@@ -22,7 +22,7 @@ class LatentModel(object):
     def energy(self, vis):
         pass
     
-    def gradient(self, vis):
+    def derivatives(self, vis):
         pass
     
     def gibbs_step(self, vis):
@@ -46,8 +46,9 @@ class LatentModel(object):
         for t in range(steps):
             new_vis = self.gibbs_step(new_vis)
         return new_vis
-    
-
+   
+   
+#TODO:
 class HopfieldModel(LatentModel):
     
     def __init__(self, nvis, nhid):
@@ -59,7 +60,8 @@ class HopfieldModel(LatentModel):
         self.params['weights'] = numpy.random.normal(loc=0.0, scale=1.0, size=(self.layers['visible'].len, self.layers['hidden'].len)).astype(dtype=numpy.float32)
         self.params['bias'] = numpy.ones_like(self.layers['visible'].loc)  
 
-    
+
+#TODO:
 class RestrictedBoltzmannMachine(LatentModel):
     
     def __init__(self, nvis, nhid):
@@ -86,16 +88,13 @@ class HookeMachine(LatentModel):
         self.params = {}
         self.params['weights'] = numpy.random.normal(loc=0.0, scale=1.0, size=(self.layers['visible'].len, self.layers['hidden'].len)).astype(dtype=numpy.float32)
         self.params['bias'] = numpy.ones_like(self.layers['hidden'].loc)  
-        self.params['T'] = numpy.float32(1.0)
+        self.params['T'] = numpy.ones(1, dtype=numpy.float32)
         
-        self.gradient = {}
-        self.previous_gradient = {}
-        for key in self.params:
-            self.gradient[key] = numpy.zeros_like(self.params[key])
-            self.previous_gradient[key] = numpy.zeros_like(self.params[key])
+    def difference(self, vis):
+        return numpy.reshape(vis, (-1,1)) - self.params['weights']
         
     def squared_diff(self, vis):
-        return (numpy.reshape(vis, (-1,1)) - self.params['weights']) ** 2.0
+        return self.difference(vis) ** 2.0
         
     def squared_distance(self, vis):
         return numpy.sum(self.squared_diff(vis), axis=0, keepdims=True).T
@@ -116,7 +115,17 @@ class HookeMachine(LatentModel):
         self.layers['hidden'].update_params(self.hidden_conditional_params(vis))
         
     def energy(self, vis):
-        return numpy.sum(numpy.log(self.params['bias'] + self.squared_distance(vis) / (2 * self.params['T'])))
+        self.update_hidden_params(self, vis)
+        return -numpy.sum(numpy.log(self.layers['hidden'].partition_function()))
         
-    def gradient(self, vis):
-        pass
+    def derivatives(self, vis):
+        self.update_hidden_params(vis)
+        hidden_mean = self.layers['hidden'].mean().T
+        deriv = {}
+        # del H(v, k) / del b
+        deriv['bias'] = self.layers['hidden'].mean()
+        # del H(v, k) / del W
+        deriv['weights'] = (self.difference(vis) * hidden_mean) / self.params['T']
+        # del H(v,k) / del T
+        deriv['T'] = numpy.dot(hidden_mean, self.squared_distance(vis))[0]
+        return deriv

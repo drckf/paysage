@@ -8,8 +8,11 @@ if __name__ == "__main__":
     
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
     b = batch.Batch(filepath, 'train/images', 100, transform=batch.color_to_ising)
-    
     m = models.HookeMachine(b.cols, 10, vis_type = 'Ising')
-    
     sampler = fit.SequentialMC.from_batch(m, b)
-        
+    
+    cd1 = fit.ContrastiveDivergence(m, b, 1)
+    g = cd1.compute_gradient()
+    
+    
+    

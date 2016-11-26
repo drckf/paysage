@@ -9,8 +9,11 @@ from math import exp
 def normalize(anarray):
     return anarray / numpy.sum(numpy.abs(anarray))
 
+# gradient_update: (model, dict) -> model
+def parameter_update(amodel, delta):
+    pass
 
-# ----- CLASSES ----- #
+# ----- SAMPLER CLASS ----- #
 
 class SequentialMC(object):
     
@@ -36,23 +39,77 @@ class SequentialMC(object):
             new_state[i,:] = self.state[indices[i]]
         self.state = new_state
         
-    
+# ---- GRADIENT COMPUTATION CLASSES ----- #
+        
 class ContrastiveDivergence(object):
     
-    def __init__(self, amodel, abatch, steps):
-        pass
-    
+    def __init__(self, amodel, abatch, steps, resample=False):
+        self.model = amodel
+        self.batch = abatch
+        self.steps = steps
+        self.resample = resample
+        
+    def compute_gradient(self):
+        minibatch = numpy.array(self.batch.get())
+        sampler = SequentialMC(self.model, minibatch)
+        sampler.update_state(1)
+        if self.resample:
+            sampler.resample_state(temperature=1.0)
+        
+        positive_phase = {key: numpy.empty_like(self.model.params[key]) for key in self.model.params}
+        for row in minibatch:
+            deriv = self.model.derivatives(row)
+            for key in deriv:
+                positive_phase[key][:] += deriv[key]
+        
+        for key in positive_phase:
+            positive_phase[key] = positive_phase[key] / len(minibatch)
 
+        negative_phase = {key: numpy.empty_like(self.model.params[key]) for key in self.model.params}
+        for row in sampler.state:
+            deriv = self.model.derivatives(row)
+            for key in deriv:
+                negative_phase[key][:] += deriv[key]
+        
+        for key in negative_phase:
+            negative_phase[key] = negative_phase[key] / len(sampler.state)  
+            
+        gradient = {key: positive_phase[key] - negative_phase[key] for key in positive_phase}
+        
+        return gradient
+            
+            
+#TODO:
 class PersistentContrastiveDivergence(object):
     
     def __init__(self, amodel, abatch, steps):
         pass
     
+#TODO:
 class HopfieldContrastiveDivergence(object):
     
     def __init__(self, amodel, abatch, steps):
         pass
 
+
+# ---- OPTIMIZER CLASSES ----- #
+
+class StochasticGradientDescent(object):
+    
+    def __init__(self):
+        pass
+    
+
+class Momentum(StochasticGradientDescent):
+    
+    def __init__(self):
+        pass
+    
+    
+class RMSProp(StochasticGradientDescent):
+    
+    def __init__(self):
+        pass
 
 """
     
