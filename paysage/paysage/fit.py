@@ -1,4 +1,6 @@
-import models, batch, numpy
+from . import models
+from . import batch
+import numpy
 from math import exp
 
 # ----- FUNCTIONS ----- #

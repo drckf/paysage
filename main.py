@@ -1,5 +1,5 @@
 import os, sys, numpy, pandas
-sys.path.append(os.path.dirname(__file__))
+
 from paysage import batch
 from paysage import models
 from paysage import fit

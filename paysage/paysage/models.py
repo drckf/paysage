@@ -1,5 +1,5 @@
 import numpy
-import layers as layers
+from . import layers
 from collections import OrderedDict
 
 #---- MODEL CLASSES ----#
