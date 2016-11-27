@@ -8,12 +8,29 @@ from math import exp
 # normalize: (numpy.ndarray) -> numpy.ndarray
 def normalize(anarray):
     return anarray / numpy.sum(numpy.abs(anarray))
+    
+# gradient: (LatentModel, numpy.ndarray, numpy.ndarray) -> numpy.ndarray
+def gradient(model, key, minibatch, samples):    
+    positive_phase = numpy.empty_like(model.params[key])
+    for row in minibatch:
+        positive_phase[:] += model.derivatives(row, key)
+    positive_phase = positive_phase / len(minibatch)
 
-# gradient_update: (model, dict) -> model
-def parameter_update(amodel, delta):
-    pass
+    negative_phase = numpy.empty_like(model.params[key])
+    for row in samples:
+        negative_phase[:] += model.derivatives(row, key)
+    negative_phase = negative_phase / len(samples)  
+        
+    gradient = positive_phase - negative_phase
+    return gradient
+    
+# total_energy: (LatentModel, numpy.ndarray) -> float
+def total_energy(model, minibatch):
+    return sum(model.energy(v) for v in minibatch)        
+    
 
 # ----- SAMPLER CLASS ----- #
+
 
 class SequentialMC(object):
     
@@ -39,44 +56,54 @@ class SequentialMC(object):
             new_state[i,:] = self.state[indices[i]]
         self.state = new_state
         
-# ---- GRADIENT COMPUTATION CLASSES ----- #
+        
+"""
+Steps in training algorithm:
+
+sampler = fit.SequentialMC.from_batch(model, batch)
+
+for e in range(epochs):
+
+    with stop_on(StopIteration):
+    
+        while True:
+        
+            for key in model.params:
+        
+                minibatch = batch.get()
+                
+                if method == 'contrastive_divergence':
+                    sampler = fit.SequentialMC(model, minibatch)                
+                sampler.update_state(steps)
+                if resample:
+                    sampler.resample_state(temperature)
+                    
+                current_energy = total_energy(model, minibatch)
+                current_gradient[key] = gradient(model, key, minibatch, sampler.state)
+                
+                delta[key]  = current_gradient[key] + momentum * previous_gradient[key]
+                model.params[key][:] = model.params[key] + stepsize[key] * delta[key]
+                    
+                new_energy = total_energy(model, minibatch)
+                
+                if new_energy < current_energy:
+                    # accept the step
+                    previous_gradient[key][:] = current_gradient[key]
+                    stepsize = 1.1 * stepsize
+                else:
+                    # reject the step and reset the model
+                    model.params[key][:] = model.params[key] - stepsize[key] * delta[key]
+                    stepsize = 0.5 * stepsize
+
+"""        
+        
+        
+# ---- LEARNING ALGORITHM CLASSES ----- #
         
 class ContrastiveDivergence(object):
     
     def __init__(self, amodel, abatch, steps, resample=False):
-        self.model = amodel
-        self.batch = abatch
-        self.steps = steps
-        self.resample = resample
-        
-    def compute_gradient(self):
-        minibatch = numpy.array(self.batch.get())
-        sampler = SequentialMC(self.model, minibatch)
-        sampler.update_state(1)
-        if self.resample:
-            sampler.resample_state(temperature=1.0)
-        
-        positive_phase = {key: numpy.empty_like(self.model.params[key]) for key in self.model.params}
-        for row in minibatch:
-            deriv = self.model.derivatives(row)
-            for key in deriv:
-                positive_phase[key][:] += deriv[key]
-        
-        for key in positive_phase:
-            positive_phase[key] = positive_phase[key] / len(minibatch)
-
-        negative_phase = {key: numpy.empty_like(self.model.params[key]) for key in self.model.params}
-        for row in sampler.state:
-            deriv = self.model.derivatives(row)
-            for key in deriv:
-                negative_phase[key][:] += deriv[key]
-        
-        for key in negative_phase:
-            negative_phase[key] = negative_phase[key] / len(sampler.state)  
-            
-        gradient = {key: positive_phase[key] - negative_phase[key] for key in positive_phase}
-        
-        return gradient
+        pass
             
             
 #TODO:
@@ -84,6 +111,7 @@ class PersistentContrastiveDivergence(object):
     
     def __init__(self, amodel, abatch, steps):
         pass
+    
     
 #TODO:
 class HopfieldContrastiveDivergence(object):
@@ -96,34 +124,11 @@ class HopfieldContrastiveDivergence(object):
 
 class StochasticGradientDescent(object):
     
-    def __init__(self):
-        pass
-    
-
-class Momentum(StochasticGradientDescent):
-    
-    def __init__(self):
-        pass
-    
-    
-class RMSProp(StochasticGradientDescent):
-    
-    def __init__(self):
-        pass
-
+    def __init__(self, method):
+        assert method.lower() in ['sgd', 'momentum', 'rmsprop']
+        self.method = method.lower()
+        
 """
-    
-# grad_a: (array, array) -> vec
-def grad_a(v_data, v_free):
-    return numpy.mean(v_data - v_free, axis=0)
-    
-# grad_b: (array, array) -> vec
-def grad_b(h_data, h_free):
-    return numpy.mean(h_data - h_free, axis=0)
-    
-# grad_W: (array, array, array, array) -> array
-def grad_W(h_data, v_data, h_free, v_free):
-    return (numpy.dot(v_data.T,h_data) - numpy.dot(v_free.T,h_free))/len(v_data)
     
 # descent: (array, int, tuple, int, int, float, int, OPTIONAL) -> tuple
 def descent(reader, n_hidden, n, momentum, epochs, method = "RMSprop", verbose = True):

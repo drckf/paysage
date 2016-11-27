@@ -11,8 +11,8 @@ if __name__ == "__main__":
     m = models.HookeMachine(b.cols, 10, vis_type = 'Ising')
     sampler = fit.SequentialMC.from_batch(m, b)
     
-    cd1 = fit.ContrastiveDivergence(m, b, 1)
-    g = cd1.compute_gradient()
+    #cd1 = fit.ContrastiveDivergence(m, b, 1)
+    #g = cd1.compute_gradient()
     
     
     

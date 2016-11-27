@@ -118,14 +118,18 @@ class HookeMachine(LatentModel):
         self.update_hidden_params(self, vis)
         return -numpy.sum(numpy.log(self.layers['hidden'].partition_function()))
         
-    def derivatives(self, vis):
+    def derivatives(self, vis, key):
         self.update_hidden_params(vis)
-        hidden_mean = self.layers['hidden'].mean().T
-        deriv = {}
-        # del H(v, k) / del b
-        deriv['bias'] = self.layers['hidden'].mean()
-        # del H(v, k) / del W
-        deriv['weights'] = (self.difference(vis) * hidden_mean) / self.params['T']
-        # del H(v,k) / del T
-        deriv['T'] = numpy.dot(hidden_mean, self.squared_distance(vis))[0]
-        return deriv
+        hidden_mean = self.layers['hidden'].mean()
+        if key == 'bias:
+            # del H(v, k) / del b
+            return hidden_mean
+        elif key == 'weights':
+            # del H(v, k) / del W
+            return (self.difference(vis) * hidden_mean.T) / self.params['T']
+        elif key == 'T':
+            # del H(v,k) / del T
+            return numpy.dot(hidden_mean.T, self.squared_distance(vis))[0]
+        else:
+            raise ValueError('unknown key: {}'.format(key))
+            
