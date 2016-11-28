@@ -58,7 +58,7 @@ class Batch(object):
             
     def get(self):
         start, stop = self.index.get()
-        tmp = self.store.select(self.key, start=start, stop=stop)
+        tmp = self.store.select(self.key, start=start, stop=stop).as_matrix()
         if not self.transform:
             return tmp
         else:

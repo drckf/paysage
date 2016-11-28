@@ -1,4 +1,4 @@
-import numpy
+import numpy, numba
 from . import layers
 from collections import OrderedDict
 
@@ -84,6 +84,8 @@ class HookeMachine(LatentModel):
         self.layers = OrderedDict()
         self.layers['visible'] = layers.get(vis_type)(nvis)
         self.layers['hidden'] = layers.get(hid_type)(nhid)
+        
+        self.state = {key: self.layers[key].prox(self.layers[key].loc) for key in self.layers}
 
         self.params = {}
         self.params['weights'] = numpy.random.normal(loc=0.0, scale=1.0, size=(self.layers['visible'].len, self.layers['hidden'].len)).astype(dtype=numpy.float32)
@@ -91,13 +93,13 @@ class HookeMachine(LatentModel):
         self.params['T'] = numpy.ones(1, dtype=numpy.float32)
         
     def difference(self, vis):
-        return numpy.reshape(vis, (-1,1)) - self.params['weights']
+        return (self.params['weights'].T - vis).T
         
     def squared_diff(self, vis):
         return self.difference(vis) ** 2.0
         
     def squared_distance(self, vis):
-        return numpy.sum(self.squared_diff(vis), axis=0, keepdims=True).T
+        return numpy.sum(self.squared_diff(vis), axis=0)
         
     def visible_conditional_params(self, hid):
         total = numpy.sum(hid)
@@ -115,13 +117,13 @@ class HookeMachine(LatentModel):
         self.layers['hidden'].update_params(self.hidden_conditional_params(vis))
         
     def energy(self, vis):
-        self.update_hidden_params(self, vis)
+        self.update_hidden_params(vis)
         return -numpy.sum(numpy.log(self.layers['hidden'].partition_function()))
         
     def derivatives(self, vis, key):
         self.update_hidden_params(vis)
         hidden_mean = self.layers['hidden'].mean()
-        if key == 'bias:
+        if key == 'bias':
             # del H(v, k) / del b
             return hidden_mean
         elif key == 'weights':
@@ -129,7 +131,10 @@ class HookeMachine(LatentModel):
             return (self.difference(vis) * hidden_mean.T) / self.params['T']
         elif key == 'T':
             # del H(v,k) / del T
-            return numpy.dot(hidden_mean.T, self.squared_distance(vis))[0]
+            return numpy.dot(hidden_mean.T, self.squared_distance(vis))
         else:
             raise ValueError('unknown key: {}'.format(key))
+            
+    
+
             

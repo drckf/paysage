@@ -11,8 +11,11 @@ if __name__ == "__main__":
     m = models.HookeMachine(b.cols, 10, vis_type = 'Ising')
     sampler = fit.SequentialMC.from_batch(m, b)
     
-    #cd1 = fit.ContrastiveDivergence(m, b, 1)
-    #g = cd1.compute_gradient()
+    minibatch = b.get()
+    v0 = minibatch[0]
     
+    foo = m.derivatives(v0, 'T')
+    print(foo)
+    #v_d, v_m = fit.basic_train(m, b, 1, method="RMSprop", verbose=True)
     
     

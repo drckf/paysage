@@ -57,10 +57,10 @@ class SequentialMC(object):
         self.state = new_state
         
 
-def basic_train(model, batch, epochs, method="RMSprop", verbose=True):
+def basic_train(model, batch, epochs, method="momentum", verbose=True):
     momentum = 0.0
-    sampler = fit.SequentialMC.from_batch(model, batch)
-    steps = {key: 0.001 for key in model.params}
+    sampler = SequentialMC.from_batch(model, batch)
+    steps = {key: 0.000001 for key in model.params}
     grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
     delta = {key: numpy.zeros_like(model.params[key]) for key in model.params}
     mean_square = {key: numpy.zeros_like(model.params[key]) for key in model.params}
@@ -79,33 +79,23 @@ def basic_train(model, batch, epochs, method="RMSprop", verbose=True):
                 v_data = batch.get()
             except StopIteration:
                 break
-            
+                        
             # generate a sample from the model
-            sampler = fit.SequentialMC(model, v_data) 
-            sampler.update_state(steps)    
+            sampler = SequentialMC(model, v_data) 
+            sampler.update_state(1)    
             sampler.resample_state(temperature=1.0)
             v_model = sampler.state
             
-            # compute the gradients
-            grad = {key: gradient(model, key, v_data, v_model) for key in model.params}
-
-            # compute the updates using RMSprop (slide 29 lecture 6 of Geoff Hinton's coursera course) or momentum
-            if method == "RMSprop":
-                for key in model.params:
-                    mean_square[key][:] = 0.9 * mean_square[key] + (1.0 - 0.9) * grad[key]**2
-                    delta[key][:] = (lr * steps[key]) / (0.000001 + numpy.sqrt(mean_square[key])) * grad[key]
-            elif method == "momentum":
-                for key in model.params:
-                    delta[key][:] = lr * steps[key] * grad[key] + momentum * delta[key] 
-            else:
-                raise ValueError("method must be one of: RMSprop, momentum")
+            for key in ['weights']:
+                current_energy = total_energy(model, v_data)
+                grad[key] = gradient(model, key, v_data, v_model)
+                model.params[key] = model.params[key] - lr * steps[key] * grad[key]
+                new_energy = total_energy(model, v_data)
+                print(key, new_energy < current_energy)
                 
-            # update the parameters
-            for key in model.params:
-                model.params[key][:] = model.params[key] + delta[key]
-        
-    return (a, b, W, mem)
-
+            break
+    
+    return (v_data, v_model)
         
         
 """

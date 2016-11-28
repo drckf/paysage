@@ -30,8 +30,8 @@ class GaussianLayer(Layer):
     
     def __init__(self, length):
         super().__init__(length)
-        self.loc = numpy.zeros((self.len, 1), dtype=numpy.float32)
-        self.scale = numpy.ones((self.len, 1), dtype=numpy.float32)
+        self.loc = numpy.zeros(self.len, dtype=numpy.float32)
+        self.scale = numpy.ones(self.len, dtype=numpy.float32)
         
     def prox(self, vis):
         return vis
@@ -54,7 +54,7 @@ class IsingLayer(Layer):
 
     def __init__(self, length):
         super().__init__(length)
-        self.loc = numpy.zeros((self.len, 1), dtype=numpy.int8)
+        self.loc = numpy.zeros(self.len, dtype=numpy.int8)
         
     def prox(self, vis):
         return 2 * (vis > 0).astype(numpy.int8) - 1
@@ -76,7 +76,7 @@ class BernoulliLayer(Layer):
     
     def __init__(self, length):
         super().__init__(length)
-        self.loc = numpy.zeros((self.len, 1), dtype=numpy.int8)
+        self.loc = numpy.zeros(self.len, dtype=numpy.int8)
         
     def prox(self, vis):
         return (vis > 0).astype(numpy.int8)
@@ -98,7 +98,7 @@ class ExponentialLayer(Layer):
 
     def __init__(self, length):
         super().__init__(length)
-        self.loc = numpy.ones((self.len, 1), dtype=numpy.float32)
+        self.loc = numpy.ones(self.len, dtype=numpy.float32)
         
     def prox(self, vis):
         return vis.clip(min=0.0)
