@@ -8,7 +8,7 @@ def binarize_color(anarray):
 
 # binary_to_ising: (np.ndarray) -> np.ndarray
 def binary_to_ising(anarray):
-    return 2 * anarray -1
+    return 2 * anarray - 1
     
 # color_to_ising: (np.ndarray) -> np.ndarray
 def color_to_ising(anarray):

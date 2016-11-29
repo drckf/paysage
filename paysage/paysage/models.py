@@ -1,6 +1,7 @@
-import numpy, numba
+import numpy
 from . import layers
 from collections import OrderedDict
+from numba import jit, vectorize
 
 #---- MODEL CLASSES ----#
 
@@ -10,19 +11,13 @@ class LatentModel(object):
        
     """
     def __init__(self):
-        self.layers = OrderedDict()
+        self.layers = {}
         self.params = {}
-    
-    def update_visible_params(self, hid):
-        pass
-
-    def update_hidden_params(self, vis):
+                
+    def sample_hidden(self, visible):
         pass
     
-    def energy(self, vis):
-        pass
-    
-    def derivatives(self, vis):
+    def sample_visible(self, hidden):
         pass
     
     def gibbs_step(self, vis):
@@ -31,10 +26,8 @@ class LatentModel(object):
            return v'
         
         """
-        self.update_hidden_params(vis)
-        hid = self.layers['hidden'].sample_state()
-        self.update_visible_params(hid)
-        return self.layers['visible'].sample_state()
+        hid = self.sample_hidden(vis)
+        return self.sample_visible(hid)
         
     def gibbs_chain(self, vis, steps):
         """gibbs_chain(v, n):
@@ -49,10 +42,58 @@ class LatentModel(object):
    
    
 #TODO:
+class RestrictedBoltzmannMachine(LatentModel):
+    
+    def __init__(self, nvis, nhid):
+        self.layers = {}
+        self.layers['visible'] = layers.IsingLayer()
+        self.layers['hidden'] = layers.BernoulliLayer()
+        
+        self.params = {}
+        self.params['weights'] = numpy.random.normal(loc=0.0, scale=1.0, size=(nvis, nhid)).astype(dtype=numpy.float32)
+        self.params['visible_bias'] = numpy.ones(nvis, dtype=numpy.float32)  
+        self.params['hidden_bias'] = numpy.ones(nhid, dtype=numpy.float32) 
+        
+    def sample_hidden(self, visible):
+        field = self.params['hidden_bias'] + numpy.dot(visible, self.params['weights'])
+        if len(field.shape) == 2:
+            return numpy.array([self.layers['hidden'].sample_state(f) for f in field], dtype=numpy.float32)       
+        else:
+            return self.layers['hidden'].sample_state(field)
+              
+    def sample_visible(self, hidden):
+        field = self.params['visible_bias'] + numpy.dot(hidden, self.params['weights'].T)
+        if len(field.shape) == 2:
+            return numpy.array([self.layers['visible'].sample_state(f) for f in field], numpy.float32)
+        else:
+            return self.layers['visible'].sample_state(field)
+        
+    def joint_energy(self, visible, hidden):
+        energy = -numpy.dot(visible, self.params['visible_bias']) - numpy.dot(hidden, self.params['hidden_bias'])
+        if len(visible.shape) == 2:
+            energy = energy - batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
+        else:
+            energy =  energy - numpy.dot(visible, numpy.dot(self.params['weights'], hidden))
+        return energy
+   
+    def marginal_energy(self, visible):
+        Z_hidden = self.layers['hidden'].partition_function(self.params['hidden_bias'] + numpy.dot(visible, self.params['weights']))
+        return -numpy.dot(self.params['visible_bias'], visible) - numpy.sum(numpy.log(Z_hid))
+
+    def derivatives(self, visible):
+        mean_hidden = self.layers['hidden'].mean(visible)
+        derivs = {}
+        self.derivs['visible_bias'] = -visible
+        self.derivs['hidden_bias'] = -mean_hidden
+        self.derivs['weights'] = -numpy.outer(visible, mean_hidden)
+        return derivs
+
+"""  
+#TODO:
 class HopfieldModel(LatentModel):
     
     def __init__(self, nvis, nhid):
-        self.layers = OrderedDict()
+        self.layers = {}
         self.layers['visible'] = layers.IsingLayer(nvis)
         self.layers['hidden'] = layers.GaussianLayer(nhid)
         
@@ -61,64 +102,43 @@ class HopfieldModel(LatentModel):
         self.params['bias'] = numpy.ones_like(self.layers['visible'].loc)  
 
 
-#TODO:
-class RestrictedBoltzmannMachine(LatentModel):
-    
-    def __init__(self, nvis, nhid):
-        self.layers = OrderedDict()
-        self.layers['visible'] = layers.IsingLayer(nvis)
-        self.layers['hidden'] = layers.BernoulliLayer(nhid)
-        
-        self.params = {}
-        self.params['weights'] = numpy.random.normal(loc=0.0, scale=1.0, size=(self.layers['visible'].len, self.layers['hidden'].len)).astype(dtype=numpy.float32)
-        self.params['visible_bias'] = numpy.ones_like(self.layers['visible'].loc)  
-        self.params['hidden_bias'] = numpy.ones_like(self.layers['hidden'].loc)  
-        
-        
 class HookeMachine(LatentModel):
     
     def __init__(self, nvis, nhid, vis_type='gauss', hid_type='expo'):   
         assert vis_type.lower() in ['gauss', 'ising']
         assert hid_type.lower() in ['expo', 'bern']
         
-        self.layers = OrderedDict()
+        self.layers = {}
         self.layers['visible'] = layers.get(vis_type)(nvis)
         self.layers['hidden'] = layers.get(hid_type)(nhid)
         
-        self.state = {key: self.layers[key].prox(self.layers[key].loc) for key in self.layers}
-
         self.params = {}
         self.params['weights'] = numpy.random.normal(loc=0.0, scale=1.0, size=(self.layers['visible'].len, self.layers['hidden'].len)).astype(dtype=numpy.float32)
         self.params['bias'] = numpy.ones_like(self.layers['hidden'].loc)  
         self.params['T'] = numpy.ones(1, dtype=numpy.float32)
+                
+        self.deriv = {}
+        self.deriv['weights'] = numpy.zeros_like(self.params['weights'])
+        self.deriv['bias'] = numpy.zeros_like(self.params['bias'])
+        self.params['T'] = numpy.zeros_like(self.params['T'])
         
-    def difference(self, vis):
-        return (self.params['weights'].T - vis).T
+        self.set_vis(numpy.zeros_like(self.layers['visible'].loc))
         
-    def squared_diff(self, vis):
-        return self.difference(vis) ** 2.0
-        
-    def squared_distance(self, vis):
-        return numpy.sum(self.squared_diff(vis), axis=0)
+    def set_vis(self, vis):
+        self.vis = vis
+        self.diff = (self.params['weights'].T - vis).T
+        self.squared_dist = numpy.sum(self.diff ** 2, axis=0)
+        self.layers['hidden'].update_params(self.params['bias'] + self.squared_dist / (2 * self.params['T']))
+        self.energy = -numpy.sum(numpy.log(self.layers['hidden'].partition_function()))        
         
     def visible_conditional_params(self, hid):
         total = numpy.sum(hid)
-        loc = numpy.dot(self.params['weights'], numpy.reshape(hid, (-1,1))) / total
+        loc = numpy.dot(self.params['weights'], hid) / total
         scale = self.params['T'] / total * numpy.ones_like(self.layers['visible'].loc)
         return (loc, scale)
         
-    def hidden_conditional_params(self, vis):
-        return self.params['bias'] + self.squared_distance(vis) / (2 * self.params['T'])
-        
     def update_visible_params(self, hid):
         self.layers['visible'].update_params(*self.visible_conditional_params(hid))
-
-    def update_hidden_params(self, vis):
-        self.layers['hidden'].update_params(self.hidden_conditional_params(vis))
-        
-    def energy(self, vis):
-        self.update_hidden_params(vis)
-        return -numpy.sum(numpy.log(self.layers['hidden'].partition_function()))
         
     def derivatives(self, vis, key):
         self.update_hidden_params(vis)
@@ -134,7 +154,16 @@ class HookeMachine(LatentModel):
             return numpy.dot(hidden_mean.T, self.squared_distance(vis))
         else:
             raise ValueError('unknown key: {}'.format(key))
-            
+    """
     
+# ----- FUNCTIONS ----- #
+    
+@jit('float32[:](float32[:,:],float32[:,:],float32[:,:])',nopython=True)
+def batch_dot(vis, W, hid):
+    result = numpy.zeros(len(vis), dtype=numpy.float32)
+    for i in range(len(vis)):
+        result[i] = numpy.dot(vis[i], numpy.dot(W, hid[i]))
+    return result
+
 
             

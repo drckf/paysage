@@ -1,122 +1,111 @@
-import numpy
-from scipy.stats import bernoulli
-from scipy.special import expit
-
+import numpy, math
+import numexpr as ne
+from  numba import jit, vectorize
 
 #----- LAYER CLASSES -----#
 
-class Layer(object):
-
-    def __init__(self, length):
-        self.len = length
-        
-    def prox(self, vis):
-        pass
-        
-    def update_params(self, *args):
-        pass
+class GaussianLayer(object):
     
-    def mean(self):
+    def __init__(self):
         pass
-    
-    def partition_function(self):
-        pass
-    
-    def sample_state(self):
-        pass
-
-
-class GaussianLayer(Layer):
-    
-    def __init__(self, length):
-        super().__init__(length)
-        self.loc = numpy.zeros(self.len, dtype=numpy.float32)
-        self.scale = numpy.ones(self.len, dtype=numpy.float32)
         
     def prox(self, vis):
         return vis
         
-    def update_params(self, *args):
-        self.loc[:] = args[0]
-        self.scale[:] = args[1]
+    def mean(self, loc):
+        return loc
         
-    def mean(self):
-        return self.loc
-        
-    def partition_function(self):
-        return 1 / self.scale
+    def partition_function(self, scale):
+        return 1.0 / scale
     
-    def sample_state(self):
-        return self.loc + self.scale * numpy.random.normal(loc=0.0, scale=1.0, size=self.loc.shape)
+    def sample_state(self, loc, scale):
+        return loc + scale * numpy.random.normal(loc=0.0, scale=1.0, size=loc.shape)
 
 
-class IsingLayer(Layer):
+class IsingLayer(object):
 
-    def __init__(self, length):
-        super().__init__(length)
-        self.loc = numpy.zeros(self.len, dtype=numpy.int8)
+    def __init__(self):
+        pass
         
     def prox(self, vis):
-        return 2 * (vis > 0).astype(numpy.int8) - 1
+        return 2.0 * (vis > 0.0).astype(numpy.float32) - 1.0
+        
+    def mean(self, loc):
+        return numpy.tanh(loc)
+        
+    def partition_function(self, loc):
+        return numpy.cosh(loc)
 
-    def update_params(self, *args):
-        self.loc[:] = args[0]
-        
-    def mean(self):
-        return numpy.tanh(self.loc)
-        
-    def partition_function(self):
-        return numpy.cosh(self.loc)
-
-    def sample_state(self):
-        return 2 * bernoulli.rvs(expit(self.loc)) - 1
+    def sample_state(self, loc):
+        return random_ising_vector(expit(loc))
         
         
-class BernoulliLayer(Layer):
+class BernoulliLayer(object):
     
-    def __init__(self, length):
-        super().__init__(length)
-        self.loc = numpy.zeros(self.len, dtype=numpy.int8)
+    def __init__(self):
+        pass
         
     def prox(self, vis):
-        return (vis > 0).astype(numpy.int8)
+        return (vis > 0.0).astype(numpy.float32)
         
-    def update_params(self, *args):
-        self.loc[:] = args[0]
+    def mean(self, loc):
+        return expit(loc)
         
-    def mean(self):
-        return expit(self.loc)
+    def partition_function(self, loc):
+        return 1.0 + numpy.exp(loc)
         
-    def partition_function(self):
-        return 1.0 + numpy.exp(self.loc)
-        
-    def sample_state(self):
-        return bernoulli.rvs(expit(self.loc))
+    def sample_state(self, loc):
+        return random_bernoulli_vector(expit(loc))
 
 
-class ExponentialLayer(Layer):
+class ExponentialLayer(object):
 
-    def __init__(self, length):
-        super().__init__(length)
-        self.loc = numpy.ones(self.len, dtype=numpy.float32)
+    def __init__(self):
+        pass
         
     def prox(self, vis):
         return vis.clip(min=0.0)
         
-    def update_params(self, *args):
-        self.loc[:] = args[0]
+    def mean(self, loc):
+        return 1.0 / loc
         
-    def mean(self):
-        return 1.0 / self.loc
-        
-    def partition_function(self):
-        return 1.0 / self.loc
+    def partition_function(self, loc):
+        return 1.0 / loc
 
-    def sample_state(self):
-        return numpy.random.exponential(self.loc)
+    def sample_state(self, loc):
+        return numpy.random.exponential(loc)
         
-        
+
 # ---- FUNCTIONS ----- #
+
+@vectorize('float32(float32)', nopython=True)
+def expit(x):
+    result = (1.0 + numpy.tanh(x/2.0)) / 2.0
+    return result
+    
+@jit('float32(float32)', nopython=True)
+def random_bernoulli(p):
+    r = numpy.random.rand()
+    if p < r:
+        return numpy.float32(0.0)
+    else:
+        return numpy.float32(1.0)
+        
+@jit('float32[:](float32[:])', nopython=True)
+def random_bernoulli_vector(p):
+    r = numpy.random.rand(len(p))
+    result = numpy.zeros_like(p)
+    for i in range(len(p)):
+        if p[i] < r[i]:
+            result[i] = numpy.float32(0.0)
+        else:
+            result[i] = numpy.float32(1.0)
+    return result
+ 
+@jit('float32[:](float32[:])', nopython=True)   
+def random_ising_vector(p):
+    result = numpy.float32(2.0) * random_bernoulli_vector(p) - numpy.float32(1.0)
+    return result
         
 def get(key):
     if 'gauss' in key.lower():
