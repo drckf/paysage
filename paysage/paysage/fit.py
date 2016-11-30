@@ -1,9 +1,10 @@
 from . import models
 from . import batch
 import numpy
-from math import exp
-from numba import jit      
+from math import exp, log
+from numba import jit, vectorize
     
+EPSILON = numpy.finfo(numpy.float32).eps
 
 # ----- SAMPLER CLASS ----- #
 
@@ -43,6 +44,7 @@ def basic_train(model, batch, epochs, method="momentum", verbose=True):
     # an array to store the reconstruction error values during the descent
     mem = []
         
+    edist = 0
     for epoch in range(epochs):
         #learning rate decays slowly duing descent
         lr = 0.8**epoch
@@ -57,8 +59,8 @@ def basic_train(model, batch, epochs, method="momentum", verbose=True):
                         
             # generate a sample from the model
             sampler = SequentialMC(model, v_data) 
-            sampler.update_state(1)    
-            #sampler.resample_state(temperature=1.0)
+            sampler.update_state(2)    
+            sampler.resample_state(temperature=1.0)
             v_model = sampler.state
             
             grad = gradient(model, v_data, v_model)
@@ -73,8 +75,11 @@ def basic_train(model, batch, epochs, method="momentum", verbose=True):
                 sampler.resample_state(temperature=1.0)
                 sampler.update_state(10)
                 sampler.resample_state(temperature=1.0)
-                edist = energy_distance(v_data, v_model)
-                print(epoch, t, recon, edist)
+                if epoch == 0:
+                    edist = energy_distance(v_data, v_model)
+                else:
+                    edist = 0.6 * energy_distance(v_data, v_model) + 0.4 * edist
+                print(epoch, t, recon, edist, data_free_energy(model, v_data))
                 
             t += 1
     
@@ -160,4 +165,20 @@ def energy_distance(minibatch, samples):
     d3 = d3 / (len(minibatch)*len(samples))
     
     return 2*d3 - d2 - d1
+    
+@vectorize('float32(float32)',nopython=True)
+def plogp(x):
+    if x <= EPSILON:
+        return numpy.float32(0)
+    else:
+        return x * numpy.log(x)
+        
+@jit('float32(float32[:])',nopython=True)
+def entropy(vec):
+    return -numpy.sum(plogp(vec))
+    
+def data_free_energy(model, data):
+    energies = model.marginal_energy(data)
+    weights = importance_weights(energies, numpy.float32(1.0)).clip(min=0.0)
+    return numpy.dot(energies, weights) - entropy(weights)
         
