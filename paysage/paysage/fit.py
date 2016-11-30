@@ -2,31 +2,7 @@ from . import models
 from . import batch
 import numpy
 from math import exp
-
-# ----- FUNCTIONS ----- #
-
-# normalize: (numpy.ndarray) -> numpy.ndarray
-def normalize(anarray):
-    return anarray / numpy.sum(numpy.abs(anarray))
-    
-# gradient: (LatentModel, numpy.ndarray, numpy.ndarray) -> numpy.ndarray
-def gradient(model, key, minibatch, samples):    
-    positive_phase = numpy.empty_like(model.params[key])
-    for row in minibatch:
-        positive_phase[:] += model.derivatives(row, key)
-    positive_phase = positive_phase / len(minibatch)
-
-    negative_phase = numpy.empty_like(model.params[key])
-    for row in samples:
-        negative_phase[:] += model.derivatives(row, key)
-    negative_phase = negative_phase / len(samples)  
-        
-    gradient = positive_phase - negative_phase
-    return gradient
-    
-# total_energy: (LatentModel, numpy.ndarray) -> float
-def total_energy(model, minibatch):
-    return sum(model.energy(v) for v in minibatch)        
+from numba import jit      
     
 
 # ----- SAMPLER CLASS ----- #
@@ -36,7 +12,10 @@ class SequentialMC(object):
     
     def __init__(self, amodel, adataframe):
         self.model = amodel
-        self.state = numpy.array(adataframe)
+        try:
+            self.state = adataframe.as_matrix().astype(numpy.float32)
+        except Exception:
+            self.state = adataframe.astype(numpy.float32)
         
     @classmethod
     def from_batch(cls, amodel, abatch):
@@ -45,17 +24,15 @@ class SequentialMC(object):
         return tmp
         
     def update_state(self, steps):
-        for i in range(len(self.state)):
-            self.state[i,:] = numpy.ravel(self.model.gibbs_chain(self.state[i], steps))
-        
+        self.state[:] = self.model.gibbs_chain(self.state, steps)
+
     def resample_state(self, temperature=1.0):
-        weights = normalize(numpy.array([exp(-self.model.energy(x) / temperature) for x in self.state]))
+        energies = self.model.marginal_energy(self.state)
+        weights = importance_weights(energies, numpy.float32(temperature)).clip(min=0.0)
+        print(energies)
         indices = numpy.random.choice(numpy.arange(len(self.state)), size=len(self.state), replace=True, p=weights)
-        new_state = numpy.empty_like(self.state)
-        for i in range(len(self.state)):
-            new_state[i,:] = self.state[indices[i]]
-        self.state = new_state
-        
+        self.state[:] = self.state[list(indices)]        
+
 
 def basic_train(model, batch, epochs, method="momentum", verbose=True):
     momentum = 0.0
@@ -136,36 +113,22 @@ for e in range(epochs):
                     model.params[key][:] = model.params[key] - stepsize[key] * delta[key]
                     stepsize = 0.5 * stepsize
 
-"""        
-        
-        
-# ---- LEARNING ALGORITHM CLASSES ----- #
-        
-class ContrastiveDivergence(object):
-    
-    def __init__(self, amodel, abatch, steps, resample=False):
-        pass
-            
-            
-#TODO:
-class PersistentContrastiveDivergence(object):
-    
-    def __init__(self, amodel, abatch, steps):
-        pass
-    
-    
-#TODO:
-class HopfieldContrastiveDivergence(object):
-    
-    def __init__(self, amodel, abatch, steps):
-        pass
+"""                
 
+# ----- FUNCTIONS ----- #
 
-# ---- OPTIMIZER CLASSES ----- #
-
-class StochasticGradientDescent(object):
+@jit('float32[:](float32[:])',nopython=True)
+def normalize(anarray):
+    return anarray / numpy.sum(numpy.abs(anarray))
     
-    def __init__(self, method):
-        assert method.lower() in ['sgd', 'momentum', 'rmsprop']
-        self.method = method.lower()
+@jit('float32[:](float32[:],float32)',nopython=True)
+def importance_weights(energies, temperature):
+    gauge = energies - numpy.min(energies)
+    return normalize(numpy.exp(-gauge/temperature))
+    
+# gradient: (LatentModel, numpy.ndarray, numpy.ndarray) -> numpy.ndarray
+def gradient(model, minibatch, samples):    
+    positive_phase = model.derivatives(minibatch.astype(numpy.float32))
+    negative_phase = model.derivatives(samples.astype(numpy.float32))
+    return {key: (positive_phase[key] - negative_phase[key]) for key in positive_phase}       
         

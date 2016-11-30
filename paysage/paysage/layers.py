@@ -2,6 +2,8 @@ import numpy, math
 import numexpr as ne
 from  numba import jit, vectorize
 
+LOG2 = 0.6931471805599453
+
 #----- LAYER CLASSES -----#
 
 class GaussianLayer(object):
@@ -15,8 +17,8 @@ class GaussianLayer(object):
     def mean(self, loc):
         return loc
         
-    def partition_function(self, scale):
-        return 1.0 / scale
+    def log_partition_function(self, scale):
+        return -numpy.log(scale)
     
     def sample_state(self, loc, scale):
         return loc + scale * numpy.random.normal(loc=0.0, scale=1.0, size=loc.shape)
@@ -33,9 +35,9 @@ class IsingLayer(object):
     def mean(self, loc):
         return numpy.tanh(loc)
         
-    def partition_function(self, loc):
-        return numpy.cosh(loc)
-
+    def log_partition_function(self, loc):
+        return -LOG2 + numpy.logaddexp(-loc, loc)
+        
     def sample_state(self, loc):
         return random_ising_vector(expit(loc))
         
@@ -51,8 +53,8 @@ class BernoulliLayer(object):
     def mean(self, loc):
         return expit(loc)
         
-    def partition_function(self, loc):
-        return 1.0 + numpy.exp(loc)
+    def log_partition_function(self, loc):
+        return numpy.logaddexp(0, loc)
         
     def sample_state(self, loc):
         return random_bernoulli_vector(expit(loc))
@@ -69,8 +71,8 @@ class ExponentialLayer(object):
     def mean(self, loc):
         return 1.0 / loc
         
-    def partition_function(self, loc):
-        return 1.0 / loc
+    def log_partition_function(self, loc):
+        return -numpy.log(loc)
 
     def sample_state(self, loc):
         return numpy.random.exponential(loc)
