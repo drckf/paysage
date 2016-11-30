@@ -4,7 +4,7 @@ import os, sys, numpy, pandas
 
 # binarize_color: (np.ndarray) -> np.ndarray
 def binarize_color(anarray):
-    return (anarray / 255).astype(numpy.int8)
+    return (anarray/255).astype(numpy.int8)
 
 # binary_to_ising: (np.ndarray) -> np.ndarray
 def binary_to_ising(anarray):
@@ -12,7 +12,7 @@ def binary_to_ising(anarray):
     
 # color_to_ising: (np.ndarray) -> np.ndarray
 def color_to_ising(anarray):
-    return binary_to_ising(binarize_color(anarray))
+    return binary_to_ising(binarize_color(anarray)).astype(numpy.float32)
     
     
 # ---- CLASSES ----- #
@@ -44,7 +44,7 @@ class IndexBatch(object):
 
 class Batch(object):
     
-    def __init__(self, filename, key, batch_size, transform=None):
+    def __init__(self, filename, key, batch_size, transform=None, flatten=False, dtype=numpy.float32):
         if transform:
             assert callable(transform)
         self.store = pandas.HDFStore(filename, mode='r')
@@ -52,13 +52,17 @@ class Batch(object):
         self.index = IndexBatch.from_store(self.store, key, batch_size) 
         self.cols = self.store.get_storer(key).ncols       
         self.transform = transform
+        self.dtype = dtype
+        self.flatten = flatten
         
     def reset(self):
         self.index.reset()
             
     def get(self):
         start, stop = self.index.get()
-        tmp = self.store.select(self.key, start=start, stop=stop).as_matrix()
+        tmp = self.store.select(self.key, start=start, stop=stop).as_matrix().astype(self.dtype)
+        if self.flatten:
+            tmp = tmp.reshape((len(tmp),-1))
         if not self.transform:
             return tmp
         else:

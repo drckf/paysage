@@ -41,9 +41,10 @@ class LatentModel(object):
         return new_vis
    
    
-#TODO:
 class RestrictedBoltzmannMachine(LatentModel):
+    """RestrictedBoltzmanMachine
     
+    """
     def __init__(self, nvis, nhid):
         self.layers = {}
         self.layers['visible'] = layers.IsingLayer()
@@ -95,26 +96,26 @@ class RestrictedBoltzmannMachine(LatentModel):
             derivs['weights'] = -outer(visible, mean_hidden)
         return derivs
 
+
 """  
 #TODO:
 class HopfieldModel(LatentModel):
     
     def __init__(self, nvis, nhid):
-        self.layers = {}
-        self.layers['visible'] = layers.IsingLayer(nvis)
-        self.layers['hidden'] = layers.GaussianLayer(nhid)
-        
-        self.params = {}
-        self.params['weights'] = numpy.random.normal(loc=0.0, scale=1.0, size=(self.layers['visible'].len, self.layers['hidden'].len)).astype(dtype=numpy.float32)
-        self.params['bias'] = numpy.ones_like(self.layers['visible'].loc)  
+        pass
 
-
+#TODO:
 class HookeMachine(LatentModel):
     
     def __init__(self, nvis, nhid, vis_type='gauss', hid_type='expo'):   
         pass
 
     """
+    
+# ----- ALIASES ----- #
+    
+RBM = RestrictedBoltzmannMachine    
+    
     
 # ----- FUNCTIONS ----- #
     
@@ -146,6 +147,4 @@ def batch_outer(vis, hid):
     for i in range(len(vis)):
         outer_inplace(vis[i], hid[i], result)
     return result / len(vis)
-    
-
             
