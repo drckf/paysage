@@ -2,28 +2,32 @@ import os, sys, numpy, pandas
 
 # ---- FUNCTIONS ----- #
 
-# binarize_color: (np.ndarray) -> np.ndarray
+# vectorize('int8(int8)')
 def binarize_color(anarray):
     return (anarray/255).astype(numpy.int8)
 
-# binary_to_ising: (np.ndarray) -> np.ndarray
+# vectorize('float32(int8)')
 def binary_to_ising(anarray):
-    return 2 * anarray - 1
+    return 2.0 * anarray.astype(numpy.float32) - 1.0
     
-# color_to_ising: (np.ndarray) -> np.ndarray
+# vectorize('float32(int8)')
 def color_to_ising(anarray):
-    return binary_to_ising(binarize_color(anarray)).astype(numpy.float32)
+    return binary_to_ising(binarize_color(anarray))
     
     
 # ---- CLASSES ----- #
 
 class IndexBatch(object):
-    
+    """IndexBatch
+       Dishes out batches of start/stop positions for reading minibatches of data from an HDFStore. 
+       The validation set is taken as the last (1 - train_fraction) samples in the store. 
+       
+    """
     def __init__(self, nrows, batch_size, train_fraction=0.9):
         self.start = {}
         self.end = {}
         self.start['train'] = 0
-        self.end['train'] = int(numpy.ceil(0.9*nrows))
+        self.end['train'] = int(numpy.ceil(train_fraction * nrows))
         self.start['validate'] = self.end['train']
         self.end['validate'] = nrows
         self.batch_size = batch_size
@@ -33,7 +37,10 @@ class IndexBatch(object):
         return cls(store.get_storer(key).nrows, batch_size, train_fraction=train_fraction)
         
     def reset(self, mode='train'):
-        self.start[mode] = 0
+        if mode == 'train':
+            self.start['train'] = 0
+        else:
+            self.start['validate'] = self.end['train']
         
     def get(self, mode='train'):
         if self.start[mode] >= self.end[mode]:
@@ -47,7 +54,12 @@ class IndexBatch(object):
         
 
 class Batch(object):
+    """Batch
+       Serves up minibatches from an HDFStore. 
+       The validation set is taken as the last (1 - train_fraction) samples in the store. 
+       The data should probably be randomly shuffled if being used to train a non-recurrent model.
     
+    """    
     def __init__(self, filename, key, batch_size, train_fraction=0.9,
                  transform=None, flatten=False, dtype=numpy.float32):
         if transform:
@@ -61,7 +73,11 @@ class Batch(object):
         self.flatten = flatten
         
     def reset(self, mode='train'):
-        self.index.reset()
+        if mode == 'all':
+            self.index.reset('train')
+            self.index.reset('validate')
+        else:
+            self.index.reset(mode)
             
     def get(self, mode='train'):
         start, stop = self.index.get(mode=mode)

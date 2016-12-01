@@ -1,8 +1,7 @@
 from . import models
 from . import batch
 import numpy
-from math import exp, log
-from numba import jit, vectorize
+from numba import jit
     
 # ----- SAMPLER CLASS ----- #
 
@@ -52,20 +51,17 @@ class ContrastiveDivergence(TrainingMethod):
         for epoch in range(self.epochs):          
             t = 0
             while True:
-                # grab a minibatch from the observed data
                 try:
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
                             
-                # generate a sample from the model
                 # CD resets the sampler from the visible data at each iteration
                 sampler = SequentialMC(self.model, v_data) 
                 sampler.update_state(self.mcsteps)    
-                v_model = sampler.state
                 
                 # compute the gradient and update the model parameters
-                self.optimizer.update(self.model, v_data, v_model, epoch)
+                self.optimizer.update(self.model, v_data, sampler.state, epoch)
                 
                 # monitor learning progress
                 prog = self.monitor.check_progress(self.model, t)
@@ -73,7 +69,7 @@ class ContrastiveDivergence(TrainingMethod):
                     print(epoch, *prog)
                 t += 1
         
-        return (v_data, v_model)
+        return None
              
              
 class ProgressMonitor(object):
@@ -81,33 +77,43 @@ class ProgressMonitor(object):
     def __init__(self, skip, batch):
         self.skip = skip
         self.batch = batch
+        self.num_validation_samples = batch.index.end['validate'] - batch.index.end['train']
         
     def check_progress(self, model, t):
         if not (t % self.skip):
-            v_data = self.batch.get(mode='validate')
-            sampler = SequentialMC(model, v_data) 
-            sampler.update_state(1)   
-            recon = numpy.sqrt(numpy.mean((v_data - sampler.state)**2))
-            sampler.resample_state(temperature=1.0)
-            sampler.update_state(10)
-            sampler.resample_state(temperature=1.0)
-            edist = energy_distance(v_data, sampler.state)
+            recon = 0
+            edist = 0
+            while True:
+                try:
+                    v_data = self.batch.get(mode='validate')
+                except StopIteration:
+                    break
+                sampler = SequentialMC(model, v_data) 
+                sampler.update_state(1)   
+                recon += numpy.sum((v_data - sampler.state)**2)
+                #sampler.resample_state(temperature=1.0)
+                #sampler.update_state(10)
+                #sampler.resample_state(temperature=1.0)
+                #edist += energy_distance(v_data, sampler.state)
+            recon = numpy.sqrt(recon / self.num_validation_samples)
+            edist = edist / self.num_validation_samples
             return t, recon, edist
     
         
 class StochasticGradientDescent(object):
     
-    def __init__(self, model):
-        self.lr = 1.0
+    def __init__(self, model, lr_decay=0.5):
+        self.lr_decay = lr_decay
         self.steps = {key: 0.001 for key in model.params}
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
         self.delta = {key: numpy.zeros_like(model.params[key]) for key in model.params}
     
     def update(self, model, v_data, v_model, epoch):
-        self.lr = 0.5 ** epoch
+        lr = self.lr_decay ** epoch
         self.grad = gradient(model, v_data, v_model)
         for key in self.grad:
-            model.params[key][:] = model.params[key] - self.lr * self.steps[key] * self.grad[key]
+            model.params[key][:] = model.params[key] - lr * self.steps[key] * self.grad[key]
+         
          
 class MomentumStochasticGradientDescent(object):
     
