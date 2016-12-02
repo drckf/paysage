@@ -32,19 +32,19 @@ class SequentialMC(object):
 
 class TrainingMethod(object):
     
-    def __init__(self, model, batch, epochs):
+    def __init__(self, model, batch, epochs, skip=100):
         self.model = model
         self.batch = batch
         self.epochs = epochs
         self.sampler = SequentialMC.from_batch(model, batch)
-        self.optimizer = StochasticGradientDescent(model)
-        self.monitor = ProgressMonitor(100, batch)
+        self.optimizer = ADAM(model)
+        self.monitor = ProgressMonitor(skip, batch)
 
         
 class ContrastiveDivergence(TrainingMethod):
     
-    def __init__(self, model, batch, epochs, mcsteps):
-        super().__init__(model, batch, epochs)
+    def __init__(self, model, batch, epochs, mcsteps, skip=100):
+        super().__init__(model, batch, epochs, skip=skip)
         self.mcsteps = mcsteps
         
     def train(self):
@@ -99,12 +99,28 @@ class ProgressMonitor(object):
             edist = edist / self.num_validation_samples
             return t, recon, edist
     
+# ----- OPTIMIZERS ----- #        
         
 class StochasticGradientDescent(object):
     
-    def __init__(self, model, lr_decay=0.5):
+    def __init__(self, model, stepsize=0.001, lr_decay=0.5):
         self.lr_decay = lr_decay
-        self.steps = {key: 0.001 for key in model.params}
+        self.stepsize = stepsize
+        self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
+    
+    def update(self, model, v_data, v_model, epoch):
+        lr = self.lr_decay ** epoch
+        self.grad = gradient(model, v_data, v_model)
+        for key in self.grad:
+            model.params[key][:] = model.params[key] - lr * self.stepsize * self.grad[key]
+         
+         
+class Momentum(object):
+    
+    def __init__(self, model, stepsize=0.001, momentum=0.9, lr_decay=0.5):
+        self.lr_decay = lr_decay
+        self.stepsize = stepsize
+        self.momentum = momentum
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
         self.delta = {key: numpy.zeros_like(model.params[key]) for key in model.params}
     
@@ -112,42 +128,51 @@ class StochasticGradientDescent(object):
         lr = self.lr_decay ** epoch
         self.grad = gradient(model, v_data, v_model)
         for key in self.grad:
-            model.params[key][:] = model.params[key] - lr * self.steps[key] * self.grad[key]
-         
-         
-class MomentumStochasticGradientDescent(object):
-    
-    def __init__(self, model):
-        self.lr = 1.0
-        self.steps = {key: 0.001 for key in model.params}
-        self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
-        self.delta = {key: numpy.zeros_like(model.params[key]) for key in model.params}
-    
-    def update(self, model, v_data, v_model, epoch):
-        self.grad = gradient(model, v_data, v_model)
-        for key in self.grad:
-            model.params[key][:] = model.params[key] - lr * self.steps[key] * self.grad[key]
-   
+            self.delta[key][:] = self.grad[key] + self.momentum * self.delta[key]
+            model.params[key][:] = model.params[key] - lr * self.stepsize * self.delta[key]
+
 
 class RMSProp(object):
     
-    def __init__(self, model):
-        self.lr = 1.0
-        self.steps = {key: 0.001 for key in model.params}
+    def __init__(self, model, stepsize=0.001, mean_square_weight=0.9):
+        self.stepsize = stepsize
+        self.mean_square_weight = mean_square_weight
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
-        self.delta = {key: numpy.zeros_like(model.params[key]) for key in model.params}
+        self.mean_square_grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
+        self.epsilon = 10**-6
     
     def update(self, model, v_data, v_model, epoch):
         self.grad = gradient(model, v_data, v_model)
         for key in self.grad:
-            model.params[key][:] = model.params[key] - lr * self.steps[key] * self.grad[key]
-       
+            self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
+            model.params[key][:] = model.params[key] - self.stepsize * self.grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key])
+ 
+ 
+class ADAM(object):
+    
+    def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.99):
+        self.stepsize = stepsize
+        self.mean_weight = mean_weight
+        self.mean_square_weight = mean_square_weight
+        self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
+        self.mean_square_grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
+        self.mean_grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
+        self.epsilon = 10**-6
+    
+    def update(self, model, v_data, v_model, epoch):
+        self.grad = gradient(model, v_data, v_model)
+        for key in self.grad:
+            self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
+            self.mean_grad[key] = self.mean_weight * self.mean_grad[key] + (1-self.mean_weight)*self.grad[key]            
+            model.params[key][:] = model.params[key] - (self.stepsize / (1 - self.mean_weight)) * self.mean_grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key] / (1 - self.mean_square_weight))
+         
          
 # ----- ALIASES ----- #
          
 sgd = SGD = StochasticGradientDescent   
-momentum = Momentum = MomentumStochasticGradientDescent   
+momentum = Momentum   
 rmsprop = RMSProp   
+adam = ADAM
         
 
 # ----- FUNCTIONS ----- #
