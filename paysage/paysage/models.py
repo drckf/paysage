@@ -18,7 +18,7 @@ class LatentModel(object):
         pass
     
     def sample_visible(self, hidden):
-        pass
+        pass        
     
     def gibbs_step(self, vis):
         """gibbs_step(v):
@@ -46,6 +46,9 @@ class RestrictedBoltzmannMachine(LatentModel):
     
     """
     def __init__(self, nvis, nhid):
+        self.nvis = nvis
+        self.nhid = nhid
+        
         self.layers = {}
         self.layers['visible'] = layers.IsingLayer()
         self.layers['hidden'] = layers.BernoulliLayer()
@@ -95,6 +98,9 @@ class RestrictedBoltzmannMachine(LatentModel):
             derivs['hidden_bias'] = -mean_hidden
             derivs['weights'] = -outer(visible, mean_hidden)
         return derivs
+        
+    def random(self, visible):
+        return self.layers['visible'].random(visible)
 
 
 """  

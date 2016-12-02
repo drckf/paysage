@@ -24,6 +24,7 @@ class SequentialMC(object):
     def update_state(self, steps):
         self.state[:] = self.model.gibbs_chain(self.state, steps)
 
+    #TODO: move resampling into the model class so that it can be alternated with gibbs
     def resample_state(self, temperature=1.0):
         energies = self.model.marginal_energy(self.state)
         weights = importance_weights(energies, numpy.float32(temperature)).clip(min=0.0)
@@ -33,19 +34,19 @@ class SequentialMC(object):
 
 class TrainingMethod(object):
     
-    def __init__(self, model, batch, optimizer, epochs, skip=100):
+    def __init__(self, model, abatch, optimizer, epochs, skip=100):
         self.model = model
-        self.batch = batch
+        self.batch = abatch
         self.epochs = epochs
-        self.sampler = SequentialMC.from_batch(model, batch)
+        self.sampler = SequentialMC.from_batch(self.model, self.batch)
         self.optimizer = optimizer
-        self.monitor = ProgressMonitor(skip, batch)
+        self.monitor = ProgressMonitor(skip, self.batch)
 
         
 class ContrastiveDivergence(TrainingMethod):
     
-    def __init__(self, model, batch, optimizer, epochs, mcsteps, skip=100):
-        super().__init__(model, batch, optimizer, epochs, skip=skip)
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip)
         self.mcsteps = mcsteps
         
     def train(self):
@@ -75,10 +76,23 @@ class ContrastiveDivergence(TrainingMethod):
              
 class ProgressMonitor(object):
     
-    def __init__(self, skip, batch):
+    def __init__(self, skip, abatch, update_steps=10):
         self.skip = skip
-        self.batch = batch
-        self.num_validation_samples = batch.index.end['validate'] - batch.index.end['train']
+        self.batch = abatch
+        self.steps = update_steps
+        self.num_validation_samples = self.batch.index.end['validate'] - self.batch.index.end['train']
+
+    def reconstruction_error(self, model, v_data):
+        sampler = SequentialMC(model, v_data) 
+        sampler.update_state(1)   
+        return numpy.sum((v_data - sampler.state)**2)
+        
+    def energy_distance(self, model, v_data):
+        v_model = model.random(v_data)
+        sampler = SequentialMC(model, v_model) 
+        sampler.update_state(self.steps)
+        # sampler.resample_state(temperature=1.0)
+        return energy_distance(v_data, sampler.state)
         
     def check_progress(self, model, t):
         if not (t % self.skip):
@@ -89,15 +103,10 @@ class ProgressMonitor(object):
                     v_data = self.batch.get(mode='validate')
                 except StopIteration:
                     break
-                sampler = SequentialMC(model, v_data) 
-                sampler.update_state(1)   
-                recon += numpy.sum((v_data - sampler.state)**2)
-                #sampler.resample_state(temperature=1.0)
-                #sampler.update_state(10)
-                #sampler.resample_state(temperature=1.0)
-                #edist += energy_distance(v_data, sampler.state)
+                recon += self.reconstruction_error(model, v_data)
+                #edist += self.energy_distance(model, v_data)
             recon = numpy.sqrt(recon / self.num_validation_samples)
-            edist = edist / self.num_validation_samples
+            #edist = edist / self.num_validation_samples
             return t, recon, edist
     
 
