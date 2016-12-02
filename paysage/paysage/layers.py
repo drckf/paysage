@@ -45,7 +45,7 @@ class IsingLayer(object):
         return random_ising_vector(expit(loc))
         
     def random(self, loc):
-        return 2.0 * numpy.random.randint(0, 2, len(loc)).astype(numpy.float32) - 1.0
+        return 2.0 * numpy.random.randint(0, 2, loc.shape).astype(numpy.float32) - 1.0
         
         
 class BernoulliLayer(object):
@@ -66,7 +66,7 @@ class BernoulliLayer(object):
         return random_bernoulli_vector(expit(loc))
         
     def random(self, loc):
-        return numpy.random.randint(0, 2, len(loc)).astype(numpy.float32)
+        return numpy.random.randint(0, 2, loc.shape).astype(numpy.float32)
 
 
 class ExponentialLayer(object):

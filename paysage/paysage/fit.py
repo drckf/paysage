@@ -91,8 +91,8 @@ class ProgressMonitor(object):
         v_model = model.random(v_data)
         sampler = SequentialMC(model, v_model) 
         sampler.update_state(self.steps)
-        # sampler.resample_state(temperature=1.0)
-        return energy_distance(v_data, sampler.state)
+        sampler.resample_state(temperature=1.0)
+        return len(v_model) * energy_distance(v_data, sampler.state)
         
     def check_progress(self, model, t):
         if not (t % self.skip):
@@ -104,9 +104,9 @@ class ProgressMonitor(object):
                 except StopIteration:
                     break
                 recon += self.reconstruction_error(model, v_data)
-                #edist += self.energy_distance(model, v_data)
+                edist += self.energy_distance(model, v_data)
             recon = numpy.sqrt(recon / self.num_validation_samples)
-            #edist = edist / self.num_validation_samples
+            edist = edist / self.num_validation_samples
             return t, recon, edist
     
 
