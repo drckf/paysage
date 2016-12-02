@@ -20,6 +20,15 @@ class LatentModel(object):
     def sample_visible(self, hidden):
         pass        
     
+    def marginal_energy(self, visible):
+        pass
+    
+    def resample_state(self, visibile, temperature=1.0):
+        energies = self.marginal_energy(visibile)
+        weights = importance_weights(energies, numpy.float32(temperature)).clip(min=0.0)
+        indices = numpy.random.choice(numpy.arange(len(visibile)), size=len(visibile), replace=True, p=weights)
+        return visibile[list(indices)]  
+    
     def gibbs_step(self, vis):
         """gibbs_step(v):
            v -> h -> v'
@@ -29,7 +38,7 @@ class LatentModel(object):
         hid = self.sample_hidden(vis)
         return self.sample_visible(hid)
         
-    def gibbs_chain(self, vis, steps):
+    def gibbs_chain(self, vis, steps, resample=False, temperature=1.0):
         """gibbs_chain(v, n):
            v -> h -> v_1 -> h_1 -> ... -> v_n
            return v_n
@@ -38,6 +47,8 @@ class LatentModel(object):
         new_vis = vis.astype(vis.dtype)
         for t in range(steps):
             new_vis = self.gibbs_step(new_vis)
+            if resample:
+                new_vis = self.resample_state(new_vis, temperature=temperature)
         return new_vis
    
    
@@ -153,4 +164,13 @@ def batch_outer(vis, hid):
     for i in range(len(vis)):
         outer_inplace(vis[i], hid[i], result)
     return result / len(vis)
+    
+@jit('float32[:](float32[:])',nopython=True)
+def normalize(anarray):
+    return anarray / numpy.sum(numpy.abs(anarray))
+    
+@jit('float32[:](float32[:],float32)',nopython=True)
+def importance_weights(energies, temperature):
+    gauge = energies - numpy.min(energies)
+    return normalize(numpy.exp(-gauge/temperature)) 
             

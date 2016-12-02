@@ -21,15 +21,8 @@ class SequentialMC(object):
         abatch.reset()
         return tmp
         
-    def update_state(self, steps):
-        self.state[:] = self.model.gibbs_chain(self.state, steps)
-
-    #TODO: move resampling into the model class so that it can be alternated with gibbs
-    def resample_state(self, temperature=1.0):
-        energies = self.model.marginal_energy(self.state)
-        weights = importance_weights(energies, numpy.float32(temperature)).clip(min=0.0)
-        indices = numpy.random.choice(numpy.arange(len(self.state)), size=len(self.state), replace=True, p=weights)
-        self.state[:] = self.state[list(indices)]        
+    def update_state(self, steps, resample=False, temperature=1.0):
+        self.state[:] = self.model.gibbs_chain(self.state, steps, resample=resample, temperature=temperature)  
 
 
 class TrainingMethod(object):
@@ -60,7 +53,7 @@ class ContrastiveDivergence(TrainingMethod):
                             
                 # CD resets the sampler from the visible data at each iteration
                 sampler = SequentialMC(self.model, v_data) 
-                sampler.update_state(self.mcsteps)    
+                sampler.update_state(self.mcsteps, resample=False)    
                 
                 # compute the gradient and update the model parameters
                 self.optimizer.update(self.model, v_data, sampler.state, epoch)
@@ -71,7 +64,7 @@ class ContrastiveDivergence(TrainingMethod):
                     print('Batch {0}: Reconstruction Error: {1:.6f}, Energy Distance: {2:.6f}'.format(t, *prog))
                 t += 1
             # end of epoch processing
-            prog = self.monitor.check_progress(self.model, 0)
+            prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
             print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
         
@@ -85,6 +78,7 @@ class ProgressMonitor(object):
         self.batch = abatch
         self.steps = update_steps
         self.num_validation_samples = self.batch.index.end['validate'] - self.batch.index.end['train']
+        self.memory = []
 
     def reconstruction_error(self, model, v_data):
         sampler = SequentialMC(model, v_data) 
@@ -94,11 +88,10 @@ class ProgressMonitor(object):
     def energy_distance(self, model, v_data):
         v_model = model.random(v_data)
         sampler = SequentialMC(model, v_model) 
-        sampler.update_state(self.steps)
-        sampler.resample_state(temperature=1.0)
+        sampler.update_state(self.steps, resample=False, temperature=1.0)
         return len(v_model) * energy_distance(v_data, sampler.state)
         
-    def check_progress(self, model, t):
+    def check_progress(self, model, t, store=False):
         if not (t % self.skip):
             recon = 0
             edist = 0
@@ -111,23 +104,20 @@ class ProgressMonitor(object):
                 edist += self.energy_distance(model, v_data)
             recon = numpy.sqrt(recon / self.num_validation_samples)
             edist = edist / self.num_validation_samples
+            if store:
+                self.memory.append([recon, edist])
             return recon, edist
+            
+    def check_convergence(self):
+        pass
     
 
 # ----- ALIASES ----- #
          
-        
+CD = ContrastiveDivergence
 
-# ----- FUNCTIONS ----- #
 
-@jit('float32[:](float32[:])',nopython=True)
-def normalize(anarray):
-    return anarray / numpy.sum(numpy.abs(anarray))
-    
-@jit('float32[:](float32[:],float32)',nopython=True)
-def importance_weights(energies, temperature):
-    gauge = energies - numpy.min(energies)
-    return normalize(numpy.exp(-gauge/temperature))   
+# ----- FUNCTIONS ----- # 
     
 @jit('float32(float32[:,:],float32[:,:])',nopython=True)
 def energy_distance(minibatch, samples):
