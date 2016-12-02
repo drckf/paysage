@@ -22,6 +22,9 @@ class GaussianLayer(object):
     
     def sample_state(self, loc, scale):
         return loc + scale * numpy.random.normal(loc=0.0, scale=1.0, size=loc.shape)
+        
+    def random(self, loc, scale):
+        return numpy.random.normal(loc=0.0, scale=1.0, size=loc.shape)
 
 
 class IsingLayer(object):
@@ -41,6 +44,9 @@ class IsingLayer(object):
     def sample_state(self, loc):
         return random_ising_vector(expit(loc))
         
+    def random(self, loc):
+        return 2.0 * numpy.random.randint(0, 2, len(loc)).astype(numpy.float32) - 1.0
+        
         
 class BernoulliLayer(object):
     
@@ -58,6 +64,9 @@ class BernoulliLayer(object):
         
     def sample_state(self, loc):
         return random_bernoulli_vector(expit(loc))
+        
+    def random(self, loc):
+        return numpy.random.randint(0, 2, len(loc)).astype(numpy.float32)
 
 
 class ExponentialLayer(object):
@@ -76,6 +85,9 @@ class ExponentialLayer(object):
 
     def sample_state(self, loc):
         return numpy.random.exponential(loc)
+        
+    def random(self, loc):
+        return numpy.random.exponential(numpy.ones_like(loc))
         
 
 # ---- FUNCTIONS ----- #

@@ -1,19 +1,4 @@
-import os, sys, numpy, pandas
-
-# ---- FUNCTIONS ----- #
-
-# vectorize('int8(int8)')
-def binarize_color(anarray):
-    return (anarray/255).astype(numpy.int8)
-
-# vectorize('float32(int8)')
-def binary_to_ising(anarray):
-    return 2.0 * anarray.astype(numpy.float32) - 1.0
-    
-# vectorize('float32(int8)')
-def color_to_ising(anarray):
-    return binary_to_ising(binarize_color(anarray))
-    
+import os, sys, numpy, pandas    
     
 # ---- CLASSES ----- #
 
@@ -88,4 +73,22 @@ class Batch(object):
             return tmp
         else:
             return self.transform(tmp)
+            
+            
+#TODO: DataShuffler            
+            
+            
+# ---- FUNCTIONS ----- #
+
+# vectorize('int8(int8)')
+def binarize_color(anarray):
+    return (anarray/255).astype(numpy.int8)
+
+# vectorize('float32(int8)')
+def binary_to_ising(anarray):
+    return 2.0 * anarray.astype(numpy.float32) - 1.0
+    
+# vectorize('float32(int8)')
+def color_to_ising(anarray):
+    return binary_to_ising(binarize_color(anarray))
         
