@@ -68,8 +68,12 @@ class ContrastiveDivergence(TrainingMethod):
                 # monitor learning progress
                 prog = self.monitor.check_progress(self.model, t)
                 if prog:
-                    print(epoch, *prog)
+                    print('Batch {0}: Reconstruction Error: {1:.6f}, Energy Distance: {2:.6f}'.format(t, *prog))
                 t += 1
+            # end of epoch processing
+            prog = self.monitor.check_progress(self.model, 0)
+            print('End of epoch {}: '.format(epoch))
+            print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
         
         return None
              
@@ -107,7 +111,7 @@ class ProgressMonitor(object):
                 edist += self.energy_distance(model, v_data)
             recon = numpy.sqrt(recon / self.num_validation_samples)
             edist = edist / self.num_validation_samples
-            return t, recon, edist
+            return recon, edist
     
 
 # ----- ALIASES ----- #
