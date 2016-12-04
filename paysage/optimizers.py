@@ -1,8 +1,4 @@
-from . import models
-from . import batch
-import numpy
-from numba import jit
-    
+import numpy    
     
 # ----- OPTIMIZERS ----- #        
         

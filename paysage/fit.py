@@ -1,8 +1,8 @@
 from . import models
 from . import batch
 from . import optimizers
+from .backends import numba_engine as en
 import numpy
-from numba import jit
     
 # -----  CLASSES ----- #
 
@@ -89,7 +89,7 @@ class ProgressMonitor(object):
         v_model = model.random(v_data)
         sampler = SequentialMC(model, v_model) 
         sampler.update_state(self.steps, resample=False, temperature=1.0)
-        return len(v_model) * energy_distance(v_data, sampler.state)
+        return len(v_model) * en.energy_distance(v_data, sampler.state)
         
     def check_progress(self, model, t, store=False):
         if not (t % self.skip):
@@ -115,30 +115,4 @@ class ProgressMonitor(object):
 # ----- ALIASES ----- #
          
 CD = ContrastiveDivergence
-
-
-# ----- FUNCTIONS ----- # 
-    
-@jit('float32(float32[:,:],float32[:,:])',nopython=True)
-def energy_distance(minibatch, samples):
-    d1 = numpy.float32(0)
-    d2 = numpy.float32(0)
-    d3 = numpy.float32(0)
-
-    for i in range(len(minibatch)):
-        for j in range(len(minibatch)):
-            d1 += numpy.linalg.norm(minibatch[i] - minibatch[j])
-    d1 = d1 / (len(minibatch)**2 - len(minibatch))
-    
-    for i in range(len(samples)):
-        for j in range(len(samples)):
-            d2 += numpy.linalg.norm(samples[i] - samples[j])
-    d2 = d2 / (len(samples)**2 - len(samples))
-    
-    for i in range(len(minibatch)):
-        for j in range(len(samples)):
-            d3 += numpy.linalg.norm(minibatch[i] - samples[j])
-    d3 = d3 / (len(minibatch)*len(samples))
-    
-    return 2*d3 - d2 - d1
         

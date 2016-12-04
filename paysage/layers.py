@@ -1,6 +1,5 @@
 import numpy, math
-import numexpr as ne
-from  numba import jit, vectorize
+from .backends import numba_engine as en
 
 LOG2 = 0.6931471805599453
 
@@ -42,7 +41,7 @@ class IsingLayer(object):
         return -LOG2 + numpy.logaddexp(-loc, loc)
         
     def sample_state(self, loc):
-        return random_ising_vector(expit(loc))
+        return en.random_ising_vector(en.expit(loc))
         
     def random(self, loc):
         return 2.0 * numpy.random.randint(0, 2, loc.shape).astype(numpy.float32) - 1.0
@@ -57,13 +56,13 @@ class BernoulliLayer(object):
         return (vis > 0.0).astype(numpy.float32)
         
     def mean(self, loc):
-        return expit(loc)
+        return en.expit(loc)
         
     def log_partition_function(self, loc):
         return numpy.logaddexp(0, loc)
         
     def sample_state(self, loc):
-        return random_bernoulli_vector(expit(loc))
+        return en.random_bernoulli_vector(en.expit(loc))
         
     def random(self, loc):
         return numpy.random.randint(0, 2, loc.shape).astype(numpy.float32)
@@ -91,35 +90,6 @@ class ExponentialLayer(object):
         
 
 # ---- FUNCTIONS ----- #
-
-@vectorize('float32(float32)', nopython=True)
-def expit(x):
-    result = (1.0 + numpy.tanh(x/2.0)) / 2.0
-    return result
-    
-@jit('float32(float32)', nopython=True)
-def random_bernoulli(p):
-    r = numpy.random.rand()
-    if p < r:
-        return numpy.float32(0.0)
-    else:
-        return numpy.float32(1.0)
-        
-@jit('float32[:](float32[:])', nopython=True)
-def random_bernoulli_vector(p):
-    r = numpy.random.rand(len(p))
-    result = numpy.zeros_like(p)
-    for i in range(len(p)):
-        if p[i] < r[i]:
-            result[i] = numpy.float32(0.0)
-        else:
-            result[i] = numpy.float32(1.0)
-    return result
- 
-@jit('float32[:](float32[:])', nopython=True)   
-def random_ising_vector(p):
-    result = numpy.float32(2.0) * random_bernoulli_vector(p) - numpy.float32(1.0)
-    return result
         
 def get(key):
     if 'gauss' in key.lower():
