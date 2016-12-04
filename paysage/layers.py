@@ -1,4 +1,4 @@
-import numpy, math
+import numpy
 from .backends import numba_engine as en
 
 LOG2 = 0.6931471805599453
