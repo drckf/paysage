@@ -60,20 +60,26 @@ class ContrastiveDivergence(TrainingMethod):
                 if prog:
                     print('Batch {0}: Reconstruction Error: {1:.6f}, Energy Distance: {2:.6f}'.format(t, *prog))
                 t += 1
+                
             # end of epoch processing
             prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
             print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
+            
+            is_converged = self.monitor.check_convergence()
+            if is_converged:
+                break
         
         return None
              
              
 class ProgressMonitor(object):
     
-    def __init__(self, skip, abatch, update_steps=10):
+    def __init__(self, skip, abatch, convergence=1.0, update_steps=10):
         self.skip = skip
         self.batch = abatch
         self.steps = update_steps
+        self.convergence = convergence
         self.num_validation_samples = self.batch.index.end['validate'] - self.batch.index.end['train']
         self.memory = []
 
@@ -103,10 +109,18 @@ class ProgressMonitor(object):
             edist = edist / self.num_validation_samples
             if store:
                 self.memory.append([recon, edist])
-            return recon, edist
+            return [recon, edist]
             
     def check_convergence(self):
-        pass
+        try:
+            delta_recon = 100 * (self.memory[-1][0] - self.memory[-2][0]) / self.memory[-2][0] # percent change in reconstruction error
+            delta_edist = 100 * (self.memory[-1][1] - self.memory[-2][1]) / self.memory[-2][1] # percent change in energy distance
+            if (delta_recon > - self.convergence) or (delta_edist > - self.convergence):
+                return True
+            else:
+                return False
+        except Exception:
+            return False
     
 
 # ----- ALIASES ----- #
