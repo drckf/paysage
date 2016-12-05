@@ -1,5 +1,4 @@
 import numpy, math
-import numexpr as ne
 from numba import jit, vectorize
 
 EPSILON = numpy.finfo(numpy.float32).eps
@@ -21,9 +20,10 @@ def random_bernoulli(p):
         
 @jit('float32[:](float32[:])', nopython=True)
 def random_bernoulli_vector(p):
-    r = numpy.random.rand(len(p))
+    n = len(p)
+    r = numpy.random.rand(n)
     result = numpy.zeros_like(p)
-    for i in range(len(p)):
+    for i in range(n):
         if p[i] < r[i]:
             result[i] = numpy.float32(0.0)
         else:
@@ -37,16 +37,19 @@ def random_ising_vector(p):
     
 @jit('float32[:](float32[:,:],float32[:,:],float32[:,:])',nopython=True)
 def batch_dot(vis, W, hid):
-    result = numpy.zeros(len(vis), dtype=numpy.float32)
-    for i in range(len(vis)):
+    n = len(vis)
+    result = numpy.zeros(n, dtype=numpy.float32)
+    for i in range(n):
         result[i] = numpy.dot(vis[i], numpy.dot(W, hid[i]))
     return result
 
 @jit('float32[:,:](float32[:],float32[:])',nopython=True)
 def outer(vis, hid):
-    result = numpy.zeros((len(vis), len(hid)), dtype=numpy.float32)
-    for i in range(len(vis)):
-        for u in range(len(hid)):
+    n = len(vis)
+    m = len(hid)
+    result = numpy.zeros((n, m), dtype=numpy.float32)
+    for i in range(n):
+        for u in range(m):
             result[i][u] = vis[i] * hid[u]
     return result
     
@@ -59,19 +62,24 @@ def outer_inplace(vis, hid, result):
     
 @jit('float32[:,:](float32[:,:],float32[:,:])',nopython=True)
 def batch_outer(vis, hid):
+    n = len(vis)
     result = numpy.zeros((vis.shape[1], hid.shape[1]), dtype=numpy.float32)
-    for i in range(len(vis)):
+    for i in range(n):
         outer_inplace(vis[i], hid[i], result)
-    return result / len(vis)
+    return result / n
     
 @jit('float32[:](float32[:])',nopython=True)
 def normalize(anarray):
-    return anarray / numpy.sum(numpy.abs(anarray))
+    return anarray / numpy.sum(anarray)
+
+@vectorize('float32(float32)',nopython=True)
+def numba_exp(x):
+    return math.exp(x)    
     
 @jit('float32[:](float32[:],float32)',nopython=True)
 def importance_weights(energies, temperature):
     gauge = energies - numpy.min(energies)
-    return normalize(numpy.exp(-gauge/temperature)) 
+    return normalize(numba_exp(-gauge/temperature)) 
     
 @jit('float32(float32[:],float32[:])',nopython=True)
 def euclidean_distance(a, b):
@@ -92,16 +100,16 @@ def energy_distance(minibatch, samples):
     for i in range(n-1):
         for j in range(i+1, n):
             d1 += euclidean_distance(minibatch[i], minibatch[j])
-    d1 = d1 / (n*n - n)
+    d1 = 2.0 * d1 / (n*n - n)
     
     for i in range(m-1):
         for j in range(i+1, m):
             d2 += euclidean_distance(samples[i], samples[j])
-    d2 = d2 / (m*m - m)
+    d2 = 2.0 * d2 / (m*m - m)
     
     for i in range(n):
         for j in range(m):
             d3 += euclidean_distance(minibatch[i], samples[j])
     d3 = d3 / (n*m)
     
-    return 2*d3 - d2 - d1
+    return 2.0 * d3 - d2 - d1
