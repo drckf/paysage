@@ -1,4 +1,5 @@
-import numpy
+import numpy, math
+import numexpr as ne
 from numba import jit, vectorize
 
 EPSILON = numpy.finfo(numpy.float32).eps
@@ -7,7 +8,7 @@ EPSILON = numpy.finfo(numpy.float32).eps
 
 @vectorize('float32(float32)', nopython=True)
 def expit(x):
-    result = (1.0 + numpy.tanh(x/2.0)) / 2.0
+    result = (1.0 + math.tanh(x/2.0)) / 2.0
     return result
     
 @jit('float32(float32)', nopython=True)

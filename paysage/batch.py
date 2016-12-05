@@ -74,7 +74,17 @@ class Batch(object):
         else:
             return self.transform(tmp)
             
-#TODO: DataShuffler            
+    def close(self):
+        self.store.close()
+            
+            
+#TODO: DataShuffler         
+class DataShuffler(object):
+    
+    def __init__(self, filename, iterations=1, batch_size=1000):
+        self.filename = filename
+        self.batch_size = batch_size
+        self.iterations = iterations
             
             
 # ---- FUNCTIONS ----- #

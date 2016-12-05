@@ -69,6 +69,7 @@ class ContrastiveDivergence(TrainingMethod):
             is_converged = self.monitor.check_convergence()
             if is_converged:
                 print('Convergence criterion reached')
+                break
         
         return None
              
@@ -89,7 +90,7 @@ class PersistentContrastiveDivergence(TrainingMethod):
                     break
                             
                 # PCD keeps the sampler from the previous iteration
-                self.sampler.update_state(self.mcsteps, resample=True)    
+                self.sampler.update_state(self.mcsteps, resample=False)    
                 
                 # compute the gradient and update the model parameters
                 self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
@@ -108,6 +109,48 @@ class PersistentContrastiveDivergence(TrainingMethod):
             is_converged = self.monitor.check_convergence()
             if is_converged:
                 print('Convergence criterion reached')
+                break
+        
+        return None
+        
+        
+class HopfieldContrastiveDivergence(TrainingMethod):
+    
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip)
+        self.mcsteps = mcsteps
+        
+    def train(self):
+        for epoch in range(self.epochs):          
+            t = 0
+            while True:
+                try:
+                    v_data = self.batch.get(mode='train')
+                except StopIteration:
+                    break
+                            
+                # sample near the weights
+                self.sampler = SequentialMC(self.model, self.model.layers['visible'].prox(self.model.params['weights']).T) 
+                self.sampler.update_state(self.mcsteps, resample=False)  
+                
+                # compute the gradient and update the model parameters
+                self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
+                
+                # monitor learning progress
+                prog = self.monitor.check_progress(self.model, t)
+                if prog:
+                    print('Batch {0}: Reconstruction Error: {1:.6f}, Energy Distance: {2:.6f}'.format(t, *prog))
+                t += 1
+                
+            # end of epoch processing
+            prog = self.monitor.check_progress(self.model, 0, store=True)
+            print('End of epoch {}: '.format(epoch))
+            print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
+            
+            is_converged = self.monitor.check_convergence()
+            if is_converged:
+                print('Convergence criterion reached')
+                break
         
         return None
         
@@ -166,4 +209,5 @@ class ProgressMonitor(object):
          
 CD = ContrastiveDivergence
 PCD = PersistentContrastiveDivergence
+HCD = HopfieldContrastiveDivergence
         
