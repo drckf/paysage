@@ -1,6 +1,8 @@
 import numpy
 from numba import jit, vectorize
 
+EPSILON = numpy.finfo(numpy.float32).eps
+
 # ----- COMPILED FUNCTIONS ----- #
 
 @vectorize('float32(float32)', nopython=True)

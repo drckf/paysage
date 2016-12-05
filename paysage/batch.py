@@ -36,6 +36,41 @@ class IndexBatch(object):
             indices = (self.start[mode], new_end)
             self.start[mode] += self.batch_size
             return indices
+            
+            
+class ShuffledIndexBatch(object):
+    """ShuffledIndexBatch
+       Generates a randomly shuffled index in minibatches. 
+       Using shuffled batches is slow. It is best to shuffle the data one time, and save that file.
+       
+    """
+    def __init__(self, nrows, batch_size, train_fraction=0.9):
+        self.batch_size = batch_size
+        self.train_end = int(numpy.ceil(train_fraction * nrows))
+        self.index = {}
+        self.index['train'], self.index['validate'] = shuffled_index(nrows, self.batch_size, self.train_end)
+        self.current = {}
+        self.current['train'] = 0
+        self.current['validate'] = 0
+        self.end = {}
+        self.end['train'] = len(self.index['train'])
+        self.end['validate'] = len(self.index['validate'])
+        
+    @classmethod
+    def from_store(cls, store, key, batch_size, train_fraction=0.9):
+        return cls(store.get_storer(key).nrows, batch_size, train_fraction=train_fraction)
+        
+    def reset(self, mode='train'):
+        self.current[mode] = 0
+        
+    def get(self, mode='train'):
+        if self.current[mode] >= self.end[mode]:
+            self.reset(mode=mode)
+            raise StopIteration
+        else:
+            indices = self.index[self.current[mode]]
+            self.current[mode] += 1
+            return indices
         
 
 class Batch(object):
@@ -79,6 +114,14 @@ class Batch(object):
             
             
 # ---- FUNCTIONS ----- #
+            
+def shuffled_index(length, batch_size, train_end):
+    index = numpy.random.permutation(numpy.arange(length))
+    train = index[:train_end]
+    validate = index[train_end:]
+    train = [numpy.sort(train[b * batch_size : (b + 1) * batch_size]) for b in range(int(numpy.ceil(len(train)/batch_size)))]
+    validate = [numpy.sort(validate[b * batch_size : (b + 1) * batch_size]) for b in range(int(numpy.ceil(len(validate)/batch_size)))]
+    return train, validate
 
 # vectorize('int8(int8)')
 def binarize_color(anarray):

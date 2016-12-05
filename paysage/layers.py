@@ -74,7 +74,7 @@ class ExponentialLayer(object):
         pass
         
     def prox(self, vis):
-        return vis.clip(min=0.0)
+        return vis.clip(min=en.EPSILON)
         
     def mean(self, loc):
         return 1.0 / loc
