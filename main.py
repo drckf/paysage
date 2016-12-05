@@ -11,7 +11,7 @@ if __name__ == "__main__":
     b = batch.Batch(filepath, 'train/images', 200, transform=batch.color_to_ising, train_fraction=0.99)
     m = models.RestrictedBoltzmannMachine(b.cols, 5)
     opt = optimizers.ADAM(m)
-    cd = fit.HCD(m, b, opt, 200, 0, skip=200, attractive=True)
+    cd = fit.CD(m, b, opt, 200, 1, skip=200)
     cd.train()    
     
     b.close()
