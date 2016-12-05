@@ -12,7 +12,7 @@ if __name__ == "__main__":
     m = models.RestrictedBoltzmannMachine(b.cols, 200)
     opt = optimizers.ADAM(m)
     
-    hcd = fit.HCD(m, b, opt, 5, 0, skip=200)
+    hcd = fit.HCD(m, b, opt, 5, skip=200)
     hcd.train()    
     
     cd = fit.PCD(m, b, opt, 5, 1, skip=200)

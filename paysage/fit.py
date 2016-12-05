@@ -116,9 +116,8 @@ class PersistentContrastiveDivergence(TrainingMethod):
         
 class HopfieldContrastiveDivergence(TrainingMethod):
     
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, attractive=True, skip=100):
+    def __init__(self, model, abatch, optimizer, epochs, attractive=True, skip=100):
         super().__init__(model, abatch, optimizer, epochs, skip=skip)
-        self.mcsteps = mcsteps
         self.attractive = attractive
         
     def train(self):
@@ -131,11 +130,10 @@ class HopfieldContrastiveDivergence(TrainingMethod):
                     break
                             
                 # sample near the weights
-                self.sampler = SequentialMC(self.model, self.model.layers['visible'].prox(self.attractive * self.model.params['weights']).T) 
-                self.sampler.update_state(self.mcsteps, resample=False)  
+                v_model = self.model.layers['visible'].prox(self.attractive * self.model.params['weights']).T 
                 
                 # compute the gradient and update the model parameters
-                self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
+                self.optimizer.update(self.model, v_data, v_model, epoch)
                 
                 # monitor learning progress
                 prog = self.monitor.check_progress(self.model, t)
