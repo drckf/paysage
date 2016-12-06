@@ -99,7 +99,7 @@ def shuffled_index(length, batch_size, train_end):
 
 # vectorize('int8(int8)')
 def binarize_color(anarray):
-    return (anarray/255).astype(numpy.int8)
+    return numpy.round(anarray/255).astype(numpy.int8)
 
 # vectorize('float32(int8)')
 def binary_to_ising(anarray):

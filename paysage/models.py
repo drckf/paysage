@@ -127,6 +127,11 @@ class HookeMachine(LatentModel):
         pass
 
     """
+
+# ----- FUNCTIONS ----- #
+
+def non_negative_constraint_in_place(anarray):
+    anarray.clip(min=0.0, out=anarray)
     
 # ----- ALIASES ----- #
     
