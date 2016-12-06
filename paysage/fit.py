@@ -24,19 +24,24 @@ class SequentialMC(object):
 
 class TrainingMethod(object):
     
-    def __init__(self, model, abatch, optimizer, epochs, skip=100):
+    def __init__(self, model, abatch, optimizer, epochs, convergence=1.0, skip=100):
         self.model = model
         self.batch = abatch
         self.epochs = epochs
         self.sampler = SequentialMC.from_batch(self.model, self.batch)
         self.optimizer = optimizer
-        self.monitor = ProgressMonitor(skip, self.batch)
+        self.monitor = ProgressMonitor(skip, self.batch, convergence=convergence)
 
         
 class ContrastiveDivergence(TrainingMethod):
+    """ContrastiveDivergence
+       CD-k algorithm for approximate maximum likelihood inference. 
     
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip)
+       Hinton, Geoffrey E. "Training products of experts by minimizing contrastive divergence." Neural computation 14.8 (2002): 1771-1800.
+       Carreira-Perpinan, Miguel A., and Geoffrey Hinton. "On Contrastive Divergence Learning." AISTATS. Vol. 10. 2005.
+    """
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, convergence=1.0, skip=100):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip, convergence=convergence)
         self.mcsteps = mcsteps
         
     def train(self):
@@ -75,9 +80,14 @@ class ContrastiveDivergence(TrainingMethod):
              
 
 class PersistentContrastiveDivergence(TrainingMethod):
+    """PersistentContrastiveDivergence
+       PCD-k algorithm for approximate maximum likelihood inference. 
     
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip)
+       Tieleman, Tijmen. "Training restricted Boltzmann machines using approximations to the likelihood gradient." Proceedings of the 25th international conference on Machine learning. ACM, 2008.
+    """
+    
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, convergence=1.0, skip=100):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip, convergence=convergence)
         self.mcsteps = mcsteps
         
     def train(self):
@@ -115,9 +125,14 @@ class PersistentContrastiveDivergence(TrainingMethod):
         
         
 class HopfieldContrastiveDivergence(TrainingMethod):
+    """HopfieldContrastiveDivergence
+       Algorithm for approximate maximum likelihood inference based on the intuition that the weights of the network are stored as memories, like in the Hopfield model of associate memory.
+
+       Unpublished. Charles K. Fisher (2016)
+    """
     
-    def __init__(self, model, abatch, optimizer, epochs, attractive=True, skip=100):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip)
+    def __init__(self, model, abatch, optimizer, epochs, convergence=1.0, attractive=True, skip=100):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip, convergence=convergence)
         self.attractive = attractive
         
     def train(self):
