@@ -176,7 +176,7 @@ class ProgressMonitor(object):
         self.batch = abatch
         self.steps = update_steps
         self.convergence = convergence
-        self.num_validation_samples = self.batch.index.end['validate'] - self.batch.index.end['train']
+        self.num_validation_samples = self.batch.index.nrows - self.batch.index.end
         self.memory = []
 
     def reconstruction_error(self, model, v_data):

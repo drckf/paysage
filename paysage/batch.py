@@ -1,6 +1,15 @@
 import numpy, pandas    
     
 # ---- CLASSES ----- #
+    
+def inclusive_slice(start, stop, step):
+    current = start
+    while current < stop:
+        next_iter = min(stop, current + step)
+        result = (current, next_iter)
+        current = next_iter
+        yield result
+
 
 class IndexBatch(object):
     """IndexBatch
@@ -9,34 +18,34 @@ class IndexBatch(object):
        
     """
     def __init__(self, nrows, batch_size, train_fraction=0.9):
-        self.start = {}
-        self.end = {}
-        self.start['train'] = 0
-        self.end['train'] = int(numpy.ceil(train_fraction * nrows))
-        self.start['validate'] = self.end['train']
-        self.end['validate'] = nrows
+        self.nrows = nrows
+        self.end = int(numpy.ceil(train_fraction * nrows))
         self.batch_size = batch_size
+        self.create_iterators()
         
     @classmethod
     def from_store(cls, store, key, batch_size, train_fraction=0.9):
         return cls(store.get_storer(key).nrows, batch_size, train_fraction=train_fraction)
+
+    def create_iterators(self):
+        self.iterators = {}
+        self.iterators['train'] = inclusive_slice(0, self.end, self.batch_size)
+        self.iterators['validate'] = inclusive_slice(self.end, self.nrows, self.batch_size)
         
     def reset(self, mode='train'):
         if mode == 'train':
-            self.start['train'] = 0
+            self.iterators['train'] = inclusive_slice(0, self.end, self.batch_size)
         else:
-            self.start['validate'] = self.end['train']
+            self.iterators['validate'] = inclusive_slice(self.end, self.nrows, self.batch_size)
         
     def get(self, mode='train'):
-        if self.start[mode] >= self.end[mode]:
-            self.reset(mode=mode)
+        try:
+            next_iter = next(self.iterators[mode])
+        except StopIteration:
+            self.reset(mode)
             raise StopIteration
-        else:
-            new_end = min(self.start[mode] + self.batch_size, self.end[mode])
-            indices = (self.start[mode], new_end)
-            self.start[mode] += self.batch_size
-            return indices
-            
+        return next_iter
+        
 
 class Batch(object):
     """Batch
@@ -76,6 +85,12 @@ class Batch(object):
             
     def close(self):
         self.store.close()
+        
+"""
+
+
+
+"""
             
             
 #TODO: DataShuffler         
