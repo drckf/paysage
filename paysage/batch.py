@@ -2,14 +2,6 @@ import numpy, pandas
     
 # ---- CLASSES ----- #
     
-def inclusive_slice(start, stop, step):
-    current = start
-    while current < stop:
-        next_iter = min(stop, current + step)
-        result = (current, next_iter)
-        current = next_iter
-        yield result
-
 
 class IndexBatch(object):
     """IndexBatch
@@ -60,11 +52,29 @@ class Batch(object):
             assert callable(transform)
         self.store = pandas.HDFStore(filename, mode='r')
         self.key = key
-        self.index = IndexBatch.from_store(self.store, key, batch_size, train_fraction=train_fraction) 
-        self.cols = self.store.get_storer(key).ncols       
-        self.transform = transform
+        self.ncols = self.store.get_storer(key).ncols       
+        self.nrows = self.store.get_storer(key).nrows
+        self.batch_size = batch_size
+        self.chunk_size = chunksize(self.ncols, dtype(1).itemsize, chunk=10**7)
+        self.index = IndexBatch.from_store(self.store, self.key, self.chunk_size, train_fraction=train_fraction) 
         self.dtype = dtype
+        self.transform = transform
         self.flatten = flatten
+        self.chunk = {'train': numpy.array([], dtype=self.dtype), 'validate': numpy.array([], dtype=self.dtype)}
+        self.batch_iterator = {'train': None, 'validate': None}
+        self.read_chunk('train')
+        self.read_chunk('validate')
+        
+    def read_chunk(self, mode='train'):
+        start, stop = self.index.get(mode)
+        tmp = self.store.select(self.key, start=start, stop=stop).as_matrix().astype(self.dtype)
+        if self.flatten:
+            tmp = tmp.reshape((len(tmp),-1))
+        if not self.transform:
+            self.chunk[mode] = tmp
+        else:
+            self.chunk[mode] = self.transform(tmp)
+        self.batch_iterator[mode] = inclusive_slice(0, len(self.chunk[mode]), self.batch_size)
         
     def reset(self, mode='train'):
         if mode == 'all':
@@ -74,23 +84,15 @@ class Batch(object):
             self.index.reset(mode)
             
     def get(self, mode='train'):
-        start, stop = self.index.get(mode=mode)
-        tmp = self.store.select(self.key, start=start, stop=stop).as_matrix().astype(self.dtype)
-        if self.flatten:
-            tmp = tmp.reshape((len(tmp),-1))
-        if not self.transform:
-            return tmp
-        else:
-            return self.transform(tmp)
+        try:
+            start, stop = next(self.batch_iterator[mode])
+        except StopIteration:
+            self.read_chunk(mode)
+            start, stop = next(self.batch_iterator[mode])
+        return self.chunk[mode][start:stop]
             
     def close(self):
         self.store.close()
-        
-"""
-
-
-
-"""
             
             
 #TODO: DataShuffler         
@@ -103,6 +105,18 @@ class DataShuffler(object):
             
             
 # ---- FUNCTIONS ----- #
+            
+def inclusive_slice(start, stop, step):
+    current = start
+    while current < stop:
+        next_iter = min(stop, current + step)
+        result = (current, next_iter)
+        current = next_iter
+        yield result
+        
+def chunksize(ncols, nbytes, chunk=10**7):
+    bytes_per_row = ncols * nbytes
+    return chunk // bytes_per_row
             
 def shuffled_index(length, batch_size, train_end):
     index = numpy.random.permutation(numpy.arange(length))

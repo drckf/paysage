@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # set up the batch, model, and optimizer objects
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
     b = batch.Batch(filepath, 'train/images', 50, transform=batch.color_to_ising, train_fraction=0.99)
-    m = models.RestrictedBoltzmannMachine(b.cols, 5)
+    m = models.RestrictedBoltzmannMachine(b.ncols, 5)
     opt = optimizers.RMSProp(m)
     
     # train the model
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     sampler = fit.SequentialMC(m, v_model) 
     sampler.update_state(1000, resample=False, temperature=1.0)
     v_model = sampler.state
-    """
     
     b.close()
+    """
     
