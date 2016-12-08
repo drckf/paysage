@@ -14,8 +14,8 @@ setup(name='paysage',
       packages=['paysage'],
       install_requires=[
                         'numpy',
-                        'pandas',
                         'h5py',
+                        'pandas',
                         'numba'
                         ],
       zip_safe=False)

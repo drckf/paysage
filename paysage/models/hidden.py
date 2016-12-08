@@ -1,6 +1,6 @@
 import numpy
-from . import layers
-from .backends import numba_engine as en
+from .. import layers
+from ..backends import numba_engine as en
 
 #---- MODEL CLASSES ----#
 

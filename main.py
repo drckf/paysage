@@ -1,7 +1,7 @@
 import os, sys, numpy, pandas
 
 from paysage import batch
-from paysage import models
+from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
 
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # set up the batch, model, and optimizer objects
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
     b = batch.Batch(filepath, 'train/images', 50, transform=batch.color_to_ising, train_fraction=0.99)
-    m = models.RestrictedBoltzmannMachine(b.ncols, 5)
+    m = hidden.RestrictedBoltzmannMachine(b.ncols, 5)
     opt = optimizers.RMSProp(m)
     
     # train the model
