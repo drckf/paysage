@@ -13,12 +13,15 @@ class LatentModel(object):
         self.layers = {}
         self.params = {}
                 
+    # placeholder function -- defined in each layer
     def sample_hidden(self, visible):
         pass
     
+    # placeholder function -- defined in each layer
     def sample_visible(self, hidden):
         pass        
     
+    # placeholder function -- defined in each layer
     def marginal_energy(self, visible):
         pass
     
@@ -28,7 +31,7 @@ class LatentModel(object):
         indices = numpy.random.choice(numpy.arange(len(visibile)), size=len(visibile), replace=True, p=weights)
         return visibile[list(indices)]  
     
-    def gibbs_step(self, vis):
+    def mcstep(self, vis):
         """gibbs_step(v):
            v -> h -> v'
            return v'
@@ -37,7 +40,7 @@ class LatentModel(object):
         hid = self.sample_hidden(vis)
         return self.sample_visible(hid)
         
-    def gibbs_chain(self, vis, steps, resample=False, temperature=1.0):
+    def markov_chain(self, vis, steps, resample=False, temperature=1.0):
         """gibbs_chain(v, n):
            v -> h -> v_1 -> h_1 -> ... -> v_n
            return v_n
@@ -45,7 +48,7 @@ class LatentModel(object):
         """
         new_vis = vis.astype(vis.dtype)
         for t in range(steps):
-            new_vis = self.gibbs_step(new_vis)
+            new_vis = self.mcstep(new_vis)
             if resample:
                 new_vis = self.resample_state(new_vis, temperature=temperature)
         return new_vis
@@ -53,6 +56,8 @@ class LatentModel(object):
    
 class RestrictedBoltzmannMachine(LatentModel):
     """RestrictedBoltzmanMachine
+    
+       Hinton, Geoffrey. "A practical guide to training restricted Boltzmann machines." Momentum 9.1 (2010): 926.
     
     """
     def __init__(self, nvis, nhid):
@@ -113,23 +118,31 @@ class RestrictedBoltzmannMachine(LatentModel):
         return self.layers['visible'].random(visible)
 
 
-"""  
 #TODO:
 class HopfieldModel(LatentModel):
+    """HopfieldModel
+       A model of associative memory with binary visible units and Gaussian hidden units.        
+       
+       Hopfield, John J. "Neural networks and physical systems with emergent collective computational abilities." Proceedings of the national academy of sciences 79.8 (1982): 2554-2558.
     
+    """    
     def __init__(self, nvis, nhid):
         pass
 
 #TODO:
 class HookeMachine(LatentModel):
+    """HookeMachine
     
+       Unpublished. Charles K. Fisher (2016)
+    
+    """
     def __init__(self, nvis, nhid, vis_type='gauss', hid_type='expo'):   
         pass
 
-    """
 
 # ----- FUNCTIONS ----- #
 
+#TODO: implement parameter constraints
 def non_negative_constraint_in_place(anarray):
     anarray.clip(min=0.0, out=anarray)
     

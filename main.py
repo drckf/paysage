@@ -25,9 +25,9 @@ if __name__ == "__main__":
     opt = optimizers.RMSProp(m)
     
     # train the model
-    cd = fit.HCD(m, b, opt, 5, skip=200, convergence=0.1)
-    #cd = fit.CD(m,b,opt, 1, 1, skip=200, convergence=0.1)
-    #cd = fit.PCD(m,b,opt, 5, 1, skip=200, convergence=0.1)
+    #cd = fit.HCD(m, b, opt, 5, skip=200, convergence=0.1)
+    #cd = fit.CD(m,b,opt, 5, 1, skip=200, convergence=0.1)
+    cd = fit.PCD(m,b,opt, 5, 1, skip=200, convergence=0.1)
     cd.train()    
     
     """

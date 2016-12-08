@@ -1,6 +1,6 @@
 import numpy, pandas    
     
-# ---- CLASSES ----- #
+# ----- CLASSES ----- #
     
 
 class IndexBatch(object):
@@ -104,7 +104,7 @@ class DataShuffler(object):
         self.iterations = iterations
             
             
-# ---- FUNCTIONS ----- #
+# ----- FUNCTIONS ----- #
             
 def inclusive_slice(start, stop, step):
     current = start
@@ -117,14 +117,6 @@ def inclusive_slice(start, stop, step):
 def chunksize(ncols, nbytes, chunk=10**7):
     bytes_per_row = ncols * nbytes
     return chunk // bytes_per_row
-            
-def shuffled_index(length, batch_size, train_end):
-    index = numpy.random.permutation(numpy.arange(length))
-    train = index[:train_end]
-    validate = index[train_end:]
-    train = [numpy.sort(train[b * batch_size : (b + 1) * batch_size]) for b in range(int(numpy.ceil(len(train)/batch_size)))]
-    validate = [numpy.sort(validate[b * batch_size : (b + 1) * batch_size]) for b in range(int(numpy.ceil(len(validate)/batch_size)))]
-    return train, validate
 
 # vectorize('int8(int8)')
 def binarize_color(anarray):
