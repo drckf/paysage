@@ -4,7 +4,10 @@ import numpy
 # -----  CLASSES ----- #
 
 class SequentialMC(object):
+    """SequentialMC
+       Simple class for a sequential Monte Carlo sampler. 
     
+    """
     def __init__(self, amodel, adataframe):
         self.model = amodel
         try:
@@ -39,6 +42,7 @@ class ContrastiveDivergence(TrainingMethod):
     
        Hinton, Geoffrey E. "Training products of experts by minimizing contrastive divergence." Neural computation 14.8 (2002): 1771-1800.
        Carreira-Perpinan, Miguel A., and Geoffrey Hinton. "On Contrastive Divergence Learning." AISTATS. Vol. 10. 2005.
+    
     """
     def __init__(self, model, abatch, optimizer, epochs, mcsteps, convergence=1.0, skip=100):
         super().__init__(model, abatch, optimizer, epochs, skip=skip, convergence=convergence)
@@ -61,13 +65,13 @@ class ContrastiveDivergence(TrainingMethod):
                 self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
                 
                 # monitor learning progress
-                prog = self.monitor.check_progress(self.model, t)
+                prog = self.monitor.check_progress(self.model, t, store=False, calc_edist=False)
                 if prog:
-                    print('Batch {0}: Reconstruction Error: {1:.6f}, Energy Distance: {2:.6f}'.format(t, *prog))
+                    print('Batch {0}: Reconstruction Error: {1:.6f}'.format(t, *prog))
                 t += 1
                 
             # end of epoch processing
-            prog = self.monitor.check_progress(self.model, 0, store=True)
+            prog = self.monitor.check_progress(self.model, 0, store=True, calc_edist=True)
             print('End of epoch {}: '.format(epoch))
             print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
             
@@ -106,13 +110,13 @@ class PersistentContrastiveDivergence(TrainingMethod):
                 self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
                 
                 # monitor learning progress
-                prog = self.monitor.check_progress(self.model, t)
+                prog = self.monitor.check_progress(self.model, t, store=False, calc_edist=False)
                 if prog:
-                    print('Batch {0}: Reconstruction Error: {1:.6f}, Energy Distance: {2:.6f}'.format(t, *prog))
+                    print('Batch {0}: Reconstruction Error: {1:.6f}'.format(t, *prog))
                 t += 1
                 
             # end of epoch processing
-            prog = self.monitor.check_progress(self.model, 0, store=True)
+            prog = self.monitor.check_progress(self.model, 0, store=True, calc_edist=True)
             print('End of epoch {}: '.format(epoch))
             print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
             
@@ -151,13 +155,13 @@ class HopfieldContrastiveDivergence(TrainingMethod):
                 self.optimizer.update(self.model, v_data, v_model, epoch)
                 
                 # monitor learning progress
-                prog = self.monitor.check_progress(self.model, t)
+                prog = self.monitor.check_progress(self.model, t, store=False, calc_edist=False)
                 if prog:
-                    print('Batch {0}: Reconstruction Error: {1:.6f}, Energy Distance: {2:.6f}'.format(t, *prog))
+                    print('Batch {0}: Reconstruction Error: {1:.6f}'.format(t, *prog))
                 t += 1
                 
             # end of epoch processing
-            prog = self.monitor.check_progress(self.model, 0, store=True)
+            prog = self.monitor.check_progress(self.model, 0, store=True, calc_edist=True)
             print('End of epoch {}: '.format(epoch))
             print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
             
@@ -185,12 +189,17 @@ class ProgressMonitor(object):
         return numpy.sum((v_data - sampler.state)**2)
         
     def energy_distance(self, model, v_data):
+        """energy_distance(model, v_data)
+        
+           Székely, Gábor J., and Maria L. Rizzo. "Energy statistics: A class of statistics based on distances." Journal of statistical planning and inference 143.8 (2013): 1249-1272.
+        
+        """
         v_model = model.random(v_data)
         sampler = SequentialMC(model, v_model) 
         sampler.update_state(self.steps, resample=False, temperature=1.0)
         return len(v_model) * en.energy_distance(v_data, sampler.state)
         
-    def check_progress(self, model, t, store=False):
+    def check_progress(self, model, t, calc_edist=False, store=False):
         if not (t % self.skip):
             recon = 0
             edist = 0
@@ -200,7 +209,9 @@ class ProgressMonitor(object):
                 except StopIteration:
                     break
                 recon += self.reconstruction_error(model, v_data)
-                edist += self.energy_distance(model, v_data)
+                if calc_edist:
+                    # energy distance is an expensive computation
+                    edist += self.energy_distance(model, v_data)
             recon = numpy.sqrt(recon / self.num_validation_samples)
             edist = edist / self.num_validation_samples
             if store:

@@ -21,17 +21,20 @@ if __name__ == "__main__":
     # set up the batch, model, and optimizer objects
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
     b = batch.Batch(filepath, 'train/images', 50, transform=batch.color_to_ising, train_fraction=0.99)
-    m = hidden.RestrictedBoltzmannMachine(b.ncols, 5)
-    opt = optimizers.RMSProp(m)
+    num_hidden_units = 100    
+    m = hidden.RestrictedBoltzmannMachine(b.ncols, num_hidden_units)
+    opt = optimizers.ADAM(m)
     
-    # train the model
-    #cd = fit.HCD(m, b, opt, 5, skip=200, convergence=0.1)
-    #cd = fit.CD(m,b,opt, 5, 1, skip=200, convergence=0.1)
-    cd = fit.PCD(m,b,opt, 5, 1, skip=200, convergence=0.1)
+    # train the model with contrastive divergence
+    print('training with hopfield contrastive divergence')
+    cd = fit.HCD(m, b, opt, 2, skip=200, convergence=0.0)
     cd.train()    
     
-    """
-    # test some reconstructions
+    print('\ncontinuing training with contrastive divergence')
+    cd = fit.CD(m,b,opt, 2, 1, skip=200, convergence=0.0)
+    cd.train()    
+    
+    # plot some reconstructions
     v_data = b.get()
     sampler = fit.SequentialMC(m, v_data) 
     sampler.update_state(1, resample=False, temperature=1.0)
@@ -40,12 +43,15 @@ if __name__ == "__main__":
     plot_image(v_data[0], (28,28))
     plot_image(v_model[0], (28,28))
     
-    # test some fantasy particles
+    # plot some fantasy particles
     v_model = m.random(v_data)
     sampler = fit.SequentialMC(m, v_model) 
     sampler.update_state(1000, resample=False, temperature=1.0)
     v_model = sampler.state
     
+    plot_image(v_data[0], (28,28))
+    plot_image(v_model[0], (28,28))
+    
+    # close the HDF5 store
     b.close()
-    """
     
