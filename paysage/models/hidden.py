@@ -52,6 +52,8 @@ class LatentModel(object):
             if resample:
                 new_vis = self.resample_state(new_vis, temperature=temperature)
         return new_vis
+        
+    #TODO: Mean-field updates
    
    
 class RestrictedBoltzmannMachine(LatentModel):

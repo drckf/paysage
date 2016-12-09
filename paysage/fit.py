@@ -53,6 +53,8 @@ class ContrastiveDivergence(TrainingMethod):
             t = 0
             while True:
                 try:
+                    if not t % 100:
+                        print('Sampling batch: {0}'.format(t))
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
@@ -63,19 +65,15 @@ class ContrastiveDivergence(TrainingMethod):
                 
                 # compute the gradient and update the model parameters
                 self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
-                
-                # monitor learning progress
-                prog = self.monitor.check_progress(self.model, t, store=False, calc_edist=False)
-                if prog:
-                    print('Batch {0}: Reconstruction Error: {1:.6f}'.format(t, *prog))
                 t += 1
                 
-            # end of epoch processing
-            prog = self.monitor.check_progress(self.model, 0, store=True, calc_edist=True)
+            # end of epoch processing            
+            prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
             print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
             
-            is_converged = self.monitor.check_convergence()
+            # convergence check should be part of optimizer
+            is_converged = self.optimizer.check_convergence()
             if is_converged:
                 print('Convergence criterion reached')
                 break
@@ -99,28 +97,26 @@ class PersistentContrastiveDivergence(TrainingMethod):
             t = 0
             while True:
                 try:
+                    if not t % 100:
+                        print('Sampling batch: {0}'.format(t))
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
                             
                 # PCD keeps the sampler from the previous iteration
                 self.sampler.update_state(self.mcsteps, resample=False)    
-                
+    
                 # compute the gradient and update the model parameters
                 self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
-                
-                # monitor learning progress
-                prog = self.monitor.check_progress(self.model, t, store=False, calc_edist=False)
-                if prog:
-                    print('Batch {0}: Reconstruction Error: {1:.6f}'.format(t, *prog))
                 t += 1
                 
-            # end of epoch processing
-            prog = self.monitor.check_progress(self.model, 0, store=True, calc_edist=True)
+            # end of epoch processing            
+            prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
             print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
             
-            is_converged = self.monitor.check_convergence()
+            # convergence check should be part of optimizer
+            is_converged = self.optimizer.check_convergence()
             if is_converged:
                 print('Convergence criterion reached')
                 break
@@ -144,28 +140,25 @@ class HopfieldContrastiveDivergence(TrainingMethod):
             t = 0
             while True:
                 try:
+                    if not t % 100:
+                        print('Sampling batch: {0}'.format(t))
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
                             
                 # sample near the weights
                 v_model = self.model.layers['visible'].prox(self.attractive * self.model.params['weights']).T 
-                
                 # compute the gradient and update the model parameters
                 self.optimizer.update(self.model, v_data, v_model, epoch)
-                
-                # monitor learning progress
-                prog = self.monitor.check_progress(self.model, t, store=False, calc_edist=False)
-                if prog:
-                    print('Batch {0}: Reconstruction Error: {1:.6f}'.format(t, *prog))
                 t += 1
                 
-            # end of epoch processing
-            prog = self.monitor.check_progress(self.model, 0, store=True, calc_edist=True)
+            # end of epoch processing            
+            prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
             print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
             
-            is_converged = self.monitor.check_convergence()
+            # convergence check should be part of optimizer
+            is_converged = self.optimizer.check_convergence()
             if is_converged:
                 print('Convergence criterion reached')
                 break
@@ -173,6 +166,7 @@ class HopfieldContrastiveDivergence(TrainingMethod):
         return None
         
              
+#TODO: convergence should be based on magnitude of gradient updates not validation performance
 class ProgressMonitor(object):
     
     def __init__(self, skip, abatch, convergence=1.0, update_steps=10):
@@ -199,7 +193,7 @@ class ProgressMonitor(object):
         sampler.update_state(self.steps, resample=False, temperature=1.0)
         return len(v_model) * en.energy_distance(v_data, sampler.state)
         
-    def check_progress(self, model, t, calc_edist=False, store=False):
+    def check_progress(self, model, t, store=False):
         if not (t % self.skip):
             recon = 0
             edist = 0
@@ -209,26 +203,12 @@ class ProgressMonitor(object):
                 except StopIteration:
                     break
                 recon += self.reconstruction_error(model, v_data)
-                if calc_edist:
-                    # energy distance is an expensive computation
-                    edist += self.energy_distance(model, v_data)
+                edist += self.energy_distance(model, v_data)
             recon = numpy.sqrt(recon / self.num_validation_samples)
             edist = edist / self.num_validation_samples
             if store:
                 self.memory.append([recon, edist])
             return [recon, edist]
-            
-    def check_convergence(self):
-        try:
-            delta_recon = 100 * (self.memory[-1][0] - self.memory[-2][0]) / self.memory[-2][0] # percent change in reconstruction error
-            delta_edist = 100 * (self.memory[-1][1] - self.memory[-2][1]) / self.memory[-2][1] # percent change in energy distance
-            if (delta_recon > - self.convergence) or (delta_edist > - self.convergence):
-                return True
-            else:
-                return False
-        except Exception:
-            return False
-    
 
 # ----- ALIASES ----- #
          
