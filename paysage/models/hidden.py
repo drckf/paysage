@@ -53,8 +53,49 @@ class LatentModel(object):
                 new_vis = self.resample_state(new_vis, temperature=temperature)
         return new_vis
         
-    #TODO: Mean-field updates
-   
+    def mean_field_step(self, vis):
+        """mean_field_step(v):
+           v -> h -> v'
+           return v'
+        
+           worth looking into extended approaches:
+           Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala. "Training Restricted Boltzmann Machine via the￼ Thouless-Anderson-Palmer free energy." Advances in Neural Information Processing Systems. 2015.
+        
+        """
+        hid = self.hidden_mean(vis)
+        return self.visible_mean(hid)   
+        
+    def mean_field_iteration(self, vis, steps):
+        """mean_field_iteration(v, n):
+           v -> h -> v_1 -> h_1 -> ... -> v_n
+           return v_n
+            
+        """
+        new_vis = vis.astype(vis.dtype)
+        for t in range(steps):
+            new_vis = self.mean_field_step(new_vis)
+        return new_vis
+        
+    def deterministic_step(self, vis):
+        """deterministic_step(v):
+           v -> h -> v'
+           return v'
+        
+        """
+        hid = self.hidden_mode(vis)
+        return self.visible_mode(hid)   
+        
+    def deterministic_iteration(self, vis, steps):
+        """mean_field_iteration(v, n):
+           v -> h -> v_1 -> h_1 -> ... -> v_n
+           return v_n
+            
+        """
+        new_vis = vis.astype(vis.dtype)
+        for t in range(steps):
+            new_vis = self.deterministic_step(new_vis)
+        return new_vis
+        
    
 class RestrictedBoltzmannMachine(LatentModel):
     """RestrictedBoltzmanMachine
@@ -81,6 +122,20 @@ class RestrictedBoltzmannMachine(LatentModel):
             return numpy.array([self.layers['hidden'].sample_state(f) for f in field], dtype=numpy.float32)       
         else:
             return self.layers['hidden'].sample_state(field)
+            
+    def hidden_mean(self, visible):
+        field = self.params['hidden_bias'] + numpy.dot(visible, self.params['weights'])
+        if len(field.shape) == 2:
+            return numpy.array([self.layers['hidden'].mean(f) for f in field], dtype=numpy.float32)       
+        else:
+            return self.layers['hidden'].mean(field)
+            
+    def hidden_mode(self, visible):
+        field = self.params['hidden_bias'] + numpy.dot(visible, self.params['weights'])
+        if len(field.shape) == 2:
+            return numpy.array([self.layers['hidden'].prox(f) for f in field], dtype=numpy.float32)       
+        else:
+            return self.layers['hidden'].prox(field)
               
     def sample_visible(self, hidden):
         field = self.params['visible_bias'] + numpy.dot(hidden, self.params['weights'].T)
@@ -88,6 +143,20 @@ class RestrictedBoltzmannMachine(LatentModel):
             return numpy.array([self.layers['visible'].sample_state(f) for f in field], numpy.float32)
         else:
             return self.layers['visible'].sample_state(field)
+            
+    def visible_mean(self, hidden):
+        field = self.params['visible_bias'] + numpy.dot(hidden, self.params['weights'].T)
+        if len(field.shape) == 2:
+            return numpy.array([self.layers['visible'].mean(f) for f in field], numpy.float32)
+        else:
+            return self.layers['visible'].mean(field)
+            
+    def visible_mode(self, hidden):
+        field = self.params['visible_bias'] + numpy.dot(hidden, self.params['weights'].T)
+        if len(field.shape) == 2:
+            return numpy.array([self.layers['visible'].prox(f) for f in field], numpy.float32)
+        else:
+            return self.layers['visible'].prox(field)
         
     def joint_energy(self, visible, hidden):
         energy = -numpy.dot(visible, self.params['visible_bias']) - numpy.dot(hidden, self.params['hidden_bias'])

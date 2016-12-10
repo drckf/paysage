@@ -35,38 +35,13 @@ def random_ising_vector(p):
     result = numpy.float32(2.0) * random_bernoulli_vector(p) - numpy.float32(1.0)
     return result
     
-@jit('float32[:](float32[:,:],float32[:,:],float32[:,:])',nopython=True)
+# this function is not numba compiled
+# using the regular, vectorized numpy expression is much faster
 def batch_dot(vis, W, hid):
-    n = len(vis)
-    result = numpy.zeros(n, dtype=numpy.float32)
-    for i in range(n):
-        result[i] = numpy.dot(vis[i], numpy.dot(W, hid[i]))
-    return result
-
-@jit('float32[:,:](float32[:],float32[:])',nopython=True)
-def outer(vis, hid):
-    n = len(vis)
-    m = len(hid)
-    result = numpy.zeros((n, m), dtype=numpy.float32)
-    for i in range(n):
-        for u in range(m):
-            result[i][u] = vis[i] * hid[u]
-    return result
+    return (numpy.dot(vis, W) * hid).sum(1).astype(numpy.float32)
     
-@jit('float32[:,:](float32[:],float32[:], float32[:,:])',nopython=True)
-def outer_inplace(vis, hid, result):
-    for i in range(len(vis)):
-        for u in range(len(hid)):
-            result[i][u] += vis[i] * hid[u]
-    return result
-    
-@jit('float32[:,:](float32[:,:],float32[:,:])',nopython=True)
 def batch_outer(vis, hid):
-    n = len(vis)
-    result = numpy.zeros((vis.shape[1], hid.shape[1]), dtype=numpy.float32)
-    for i in range(n):
-        outer_inplace(vis[i], hid[i], result)
-    return result / n
+    return numpy.dot(vis.T, hid) / len(vis)
     
 @jit('float32[:](float32[:])',nopython=True)
 def normalize(anarray):
