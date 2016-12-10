@@ -13,7 +13,6 @@ class Optimizer(object):
         
     def check_convergence(self):
         mag = gradient_magnitude(self.grad)
-        print(mag)
         if mag <= self.tolerance:
             return True
         else:

@@ -1,5 +1,5 @@
 from .backends import numba_engine as en
-import numpy
+import numpy, time
     
 # -----  CLASSES ----- #
 
@@ -51,6 +51,7 @@ class ContrastiveDivergence(TrainingMethod):
     def train(self):
         for epoch in range(self.epochs):          
             t = 0
+            start_time = time.time()
             while True:
                 try:
                     if not t % 100:
@@ -71,6 +72,9 @@ class ContrastiveDivergence(TrainingMethod):
             prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
             print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
+
+            end_time = time.time()
+            print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')            
             
             # convergence check should be part of optimizer
             is_converged = self.optimizer.check_convergence()
@@ -95,6 +99,7 @@ class PersistentContrastiveDivergence(TrainingMethod):
     def train(self):
         for epoch in range(self.epochs):          
             t = 0
+            start_time = time.time()
             while True:
                 try:
                     if not t % 100:
@@ -114,6 +119,9 @@ class PersistentContrastiveDivergence(TrainingMethod):
             prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
             print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
+            
+            end_time = time.time()
+            print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')  
             
             # convergence check should be part of optimizer
             is_converged = self.optimizer.check_convergence()
@@ -138,6 +146,7 @@ class HopfieldContrastiveDivergence(TrainingMethod):
     def train(self):
         for epoch in range(self.epochs):          
             t = 0
+            start_time = time.time()
             while True:
                 try:
                     if not t % 100:
@@ -156,6 +165,9 @@ class HopfieldContrastiveDivergence(TrainingMethod):
             prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
             print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
+            
+            end_time = time.time()
+            print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')  
             
             # convergence check should be part of optimizer
             is_converged = self.optimizer.check_convergence()

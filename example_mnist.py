@@ -24,18 +24,22 @@ if __name__ == "__main__":
     num_hidden_units = 200   
     m = hidden.RestrictedBoltzmannMachine(b.ncols, num_hidden_units)
     opt = optimizers.ADAM(m)
+    
     """
     # train the model with contrastive divergence
     print('training with hopfield contrastive divergence')
     cd = fit.HCD(m, b, opt, 10, skip=200, convergence=0.0)
     cd.train()  
+    
+    print('training with contrastive divergence')
+    cd = fit.CD(m, b, opt, 10, 1, skip=200, convergence=0.0)
+    cd.train()  
     """
     
-    print('\ncontinuing training with contrastive divergence')
-    cd = fit.CD(m, b, opt, 1, 1, skip=200, convergence=0.0)
-    cd.train()    
+    print('training with persistent contrastive divergence')
+    cd = fit.PCD(m, b, opt, 10, 1, skip=200, convergence=0.0)
+    cd.train()  
     
-    """
     # plot some reconstructions
     v_data = b.get()
     sampler = fit.SequentialMC(m, v_data) 
@@ -53,7 +57,7 @@ if __name__ == "__main__":
     
     plot_image(v_data[0], (28,28))
     plot_image(v_model[0], (28,28))
-    """
+    
     # close the HDF5 store
     b.close()
     
