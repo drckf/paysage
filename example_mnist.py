@@ -22,20 +22,19 @@ if __name__ == "__main__":
     
     # set up the batch, model, and optimizer objects
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
-    b = batch.Batch(filepath, 'train/images', batch_size, 
+    data = batch.Batch(filepath, 'train/images', batch_size, 
                     transform=batch.binarize_color, train_fraction=0.99)
-    m = hidden.RestrictedBoltzmannMachine(b.ncols, num_hidden_units, 
-                                          vis_type='bernoulli', hid_type = 'ising')
-    opt = optimizers.ADAM(m)
+    rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
+                                          vis_type='bernoulli', hid_type = 'bernoulli')
+    opt = optimizers.ADAM(rbm)
     
     print('training with contrastive divergence')
-    cd = fit.CD(m, b, opt, 10, 1, skip=200, convergence=0.0)
+    cd = fit.CD(rbm, data, opt, 10, 1, skip=200, convergence=0.0)
     cd.train()  
     
-    """
     # plot some reconstructions
-    v_data = b.get()
-    sampler = fit.SequentialMC(m, v_data) 
+    v_data = data.chunk['validate']
+    sampler = fit.SequentialMC(rbm, v_data) 
     sampler.update_state(1, resample=False, temperature=1.0)
     v_model = sampler.state
     
@@ -43,8 +42,6 @@ if __name__ == "__main__":
     plot_image(v_model[0], (28,28))
     
     # plot some fantasy particles
-    v_model = m.random(v_data)
-    sampler = fit.SequentialMC(m, v_model) 
     sampler.update_state(1000, resample=False, temperature=1.0)
     v_model = sampler.state
     
@@ -53,5 +50,4 @@ if __name__ == "__main__":
     
     # close the HDF5 store
     b.close()
-    """
     
