@@ -10,29 +10,17 @@ def expit(x):
     result = (1.0 + math.tanh(x/2.0)) / 2.0
     return result
     
-@jit('float32(float32)', nopython=True)
+@vectorize('float32(float32)', nopython=True)
 def random_bernoulli(p):
     r = numpy.random.rand()
     if p < r:
         return numpy.float32(0.0)
     else:
         return numpy.float32(1.0)
-        
-@jit('float32[:](float32[:])', nopython=True)
-def random_bernoulli_vector(p):
-    n = len(p)
-    r = numpy.random.rand(n)
-    result = numpy.zeros_like(p)
-    for i in range(n):
-        if p[i] < r[i]:
-            result[i] = numpy.float32(0.0)
-        else:
-            result[i] = numpy.float32(1.0)
-    return result
  
-@jit('float32[:](float32[:])', nopython=True)   
-def random_ising_vector(p):
-    result = numpy.float32(2.0) * random_bernoulli_vector(p) - numpy.float32(1.0)
+@vectorize('float32(float32)', nopython=True)   
+def random_ising(p):
+    result = numpy.float32(2.0) * random_bernoulli(p) - numpy.float32(1.0)
     return result
     
 # this function is not numba compiled

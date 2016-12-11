@@ -118,48 +118,36 @@ class RestrictedBoltzmannMachine(LatentModel):
         self.params['weights'] = numpy.random.normal(loc=0.0, scale=1.0, size=(nvis, nhid)).astype(dtype=numpy.float32)
         self.params['visible_bias'] = numpy.ones(nvis, dtype=numpy.float32)  
         self.params['hidden_bias'] = numpy.ones(nhid, dtype=numpy.float32) 
+
+    def hidden_field(self, visible):
+        return self.params['hidden_bias'] + numpy.dot(visible, self.params['weights'])
+
+    def visible_field(self, hidden):
+        return self.params['visible_bias'] + numpy.dot(hidden, self.params['weights'].T)
         
     def sample_hidden(self, visible):
         field = self.params['hidden_bias'] + numpy.dot(visible, self.params['weights'])
-        if len(field.shape) == 2:
-            return numpy.array([self.layers['hidden'].sample_state(f) for f in field], dtype=numpy.float32)       
-        else:
-            return self.layers['hidden'].sample_state(field)
+        return self.layers['hidden'].sample_state(field)
             
     def hidden_mean(self, visible):
         field = self.params['hidden_bias'] + numpy.dot(visible, self.params['weights'])
-        if len(field.shape) == 2:
-            return numpy.array([self.layers['hidden'].mean(f) for f in field], dtype=numpy.float32)       
-        else:
-            return self.layers['hidden'].mean(field)
+        return self.layers['hidden'].mean(field)
             
     def hidden_mode(self, visible):
         field = self.params['hidden_bias'] + numpy.dot(visible, self.params['weights'])
-        if len(field.shape) == 2:
-            return numpy.array([self.layers['hidden'].prox(f) for f in field], dtype=numpy.float32)       
-        else:
-            return self.layers['hidden'].prox(field)
+        return self.layers['hidden'].prox(field)
               
     def sample_visible(self, hidden):
         field = self.params['visible_bias'] + numpy.dot(hidden, self.params['weights'].T)
-        if len(field.shape) == 2:
-            return numpy.array([self.layers['visible'].sample_state(f) for f in field], numpy.float32)
-        else:
-            return self.layers['visible'].sample_state(field)
+        return self.layers['visible'].sample_state(field)
             
     def visible_mean(self, hidden):
         field = self.params['visible_bias'] + numpy.dot(hidden, self.params['weights'].T)
-        if len(field.shape) == 2:
-            return numpy.array([self.layers['visible'].mean(f) for f in field], numpy.float32)
-        else:
-            return self.layers['visible'].mean(field)
+        return self.layers['visible'].mean(field)
             
     def visible_mode(self, hidden):
         field = self.params['visible_bias'] + numpy.dot(hidden, self.params['weights'].T)
-        if len(field.shape) == 2:
-            return numpy.array([self.layers['visible'].prox(f) for f in field], numpy.float32)
-        else:
-            return self.layers['visible'].prox(field)
+        return self.layers['visible'].prox(field)
         
     def joint_energy(self, visible, hidden):
         energy = -numpy.dot(visible, self.params['visible_bias']) - numpy.dot(hidden, self.params['hidden_bias'])

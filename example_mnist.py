@@ -50,8 +50,8 @@ if __name__ == "__main__":
     
     plot_image(v_data[0], (28,28))
     plot_image(v_model[0], (28,28))
-    """
     
     # close the HDF5 store
     b.close()
+    """
     

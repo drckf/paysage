@@ -41,7 +41,7 @@ class IsingLayer(object):
         return -LOG2 + numpy.logaddexp(-loc, loc)
         
     def sample_state(self, loc):
-        return en.random_ising_vector(en.expit(loc))
+        return en.random_ising(en.expit(loc))
         
     def random(self, loc):
         return 2.0 * numpy.random.randint(0, 2, loc.shape).astype(numpy.float32) - 1.0
@@ -62,7 +62,7 @@ class BernoulliLayer(object):
         return numpy.logaddexp(0, loc)
         
     def sample_state(self, loc):
-        return en.random_bernoulli_vector(en.expit(loc))
+        return en.random_bernoulli(en.expit(loc))
         
     def random(self, loc):
         return numpy.random.randint(0, 2, loc.shape).astype(numpy.float32)
