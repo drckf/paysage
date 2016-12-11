@@ -17,27 +17,19 @@ def plot_image(image_vector, shape):
     plt.close(f)    
 
 if __name__ == "__main__":
+    num_hidden_units = 200   
+    batch_size = 50
     
     # set up the batch, model, and optimizer objects
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
-    b = batch.Batch(filepath, 'train/images', 100, transform=batch.color_to_ising, train_fraction=0.99)
-    num_hidden_units = 200   
-    m = hidden.RestrictedBoltzmannMachine(b.ncols, num_hidden_units)
+    b = batch.Batch(filepath, 'train/images', batch_size, 
+                    transform=batch.binarize_color, train_fraction=0.99)
+    m = hidden.RestrictedBoltzmannMachine(b.ncols, num_hidden_units, 
+                                          vis_type='bernoulli', hid_type = 'ising')
     opt = optimizers.ADAM(m)
-    
-    """
-    # train the model with contrastive divergence
-    print('training with hopfield contrastive divergence')
-    cd = fit.HCD(m, b, opt, 10, skip=200, convergence=0.0)
-    cd.train()  
     
     print('training with contrastive divergence')
     cd = fit.CD(m, b, opt, 10, 1, skip=200, convergence=0.0)
-    cd.train()  
-    """
-    
-    print('training with persistent contrastive divergence')
-    cd = fit.PCD(m, b, opt, 10, 1, skip=200, convergence=0.0)
     cd.train()  
     
     # plot some reconstructions

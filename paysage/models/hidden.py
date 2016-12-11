@@ -103,14 +103,17 @@ class RestrictedBoltzmannMachine(LatentModel):
        Hinton, Geoffrey. "A practical guide to training restricted Boltzmann machines." Momentum 9.1 (2010): 926.
     
     """
-    def __init__(self, nvis, nhid):
+    def __init__(self, nvis, nhid, vis_type='ising', hid_type='bernoulli'):
+        assert vis_type in ['ising', 'bernoulli', 'exponential']
+        assert hid_type in ['ising', 'bernoulli', 'exponential']
+        
         self.nvis = nvis
         self.nhid = nhid
         
         self.layers = {}
-        self.layers['visible'] = layers.IsingLayer()
-        self.layers['hidden'] = layers.BernoulliLayer()
-        
+        self.layers['visible'] = layers.get(vis_type)
+        self.layers['hidden'] = layers.get(hid_type)
+                
         self.params = {}
         self.params['weights'] = numpy.random.normal(loc=0.0, scale=1.0, size=(nvis, nhid)).astype(dtype=numpy.float32)
         self.params['visible_bias'] = numpy.ones(nvis, dtype=numpy.float32)  

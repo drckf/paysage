@@ -120,7 +120,7 @@ def chunksize(ncols, nbytes, chunk=10**7):
 
 # vectorize('int8(int8)')
 def binarize_color(anarray):
-    return numpy.round(anarray/255).astype(numpy.int8)
+    return numpy.round(anarray/255).astype(numpy.float32)
 
 # vectorize('float32(int8)')
 def binary_to_ising(anarray):

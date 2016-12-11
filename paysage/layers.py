@@ -93,12 +93,12 @@ class ExponentialLayer(object):
         
 def get(key):
     if 'gauss' in key.lower():
-        return GaussianLayer
+        return GaussianLayer()
     elif 'ising' in key.lower():
-        return IsingLayer
+        return IsingLayer()
     elif 'bern' in key.lower():
-        return BernoulliLayer
+        return BernoulliLayer()
     elif 'expo' in key.lower():
-        return ExponentialLayer
+        return ExponentialLayer()
     else:
         raise ValueError('Unknown layer type')
