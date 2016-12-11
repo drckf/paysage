@@ -107,18 +107,18 @@ class RestrictedBoltzmannMachine(LatentModel):
         assert vis_type in ['ising', 'bernoulli', 'exponential']
         assert hid_type in ['ising', 'bernoulli', 'exponential']
         
+        super().__init__()
+        
         self.nvis = nvis
         self.nhid = nhid
         
-        self.layers = {}
         self.layers['visible'] = layers.get(vis_type)
         self.layers['hidden'] = layers.get(hid_type)
                 
-        self.params = {}
         # Hinton says to initalize the weights from N(0, 0.01)
         # hidden_bias = 0
         # visible_bias = log(p_i / (1 - p_i))
-        # should implement more general initialization methods
+        #TODO: should implement more general initialization methods
         self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01, size=(nvis, nhid)).astype(dtype=numpy.float32)
         self.params['visible_bias'] = numpy.ones(nvis, dtype=numpy.float32)  
         self.params['hidden_bias'] = numpy.ones(nhid, dtype=numpy.float32) 

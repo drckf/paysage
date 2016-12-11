@@ -17,7 +17,7 @@ def plot_image(image_vector, shape):
     plt.close(f)    
 
 if __name__ == "__main__":
-    num_hidden_units = 200   
+    num_hidden_units = 500   
     batch_size = 50
     
     # set up the batch, model, and optimizer objects
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     opt = optimizers.ADAM(rbm)
     
     print('training with contrastive divergence')
-    cd = fit.CD(rbm, data, opt, 10, 1, skip=200, convergence=0.0)
+    cd = fit.PCD(rbm, data, opt, 5, 1, skip=200, convergence=0.0, update_method='deterministic')
     cd.train()  
     
     # plot some reconstructions
