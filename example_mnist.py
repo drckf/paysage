@@ -29,7 +29,7 @@ if __name__ == "__main__":
     opt = optimizers.ADAM(rbm)
     
     print('training with contrastive divergence')
-    cd = fit.PCD(rbm, data, opt, 5, 1, skip=200, convergence=0.0, update_method='deterministic')
+    cd = fit.PCD(rbm, data, opt, 20, 1, skip=200, convergence=0.0, update_method='deterministic')
     cd.train()  
     
     # plot some reconstructions
