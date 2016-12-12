@@ -1,4 +1,5 @@
 import os, sys, numpy, pandas
+from paysage.backends import numba_engine as en
 
 from paysage import batch
 from paysage.models import hidden
@@ -19,8 +20,8 @@ def plot_image(image_vector, shape):
 if __name__ == "__main__":
     num_hidden_units = 500   
     batch_size = 50
-    num_epochs = 1
-    learning_rate = 0.1
+    num_epochs = 20
+    learning_rate = 0.001
     
     # set up the batch, model, and optimizer objects
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
@@ -31,7 +32,8 @@ if __name__ == "__main__":
     opt = optimizers.ADAM(rbm, stepsize=learning_rate)
     
     print('training with contrastive divergence')
-    cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, convergence=0.0, update_method='deterministic')
+    cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, 
+                 convergence=0.0, update_method='stochastic')
     cd.train()  
     
     # plot some reconstructions

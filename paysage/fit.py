@@ -112,7 +112,8 @@ class PersistentContrastiveDivergence(TrainingMethod):
             while True:
                 try:
                     if not t % 100:
-                        print('Sampling batch: {0}'.format(t))
+                        #print('Sampling batch: {0}'.format(t))
+                        pass
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break

@@ -19,7 +19,7 @@ if __name__ == "__main__":
     num_hidden_units = 500   
     batch_size = 50
     num_epochs = 20
-    learning_rate = 0.1
+    learning_rate = 0.001
     
     # set up the batch, model, and optimizer objects
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
