@@ -1,9 +1,8 @@
 import os, sys, numpy, pandas
+from paysage.backends import numba_engine as en
 
 from paysage import batch
-from paysage.models import hidden
-from paysage import fit
-from paysage import optimizers
+from sklearn.neural_network import BernoulliRBM
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -19,35 +18,34 @@ def plot_image(image_vector, shape):
 if __name__ == "__main__":
     num_hidden_units = 500   
     batch_size = 50
-    num_epochs = 1
+    num_epochs = 20
     learning_rate = 0.1
     
     # set up the batch, model, and optimizer objects
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
     data = batch.Batch(filepath, 'train/images', batch_size, 
                     transform=batch.binarize_color, train_fraction=0.99)
-    rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
-                    vis_type='bernoulli', hid_type = 'bernoulli')
-    opt = optimizers.ADAM(rbm, stepsize=learning_rate)
-    
-    print('training with contrastive divergence')
-    cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, convergence=0.0, update_method='deterministic')
-    cd.train()  
+                    
+    rbm = BernoulliRBM(n_components=num_hidden_units, 
+                       learning_rate=learning_rate, 
+                       batch_size=batch_size, 
+                       n_iter=num_epochs, 
+                       verbose=1)
+                       
+    rbm.fit(data.chunk['train'])
     
     # plot some reconstructions
     v_data = data.chunk['validate']
-    sampler = fit.SequentialMC(rbm, v_data) 
-    sampler.update_state(1, resample=False, temperature=1.0)
-    v_model = sampler.state
-    
+    v_model = rbm.gibbs(v_data)
+
     recon = numpy.sqrt(numpy.sum((v_data - v_model)**2) / len(v_data))
-    
+        
     plot_image(v_data[0], (28,28))
     plot_image(v_model[0], (28,28))
     
     # plot some fantasy particles
-    sampler.update_state(1000, resample=False, temperature=1.0)
-    v_model = sampler.state
+    for t in range(1000):
+        v_model = rbm.gibbs(v_model)
     
     plot_image(v_data[0], (28,28))
     plot_image(v_model[0], (28,28))
