@@ -46,7 +46,7 @@ class Batch(object):
        The data should probably be randomly shuffled if being used to train a non-recurrent model.
     
     """    
-    def __init__(self, filename, key, batch_size, train_fraction=0.9,
+    def __init__(self, filename, key, batch_size, train_fraction=0.9, memory = 1,
                  transform=None, flatten=False, dtype=numpy.float32):
         if transform:
             assert callable(transform)
@@ -55,7 +55,8 @@ class Batch(object):
         self.ncols = self.store.get_storer(key).ncols       
         self.nrows = self.store.get_storer(key).nrows
         self.batch_size = batch_size
-        self.chunk_size = chunksize(self.ncols, dtype(1).itemsize, chunk=10**7)
+        self.memory = int(memory * 10 ** 9)
+        self.chunk_size = chunksize(self.ncols, dtype(1).itemsize, chunk=self.memory)
         self.index = IndexBatch.from_store(self.store, self.key, self.chunk_size, train_fraction=train_fraction) 
         self.dtype = dtype
         self.transform = transform
@@ -120,7 +121,7 @@ def chunksize(ncols, nbytes, chunk=10**7):
 
 # vectorize('int8(int8)')
 def binarize_color(anarray):
-    return numpy.round(anarray/255).astype(numpy.int8)
+    return numpy.round(anarray/255).astype(numpy.float32)
 
 # vectorize('float32(int8)')
 def binary_to_ising(anarray):

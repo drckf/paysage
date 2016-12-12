@@ -10,29 +10,17 @@ def expit(x):
     result = (1.0 + math.tanh(x/2.0)) / 2.0
     return result
     
-@jit('float32(float32)', nopython=True)
+@vectorize('float32(float32)', nopython=True)
 def random_bernoulli(p):
     r = numpy.random.rand()
     if p < r:
         return numpy.float32(0.0)
     else:
         return numpy.float32(1.0)
-        
-@jit('float32[:](float32[:])', nopython=True)
-def random_bernoulli_vector(p):
-    n = len(p)
-    r = numpy.random.rand(n)
-    result = numpy.zeros_like(p)
-    for i in range(n):
-        if p[i] < r[i]:
-            result[i] = numpy.float32(0.0)
-        else:
-            result[i] = numpy.float32(1.0)
-    return result
  
-@jit('float32[:](float32[:])', nopython=True)   
-def random_ising_vector(p):
-    result = numpy.float32(2.0) * random_bernoulli_vector(p) - numpy.float32(1.0)
+@vectorize('float32(float32)', nopython=True)   
+def random_ising(p):
+    result = numpy.float32(2.0) * random_bernoulli(p) - numpy.float32(1.0)
     return result
     
 # this function is not numba compiled
@@ -88,3 +76,33 @@ def energy_distance(minibatch, samples):
     d3 = d3 / (n*m)
     
     return 2.0 * d3 - d2 - d1
+    
+@jit('float32(float32[:,:],float32[:,:], int16)',nopython=True)
+def fast_energy_distance(minibatch, samples, downsample=100):
+    d1 = numpy.float32(0)
+    d2 = numpy.float32(0)
+    d3 = numpy.float32(0)
+    
+    n = min(len(minibatch), downsample)
+    m = min(len(samples), downsample)
+    
+    index_1 = numpy.random.choice(numpy.arange(len(minibatch)), size=n)
+    index_2 = numpy.random.choice(numpy.arange(len(samples)), size=m)
+
+    for i in range(n-1):
+        for j in range(i+1, n):
+            d1 += euclidean_distance(minibatch[index_1[i]], minibatch[index_1[j]])
+    d1 = 2.0 * d1 / (n*n - n)
+    
+    for i in range(m-1):
+        for j in range(i+1, m):
+            d2 += euclidean_distance(samples[index_1[i]], samples[index_2[j]])
+    d2 = 2.0 * d2 / (m*m - m)
+    
+    for i in index_1:
+        for j in index_2:
+            d3 += euclidean_distance(minibatch[i], samples[j])
+    d3 = d3 / (n*m)
+    
+    return 2.0 * d3 - d2 - d1
+    

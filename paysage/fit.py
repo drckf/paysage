@@ -8,30 +8,39 @@ class SequentialMC(object):
        Simple class for a sequential Monte Carlo sampler. 
     
     """
-    def __init__(self, amodel, adataframe):
+    def __init__(self, amodel, adataframe, method='stochastic'):
         self.model = amodel
+        self.method = method
         try:
             self.state = adataframe.as_matrix().astype(numpy.float32)
         except Exception:
             self.state = adataframe.astype(numpy.float32)
         
     @classmethod
-    def from_batch(cls, amodel, abatch):
-        tmp = cls(amodel, abatch.get())
+    def from_batch(cls, amodel, abatch, method='stochastic'):
+        tmp = cls(amodel, abatch.get(), method=method)
         abatch.reset('all')
         return tmp
         
     def update_state(self, steps, resample=False, temperature=1.0):
-        self.state[:] = self.model.markov_chain(self.state, steps, resample=resample, temperature=temperature)  
+        if self.method == 'stochastic':
+            self.state = self.model.markov_chain(self.state, steps, resample=resample, temperature=temperature)  
+        elif self.method == 'mean_field':
+            self.state = self.model.mean_field_iteration(self.state, steps)  
+        elif self.method == 'deterministic':
+            self.state = self.model.deterministic_iteration(self.state, steps)  
+        else:
+            raise ValueError("Unknown method {}".format(self.method))
 
 
 class TrainingMethod(object):
     
-    def __init__(self, model, abatch, optimizer, epochs, convergence=1.0, skip=100):
+    def __init__(self, model, abatch, optimizer, epochs, convergence=1.0, skip=100, update_method='stochastic'):
         self.model = model
         self.batch = abatch
         self.epochs = epochs
-        self.sampler = SequentialMC.from_batch(self.model, self.batch)
+        self.update_method = update_method
+        self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
         self.optimizer = optimizer
         self.monitor = ProgressMonitor(skip, self.batch, convergence=convergence)
 
@@ -44,8 +53,8 @@ class ContrastiveDivergence(TrainingMethod):
        Carreira-Perpinan, Miguel A., and Geoffrey Hinton. "On Contrastive Divergence Learning." AISTATS. Vol. 10. 2005.
     
     """
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, convergence=1.0, skip=100):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip, convergence=convergence)
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, convergence=1.0, skip=100, update_method='stochastic'):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip, convergence=convergence, update_method=update_method)
         self.mcsteps = mcsteps
         
     def train(self):
@@ -61,7 +70,7 @@ class ContrastiveDivergence(TrainingMethod):
                     break
                             
                 # CD resets the sampler from the visible data at each iteration
-                self.sampler = SequentialMC(self.model, v_data) 
+                self.sampler = SequentialMC(self.model, v_data, method=self.update_method) 
                 self.sampler.update_state(self.mcsteps, resample=False)    
                 
                 # compute the gradient and update the model parameters
@@ -92,8 +101,8 @@ class PersistentContrastiveDivergence(TrainingMethod):
        Tieleman, Tijmen. "Training restricted Boltzmann machines using approximations to the likelihood gradient." Proceedings of the 25th international conference on Machine learning. ACM, 2008.
    
     """    
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, convergence=1.0, skip=100):
-       super().__init__(model, abatch, optimizer, epochs, skip=skip, convergence=convergence)
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, convergence=1.0, skip=100, update_method='stochastic'):
+       super().__init__(model, abatch, optimizer, epochs, skip=skip, convergence=convergence, update_method=update_method)
        self.mcsteps = mcsteps
     
     def train(self):
@@ -103,7 +112,8 @@ class PersistentContrastiveDivergence(TrainingMethod):
             while True:
                 try:
                     if not t % 100:
-                        print('Sampling batch: {0}'.format(t))
+                        #print('Sampling batch: {0}'.format(t))
+                        pass
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
@@ -203,7 +213,7 @@ class ProgressMonitor(object):
         v_model = model.random(v_data)
         sampler = SequentialMC(model, v_model) 
         sampler.update_state(self.steps, resample=False, temperature=1.0)
-        return len(v_model) * en.energy_distance(v_data, sampler.state)
+        return len(v_model) * en.fast_energy_distance(v_data, sampler.state, downsample=100)
         
     def check_progress(self, model, t, store=False):
         if not (t % self.skip):
