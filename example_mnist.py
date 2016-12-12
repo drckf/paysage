@@ -20,7 +20,7 @@ def plot_image(image_vector, shape):
 if __name__ == "__main__":
     num_hidden_units = 500   
     batch_size = 50
-    num_epochs = 20
+    num_epochs = 10
     learning_rate = 0.001
     
     # set up the batch, model, and optimizer objects
@@ -36,6 +36,7 @@ if __name__ == "__main__":
                  convergence=0.0, update_method='stochastic')
     cd.train()  
     
+    """
     # plot some reconstructions
     v_data = data.chunk['validate']
     sampler = fit.SequentialMC(rbm, v_data) 
@@ -58,7 +59,7 @@ if __name__ == "__main__":
     
     print('Reconstruction error:  {0:.2f}'.format(recon))
     print('Energy distance:  {0:.2f}'.format(edist))
-    
+    """
     # close the HDF5 store
     data.close()
     
