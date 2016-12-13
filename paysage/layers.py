@@ -7,6 +7,8 @@ LOG2 = 0.6931471805599453
 
 class GaussianLayer(object):
     
+    constraints = []
+    
     def __init__(self):
         pass
         
@@ -27,6 +29,8 @@ class GaussianLayer(object):
 
 
 class IsingLayer(object):
+    
+    constraints = []
 
     def __init__(self):
         pass
@@ -49,6 +53,8 @@ class IsingLayer(object):
         
 class BernoulliLayer(object):
     
+    constraints = []
+    
     def __init__(self):
         pass
         
@@ -69,6 +75,8 @@ class BernoulliLayer(object):
 
 
 class ExponentialLayer(object):
+    
+    constraints = ['positive']
 
     def __init__(self):
         pass

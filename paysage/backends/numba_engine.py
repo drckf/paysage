@@ -1,5 +1,5 @@
 import numpy, math
-from numba import jit, vectorize
+from numba import jit, vectorize, void
 
 EPSILON = numpy.finfo(numpy.float32).eps
 
@@ -37,7 +37,7 @@ def normalize(anarray):
 
 @vectorize('float32(float32)',nopython=True)
 def numba_exp(x):
-    return math.exp(x)    
+    return math.exp(x)   
     
 @jit('float32[:](float32[:],float32)',nopython=True)
 def importance_weights(energies, temperature):
@@ -45,11 +45,15 @@ def importance_weights(energies, temperature):
     return normalize(numba_exp(-gauge/temperature)) 
     
 @jit('float32(float32[:],float32[:])',nopython=True)
-def euclidean_distance(a, b):
+def squared_norm(a, b):
     result = numpy.float32(0.0)
     for i in range(len(a)):
         result += (a[i] - b[i])**2
-    return math.sqrt(result)
+    return result    
+    
+@jit('float32(float32[:],float32[:])',nopython=True)
+def euclidean_distance(a, b):
+    return math.sqrt(squared_norm(a, b))
     
 @jit('float32(float32[:,:],float32[:,:])',nopython=True)
 def energy_distance(minibatch, samples):

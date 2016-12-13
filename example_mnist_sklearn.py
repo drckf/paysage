@@ -18,7 +18,7 @@ def plot_image(image_vector, shape):
 if __name__ == "__main__":
     num_hidden_units = 500   
     batch_size = 50
-    num_epochs = 20
+    num_epochs = 10
     learning_rate = 0.001
     
     # set up the batch, model, and optimizer objects
