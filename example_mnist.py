@@ -32,8 +32,7 @@ if __name__ == "__main__":
     opt = optimizers.SGD(rbm, stepsize=learning_rate)
     
     print('training with contrastive divergence')
-    cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, 
-                 convergence=0.0, update_method='stochastic')
+    cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, update_method='stochastic')
     cd.train()  
     
     # plot some reconstructions

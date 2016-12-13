@@ -58,7 +58,7 @@ class LatentModel(object):
            v -> h -> v'
            return v'
         
-           worth looking into extended approaches:
+           It may be worth looking into extended approaches:
            Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala. "Training Restricted Boltzmann Machine via the￼ Thouless-Anderson-Palmer free energy." Advances in Neural Information Processing Systems. 2015.
         
         """
