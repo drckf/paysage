@@ -20,7 +20,7 @@ def plot_image(image_vector, shape):
 if __name__ == "__main__":
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 10
+    num_epochs = 1
     learning_rate = 0.001
     
     # set up the batch, model, and optimizer objects
@@ -59,5 +59,5 @@ if __name__ == "__main__":
     print('Energy distance:  {0:.2f}'.format(edist))
     
     # close the HDF5 store
-    data.close()
+    #data.close()
     

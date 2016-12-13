@@ -18,6 +18,9 @@ class GaussianLayer(object):
     def mean(self, loc):
         return loc
         
+    def inverse_mean(self, mean):
+        return mean
+        
     def log_partition_function(self, scale):
         return -numpy.log(scale)
     
@@ -40,6 +43,9 @@ class IsingLayer(object):
         
     def mean(self, loc):
         return numpy.tanh(loc)
+        
+    def inverse_mean(self, mean):
+        return numpy.arctanh(loc)
         
     def log_partition_function(self, loc):
         return -LOG2 + numpy.logaddexp(-loc, loc)
@@ -64,6 +70,9 @@ class BernoulliLayer(object):
     def mean(self, loc):
         return en.expit(loc)
         
+    def inverse_mean(self, mean):
+        return numpy.log(mean / (1 - mean))
+        
     def log_partition_function(self, loc):
         return numpy.logaddexp(0, loc)
         
@@ -86,6 +95,9 @@ class ExponentialLayer(object):
         
     def mean(self, loc):
         return 1.0 / loc
+        
+    def inverse_mean(self, mean):
+        return 1.0 / mean
         
     def log_partition_function(self, loc):
         return -numpy.log(loc)
