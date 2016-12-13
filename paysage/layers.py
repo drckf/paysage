@@ -45,7 +45,8 @@ class IsingLayer(object):
         return numpy.tanh(loc)
         
     def inverse_mean(self, mean):
-        return numpy.arctanh(loc)
+        clipped_mean = mean.clip(min= -1 + en.EPSILON,max= 1 - en.EPSILON)
+        return numpy.arctanh(mean)
         
     def log_partition_function(self, loc):
         return -LOG2 + numpy.logaddexp(-loc, loc)
@@ -71,7 +72,8 @@ class BernoulliLayer(object):
         return en.expit(loc)
         
     def inverse_mean(self, mean):
-        return numpy.log(mean / (1 - mean))
+        clipped_mean = mean.clip(min=en.EPSILON, max = 1 - en.EPSILON)
+        return numpy.log(clipped_mean/(1-clipped_mean))
         
     def log_partition_function(self, loc):
         return numpy.logaddexp(0, loc)
@@ -94,10 +96,10 @@ class ExponentialLayer(object):
         return vis.clip(min=en.EPSILON)
         
     def mean(self, loc):
-        return 1.0 / loc
+        return 1.0 / (en.EPSILON + loc)
         
     def inverse_mean(self, mean):
-        return 1.0 / mean
+        return 1.0 / (en.EPSILON + mean)
         
     def log_partition_function(self, loc):
         return -numpy.log(loc)

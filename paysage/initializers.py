@@ -9,8 +9,8 @@ class Initializer(object):
         self.batch = batch
 
     def initial_bias(self, inverse_mean):
-        p = numpy.ones(self.batch.ncols, dtype=numpy.float32) / self.batch.batch_size
-        nbatches = 1
+        p = numpy.zeros(self.batch.ncols, dtype=numpy.float32)
+        nbatches = 0
         while True:
             try:
                 v_data = self.batch.get(mode='train')
