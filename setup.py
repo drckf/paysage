@@ -16,6 +16,7 @@ setup(name='paysage',
                         'numpy',
                         'h5py',
                         'pandas',
+                        'scikit-learn'
                         'numba'
                         ],
       zip_safe=False)

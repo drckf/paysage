@@ -18,7 +18,7 @@ def plot_image(image_vector, shape):
     plt.close(f)    
 
 if __name__ == "__main__":
-    num_hidden_units = 500   
+    num_hidden_units = 500
     batch_size = 50
     num_epochs = 10
     learning_rate = 0.001
@@ -29,14 +29,13 @@ if __name__ == "__main__":
                     transform=batch.binarize_color, train_fraction=0.99)
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                     vis_type='bernoulli', hid_type = 'bernoulli')
-    opt = optimizers.ADAM(rbm, stepsize=learning_rate)
+    opt = optimizers.SGD(rbm, stepsize=learning_rate)
     
     print('training with contrastive divergence')
     cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, 
                  convergence=0.0, update_method='stochastic')
     cd.train()  
     
-    """
     # plot some reconstructions
     v_data = data.chunk['validate']
     sampler = fit.SequentialMC(rbm, v_data) 
@@ -59,7 +58,7 @@ if __name__ == "__main__":
     
     print('Reconstruction error:  {0:.2f}'.format(recon))
     print('Energy distance:  {0:.2f}'.format(edist))
-    """
+    
     # close the HDF5 store
     data.close()
     

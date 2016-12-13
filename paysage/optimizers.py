@@ -1,13 +1,12 @@
 import numpy    
+from .backends import numba_engine as en
 
     
 # ----- OPTIMIZERS ----- #        
-    
-#TODO: check_convergence
-    
+        
 class Optimizer(object):
     
-    def __init__(self, tolerance=10**-6):
+    def __init__(self, tolerance=10**-3):
         self.tolerance = tolerance
         self.grad = {}
         
@@ -24,17 +23,17 @@ class StochasticGradientDescent(Optimizer):
        Basic algorithm of gradient descent with minibatches. 
     
     """
-    def __init__(self, model, stepsize=0.001, lr_decay=0.5, tolerance=10**-6):
+    def __init__(self, model, stepsize=0.001, lr_decay=0.5, tolerance=10**-3):
         super().__init__(tolerance)
         self.lr_decay = lr_decay
         self.stepsize = stepsize
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
     
     def update(self, model, v_data, v_model, epoch):
-        lr = self.lr_decay ** epoch
+        lr = self.lr_decay ** epoch * self.stepsize
         self.grad = gradient(model, v_data, v_model)
         for key in self.grad:
-            model.params[key] = model.params[key] - lr * self.stepsize * self.grad[key]
+            model.params[key] = model.params[key] - lr * self.grad[key]
          
          
 class Momentum(Optimizer):
@@ -52,11 +51,11 @@ class Momentum(Optimizer):
         self.delta = {key: numpy.zeros_like(model.params[key]) for key in model.params}
     
     def update(self, model, v_data, v_model, epoch):
-        lr = self.lr_decay ** epoch
+        lr = self.lr_decay ** epoch * self.stepsize
         self.grad = gradient(model, v_data, v_model)
         for key in self.grad:
             self.delta[key] = self.grad[key] + self.momentum * self.delta[key]
-            model.params[key] = model.params[key] - lr * self.stepsize * self.delta[key]
+            model.params[key] = model.params[key] - lr * self.delta[key]
 
 
 class RMSProp(Optimizer):
@@ -66,11 +65,11 @@ class RMSProp(Optimizer):
     """
     def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, tolerance=10**-6):
         super().__init__(tolerance)        
-        self.stepsize = stepsize
-        self.mean_square_weight = mean_square_weight
+        self.stepsize = numpy.float32(stepsize)
+        self.mean_square_weight = numpy.float32(mean_square_weight)
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
         self.mean_square_grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
-        self.epsilon = 10**-6
+        self.epsilon = numpy.float32(0.000001)
     
     def update(self, model, v_data, v_model, epoch):
         self.grad = gradient(model, v_data, v_model)
@@ -87,13 +86,13 @@ class ADAM(Optimizer):
     """
     def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.9, tolerance=10**-6):
         super().__init__(tolerance)        
-        self.stepsize = stepsize
-        self.mean_weight = mean_weight
-        self.mean_square_weight = mean_square_weight
+        self.stepsize = numpy.float32(stepsize)
+        self.mean_weight = numpy.float32(mean_weight)
+        self.mean_square_weight = numpy.float32(mean_square_weight)
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
         self.mean_square_grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
         self.mean_grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
-        self.epsilon = 10**-6
+        self.epsilon = numpy.float32(0.000001)
     
     def update(self, model, v_data, v_model, epoch):
         self.grad = gradient(model, v_data, v_model)
@@ -101,7 +100,6 @@ class ADAM(Optimizer):
             self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
             self.mean_grad[key] = self.mean_weight * self.mean_grad[key] + (1-self.mean_weight)*self.grad[key]            
             model.params[key] = model.params[key] - (self.stepsize / (1 - self.mean_weight)) * self.mean_grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key] / (1 - self.mean_square_weight))
-         
          
 # ----- ALIASES ----- #
          
