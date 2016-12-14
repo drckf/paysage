@@ -18,5 +18,6 @@ class Initializer(object):
                 break
             p += numpy.mean(v_data, axis=0).astype(numpy.float32)
             nbatches += 1
-        print(p)
         return inverse_mean(p/nbatches)
+
+    
