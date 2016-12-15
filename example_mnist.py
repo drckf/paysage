@@ -27,8 +27,10 @@ if __name__ == "__main__":
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
     data = batch.Batch(filepath, 'train/images', batch_size, 
                     transform=batch.binarize_color, train_fraction=0.99)
+                    
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                     vis_type='bernoulli', hid_type = 'bernoulli')
+                    
     opt = optimizers.SGD(rbm, stepsize=learning_rate)
     
     print('training with contrastive divergence')

@@ -1,6 +1,7 @@
 import numpy
 from .. import layers
 from ..backends import numba_engine as en
+from .initalize import init_hidden as init
 
 #---- MODEL CLASSES ----#
 
