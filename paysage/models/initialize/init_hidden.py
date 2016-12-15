@@ -12,6 +12,7 @@ def hinton(batch, model):
         Hinton, Geoffrey. "A practical guide to training restricted Boltzmann machines." Momentum 9.1 (2010): 926.
 
     """
+    nvis, nhid = model.params['weights'].shape
     model.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01, size=(nvis, nhid)).astype(dtype=numpy.float32)
     model.params['hidden_bias'] = numpy.ones(nhid, dtype=numpy.float32)
     

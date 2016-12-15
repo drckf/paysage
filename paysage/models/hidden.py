@@ -116,13 +116,16 @@ class RestrictedBoltzmannMachine(LatentModel):
         self.layers['visible'] = layers.get(vis_type)
         self.layers['hidden'] = layers.get(hid_type)
                 
-        # Hinton says to initalize the weights from N(0, 0.01)
-        # hidden_bias = 0
-        # visible_bias = log(p_i / (1 - p_i))
-        #TODO: should implement more general initialization methods
         self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01, size=(nvis, nhid)).astype(dtype=numpy.float32)
-        self.params['visible_bias'] = numpy.ones(nvis, dtype=numpy.float32)  
-        self.params['hidden_bias'] = numpy.ones(nhid, dtype=numpy.float32) 
+        self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)  
+        self.params['hidden_bias'] = numpy.zeros(nhid, dtype=numpy.float32) 
+        
+    def initialize(self, data, method='hinton'):
+        try:
+            func = getattr(init, method)
+        except AttributeError:
+            print('{} is not a valid initialization method for latent models'.format(method))
+        func(data, self)
 
     def hidden_field(self, visible):
         return self.params['hidden_bias'] + numpy.dot(visible, self.params['weights'])

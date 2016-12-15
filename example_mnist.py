@@ -20,7 +20,7 @@ def plot_image(image_vector, shape):
 if __name__ == "__main__":
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 1
+    num_epochs = 5
     learning_rate = 0.001
     
     # set up the batch, model, and optimizer objects
@@ -30,8 +30,9 @@ if __name__ == "__main__":
                     
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                     vis_type='bernoulli', hid_type = 'bernoulli')
+    rbm.initialize(data, method='hinton')
                     
-    opt = optimizers.SGD(rbm, stepsize=learning_rate)
+    opt = optimizers.RMSProp(rbm, stepsize=learning_rate)
     
     print('training with contrastive divergence')
     cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, update_method='stochastic')
