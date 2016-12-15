@@ -1,6 +1,6 @@
 import os, sys, numpy, pandas
-from paysage.backends import numba_engine as en
 
+from paysage.backends import numba_engine as en
 from paysage import batch
 from paysage.models import hidden
 from paysage import fit

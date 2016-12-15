@@ -1,5 +1,5 @@
 import numpy
-from .backends import numba_engine as en
+from ...backends import numba_engine as en
 
 # ----- CLASSES ----- #
 
