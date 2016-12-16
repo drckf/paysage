@@ -2,6 +2,7 @@ import numpy
 from .. import layers
 from ..backends import numba_engine as en
 from ..models.initialize import init_hidden as init
+from .. import constraints
 
 #---- MODEL CLASSES ----#
 
@@ -13,6 +14,7 @@ class LatentModel(object):
     def __init__(self):
         self.layers = {}
         self.params = {}
+        self.constraints = {}
                 
     # placeholder function -- defined in each layer
     def sample_hidden(self, visible):
@@ -25,6 +27,11 @@ class LatentModel(object):
     # placeholder function -- defined in each layer
     def marginal_energy(self, visible):
         pass
+    
+    def enforce_constraints(self):
+        for key in self.params:
+            for constraint in self.constraints[key]:
+                getattr(constraints, constraint)(self.params[key])
     
     def resample_state(self, visibile, temperature=1.0):
         energies = self.marginal_energy(visibile)
@@ -97,6 +104,9 @@ class LatentModel(object):
             new_vis = self.deterministic_step(new_vis)
         return new_vis
         
+    def random(self, visible):
+        return self.layers['visible'].random(visible)
+        
    
 class RestrictedBoltzmannMachine(LatentModel):
     """RestrictedBoltzmanMachine
@@ -120,12 +130,17 @@ class RestrictedBoltzmannMachine(LatentModel):
         self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)  
         self.params['hidden_bias'] = numpy.zeros(nhid, dtype=numpy.float32) 
         
+        self.constraints['visible_bias'] = self.layers['visible'].constraints
+        self.constraints['hidden_bias'] = self.layers['hidden'].constraints
+        self.constraints['weights'] = list(set(self.constraints['visible_bias'] + self.constraints['hidden_bias']))
+
     def initialize(self, data, method='hinton'):
         try:
             func = getattr(init, method)
         except AttributeError:
             print('{} is not a valid initialization method for latent models'.format(method))
         func(data, self)
+        self.enforce_constraints()
 
     def hidden_field(self, visible):
         return self.params['hidden_bias'] + numpy.dot(visible, self.params['weights'])
@@ -175,9 +190,6 @@ class RestrictedBoltzmannMachine(LatentModel):
             derivs['hidden_bias'] = -mean_hidden
             derivs['weights'] = -en.outer(visible, mean_hidden)
         return derivs
-        
-    def random(self, visible):
-        return self.layers['visible'].random(visible)
 
 
 #TODO:
@@ -202,11 +214,6 @@ class HookeMachine(LatentModel):
         pass
 
 
-# ----- FUNCTIONS ----- #
-
-#TODO: implement parameter constraints
-def non_negative_constraint_in_place(anarray):
-    anarray.clip(min=0.0, out=anarray)
     
 # ----- ALIASES ----- #
     

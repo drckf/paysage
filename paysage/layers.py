@@ -87,7 +87,7 @@ class BernoulliLayer(object):
 
 class ExponentialLayer(object):
     
-    constraints = ['positive']
+    constraints = ['non_negative']
 
     def __init__(self):
         pass
@@ -105,10 +105,10 @@ class ExponentialLayer(object):
         return -numpy.log(loc)
 
     def sample_state(self, loc):
-        return numpy.random.exponential(loc)
+        return numpy.random.exponential(loc).astype(numpy.float32)
         
     def random(self, loc):
-        return numpy.random.exponential(numpy.ones_like(loc))
+        return numpy.random.exponential(numpy.ones_like(loc)).astype(numpy.float32)
         
 
 # ---- FUNCTIONS ----- #
