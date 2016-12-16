@@ -36,7 +36,7 @@ if __name__ == "__main__":
                     
     # set up the optimizer and the fit method
     opt = optimizers.RMSProp(rbm, stepsize=learning_rate)
-    cd = fit.CD(rbm, data, opt, num_epochs, 1, skip=200, update_method='stochastic')
+    cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, update_method='stochastic')
     
     # fit the model
     print('training with contrastive divergence')
