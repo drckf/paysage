@@ -115,8 +115,8 @@ class RestrictedBoltzmannMachine(LatentModel):
     
     """
     def __init__(self, nvis, nhid, vis_type='ising', hid_type='bernoulli'):
-        assert vis_type in ['ising', 'bernoulli', 'exponential']
-        assert hid_type in ['ising', 'bernoulli', 'exponential']
+        assert vis_type in ['ising', 'bernoulli']
+        assert hid_type in ['ising', 'bernoulli']
         
         super().__init__()
         
@@ -190,6 +190,10 @@ class RestrictedBoltzmannMachine(LatentModel):
             derivs['hidden_bias'] = -mean_hidden
             derivs['weights'] = -en.outer(visible, mean_hidden)
         return derivs
+        
+    #TODO: pseudo-likelihood
+    def pseudolikelihood(self, visible):
+        pass
 
 
 #TODO:

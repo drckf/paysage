@@ -18,10 +18,10 @@ def plot_image(image_vector, shape):
     plt.close(f)    
 
 if __name__ == "__main__":
-    num_hidden_units = 50
+    num_hidden_units = 500
     batch_size = 50
-    num_epochs = 5
-    learning_rate = 0.001
+    num_epochs = 20
+    learning_rate = 0.0001
     
     # set up the batch object to read the data
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
@@ -30,7 +30,7 @@ if __name__ == "__main__":
                     
     # set up the model and initialize the parameters
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
-                    vis_type='bernoulli', hid_type = 'exponential')
+                    vis_type='bernoulli', hid_type = 'bernoulli')
                     
     rbm.initialize(data, method='hinton')
                     
