@@ -20,7 +20,7 @@ def plot_image(image_vector, shape):
 if __name__ == "__main__":
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 20
+    num_epochs = 5
     learning_rate = 0.001
     
     # set up the batch object to read the data
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # set up the model and initialize the parameters
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                     vis_type='bernoulli', hid_type = 'bernoulli')
-                    
+    rbm.add_constraints({'weights': 'non_negative'})
     rbm.initialize(data, method='hinton')
                     
     # set up the optimizer and the fit method
