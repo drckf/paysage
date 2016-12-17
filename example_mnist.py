@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # set up the model and initialize the parameters
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                     vis_type='bernoulli', hid_type = 'bernoulli')
-                    
+    rbm.add_constraints({'weights': 'non_negative'})
     rbm.initialize(data, method='hinton')
                     
     # set up the optimizer and the fit method

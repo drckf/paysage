@@ -35,7 +35,7 @@ class LatentModel(object):
     
     def enforce_constraints(self):
         for key in self.constraints:
-            getattr(constraints, constraint)(self.params[key])
+            getattr(constraints, self.constraints[key])(self.params[key])
     
     def resample_state(self, visibile, temperature=1.0):
         energies = self.marginal_energy(visibile)
