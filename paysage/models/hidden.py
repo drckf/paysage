@@ -1,6 +1,8 @@
 import numpy
 from .. import layers
 from ..backends import numba_engine as en
+from ..models.initialize import init_hidden as init
+from .. import constraints
 
 #---- MODEL CLASSES ----#
 
@@ -12,6 +14,7 @@ class LatentModel(object):
     def __init__(self):
         self.layers = {}
         self.params = {}
+        self.constraints = {}
                 
     # placeholder function -- defined in each layer
     def sample_hidden(self, visible):
@@ -24,6 +27,15 @@ class LatentModel(object):
     # placeholder function -- defined in each layer
     def marginal_energy(self, visible):
         pass
+    
+    def add_constraints(self, cons):
+        for key in cons:
+            assert key in self.params
+            self.constraints[key] = cons[key]
+    
+    def enforce_constraints(self):
+        for key in self.constraints:
+            getattr(constraints, self.constraints[key])(self.params[key])
     
     def resample_state(self, visibile, temperature=1.0):
         energies = self.marginal_energy(visibile)
@@ -58,7 +70,7 @@ class LatentModel(object):
            v -> h -> v'
            return v'
         
-           worth looking into extended approaches:
+           It may be worth looking into extended approaches:
            Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala. "Training Restricted Boltzmann Machine via the￼ Thouless-Anderson-Palmer free energy." Advances in Neural Information Processing Systems. 2015.
         
         """
@@ -96,6 +108,9 @@ class LatentModel(object):
             new_vis = self.deterministic_step(new_vis)
         return new_vis
         
+    def random(self, visible):
+        return self.layers['visible'].random(visible)
+        
    
 class RestrictedBoltzmannMachine(LatentModel):
     """RestrictedBoltzmanMachine
@@ -104,8 +119,8 @@ class RestrictedBoltzmannMachine(LatentModel):
     
     """
     def __init__(self, nvis, nhid, vis_type='ising', hid_type='bernoulli'):
-        assert vis_type in ['ising', 'bernoulli', 'exponential']
-        assert hid_type in ['ising', 'bernoulli', 'exponential']
+        assert vis_type in ['ising', 'bernoulli']
+        assert hid_type in ['ising', 'bernoulli']
         
         super().__init__()
         
@@ -115,13 +130,17 @@ class RestrictedBoltzmannMachine(LatentModel):
         self.layers['visible'] = layers.get(vis_type)
         self.layers['hidden'] = layers.get(hid_type)
                 
-        # Hinton says to initalize the weights from N(0, 0.01)
-        # hidden_bias = 0
-        # visible_bias = log(p_i / (1 - p_i))
-        #TODO: should implement more general initialization methods
         self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01, size=(nvis, nhid)).astype(dtype=numpy.float32)
-        self.params['visible_bias'] = numpy.ones(nvis, dtype=numpy.float32)  
-        self.params['hidden_bias'] = numpy.ones(nhid, dtype=numpy.float32) 
+        self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)  
+        self.params['hidden_bias'] = numpy.zeros(nhid, dtype=numpy.float32) 
+        
+    def initialize(self, data, method='hinton'):
+        try:
+            func = getattr(init, method)
+        except AttributeError:
+            print('{} is not a valid initialization method for latent models'.format(method))
+        func(data, self)
+        self.enforce_constraints()
 
     def hidden_field(self, visible):
         return self.params['hidden_bias'] + numpy.dot(visible, self.params['weights'])
@@ -172,8 +191,9 @@ class RestrictedBoltzmannMachine(LatentModel):
             derivs['weights'] = -en.outer(visible, mean_hidden)
         return derivs
         
-    def random(self, visible):
-        return self.layers['visible'].random(visible)
+    #TODO: pseudo-likelihood
+    def pseudolikelihood(self, visible):
+        pass
 
 
 #TODO:
@@ -198,11 +218,6 @@ class HookeMachine(LatentModel):
         pass
 
 
-# ----- FUNCTIONS ----- #
-
-#TODO: implement parameter constraints
-def non_negative_constraint_in_place(anarray):
-    anarray.clip(min=0.0, out=anarray)
     
 # ----- ALIASES ----- #
     

@@ -35,14 +35,14 @@ class SequentialMC(object):
 
 class TrainingMethod(object):
     
-    def __init__(self, model, abatch, optimizer, epochs, convergence=1.0, skip=100, update_method='stochastic'):
+    def __init__(self, model, abatch, optimizer, epochs, skip=100, update_method='stochastic'):
         self.model = model
         self.batch = abatch
         self.epochs = epochs
         self.update_method = update_method
         self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
         self.optimizer = optimizer
-        self.monitor = ProgressMonitor(skip, self.batch, convergence=convergence)
+        self.monitor = ProgressMonitor(skip, self.batch)
 
         
 class ContrastiveDivergence(TrainingMethod):
@@ -53,8 +53,8 @@ class ContrastiveDivergence(TrainingMethod):
        Carreira-Perpinan, Miguel A., and Geoffrey Hinton. "On Contrastive Divergence Learning." AISTATS. Vol. 10. 2005.
     
     """
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, convergence=1.0, skip=100, update_method='stochastic'):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip, convergence=convergence, update_method=update_method)
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100, update_method='stochastic'):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method)
         self.mcsteps = mcsteps
         
     def train(self):
@@ -101,8 +101,8 @@ class PersistentContrastiveDivergence(TrainingMethod):
        Tieleman, Tijmen. "Training restricted Boltzmann machines using approximations to the likelihood gradient." Proceedings of the 25th international conference on Machine learning. ACM, 2008.
    
     """    
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, convergence=1.0, skip=100, update_method='stochastic'):
-       super().__init__(model, abatch, optimizer, epochs, skip=skip, convergence=convergence, update_method=update_method)
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100, update_method='stochastic'):
+       super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method)
        self.mcsteps = mcsteps
     
     def train(self):
@@ -149,8 +149,8 @@ class HopfieldContrastiveDivergence(TrainingMethod):
        Unpublished. Charles K. Fisher (2016)
     
     """    
-    def __init__(self, model, abatch, optimizer, epochs, convergence=1.0, attractive=True, skip=100):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip, convergence=convergence)
+    def __init__(self, model, abatch, optimizer, epochs, attractive=True, skip=100):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip)
         self.attractive = attractive
         
     def train(self):
@@ -188,14 +188,12 @@ class HopfieldContrastiveDivergence(TrainingMethod):
         return None
         
              
-#TODO: convergence should be based on magnitude of gradient updates not validation performance
 class ProgressMonitor(object):
     
-    def __init__(self, skip, abatch, convergence=1.0, update_steps=10):
+    def __init__(self, skip, abatch, update_steps=10):
         self.skip = skip
         self.batch = abatch
         self.steps = update_steps
-        self.convergence = convergence
         self.num_validation_samples = self.batch.index.nrows - self.batch.index.end
         self.memory = []
 

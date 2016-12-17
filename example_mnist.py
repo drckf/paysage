@@ -1,6 +1,6 @@
 import os, sys, numpy, pandas
-from paysage.backends import numba_engine as en
 
+from paysage.backends import numba_engine as en
 from paysage import batch
 from paysage.models import hidden
 from paysage import fit
@@ -20,20 +20,26 @@ def plot_image(image_vector, shape):
 if __name__ == "__main__":
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 10
+    num_epochs = 5
     learning_rate = 0.001
     
-    # set up the batch, model, and optimizer objects
+    # set up the batch object to read the data
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
     data = batch.Batch(filepath, 'train/images', batch_size, 
                     transform=batch.binarize_color, train_fraction=0.99)
+                    
+    # set up the model and initialize the parameters
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                     vis_type='bernoulli', hid_type = 'bernoulli')
-    opt = optimizers.SGD(rbm, stepsize=learning_rate)
+    rbm.add_constraints({'weights': 'non_negative'})
+    rbm.initialize(data, method='hinton')
+                    
+    # set up the optimizer and the fit method
+    opt = optimizers.RMSProp(rbm, stepsize=learning_rate)
+    cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, update_method='stochastic')
     
+    # fit the model
     print('training with contrastive divergence')
-    cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, 
-                 convergence=0.0, update_method='stochastic')
     cd.train()  
     
     # plot some reconstructions

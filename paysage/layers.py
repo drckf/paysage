@@ -6,9 +6,7 @@ LOG2 = 0.6931471805599453
 #----- LAYER CLASSES -----#
 
 class GaussianLayer(object):
-    
-    constraints = []
-    
+        
     def __init__(self):
         pass
         
@@ -17,6 +15,9 @@ class GaussianLayer(object):
         
     def mean(self, loc):
         return loc
+        
+    def inverse_mean(self, mean):
+        return mean
         
     def log_partition_function(self, scale):
         return -numpy.log(scale)
@@ -30,8 +31,6 @@ class GaussianLayer(object):
 
 class IsingLayer(object):
     
-    constraints = []
-
     def __init__(self):
         pass
         
@@ -40,6 +39,10 @@ class IsingLayer(object):
         
     def mean(self, loc):
         return numpy.tanh(loc)
+        
+    def inverse_mean(self, mean):
+        clipped_mean = mean.clip(min= -1 + en.EPSILON,max= 1 - en.EPSILON)
+        return numpy.arctanh(mean)
         
     def log_partition_function(self, loc):
         return -LOG2 + numpy.logaddexp(-loc, loc)
@@ -52,9 +55,7 @@ class IsingLayer(object):
         
         
 class BernoulliLayer(object):
-    
-    constraints = []
-    
+        
     def __init__(self):
         pass
         
@@ -63,6 +64,10 @@ class BernoulliLayer(object):
         
     def mean(self, loc):
         return en.expit(loc)
+        
+    def inverse_mean(self, mean):
+        clipped_mean = mean.clip(min=en.EPSILON, max = 1 - en.EPSILON)
+        return numpy.log(clipped_mean/(1-clipped_mean))
         
     def log_partition_function(self, loc):
         return numpy.logaddexp(0, loc)
@@ -76,8 +81,6 @@ class BernoulliLayer(object):
 
 class ExponentialLayer(object):
     
-    constraints = ['positive']
-
     def __init__(self):
         pass
         
@@ -85,16 +88,19 @@ class ExponentialLayer(object):
         return vis.clip(min=en.EPSILON)
         
     def mean(self, loc):
-        return 1.0 / loc
+        return 1.0 / (en.EPSILON + loc)
+        
+    def inverse_mean(self, mean):
+        return 1.0 / (en.EPSILON + mean)
         
     def log_partition_function(self, loc):
         return -numpy.log(loc)
 
     def sample_state(self, loc):
-        return numpy.random.exponential(loc)
+        return numpy.random.exponential(loc).astype(numpy.float32)
         
     def random(self, loc):
-        return numpy.random.exponential(numpy.ones_like(loc))
+        return numpy.random.exponential(numpy.ones_like(loc)).astype(numpy.float32)
         
 
 # ---- FUNCTIONS ----- #
