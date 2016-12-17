@@ -28,10 +28,14 @@ class LatentModel(object):
     def marginal_energy(self, visible):
         pass
     
+    def add_constraints(self, cons):
+        for key in cons:
+            assert key in self.params
+            self.constraints[key] = cons[key]
+    
     def enforce_constraints(self):
-        for key in self.params:
-            for constraint in self.constraints[key]:
-                getattr(constraints, constraint)(self.params[key])
+        for key in self.constraints:
+            getattr(constraints, constraint)(self.params[key])
     
     def resample_state(self, visibile, temperature=1.0):
         energies = self.marginal_energy(visibile)
@@ -130,10 +134,6 @@ class RestrictedBoltzmannMachine(LatentModel):
         self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)  
         self.params['hidden_bias'] = numpy.zeros(nhid, dtype=numpy.float32) 
         
-        self.constraints['visible_bias'] = self.layers['visible'].constraints
-        self.constraints['hidden_bias'] = self.layers['hidden'].constraints
-        self.constraints['weights'] = list(set(self.constraints['visible_bias'] + self.constraints['hidden_bias']))
-
     def initialize(self, data, method='hinton'):
         try:
             func = getattr(init, method)
