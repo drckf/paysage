@@ -30,5 +30,5 @@ class l1_penalty(object):
         
 # ----- ALIASES ----- #
         
-ridge_penalty = l2_penalty
-lasso_penalty = l1_penalty
+ridge = l2_penalty
+lasso = l1_penalty

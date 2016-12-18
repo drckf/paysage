@@ -20,7 +20,7 @@ def plot_image(image_vector, shape):
 if __name__ == "__main__":
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 50
+    num_epochs = 10
     learning_rate = 0.001
     
     # set up the batch object to read the data
@@ -33,6 +33,7 @@ if __name__ == "__main__":
                     vis_type='bernoulli', hid_type = 'bernoulli')
     rbm.add_constraints({'weights': 'non_negative'})
     rbm.initialize(data, method='hinton')
+    rbm.add_weight_decay(10.0, method='lasso')
                     
     # set up the optimizer and the fit method
     opt = optimizers.RMSProp(rbm, stepsize=learning_rate)

@@ -6,7 +6,8 @@ from .backends import numba_engine as en
         
 class Optimizer(object):
     
-    def __init__(self, tolerance=10**-3):
+    def __init__(self, tolerance=10**-3, lr_decay=0.9):
+        self.lr_decay = lr_decay
         self.tolerance = tolerance
         self.grad = {}
         
@@ -24,8 +25,7 @@ class StochasticGradientDescent(Optimizer):
     
     """
     def __init__(self, model, stepsize=0.001, lr_decay=0.5, tolerance=10**-3):
-        super().__init__(tolerance)
-        self.lr_decay = lr_decay
+        super().__init__(tolerance, lr_decay)
         self.stepsize = stepsize
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
     
@@ -34,6 +34,7 @@ class StochasticGradientDescent(Optimizer):
         self.grad = gradient(model, v_data, v_model)
         for key in self.grad:
             model.params[key] = model.params[key] - lr * self.grad[key]
+        model.enforce_weight_decay(lr)        
         model.enforce_constraints()
          
          
@@ -44,8 +45,7 @@ class Momentum(Optimizer):
     
     """
     def __init__(self, model, stepsize=0.001, momentum=0.9, lr_decay=0.5, tolerance=10**-6):
-        super().__init__(tolerance)        
-        self.lr_decay = lr_decay
+        super().__init__(tolerance, lr_decay)        
         self.stepsize = stepsize
         self.momentum = momentum
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
@@ -57,6 +57,7 @@ class Momentum(Optimizer):
         for key in self.grad:
             self.delta[key] = self.grad[key] + self.momentum * self.delta[key]
             model.params[key] = model.params[key] - lr * self.delta[key]
+        model.enforce_weight_decay(lr)        
         model.enforce_constraints()
         
 
@@ -74,10 +75,12 @@ class RMSProp(Optimizer):
         self.epsilon = numpy.float32(0.000001)
     
     def update(self, model, v_data, v_model, epoch):
+        lr = self.lr_decay ** epoch * self.stepsize
         self.grad = gradient(model, v_data, v_model)
         for key in self.grad:
             self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
             model.params[key] = model.params[key] - self.stepsize * self.grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key])
+        model.enforce_weight_decay(lr)        
         model.enforce_constraints()
 
 
@@ -98,11 +101,13 @@ class ADAM(Optimizer):
         self.epsilon = numpy.float32(0.000001)
     
     def update(self, model, v_data, v_model, epoch):
+        lr = self.lr_decay ** epoch * self.stepsize
         self.grad = gradient(model, v_data, v_model)
         for key in self.grad:
             self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
             self.mean_grad[key] = self.mean_weight * self.mean_grad[key] + (1-self.mean_weight)*self.grad[key]            
             model.params[key] = model.params[key] - (self.stepsize / (1 - self.mean_weight)) * self.mean_grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key] / (1 - self.mean_square_weight))
+        model.enforce_weight_decay(lr)
         model.enforce_constraints()
 
 
