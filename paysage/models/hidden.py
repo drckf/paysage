@@ -3,6 +3,8 @@ from .. import layers
 from ..backends import numba_engine as en
 from ..models.initialize import init_hidden as init
 from .. import constraints
+from .. import penalties
+
 
 #---- MODEL CLASSES ----#
 
@@ -15,6 +17,7 @@ class LatentModel(object):
         self.layers = {}
         self.params = {}
         self.constraints = {}
+        self.penalty = {}
                 
     # placeholder function -- defined in each layer
     def sample_hidden(self, visible):
@@ -36,6 +39,9 @@ class LatentModel(object):
     def enforce_constraints(self):
         for key in self.constraints:
             getattr(constraints, self.constraints[key])(self.params[key])
+            
+    def add_weight_decay(self, penalty, method='l2_penalty'):
+        self.penalty = {'weights': getattr(penalties, method)(penalty)}
     
     def resample_state(self, visibile, temperature=1.0):
         energies = self.marginal_energy(visibile)
@@ -190,10 +196,6 @@ class RestrictedBoltzmannMachine(LatentModel):
             derivs['hidden_bias'] = -mean_hidden
             derivs['weights'] = -en.outer(visible, mean_hidden)
         return derivs
-        
-    #TODO: pseudo-likelihood
-    def pseudolikelihood(self, visible):
-        pass
 
 
 #TODO:
