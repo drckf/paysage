@@ -32,8 +32,9 @@ class StochasticGradientDescent(Optimizer):
     def update(self, model, v_data, v_model, epoch):
         lr = self.lr_decay ** epoch * self.stepsize
         self.grad = gradient(model, v_data, v_model)
-        if model.weight_decay:
-            self.grad += model.weight_decay.grad(model.params['weights'])
+        if model.penalty:
+            for key in model.penalty:
+                self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
             model.params[key] = model.params[key] - lr * self.grad[key]
         model.enforce_constraints()
@@ -55,8 +56,9 @@ class Momentum(Optimizer):
     def update(self, model, v_data, v_model, epoch):
         lr = self.lr_decay ** epoch * self.stepsize
         self.grad = gradient(model, v_data, v_model)
-        if model.weight_decay:
-            self.grad['weights'] += model.weight_decay.grad(model.params['weights'])
+        if model.penalty:
+            for key in model.penalty:
+                self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
             self.delta[key] = self.grad[key] + self.momentum * self.delta[key]
             model.params[key] = model.params[key] - lr * self.delta[key]
@@ -78,8 +80,9 @@ class RMSProp(Optimizer):
     
     def update(self, model, v_data, v_model, epoch):
         self.grad = gradient(model, v_data, v_model)
-        if model.weight_decay:
-            self.grad['weights'] += model.weight_decay.grad(model.params['weights'])
+        if model.penalty:
+            for key in model.penalty:
+                self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
             self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
             model.params[key] = model.params[key] - self.stepsize * self.grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key])
@@ -104,8 +107,9 @@ class ADAM(Optimizer):
     
     def update(self, model, v_data, v_model, epoch):
         self.grad = gradient(model, v_data, v_model)
-        if model.weight_decay:
-            self.grad['weights'] += model.weight_decay.grad(model.params['weights'])
+        if model.penalty:
+            for key in model.penalty:
+                self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
             self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
             self.mean_grad[key] = self.mean_weight * self.mean_grad[key] + (1-self.mean_weight)*self.grad[key]            

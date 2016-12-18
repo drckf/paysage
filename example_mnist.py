@@ -31,9 +31,9 @@ if __name__ == "__main__":
     # set up the model and initialize the parameters
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                     vis_type='bernoulli', hid_type = 'bernoulli')
-    rbm.add_constraints({'weights': 'non_negative'})
+    #rbm.add_constraints({'weights': 'non_negative'})
     rbm.initialize(data, method='hinton')
-    rbm.add_weight_decay(1.0, method='lasso')
+    rbm.add_weight_decay(0.0001, method='ridge')
                     
     # set up the optimizer and the fit method
     opt = optimizers.RMSProp(rbm, stepsize=learning_rate)

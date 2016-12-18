@@ -17,7 +17,7 @@ class LatentModel(object):
         self.layers = {}
         self.params = {}
         self.constraints = {}
-        self.weight_decay = None
+        self.penalty = {}
                 
     # placeholder function -- defined in each layer
     def sample_hidden(self, visible):
@@ -41,7 +41,7 @@ class LatentModel(object):
             getattr(constraints, self.constraints[key])(self.params[key])
             
     def add_weight_decay(self, penalty, method='l2_penalty'):
-        self.weight_decay = getattr(penalties, method)(penalty)
+        self.penalty = {'weights': getattr(penalties, method)(penalty)}
     
     def resample_state(self, visibile, temperature=1.0):
         energies = self.marginal_energy(visibile)
