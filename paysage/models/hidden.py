@@ -42,10 +42,6 @@ class LatentModel(object):
             
     def add_weight_decay(self, penalty, method='l2_penalty'):
         self.weight_decay = getattr(penalties, method)(penalty)
-        
-    def enforce_weight_decay(self, stepsize):
-        if self.weight_decay:
-            self.weight_decay.update(self.params['weights'], stepsize)
     
     def resample_state(self, visibile, temperature=1.0):
         energies = self.marginal_energy(visibile)

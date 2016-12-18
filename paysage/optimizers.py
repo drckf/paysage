@@ -32,9 +32,10 @@ class StochasticGradientDescent(Optimizer):
     def update(self, model, v_data, v_model, epoch):
         lr = self.lr_decay ** epoch * self.stepsize
         self.grad = gradient(model, v_data, v_model)
+        if model.weight_decay:
+            self.grad += model.weight_decay.grad(model.params['weights'])
         for key in self.grad:
             model.params[key] = model.params[key] - lr * self.grad[key]
-        model.enforce_weight_decay(lr)        
         model.enforce_constraints()
          
          
@@ -54,10 +55,11 @@ class Momentum(Optimizer):
     def update(self, model, v_data, v_model, epoch):
         lr = self.lr_decay ** epoch * self.stepsize
         self.grad = gradient(model, v_data, v_model)
+        if model.weight_decay:
+            self.grad['weights'] += model.weight_decay.grad(model.params['weights'])
         for key in self.grad:
             self.delta[key] = self.grad[key] + self.momentum * self.delta[key]
             model.params[key] = model.params[key] - lr * self.delta[key]
-        model.enforce_weight_decay(lr)        
         model.enforce_constraints()
         
 
@@ -75,12 +77,12 @@ class RMSProp(Optimizer):
         self.epsilon = numpy.float32(0.000001)
     
     def update(self, model, v_data, v_model, epoch):
-        lr = self.lr_decay ** epoch * self.stepsize
         self.grad = gradient(model, v_data, v_model)
+        if model.weight_decay:
+            self.grad['weights'] += model.weight_decay.grad(model.params['weights'])
         for key in self.grad:
             self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
             model.params[key] = model.params[key] - self.stepsize * self.grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key])
-        model.enforce_weight_decay(lr)        
         model.enforce_constraints()
 
 
@@ -101,13 +103,13 @@ class ADAM(Optimizer):
         self.epsilon = numpy.float32(0.000001)
     
     def update(self, model, v_data, v_model, epoch):
-        lr = self.lr_decay ** epoch * self.stepsize
         self.grad = gradient(model, v_data, v_model)
+        if model.weight_decay:
+            self.grad['weights'] += model.weight_decay.grad(model.params['weights'])
         for key in self.grad:
             self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
             self.mean_grad[key] = self.mean_weight * self.mean_grad[key] + (1-self.mean_weight)*self.grad[key]            
             model.params[key] = model.params[key] - (self.stepsize / (1 - self.mean_weight)) * self.mean_grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key] / (1 - self.mean_square_weight))
-        model.enforce_weight_decay(lr)
         model.enforce_constraints()
 
 
