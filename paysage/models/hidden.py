@@ -190,10 +190,6 @@ class RestrictedBoltzmannMachine(LatentModel):
             derivs['hidden_bias'] = -mean_hidden
             derivs['weights'] = -en.outer(visible, mean_hidden)
         return derivs
-        
-    #TODO: pseudo-likelihood
-    def pseudolikelihood(self, visible):
-        pass
 
 
 #TODO:
