@@ -36,7 +36,7 @@ class StochasticGradientDescent(Optimizer):
             for key in model.penalty:
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
-            model.params[key] = model.params[key] - lr * self.grad[key]
+            model.params[key] -= lr * self.grad[key]
         model.enforce_constraints()
          
          
@@ -61,7 +61,7 @@ class Momentum(Optimizer):
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
             self.delta[key] = self.grad[key] + self.momentum * self.delta[key]
-            model.params[key] = model.params[key] - lr * self.delta[key]
+            model.params[key] -= lr * self.delta[key]
         model.enforce_constraints()
         
 
@@ -84,8 +84,8 @@ class RMSProp(Optimizer):
             for key in model.penalty:
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
-            self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
-            model.params[key] = model.params[key] - self.stepsize * self.grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key])
+            en.running_mean_square(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
+            model.params[key] -= self.stepsize * en.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key])
         model.enforce_constraints()
 
 
@@ -111,9 +111,9 @@ class ADAM(Optimizer):
             for key in model.penalty:
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
-            self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
-            self.mean_grad[key] = self.mean_weight * self.mean_grad[key] + (1-self.mean_weight)*self.grad[key]            
-            model.params[key] = model.params[key] - (self.stepsize / (1 - self.mean_weight)) * self.mean_grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key] / (1 - self.mean_square_weight))
+            en.running_mean_square(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
+            en.running_mean(self.mean_weight, self.mean_grad[key], self.grad[key])            
+            model.params[key] -= (self.stepsize / (1 - self.mean_weight)) * en.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key]/(1 - self.mean_square_weight))            
         model.enforce_constraints()
 
 

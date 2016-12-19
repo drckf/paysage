@@ -175,9 +175,9 @@ class RestrictedBoltzmannMachine(LatentModel):
     def joint_energy(self, visible, hidden):
         energy = -numpy.dot(visible, self.params['visible_bias']) - numpy.dot(hidden, self.params['hidden_bias'])
         if len(visible.shape) == 2:
-            energy = energy - en.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
+            energy -= en.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
         else:
-            energy =  energy - numpy.dot(visible, numpy.dot(self.params['weights'], hidden))
+            energy -= numpy.dot(visible, numpy.dot(self.params['weights'], hidden))
         return numpy.mean(energy)
    
     def marginal_free_energy(self, visible):
@@ -194,7 +194,7 @@ class RestrictedBoltzmannMachine(LatentModel):
         else:
             derivs['visible_bias'] = -visible
             derivs['hidden_bias'] = -mean_hidden
-            derivs['weights'] = -en.outer(visible, mean_hidden)
+            derivs['weights'] = -numpy.outer(visible, mean_hidden)
         return derivs
 
 

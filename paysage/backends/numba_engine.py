@@ -1,9 +1,19 @@
 import numpy, math
 from numba import jit, vectorize, void
+import numexpr as ne
 
 EPSILON = numpy.finfo(numpy.float32).eps
 
 # ----- COMPILED FUNCTIONS ----- #
+
+def running_mean(w, x, y):
+    ne.evaluate('w*x + (1-w)*y', out=x)
+    
+def running_mean_square(w, x, y):
+    ne.evaluate('w*x + (1-w)*y*y', out=x)
+    
+def sqrt_div(x,y):
+    return ne.evaluate('x/sqrt(y)')
 
 @vectorize('float32(float32)', nopython=True)
 def expit(x):
