@@ -1,5 +1,5 @@
-from .backends import numba_engine as en
 import numpy, time
+from . import backends as B
     
 # -----  CLASSES ----- #
 
@@ -211,7 +211,7 @@ class ProgressMonitor(object):
         v_model = model.random(v_data)
         sampler = SequentialMC(model, v_model) 
         sampler.update_state(self.steps, resample=False, temperature=1.0)
-        return len(v_model) * en.fast_energy_distance(v_data, sampler.state, downsample=100)
+        return len(v_model) * B.fast_energy_distance(v_data, sampler.state, downsample=100)
         
     def check_progress(self, model, t, store=False):
         if not (t % self.skip):

@@ -1,10 +1,9 @@
 import numpy
 from .. import layers
-from ..backends import numba_engine as en
+from .. import backends as B
 from ..models.initialize import init_hidden as init
 from .. import constraints
 from .. import penalties
-
 
 #---- MODEL CLASSES ----#
 
@@ -45,7 +44,7 @@ class LatentModel(object):
     
     def resample_state(self, visibile, temperature=1.0):
         energies = self.marginal_energy(visibile)
-        weights = en.importance_weights(energies, numpy.float32(temperature)).clip(min=0.0)
+        weights = B.importance_weights(energies, numpy.float32(temperature)).clip(min=0.0)
         indices = numpy.random.choice(numpy.arange(len(visibile)), size=len(visibile), replace=True, p=weights)
         return visibile[list(indices)]  
     
@@ -175,7 +174,7 @@ class RestrictedBoltzmannMachine(LatentModel):
     def joint_energy(self, visible, hidden):
         energy = -numpy.dot(visible, self.params['visible_bias']) - numpy.dot(hidden, self.params['hidden_bias'])
         if len(visible.shape) == 2:
-            energy -= en.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
+            energy -= B.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
         else:
             energy -= numpy.dot(visible, numpy.dot(self.params['weights'], hidden))
         return numpy.mean(energy)
@@ -190,7 +189,7 @@ class RestrictedBoltzmannMachine(LatentModel):
         if len(mean_hidden.shape) == 2:
             derivs['visible_bias'] = -numpy.mean(visible, axis=0)
             derivs['hidden_bias'] = -numpy.mean(mean_hidden, axis=0)
-            derivs['weights'] = -en.batch_outer(visible, mean_hidden)
+            derivs['weights'] = -B.batch_outer(visible, mean_hidden)
         else:
             derivs['visible_bias'] = -visible
             derivs['hidden_bias'] = -mean_hidden
@@ -206,9 +205,11 @@ class HopfieldModel(LatentModel):
        Hopfield, John J. "Neural networks and physical systems with emergent collective computational abilities." Proceedings of the national academy of sciences 79.8 (1982): 2554-2558.
     
     """    
-    def __init__(self, nvis, nhid):
+    def __init__(self, nvis, nhid):        
         pass
-
+        
+        
+        
 #TODO:
 class HookeMachine(LatentModel):
     """HookeMachine

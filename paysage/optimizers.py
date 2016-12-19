@@ -1,5 +1,5 @@
 import numpy    
-from .backends import numba_engine as en
+from . import backends as B
 
     
 # ----- OPTIMIZERS ----- #        
@@ -84,7 +84,7 @@ class RMSProp(Optimizer):
             for key in model.penalty:
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
-            en.running_mean_square(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
+            B.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
             model.params[key] -= self.stepsize * en.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key])
         model.enforce_constraints()
 
@@ -111,8 +111,8 @@ class ADAM(Optimizer):
             for key in model.penalty:
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
-            en.running_mean_square(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
-            en.running_mean(self.mean_weight, self.mean_grad[key], self.grad[key])            
+            B.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
+            B.mix_inplace(self.mean_weight, self.mean_grad[key], self.grad[key])            
             model.params[key] -= (self.stepsize / (1 - self.mean_weight)) * en.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key]/(1 - self.mean_square_weight))            
         model.enforce_constraints()
 
