@@ -12,25 +12,51 @@ Routines for matrix operations
 # ----- ELEMENTWISE ----- #
 
 def elementwise_inverse(x):
+    """
+       Compute a safe element-wise inverse of a non-negative matrix.
+    
+    """
     y = EPSILON + x
     return 1/y
     
 def mix_inplace(w,x,y):
+    """
+        Compute a weighted average of two matrices (x and y) and store the results in x.    
+        Useful for keeping track of running averages during training.        
+        
+    """
     ne.evaluate('w*x + (1-w)*y', out=x)
     
 def square_mix_inplace(w,x,y):
+    """
+        Compute a weighted average of two matrices (x and y^2) and store the results in x.    
+        Useful for keeping track of running averages of squared matrices during training.        
+        
+    """
     ne.evaluate('w*x + (1-w)*y*y', out=x)
     
 def sqrt_div(x,y):
+    """
+        Elementwise division of x by sqrt(y).
+    
+    """
     z = EPSILON + y
     return ne.evaluate('x/sqrt(z)')
     
 def normalize(x):
+    """
+        Divide x by it's sum.
+        
+    """
     y = EPSILON + x
     return x/numpy.sum(y)
     
 @jit('float32(float32[:],float32[:])',nopython=True)
-def squared_norm(a, b):
+def squared_euclidean_distance(a, b):
+    """
+        Compute the squared euclidean distance between two vectors.
+    
+    """
     result = numpy.float32(0.0)
     for i in range(len(a)):
         result += (a[i] - b[i])**2
@@ -38,15 +64,38 @@ def squared_norm(a, b):
     
 @jit('float32(float32[:],float32[:])',nopython=True)
 def euclidean_distance(a, b):
-    return math.sqrt(squared_norm(a, b))
+    """
+        Compute the euclidean distance between two vectors.        
+        
+    """
+    return math.sqrt(squared_euclidean_distance(a, b))
 
 
 # ----- THE FOLLOWING FUNCTIONS ARE THE MAIN BOTTLENECKS ----- #    
     
 def batch_dot(vis, W, hid):
+    """    
+        Let v by a L x N matrix where each column v_i is a visible vector.
+        Let h be a L x M matrix where each column h_i is a hidden vector.
+        And, let W be a N x M matrix of weights.
+        Then, batch_dot(v,W,h) = \frac{1}{L} \sum_i v_i^T W h_i
+        Returns a scalar.
+        
+        The actual computation is performed with a vectorized expression.
+    
+    """
     return (numpy.dot(vis, W) * hid).sum(1).astype(numpy.float32)
     
 def batch_outer(vis, hid):
+    """    
+        Let v by a L x N matrix where each column v_i is a visible vector.
+        Let h be a L x M matrix where each column h_i is a hidden vector.
+        Then, batch_outer(v, h) = \frac{1}{L} \sum_i v_i h_i^T
+        Returns an N x M matrix.        
+        
+        The actual computation is performed with a vectorized expression.
+    
+    """
     return numpy.dot(vis.T, hid) / len(vis)
     
 def xM_plus_a(x,M,a,trans=False):

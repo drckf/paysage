@@ -18,15 +18,15 @@ class LatentModel(object):
         self.constraints = {}
         self.penalty = {}
                 
-    # placeholder function -- defined in each layer
+    # placeholder function -- defined in each model
     def sample_hidden(self, visible):
         pass
     
-    # placeholder function -- defined in each layer
+    # placeholder function -- defined in each model
     def sample_visible(self, hidden):
         pass        
     
-    # placeholder function -- defined in each layer
+    # placeholder function -- defined in each model
     def marginal_energy(self, visible):
         pass
     

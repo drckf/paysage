@@ -42,7 +42,7 @@ if __name__ == "__main__":
     
 
     # set up the optimizer and the fit method
-    opt = optimizers.SGD(rbm, stepsize=learning_rate)
+    opt = optimizers.RMSProp(rbm, stepsize=learning_rate)
     cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, update_method='stochastic')
     
     # fit the model

@@ -10,6 +10,7 @@ def hinton(batch, model):
         Hinton says to initalize the weights from N(0, 0.01)
         hidden_bias = 0
         visible_bias = log(p_i / (1 - p_i))
+        
         Hinton, Geoffrey. "A practical guide to training restricted Boltzmann machines." Momentum 9.1 (2010): 926.
 
     """
