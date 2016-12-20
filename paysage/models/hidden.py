@@ -148,10 +148,10 @@ class RestrictedBoltzmannMachine(LatentModel):
         self.enforce_constraints()
 
     def hidden_field(self, visible):
-        return self.params['hidden_bias'] + numpy.dot(visible, self.params['weights'])
+        return B.xM_plus_a(visible, self.params['weights'], self.params['hidden_bias'], trans=False)
 
     def visible_field(self, hidden):
-        return self.params['visible_bias'] + numpy.dot(hidden, self.params['weights'].T)
+        return B.xM_plus_a(hidden, self.params['weights'], self.params['visible_bias'], trans=True)
         
     def sample_hidden(self, visible):
         return self.layers['hidden'].sample_state(self.hidden_field(visible))
@@ -176,7 +176,7 @@ class RestrictedBoltzmannMachine(LatentModel):
         if len(visible.shape) == 2:
             energy -= B.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
         else:
-            energy -= numpy.dot(visible, numpy.dot(self.params['weights'], hidden))
+            energy -=  xMy(visible, self.params['weights'], hidden)
         return numpy.mean(energy)
    
     def marginal_free_energy(self, visible):

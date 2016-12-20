@@ -45,7 +45,7 @@ class IsingLayer(object):
         return B.logcosh(loc)
         
     def sample_state(self, loc):
-        return B.random_ising(expit(loc))
+        return B.random_ising(B.expit(loc))
         
     def random(self, loc):
         return 2 * numpy.random.randint(0, 2, loc.shape).astype(numpy.float32) - 1

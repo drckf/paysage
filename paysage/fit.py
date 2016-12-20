@@ -63,8 +63,6 @@ class ContrastiveDivergence(TrainingMethod):
             start_time = time.time()
             while True:
                 try:
-                    if not t % 100:
-                        print('Sampling batch: {0}'.format(t))
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
@@ -111,9 +109,6 @@ class PersistentContrastiveDivergence(TrainingMethod):
             start_time = time.time()
             while True:
                 try:
-                    if not t % 100:
-                        #print('Sampling batch: {0}'.format(t))
-                        pass
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
@@ -159,8 +154,6 @@ class HopfieldContrastiveDivergence(TrainingMethod):
             start_time = time.time()
             while True:
                 try:
-                    if not t % 100:
-                        print('Sampling batch: {0}'.format(t))
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break

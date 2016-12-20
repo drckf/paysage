@@ -9,7 +9,6 @@ Routines for matrix operations
 
 """
 
-
 # ----- ELEMENTWISE ----- #
 
 def elementwise_inverse(x):
@@ -50,8 +49,8 @@ def batch_dot(vis, W, hid):
 def batch_outer(vis, hid):
     return numpy.dot(vis.T, hid) / len(vis)
     
-def xM_plus_a(x,M,a,notrans=True):
-    if notrans:
+def xM_plus_a(x,M,a,trans=False):
+    if not trans:
         return a + numpy.dot(x,M)
     else:
         return a + numpy.dot(x,M.T)

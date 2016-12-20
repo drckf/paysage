@@ -1,5 +1,4 @@
 import numpy, math
-from numba import jit, vectorize
 import numexpr as ne
 
 EPSILON = numpy.finfo(numpy.float32).eps
@@ -13,7 +12,7 @@ def log(x):
     
 def tanh(x):
     return ne.evaluate('tanh(x)')
-    
+
 def expit(x):
     return ne.evaluate('(1 + tanh(x/2))/2')
     

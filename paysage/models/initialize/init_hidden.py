@@ -1,4 +1,6 @@
 import numpy
+from ... import backends as B
+
 
 # ----- FUNCTIONS ----- #
 
@@ -13,7 +15,7 @@ def hinton(batch, model):
     """
     nvis, nhid = model.params['weights'].shape
     model.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01, size=(nvis, nhid)).astype(dtype=numpy.float32)
-    model.params['hidden_bias'] = numpy.ones(nhid, dtype=numpy.float32)
+    model.params['hidden_bias'] = B.EPSILON * numpy.ones(nhid, dtype=numpy.float32)
     
     p = numpy.zeros(batch.ncols, dtype=numpy.float32)
     nbatches = 0
