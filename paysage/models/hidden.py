@@ -207,7 +207,18 @@ class HopfieldModel(LatentModel):
     """    
     def __init__(self, nvis, nhid):        
         pass
-        
+   
+
+#TODO:
+class GaussianRestrictedBoltzmannMachine(LatentModel):
+    """HopfieldModel
+       A model of associative memory with binary visible units and Gaussian hidden units.        
+       
+       Hopfield, John J. "Neural networks and physical systems with emergent collective computational abilities." Proceedings of the national academy of sciences 79.8 (1982): 2554-2558.
+    
+    """    
+    def __init__(self, nvis, nhid):        
+        pass     
         
         
 #TODO:
@@ -225,4 +236,5 @@ class HookeMachine(LatentModel):
 # ----- ALIASES ----- #
     
 RBM = RestrictedBoltzmannMachine    
+GRBM = GaussianRBM = GaussianRestrictedBoltzmannMachine
             

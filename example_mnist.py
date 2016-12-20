@@ -42,7 +42,7 @@ if __name__ == "__main__":
     
 
     # set up the optimizer and the fit method
-    opt = optimizers.RMSProp(rbm, stepsize=learning_rate)
+    opt = optimizers.SGD(rbm, stepsize=learning_rate)
     cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, update_method='stochastic')
     
     # fit the model
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     
     # close the HDF5 store
     data.close()
-    end = time.time()
     
+    end = time.time()
     print('Total time: {0:.2f} seconds'.format(end - start))
     

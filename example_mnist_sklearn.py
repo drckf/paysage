@@ -1,5 +1,5 @@
 import os, sys, numpy, pandas
-from paysage.backends import numba_engine as en
+from paysage import backends as B
 
 from paysage import batch
 from sklearn.neural_network import BernoulliRBM
@@ -16,6 +16,8 @@ def plot_image(image_vector, shape):
     plt.close(f)    
 
 if __name__ == "__main__":
+    start = time.time()
+
     num_hidden_units = 500   
     batch_size = 50
     num_epochs = 10
@@ -50,11 +52,14 @@ if __name__ == "__main__":
     plot_image(v_data[0], (28,28))
     plot_image(v_model[0], (28,28))
     
-    edist = en.fast_energy_distance(v_data.astype(numpy.float32), v_model.astype(numpy.float32), downsample=100)
+    edist = B.fast_energy_distance(v_data.astype(numpy.float32), v_model.astype(numpy.float32), downsample=100)
     
     print('Reconstruction error:  {0:.2f}'.format(recon))
     print('Energy distance:  {0:.2f}'.format(edist))
     
     # close the HDF5 store
     data.close()
+    
+    end = time.time()
+    print('Total time: {0:.2f} seconds'.format(end - start))
     
