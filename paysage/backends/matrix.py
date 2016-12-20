@@ -75,11 +75,11 @@ def euclidean_distance(a, b):
     
 def batch_dot(vis, W, hid):
     """    
-        Let v by a L x N matrix where each column v_i is a visible vector.
-        Let h be a L x M matrix where each column h_i is a hidden vector.
+        Let v by a L x N matrix where each row v_i is a visible vector.
+        Let h be a L x M matrix where each row h_i is a hidden vector.
         And, let W be a N x M matrix of weights.
         Then, batch_dot(v,W,h) = \frac{1}{L} \sum_i v_i^T W h_i
-        Returns a scalar.
+        Returns a vector.
         
         The actual computation is performed with a vectorized expression.
     
@@ -88,8 +88,8 @@ def batch_dot(vis, W, hid):
     
 def batch_outer(vis, hid):
     """    
-        Let v by a L x N matrix where each column v_i is a visible vector.
-        Let h be a L x M matrix where each column h_i is a hidden vector.
+        Let v by a L x N matrix where each row v_i is a visible vector.
+        Let h be a L x M matrix where each row h_i is a hidden vector.
         Then, batch_outer(v, h) = \frac{1}{L} \sum_i v_i h_i^T
         Returns an N x M matrix.        
         

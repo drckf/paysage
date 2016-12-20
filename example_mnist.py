@@ -23,7 +23,7 @@ if __name__ == "__main__":
     
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 10
+    num_epochs = 1
     learning_rate = 0.001
     
     # set up the batch object to read the data
@@ -32,8 +32,12 @@ if __name__ == "__main__":
                     transform=batch.binarize_color, train_fraction=0.99)
               
     # set up the model and initialize the parameters
+    """
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                         vis_type='bernoulli', hid_type = 'bernoulli')
+    """
+    rbm = hidden.HopfieldModel(data.ncols, num_hidden_units, 
+                        vis_type='bernoulli')
                         
     
     #rbm.add_constraints({'weights': 'non_negative'})
@@ -73,7 +77,7 @@ if __name__ == "__main__":
     print('Energy distance:  {0:.2f}'.format(edist))
     
     # close the HDF5 store
-    data.close()
+    #data.close()
     
     end = time.time()
     print('Total time: {0:.2f} seconds'.format(end - start))

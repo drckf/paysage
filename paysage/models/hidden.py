@@ -176,7 +176,7 @@ class RestrictedBoltzmannMachine(LatentModel):
         if len(visible.shape) == 2:
             energy -= B.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
         else:
-            energy -=  xMy(visible, self.params['weights'], hidden)
+            energy -=  B.xMy(visible, self.params['weights'], hidden)
         return numpy.mean(energy)
    
     def marginal_free_energy(self, visible):
@@ -205,8 +205,80 @@ class HopfieldModel(LatentModel):
        Hopfield, John J. "Neural networks and physical systems with emergent collective computational abilities." Proceedings of the national academy of sciences 79.8 (1982): 2554-2558.
     
     """    
-    def __init__(self, nvis, nhid):        
-        pass
+    def __init__(self, nvis, nhid, vis_type='ising'):
+        assert vis_type in ['ising', 'bernoulli']
+        
+        super().__init__()
+        
+        self.nvis = nvis
+        self.nhid = nhid
+        
+        self.layers['visible'] = layers.get(vis_type)
+        self.layers['hidden'] = layers.get('gaussian')
+                
+        self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01, size=(nvis, nhid)).astype(dtype=numpy.float32)
+        self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32) 
+        
+        # the parameters of the hidden layer are not trainable
+        self.hidden_bias = numpy.zeros(nhid, dtype=numpy.float32)
+        self.hidden_scale = numpy.ones(nhid, dtype=numpy.float32)
+        
+    def initialize(self, data, method='hinton'):
+        try:
+            func = getattr(init, method)
+        except AttributeError:
+            print('{} is not a valid initialization method for latent models'.format(method))
+        func(data, self)
+        self.enforce_constraints()
+    
+    def hidden_loc(self, visible):
+        return B.xM_plus_a(visible, self.params['weights'], self.hidden_bias, trans=False)
+    
+    def visible_field(self, hidden):
+        return B.xM_plus_a(hidden, self.params['weights'], self.params['visible_bias'], trans=True)
+        
+    def sample_hidden(self, visible):
+        return self.layers['hidden'].sample_state(self.hidden_loc(visible), self.hidden_scale)
+            
+    def hidden_mean(self, visible):
+        return self.layers['hidden'].mean(self.hidden_loc(visible))
+            
+    def hidden_mode(self, visible):
+        return self.layers['hidden'].prox(self.hidden_loc(visible))
+              
+    def sample_visible(self, hidden):
+        return self.layers['visible'].sample_state(self.visible_field(hidden))
+            
+    def visible_mean(self, hidden):
+        return self.layers['visible'].mean(self.visible_field(hidden))
+            
+    def visible_mode(self, hidden):
+        return self.layers['visible'].prox(self.visible_field(hidden))
+        
+    def derivatives(self, visible):
+        mean_hidden = self.hidden_mean(visible)
+        derivs = {}
+        if len(mean_hidden.shape) == 2:
+            derivs['visible_bias'] = -numpy.mean(visible, axis=0)
+            derivs['weights'] = -B.batch_outer(visible, mean_hidden)
+        else:
+            derivs['visible_bias'] = -visible
+            derivs['weights'] = -numpy.outer(visible, mean_hidden)
+        return derivs
+        
+    def joint_energy(self, visible, hidden):
+        energy = -numpy.dot(visible, self.params['visible_bias']) - numpy.dot(hidden, self.params['hidden_bias'])
+        if len(visible.shape) == 2:
+            energy -= B.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
+        else:
+            energy -=  B.xMy(visible, self.params['weights'], hidden)
+        return numpy.mean(energy)
+   
+    #TODO: fix 
+    def marginal_free_energy(self, visible):
+        log_Z_hidden = self.layers['hidden'].log_partition_function(self.hidden_field(visible))
+        return -numpy.dot(visible, self.params['visible_bias']) - numpy.sum(log_Z_hidden)
+
    
 
 #TODO:
