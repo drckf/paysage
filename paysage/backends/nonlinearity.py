@@ -39,3 +39,9 @@ def logit(x):
     
 def softplus(x):
     return numpy.logaddexp(0, x)
+    
+def cos(x):
+    return ne.evaluate('cos(x)')
+    
+def sin(x):
+    return ne.evaluate('sin(x)')

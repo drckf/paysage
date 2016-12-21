@@ -25,9 +25,9 @@ class LatentModel(object):
     # placeholder function -- defined in each model
     def sample_visible(self, hidden):
         pass        
-    
-    # placeholder function -- defined in each model
-    def marginal_energy(self, visible):
+
+    # placeholder function -- defined in each model    
+    def marginal_free_energy(self, visible):
         pass
     
     def add_constraints(self, cons):
@@ -43,7 +43,7 @@ class LatentModel(object):
         self.penalty = {'weights': getattr(penalties, method)(penalty)}
     
     def resample_state(self, visibile, temperature=1.0):
-        energies = self.marginal_energy(visibile)
+        energies = self.marginal_free_energy(visibile)
         weights = B.importance_weights(energies, numpy.float32(temperature)).clip(min=0.0)
         indices = numpy.random.choice(numpy.arange(len(visibile)), size=len(visibile), replace=True, p=weights)
         return visibile[list(indices)]  
@@ -147,57 +147,57 @@ class RestrictedBoltzmannMachine(LatentModel):
         func(data, self)
         self.enforce_constraints()
 
-    def hidden_field(self, visible):
+    def _hidden_field(self, visible):
         return B.xM_plus_a(visible, self.params['weights'], self.params['hidden_bias'], trans=False)
 
-    def visible_field(self, hidden):
+    def _visible_field(self, hidden):
         return B.xM_plus_a(hidden, self.params['weights'], self.params['visible_bias'], trans=True)
         
     def sample_hidden(self, visible):
-        return self.layers['hidden'].sample_state(self.hidden_field(visible))
+        return self.layers['hidden'].sample_state(self._hidden_field(visible))
             
     def hidden_mean(self, visible):
-        return self.layers['hidden'].mean(self.hidden_field(visible))
+        return self.layers['hidden'].mean(self._hidden_field(visible))
             
     def hidden_mode(self, visible):
-        return self.layers['hidden'].prox(self.hidden_field(visible))
+        return self.layers['hidden'].prox(self._hidden_field(visible))
               
     def sample_visible(self, hidden):
-        return self.layers['visible'].sample_state(self.visible_field(hidden))
+        return self.layers['visible'].sample_state(self._visible_field(hidden))
             
     def visible_mean(self, hidden):
-        return self.layers['visible'].mean(self.visible_field(hidden))
+        return self.layers['visible'].mean(self._visible_field(hidden))
             
     def visible_mode(self, hidden):
-        return self.layers['visible'].prox(self.visible_field(hidden))
-        
-    def joint_energy(self, visible, hidden):
-        energy = -numpy.dot(visible, self.params['visible_bias']) - numpy.dot(hidden, self.params['hidden_bias'])
-        if len(visible.shape) == 2:
-            energy -= B.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
-        else:
-            energy -=  B.xMy(visible, self.params['weights'], hidden)
-        return numpy.mean(energy)
-   
-    def marginal_free_energy(self, visible):
-        log_Z_hidden = self.layers['hidden'].log_partition_function(self.hidden_field(visible))
-        return -numpy.dot(visible, self.params['visible_bias']) - numpy.sum(log_Z_hidden)
+        return self.layers['visible'].prox(self._visible_field(hidden))
 
     def derivatives(self, visible):
         mean_hidden = self.hidden_mean(visible)
         derivs = {}
         if len(mean_hidden.shape) == 2:
-            derivs['visible_bias'] = -numpy.mean(visible, axis=0)
-            derivs['hidden_bias'] = -numpy.mean(mean_hidden, axis=0)
-            derivs['weights'] = -B.batch_outer(visible, mean_hidden)
+            derivs['visible_bias'] = -B.mean(visible, axis=0)
+            derivs['hidden_bias'] = -B.mean(mean_hidden, axis=0)
+            derivs['weights'] = -B.dot(visible.T, mean_hidden) / len(visible)
         else:
             derivs['visible_bias'] = -visible
             derivs['hidden_bias'] = -mean_hidden
-            derivs['weights'] = -numpy.outer(visible, mean_hidden)
+            derivs['weights'] = -B.outer(visible, mean_hidden)
         return derivs
+        
+    def joint_energy(self, visible, hidden):
+        energy = -B.dot(visible, self.params['visible_bias']) - B.dot(hidden, self.params['hidden_bias'])
+        if len(visible.shape) == 2:
+            energy -= B.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
+        else:
+            energy -=  B.quadratic_form(visible, self.params['weights'], hidden)
+        return B.mean(energy)
+   
+    def marginal_free_energy(self, visible):
+        log_Z_hidden = self.layers['hidden'].log_partition_function(self.hidden_field(visible))
+        return -B.dot(visible, self.params['visible_bias']) - B.sum(log_Z_hidden)
 
 
-#TODO:
+
 class HopfieldModel(LatentModel):
     """HopfieldModel
        A model of associative memory with binary visible units and Gaussian hidden units.        
@@ -231,53 +231,52 @@ class HopfieldModel(LatentModel):
         func(data, self)
         self.enforce_constraints()
     
-    def hidden_loc(self, visible):
+    def _hidden_loc(self, visible):
         return B.xM_plus_a(visible, self.params['weights'], self.hidden_bias, trans=False)
     
-    def visible_field(self, hidden):
+    def _visible_field(self, hidden):
         return B.xM_plus_a(hidden, self.params['weights'], self.params['visible_bias'], trans=True)
         
     def sample_hidden(self, visible):
-        return self.layers['hidden'].sample_state(self.hidden_loc(visible), self.hidden_scale)
+        return self.layers['hidden'].sample_state(self._hidden_loc(visible), self.hidden_scale)
             
     def hidden_mean(self, visible):
-        return self.layers['hidden'].mean(self.hidden_loc(visible))
+        return self.layers['hidden'].mean(self._hidden_loc(visible))
             
     def hidden_mode(self, visible):
-        return self.layers['hidden'].prox(self.hidden_loc(visible))
+        return self.layers['hidden'].prox(self._hidden_loc(visible))
               
     def sample_visible(self, hidden):
-        return self.layers['visible'].sample_state(self.visible_field(hidden))
+        return self.layers['visible'].sample_state(self._visible_field(hidden))
             
     def visible_mean(self, hidden):
-        return self.layers['visible'].mean(self.visible_field(hidden))
+        return self.layers['visible'].mean(self._visible_field(hidden))
             
     def visible_mode(self, hidden):
-        return self.layers['visible'].prox(self.visible_field(hidden))
+        return self.layers['visible'].prox(self._visible_field(hidden))
         
     def derivatives(self, visible):
         mean_hidden = self.hidden_mean(visible)
         derivs = {}
         if len(mean_hidden.shape) == 2:
-            derivs['visible_bias'] = -numpy.mean(visible, axis=0)
-            derivs['weights'] = -B.batch_outer(visible, mean_hidden)
+            derivs['visible_bias'] = -B.mean(visible, axis=0)
+            derivs['weights'] = -B.batch_outer(visible, mean_hidden) / len(visible)
         else:
             derivs['visible_bias'] = -visible
-            derivs['weights'] = -numpy.outer(visible, mean_hidden)
+            derivs['weights'] = -B.outer(visible, mean_hidden)
         return derivs
         
     def joint_energy(self, visible, hidden):
-        energy = -numpy.dot(visible, self.params['visible_bias']) - numpy.dot(hidden, self.params['hidden_bias'])
+        energy = -B.dot(visible, self.params['visible_bias']) - B.msum(hidden**2, axis=1)
         if len(visible.shape) == 2:
             energy -= B.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
         else:
-            energy -=  B.xMy(visible, self.params['weights'], hidden)
-        return numpy.mean(energy)
+            energy -=  B.quadratic_form(visible, self.params['weights'], hidden)
+        return B.mean(energy)
    
-    #TODO: fix 
     def marginal_free_energy(self, visible):
-        log_Z_hidden = self.layers['hidden'].log_partition_function(self.hidden_field(visible))
-        return -numpy.dot(visible, self.params['visible_bias']) - numpy.sum(log_Z_hidden)
+        J = B.dot(self.params['weights'], self.params['weights'].T)
+        return -B.dot(visible, self.params['visible_bias']) - B.batch_dot(visible, J, visible)
 
    
 
