@@ -1,6 +1,4 @@
-import numpy
-import threading
-import queue, time
+import numpy, threading, queue
 
 class AsynchronousFunction(threading.Thread):
     
@@ -25,35 +23,20 @@ class ThreadRandom(object):
         # set up a queue
         self.queue = queue.Queue()
         
-    def spawn(self, num_threads = 1, *args, **kwargs):
+    def spawn(self, *args, num_threads = 1, **kwargs):
         self.thread = [None for i in range(num_threads)]
         for i in range(num_threads):
             self.thread[i] = AsynchronousFunction(self.generator, self.queue, *args, **kwargs)
             self.thread[i].start()
             
     def get(self, *args, **kwargs):
-        #TODO: check that the currently queued value has the right shape
         if self.queue.empty():
-            # if the queue is empty, spawn two threads that will put two things into the queue
-            self.spawn(num_threads=2, *args, **kwargs)
+            # if the queue is empty, spawn two thread to put some things into the queue
+            self.spawn(*args, num_threads=2, **kwargs)
         else:
             # if the queue is not empty, spawn a single thread to add something to it
-            self.spawn(num_threads=1, *args, **kwargs)
+            self.spawn(*args, num_threads=1, **kwargs)
         # pop off the end of the queue and return it
         val = self.queue.get()
-        return val
-            
-            
-foo = ThreadRandom('rand')
-
-start = time.time()
-
-for t in range(10):
-    v = foo.get()
-    time.sleep(1)
-
-end = time.time()
-
-print(end - start)
-         
+        return self.dtype(val)         
  

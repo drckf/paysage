@@ -32,12 +32,12 @@ if __name__ == "__main__":
                     transform=batch.binarize_color, train_fraction=0.99)
               
     # set up the model and initialize the parameters
-    """
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                         vis_type='bernoulli', hid_type = 'bernoulli')
     """
     rbm = hidden.HopfieldModel(data.ncols, num_hidden_units, 
                         vis_type='bernoulli')
+    """
     
     #rbm.add_constraints({'weights': 'non_negative'})
     rbm.initialize(data, method='hinton')
