@@ -331,7 +331,7 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         return self.layers['hidden'].prox(self._hidden_field(visible))
               
     def sample_visible(self, hidden):
-        return self.layers['visible'].sample_state(self._visible_loc(hidden), self.params['visible_scale'])
+        return self.layers['visible'].sample_state(self._visible_loc(hidden), B.sqrt(self.params['visible_scale']))
             
     def visible_mean(self, hidden):
         return self.layers['visible'].mean(self._visible_loc(hidden))

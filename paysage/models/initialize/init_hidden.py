@@ -57,4 +57,6 @@ def hinton_grbm(batch, model):
         nbatches += 1
         
     model.params['visible_loc'] = model.layers['visible'].inverse_mean(x/nbatches)
-    model.params['visible_scale'] = x2 / nbatches - (x / nbatches)**2 + 1 / batch.batch_size
+    model.params['visible_scale'] = x2 / nbatches - (x / nbatches)**2
+    # apply some shrinkage towards one
+    B.mix_inplace(numpy.float32(1 - 1/batch.batch_size), model.params['visible_scale'], numpy.ones_like(model.params['visible_scale'], dtype=numpy.float32))
