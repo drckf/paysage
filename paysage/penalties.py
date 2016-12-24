@@ -1,4 +1,5 @@
 import numpy
+from . import backends as B
 
 # ----- FUNCTIONS ----- #
 
@@ -24,6 +25,18 @@ class l1_penalty(object):
         
     def grad(self, array):
         return self.penalty * numpy.sign(array)
+      
+      
+class log_penalty(object):
+    
+    def __init__(self, penalty):
+        self.penalty = penalty
+        
+    def value(self, anarray):
+        return -self.penalty * B.log(anarray)
+        
+    def grad(self, anarray):
+        return -self.penalty / anarray
         
         
 # ----- ALIASES ----- #

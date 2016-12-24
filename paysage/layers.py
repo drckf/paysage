@@ -26,7 +26,7 @@ class GaussianLayer(object):
             r = self.rand.get(*loc.shape)
         return loc + scale * r
         
-    def random(self, loc, scale):
+    def random(self, loc):
         r = self.rand.get(*loc.shape)        
         while r.shape != loc.shape:
             r = self.rand.get(*loc.shape)
