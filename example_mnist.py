@@ -21,10 +21,10 @@ def plot_image(image_vector, shape):
 if __name__ == "__main__":
     start = time.time()
     
-    num_hidden_units = 500
+    num_hidden_units = 50
     batch_size = 50
     num_epochs = 10
-    learning_rate = 0.001
+    learning_rate = 0.01
     
     # set up the batch object to read the data
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     """
     
     rbm = hidden.GRBM(data.ncols, num_hidden_units,  hid_type = 'bernoulli')
-    rbm.initialize(data, method='hinton_grbm')    
+    rbm.initialize(data, method='hinton')    
 
     # set up the optimizer and the fit method
     opt = optimizers.RMSProp(rbm, stepsize=learning_rate)

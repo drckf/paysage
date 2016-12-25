@@ -300,14 +300,11 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         self.layers['hidden'] = layers.get(hid_type)
                 
         self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01, size=(nvis, nhid)).astype(dtype=numpy.float32)
-        self.params['visible_loc'] = numpy.zeros(nvis, dtype=numpy.float32)  
-        self.params['visible_scale'] = numpy.ones(nvis, dtype=numpy.float32)  
+        self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)  
+        self.params['visible_scale'] = numpy.zeros(nvis, dtype=numpy.float32)  
         self.params['hidden_bias'] = numpy.zeros(nhid, dtype=numpy.float32) 
-        
-        # put a prior on the scale of the visible units to keep them positive
-        #self.penalty.update({'visible_scale': getattr(penalties, 'log_penalty')(0.5)})
   
-    def initialize(self, data, method='hinton_grbm'):
+    def initialize(self, data, method='hinton'):
         try:
             func = getattr(init, method)
         except AttributeError:
@@ -316,10 +313,11 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         self.enforce_constraints()
 
     def _hidden_field(self, visible):
-        return B.xM_plus_a(visible / self.params['visible_scale'], self.params['weights'], self.params['hidden_bias'], trans=False)
+        scale = B.exp(self.params['visible_scale'])
+        return B.xM_plus_a(visible / scale, self.params['weights'], self.params['hidden_bias'], trans=False)
 
     def _visible_loc(self, hidden):
-        return B.xM_plus_a(hidden, self.params['weights'], self.params['visible_loc'], trans=True)
+        return B.xM_plus_a(hidden, self.params['weights'], self.params['visible_bias'], trans=True)
         
     def sample_hidden(self, visible):
         return self.layers['hidden'].sample_state(self._hidden_field(visible))
@@ -331,7 +329,8 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         return self.layers['hidden'].prox(self._hidden_field(visible))
               
     def sample_visible(self, hidden):
-        return self.layers['visible'].sample_state(self._visible_loc(hidden), B.sqrt(self.params['visible_scale']))
+        scale = B.exp(0.5 * self.params['visible_scale'])
+        return self.layers['visible'].sample_state(self._visible_loc(hidden), scale)
             
     def visible_mean(self, hidden):
         return self.layers['visible'].mean(self._visible_loc(hidden))
@@ -341,22 +340,21 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
 
     def derivatives(self, visible):
         mean_hidden = self.hidden_mean(visible)
-        v_scaled = visible / self.params['visible_scale']
+        scale = B.exp(self.params['visible_scale'])
+        v_scaled = visible / scale
         derivs = {}
         if len(mean_hidden.shape) == 2:
-            derivs['visible_loc'] = -B.mean(v_scaled, axis=0)
+            derivs['visible_bias'] = -B.mean(v_scaled, axis=0)
             derivs['hidden_bias'] = -B.mean(mean_hidden, axis=0)
             derivs['weights'] = -B.dot(v_scaled.T, mean_hidden) / len(visible)
-            #derivs['visible_scale'] = 0.5 * B.mean((visible-self.params['visible_loc'])**2, axis=0) - B.mean(visible * B.dot(mean_hidden, self.params['weights'].T), axis=0)
-            #derivs['visible_scale'] /= self.params['visible_scale']**2
-            #self.penalty['visible_scale'].penalty = 0.5 / len(visible)
+            #derivs['visible_scale'] = -0.5 * B.mean((visible-self.params['visible_loc'])**2, axis=0) + B.mean(visible * B.dot(mean_hidden, self.params['weights'].T), axis=0)
+            #derivs['visible_scale'] /= scale
         else:
             derivs['visible_bias'] = -v_scaled
             derivs['hidden_bias'] = -mean_hidden
             derivs['weights'] = -B.outer(v_scaled, mean_hidden)
-            #derivs['visible_scale'] = 0.5 * (visible - self.params['visible_loc'])**2 - B.dot(self.params['weights'], mean_hidden)
-            #derivs['visible_scale'] /= self.params['visible_scale']**2            
-            #self.penalty['visible_scale'].penalty = 0.5
+            #derivs['visible_scale'] = -0.5 * (visible - self.params['visible_loc'])**2 + B.dot(self.params['weights'], mean_hidden)
+            #derivs['visible_scale'] /= scale          
         return derivs
         
     #TODO: 
