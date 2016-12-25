@@ -22,9 +22,9 @@ if __name__ == "__main__":
     start = time.time()
     
     num_hidden_units = 50
-    batch_size = 50
+    batch_size = 500
     num_epochs = 10
-    learning_rate = 0.01
+    learning_rate = 0.0001
     
     # set up the batch object to read the data
     filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')

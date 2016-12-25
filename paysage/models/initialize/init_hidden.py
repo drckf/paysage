@@ -43,4 +43,6 @@ def hinton(batch, model):
         B.mix_inplace(numpy.float32(1 - 1/batch.batch_size), model.params['visible_scale'], numpy.ones_like(model.params['visible_scale'], dtype=numpy.float32))
         # scale parameters should be expressed in log-space    
         model.params['visible_scale'] = B.log(model.params['visible_scale'])
+        
+        model.params['visible_scale'] = numpy.zeros_like(model.params['visible_scale'])
     
