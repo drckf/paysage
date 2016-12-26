@@ -21,8 +21,8 @@ def plot_image(image_vector, shape):
 if __name__ == "__main__":
     start = time.time()
     
-    num_hidden_units = 50
-    batch_size = 500
+    num_hidden_units = 500
+    batch_size = 50
     num_epochs = 10
     learning_rate = 0.0001
     
@@ -35,7 +35,6 @@ if __name__ == "__main__":
     """
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                         vis_type='bernoulli', hid_type = 'bernoulli')
-    rbm.initialize(data, method='hinton')
     """
     
     rbm = hidden.GRBM(data.ncols, num_hidden_units,  hid_type = 'bernoulli')

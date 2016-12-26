@@ -344,15 +344,15 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         v_scaled = visible / scale
         derivs = {}
         if len(mean_hidden.shape) == 2:
-            #derivs['visible_bias'] = -B.mean(v_scaled, axis=0)
-            #derivs['hidden_bias'] = -B.mean(mean_hidden, axis=0)
-            #derivs['weights'] = -B.dot(v_scaled.T, mean_hidden) / len(visible)
+            derivs['visible_bias'] = -B.mean(v_scaled, axis=0)
+            derivs['hidden_bias'] = -B.mean(mean_hidden, axis=0)
+            derivs['weights'] = -B.dot(v_scaled.T, mean_hidden) / len(visible)
             derivs['visible_scale'] = -0.5 * B.mean((visible-self.params['visible_bias'])**2, axis=0) + B.batch_dot(mean_hidden, self.params['weights'].T, visible, axis=0) / len(visible)
             derivs['visible_scale'] /= scale
         else:
-            #derivs['visible_bias'] = -v_scaled
-            #derivs['hidden_bias'] = -mean_hidden
-            #derivs['weights'] = -B.outer(v_scaled, mean_hidden)
+            derivs['visible_bias'] = -v_scaled
+            derivs['hidden_bias'] = -mean_hidden
+            derivs['weights'] = -B.outer(v_scaled, mean_hidden)
             derivs['visible_scale'] = -0.5 * (visible - self.params['visible_bias'])**2 + B.dot(self.params['weights'], mean_hidden)
             derivs['visible_scale'] /= scale     
         return derivs

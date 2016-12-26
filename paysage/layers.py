@@ -6,7 +6,7 @@ from . import backends as B
 class GaussianLayer(object):
         
     def __init__(self, seed = 137):
-        self.rand = B.ThreadRandom('randn', seed = seed, dtype = numpy.float32)
+        self.rand = numpy.random.randn
         
     def prox(self, vis):
         return vis
@@ -21,22 +21,18 @@ class GaussianLayer(object):
         return -B.log(scale)
     
     def sample_state(self, loc, scale):
-        r = self.rand.get(*loc.shape)        
-        while r.shape != loc.shape:
-            r = self.rand.get(*loc.shape)
+        r = numpy.float32(self.rand(*loc.shape))     
         return loc + scale * r
         
     def random(self, loc):
-        r = self.rand.get(*loc.shape)        
-        while r.shape != loc.shape:
-            r = self.rand.get(*loc.shape)
+        r = numpy.float32(self.rand(*loc.shape))
         return r
 
 
 class IsingLayer(object):
     
     def __init__(self, seed = 137):
-        self.rand = B.ThreadRandom('rand', seed = seed, dtype = numpy.float32)
+        self.rand = numpy.random.rand
         
     def prox(self, vis):
         return 2.0 * (vis > 0.0).astype(numpy.float32) - 1.0
@@ -52,22 +48,18 @@ class IsingLayer(object):
         
     def sample_state(self, loc):
         p = B.expit(loc)
-        r = self.rand.get(*p.shape)        
-        while r.shape != p.shape:
-            r = self.rand.get(*p.shape)
+        r = self.rand(*p.shape)        
         return 2*numpy.float32(r<p)-1
         
     def random(self, loc):
-        r = self.rand.get(*loc.shape)        
-        while r.shape != loc.shape:
-            r = self.rand.get(*loc.shape)
+        r = self.rand(*loc.shape)        
         return 2*numpy.float32(r<0.5)-1
                 
         
 class BernoulliLayer(object):
         
     def __init__(self, seed = 137):
-        self.rand = B.ThreadRandom('rand', seed = seed, dtype = numpy.float32)
+        self.rand = numpy.random.rand
         
     def prox(self, vis):
         return (vis > 0.0).astype(numpy.float32)
@@ -83,21 +75,17 @@ class BernoulliLayer(object):
         
     def sample_state(self, loc):
         p = B.expit(loc)
-        r = self.rand.get(*p.shape)        
-        while r.shape != p.shape:
-            r = self.rand.get(*p.shape)
+        r = self.rand(*p.shape)        
         return numpy.float32(r<p)
         
     def random(self, loc):
-        r = self.rand.get(*loc.shape)        
-        while r.shape != loc.shape:
-            r = self.rand.get(*loc.shape)
+        r = self.rand(*loc.shape)        
         return numpy.float32(r<0.5)
 
 class ExponentialLayer(object):
     
     def __init__(self, seed = 137):
-        self.rand = B.ThreadRandom('rand', seed = seed, dtype = numpy.float32)
+        self.rand = numpy.random.rand
         
     def prox(self, vis):
         return vis.clip(min=B.EPSILON)
@@ -112,15 +100,11 @@ class ExponentialLayer(object):
         return -B.log(loc)
 
     def sample_state(self, loc):
-        r = self.rand.get(*loc.shape)        
-        while r.shape != loc.shape:
-            r = self.rand.get(*loc.shape)
+        r = self.rand(*loc.shape)        
         return -B.log(r) / loc            
         
     def random(self, loc):
-        r = self.rand.get(*loc.shape)        
-        while r.shape != loc.shape:
-            r = self.rand.get(*loc.shape)
+        r = self.rand(*loc.shape)        
         return -B.log(r)   
         
 
