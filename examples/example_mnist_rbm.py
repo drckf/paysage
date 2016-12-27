@@ -24,20 +24,16 @@ if __name__ == "__main__":
     num_hidden_units = 500
     batch_size = 50
     num_epochs = 10
-    learning_rate = 0.0001
+    learning_rate = 0.001
     
     # set up the batch object to read the data
-    filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
+    filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
     data = batch.Batch(filepath, 'train/images', batch_size, 
-                    transform=numpy.float32, train_fraction=0.99)
+                    transform=batch.binarize_color, train_fraction=0.99)
               
     # set up the model and initialize the parameters
-    """
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                         vis_type='bernoulli', hid_type = 'bernoulli')
-    """
-    
-    rbm = hidden.GRBM(data.ncols, num_hidden_units,  hid_type = 'bernoulli')
     rbm.initialize(data, method='hinton')    
 
     # set up the optimizer and the fit method
@@ -72,7 +68,7 @@ if __name__ == "__main__":
     print('Energy distance:  {0:.2f}'.format(edist))
     
     # close the HDF5 store
-    #data.close()
+    data.close()
     
     end = time.time()
     print('Total time: {0:.2f} seconds'.format(end - start))
