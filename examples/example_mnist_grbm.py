@@ -67,7 +67,7 @@ if __name__ == "__main__":
     print('Energy distance:  {0:.2f}'.format(edist))
     
     # close the HDF5 store
-    data.close()
+    #data.close()
     
     end = time.time()
     print('Total time: {0:.2f} seconds'.format(end - start))

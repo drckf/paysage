@@ -280,12 +280,11 @@ class HopfieldModel(LatentModel):
 
    
 
-#TODO:
 class GaussianRestrictedBoltzmannMachine(LatentModel):
-    """HopfieldModel
-       A model of associative memory with binary visible units and Gaussian hidden units.        
-       
-       Hopfield, John J. "Neural networks and physical systems with emergent collective computational abilities." Proceedings of the national academy of sciences 79.8 (1982): 2554-2558.
+    """GaussianRestrictedBoltzmanMachine
+       RBM with Gaussian visible units. 
+    
+       Hinton, Geoffrey. "A practical guide to training restricted Boltzmann machines." Momentum 9.1 (2010): 926.
     
     """    
     def __init__(self, nvis, nhid, hid_type='bernoulli'):
@@ -357,20 +356,23 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
             derivs['visible_scale'] /= scale     
         return derivs
         
-    #TODO: 
     def joint_energy(self, visible, hidden):
-        energy = -B.dot(visible, self.params['visible_bias']) - B.dot(hidden, self.params['hidden_bias'])
+        scale = B.exp(self.params['visible_scale'])
+        v_scaled = visible / scale
+        energy = 0.5 * B.mean((visible - self.params['visible_bias'])**2 / scale, axis=1) - B.dot(hidden, self.params['hidden_bias'])
         if len(visible.shape) == 2:
-            energy -= B.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
+            energy -= B.batch_dot(v_scaled, self.params['weights'], hidden)
         else:
-            energy -=  B.quadratic_form(visible, self.params['weights'], hidden)
+            energy -=  B.quadratic_form(v_scaled, self.params['weights'], hidden)
         return B.mean(energy)
            
-    #TODO: 
     def marginal_free_energy(self, visible):
-        log_Z_hidden = self.layers['hidden'].log_partition_function(self.hidden_field(visible))
-        return -B.dot(visible, self.params['visible_bias']) - B.sum(log_Z_hidden)        
-        
+        scale = B.exp(self.params['visible_scale'])
+        v_scaled = visible / scale
+        log_Z_hidden = self.layers['hidden'].log_partition_function(self.hidden_field(v_scaled))
+        return 0.5 * B.mean((visible - self.params['visible_bias'])**2 / scale, axis=1) - B.sum(log_Z_hidden)        
+  
+      
 #TODO:
 class HookeMachine(LatentModel):
     """HookeMachine
