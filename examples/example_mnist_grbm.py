@@ -23,13 +23,16 @@ if __name__ == "__main__":
     
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 10
+    num_epochs = 20
     learning_rate = 0.0001
+    
+    def transform(x):
+        return numpy.float32(x) / 255
     
     # set up the batch object to read the data
     filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
     data = batch.Batch(filepath, 'train/images', batch_size, 
-                    transform=numpy.float32, train_fraction=0.99)
+                    transform=transform, train_fraction=0.99)
               
     # set up the model and initialize the parameters    
     rbm = hidden.GRBM(data.ncols, num_hidden_units,  hid_type = 'bernoulli')
@@ -61,7 +64,7 @@ if __name__ == "__main__":
     plot_image(v_data[0], (28,28))
     plot_image(v_model[0], (28,28))
     
-    edist = B.fast_energy_distance(v_data.astype(numpy.float32), v_model.astype(numpy.float32), downsample=100)
+    edist = B.fast_energy_distance(v_data, v_model, downsample=100)
     
     print('Reconstruction error:  {0:.2f}'.format(recon))
     print('Energy distance:  {0:.2f}'.format(edist))
