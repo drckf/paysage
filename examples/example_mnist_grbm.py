@@ -23,7 +23,7 @@ if __name__ == "__main__":
     
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 20
+    num_epochs = 10
     learning_rate = 0.0001
     
     def transform(x):
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     print('Energy distance:  {0:.2f}'.format(edist))
     
     # close the HDF5 store
-    #data.close()
+    data.close()
     
     end = time.time()
     print('Total time: {0:.2f} seconds'.format(end - start))
