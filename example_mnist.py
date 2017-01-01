@@ -1,8 +1,7 @@
 import os, sys, numpy, pandas, time
 
 #from paysage.backends import numba_engine as en
-#from paysage import batch
-from paysage import threaded_batch as batch
+from paysage import batch
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
@@ -24,7 +23,7 @@ if __name__ == "__main__":
     
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 1
+    num_epochs = 5
     learning_rate = 0.001
     
     # set up the batch object to read the data
@@ -39,7 +38,7 @@ if __name__ == "__main__":
     rbm.initialize(data, method='hinton')
     
     # set up the optimizer and the fit method
-    opt = optimizers.RMSProp(rbm, stepsize=learning_rate)
+    opt = optimizers.ADAM(rbm, stepsize=learning_rate)
     cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, update_method='stochastic')
     
     # fit the model
