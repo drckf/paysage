@@ -20,19 +20,24 @@ class IndexBatch(object):
         return cls(store.get_storer(key).nrows, batch_size, train_fraction=train_fraction)
 
     def create_iterators(self):
-        self.iterators = {}
-        self.iterators['train'] = inclusive_slice(0, self.end, self.batch_size)
-        self.iterators['validate'] = inclusive_slice(self.end, self.nrows, self.batch_size)
+        self.train_iterator = inclusive_slice(0, self.end, self.batch_size)
+        self.validate_iterator = inclusive_slice(self.end, self.nrows, self.batch_size)
         
     def reset(self, mode='train'):
         if mode == 'train':
-            self.iterators['train'] = inclusive_slice(0, self.end, self.batch_size)
+            new_generator = inclusive_slice(0, self.end, self.batch_size)
+            next(self.train_iterator)
+            self.train_iterator = new_generator
+            next(self.train_iterator)
         else:
-            self.iterators['validate'] = inclusive_slice(self.end, self.nrows, self.batch_size)
+            self.validate_iterator = inclusive_slice(self.end, self.nrows, self.batch_size)
         
     def get(self, mode='train'):
         try:
-            next_iter = next(self.iterators[mode])
+            if mode == 'train':
+                next_iter = next(self.train_iterator)
+            else:
+                next_iter = next(self.validate_iterator)
         except StopIteration:
             self.reset(mode)
             raise StopIteration

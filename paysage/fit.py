@@ -187,7 +187,7 @@ class ProgressMonitor(object):
         self.skip = skip
         self.batch = abatch
         self.steps = update_steps
-        self.num_validation_samples = self.batch.index.nrows - self.batch.index.end
+        self.num_validation_samples = self.batch.readers['validate'].end - self.batch.readers['validate'].beginning
         self.memory = []
 
     def reconstruction_error(self, model, v_data):
