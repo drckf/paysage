@@ -18,8 +18,8 @@ class SequentialMC(object):
         
     @classmethod
     def from_batch(cls, amodel, abatch, method='stochastic'):
-        tmp = cls(amodel, abatch.get(), method=method)
-        abatch.reset('all')
+        tmp = cls(amodel, abatch.get('train'), method=method)
+        abatch.reset_generator('all')
         return tmp
         
     def update_state(self, steps, resample=False, temperature=1.0):
@@ -187,7 +187,7 @@ class ProgressMonitor(object):
         self.skip = skip
         self.batch = abatch
         self.steps = update_steps
-        self.num_validation_samples = self.batch.index.nrows - self.batch.index.end
+        self.num_validation_samples = self.batch.num_validation_samples()
         self.memory = []
 
     def reconstruction_error(self, model, v_data):
