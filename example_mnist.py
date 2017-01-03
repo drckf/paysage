@@ -31,21 +31,14 @@ if __name__ == "__main__":
     data = batch.Batch(filepath, 'train/images', batch_size, 
                     transform=batch.binarize_color, train_fraction=0.99)
               
+
     # set up the model and initialize the parameters
-    """
-    rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
-                        vis_type='bernoulli', hid_type = 'bernoulli')
-    """
     rbm = hidden.HopfieldModel(data.ncols, num_hidden_units, 
                         vis_type='bernoulli')
-    
-    #rbm.add_constraints({'weights': 'non_negative'})
     rbm.initialize(data, method='hinton')
-    #rbm.add_weight_decay(0.0001, method='ridge')
     
-
     # set up the optimizer and the fit method
-    opt = optimizers.RMSProp(rbm, stepsize=learning_rate)
+    opt = optimizers.ADAM(rbm, stepsize=learning_rate)
     cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, update_method='stochastic')
     
     # fit the model
@@ -53,7 +46,7 @@ if __name__ == "__main__":
     cd.train()  
 
     # plot some reconstructions
-    v_data = data.chunk['validate']
+    v_data = data.get('validate')
     sampler = fit.SequentialMC(rbm, v_data) 
     sampler.update_state(1, resample=False, temperature=1.0)
     v_model = sampler.state
