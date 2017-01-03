@@ -33,8 +33,8 @@ if __name__ == "__main__":
               
 
     # set up the model and initialize the parameters
-    rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
-                        vis_type='bernoulli', hid_type = 'bernoulli')
+    rbm = hidden.HopfieldModel(data.ncols, num_hidden_units, 
+                        vis_type='bernoulli')
     rbm.initialize(data, method='hinton')
     
     # set up the optimizer and the fit method
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     print('Energy distance:  {0:.2f}'.format(edist))
     
     # close the HDF5 store
-    data.close()
+    #data.close()
     
     end = time.time()
     print('Total time: {0:.2f} seconds'.format(end - start))

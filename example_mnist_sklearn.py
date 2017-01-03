@@ -1,4 +1,4 @@
-import os, sys, numpy, pandas
+import os, sys, numpy, pandas, time
 from paysage import backends as B
 
 from paysage import batch

@@ -71,15 +71,33 @@ def euclidean_distance(a, b):
     return math.sqrt(squared_euclidean_distance(a, b))
 
 
-# ----- THE FOLLOWING FUNCTIONS ARE THE MAIN BOTTLENECKS ----- #    
+# ----- THE FOLLOWING FUNCTIONS ARE THE MAIN BOTTLENECKS ----- #   
+
+def mean(x, axis=None):
+    return numpy.mean(x, axis=axis)
+    
+def msum(x, axis=None):
+    return numpy.sum(x, axis=axis)
+
+def dot(a,b):
+    return numpy.dot(a, b)
+    
+def dot_plus(a,b,c):
+    return numpy.dot(a,b) + c
+    
+def quadratic_form(x,M,y):
+    return numpy.dot(x,numpy.dot(M,y))
+    
+def outer(x,y):
+    return numpy.outer(x,y)
     
 def batch_dot(vis, W, hid):
     """    
-        Let v by a L x N matrix where each column v_i is a visible vector.
-        Let h be a L x M matrix where each column h_i is a hidden vector.
+        Let v by a L x N matrix where each row v_i is a visible vector.
+        Let h be a L x M matrix where each row h_i is a hidden vector.
         And, let W be a N x M matrix of weights.
-        Then, batch_dot(v,W,h) = \frac{1}{L} \sum_i v_i^T W h_i
-        Returns a scalar.
+        Then, batch_dot(v,W,h) = \sum_i v_i^T W h_i
+        Returns a vector.
         
         The actual computation is performed with a vectorized expression.
     
@@ -88,15 +106,15 @@ def batch_dot(vis, W, hid):
     
 def batch_outer(vis, hid):
     """    
-        Let v by a L x N matrix where each column v_i is a visible vector.
-        Let h be a L x M matrix where each column h_i is a hidden vector.
-        Then, batch_outer(v, h) = \frac{1}{L} \sum_i v_i h_i^T
+        Let v by a L x N matrix where each row v_i is a visible vector.
+        Let h be a L x M matrix where each row h_i is a hidden vector.
+        Then, batch_outer(v, h) = \sum_i v_i h_i^T
         Returns an N x M matrix.        
         
         The actual computation is performed with a vectorized expression.
     
     """
-    return numpy.dot(vis.T, hid) / len(vis)
+    return numpy.dot(vis.T, hid)
     
 def xM_plus_a(x,M,a,trans=False):
     if not trans:
