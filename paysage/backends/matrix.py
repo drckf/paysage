@@ -91,7 +91,7 @@ def quadratic_form(x,M,y):
 def outer(x,y):
     return numpy.outer(x,y)
     
-def batch_dot(vis, W, hid):
+def batch_dot(vis, W, hid, axis=1):
     """    
         Let v by a L x N matrix where each row v_i is a visible vector.
         Let h be a L x M matrix where each row h_i is a hidden vector.
@@ -102,7 +102,7 @@ def batch_dot(vis, W, hid):
         The actual computation is performed with a vectorized expression.
     
     """
-    return (numpy.dot(vis, W) * hid).sum(1).astype(numpy.float32)
+    return (numpy.dot(vis, W) * hid).sum(axis).astype(numpy.float32)
     
 def batch_outer(vis, hid):
     """    

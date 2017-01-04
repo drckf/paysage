@@ -40,7 +40,7 @@ class LatentModel(object):
             getattr(constraints, self.constraints[key])(self.params[key])
             
     def add_weight_decay(self, penalty, method='l2_penalty'):
-        self.penalty = {'weights': getattr(penalties, method)(penalty)}
+        self.penalty.update({'weights': getattr(penalties, method)(penalty)})
     
     def resample_state(self, visibile, temperature=1.0):
         energies = self.marginal_free_energy(visibile)
@@ -280,18 +280,99 @@ class HopfieldModel(LatentModel):
 
    
 
-#TODO:
 class GaussianRestrictedBoltzmannMachine(LatentModel):
-    """HopfieldModel
-       A model of associative memory with binary visible units and Gaussian hidden units.        
-       
-       Hopfield, John J. "Neural networks and physical systems with emergent collective computational abilities." Proceedings of the national academy of sciences 79.8 (1982): 2554-2558.
+    """GaussianRestrictedBoltzmanMachine
+       RBM with Gaussian visible units. 
+    
+       Hinton, Geoffrey. "A practical guide to training restricted Boltzmann machines." Momentum 9.1 (2010): 926.
     
     """    
-    def __init__(self, nvis, nhid):        
-        pass     
+    def __init__(self, nvis, nhid, hid_type='bernoulli'):
+        assert hid_type in ['ising', 'bernoulli']
         
+        super().__init__()
         
+        self.nvis = nvis
+        self.nhid = nhid
+        
+        self.layers['visible'] = layers.get('gaussian')
+        self.layers['hidden'] = layers.get(hid_type)
+                
+        self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01, size=(nvis, nhid)).astype(dtype=numpy.float32)
+        self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)  
+        self.params['visible_scale'] = numpy.zeros(nvis, dtype=numpy.float32)  
+        self.params['hidden_bias'] = numpy.zeros(nhid, dtype=numpy.float32) 
+  
+    def initialize(self, data, method='hinton'):
+        try:
+            func = getattr(init, method)
+        except AttributeError:
+            print('{} is not a valid initialization method for latent models'.format(method))
+        func(data, self)
+        self.enforce_constraints()
+
+    def _hidden_field(self, visible):
+        scale = B.exp(self.params['visible_scale'])
+        return B.xM_plus_a(visible / scale, self.params['weights'], self.params['hidden_bias'], trans=False)
+
+    def _visible_loc(self, hidden):
+        return B.xM_plus_a(hidden, self.params['weights'], self.params['visible_bias'], trans=True)
+        
+    def sample_hidden(self, visible):
+        return self.layers['hidden'].sample_state(self._hidden_field(visible))
+            
+    def hidden_mean(self, visible):
+        return self.layers['hidden'].mean(self._hidden_field(visible))
+            
+    def hidden_mode(self, visible):
+        return self.layers['hidden'].prox(self._hidden_field(visible))
+              
+    def sample_visible(self, hidden):
+        scale = B.exp(0.5 * self.params['visible_scale'])
+        return self.layers['visible'].sample_state(self._visible_loc(hidden), scale)
+            
+    def visible_mean(self, hidden):
+        return self.layers['visible'].mean(self._visible_loc(hidden))
+            
+    def visible_mode(self, hidden):
+        return self.layers['visible'].prox(self._visible_loc(hidden))
+
+    def derivatives(self, visible):
+        mean_hidden = self.hidden_mean(visible)
+        scale = B.exp(self.params['visible_scale'])
+        v_scaled = visible / scale
+        derivs = {}
+        if len(mean_hidden.shape) == 2:
+            derivs['visible_bias'] = -B.mean(v_scaled, axis=0)
+            derivs['hidden_bias'] = -B.mean(mean_hidden, axis=0)
+            derivs['weights'] = -B.dot(v_scaled.T, mean_hidden) / len(visible)
+            derivs['visible_scale'] = -0.5 * B.mean((visible-self.params['visible_bias'])**2, axis=0) + B.batch_dot(mean_hidden, self.params['weights'].T, visible, axis=0) / len(visible)
+            derivs['visible_scale'] /= scale
+        else:
+            derivs['visible_bias'] = -v_scaled
+            derivs['hidden_bias'] = -mean_hidden
+            derivs['weights'] = -B.outer(v_scaled, mean_hidden)
+            derivs['visible_scale'] = -0.5 * (visible - self.params['visible_bias'])**2 + B.dot(self.params['weights'], mean_hidden)
+            derivs['visible_scale'] /= scale     
+        return derivs
+        
+    def joint_energy(self, visible, hidden):
+        scale = B.exp(self.params['visible_scale'])
+        v_scaled = visible / scale
+        energy = 0.5 * B.mean((visible - self.params['visible_bias'])**2 / scale, axis=1) - B.dot(hidden, self.params['hidden_bias'])
+        if len(visible.shape) == 2:
+            energy -= B.batch_dot(v_scaled, self.params['weights'], hidden)
+        else:
+            energy -=  B.quadratic_form(v_scaled, self.params['weights'], hidden)
+        return B.mean(energy)
+           
+    def marginal_free_energy(self, visible):
+        scale = B.exp(self.params['visible_scale'])
+        v_scaled = visible / scale
+        log_Z_hidden = self.layers['hidden'].log_partition_function(self.hidden_field(v_scaled))
+        return 0.5 * B.mean((visible - self.params['visible_bias'])**2 / scale, axis=1) - B.sum(log_Z_hidden)        
+  
+      
 #TODO:
 class HookeMachine(LatentModel):
     """HookeMachine
