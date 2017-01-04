@@ -22,6 +22,37 @@ class SequentialMC(object):
         abatch.reset_generator('all')
         return tmp
         
+    def update_state(self, steps):
+        if self.method == 'stochastic':
+            self.state = self.model.markov_chain(self.state, steps)  
+        elif self.method == 'mean_field':
+            self.state = self.model.mean_field_iteration(self.state, steps)  
+        elif self.method == 'deterministic':
+            self.state = self.model.deterministic_iteration(self.state, steps)  
+        else:
+            raise ValueError("Unknown method {}".format(self.method))
+            
+            
+class SequentialSimulatedTemperingImportanceResampling(object):
+    def __init__(self, amodel, adataframe, method='stochastic'):
+        self.model = amodel
+        self.method = method
+        try:
+            self.state = adataframe.as_matrix().astype(numpy.float32)
+        except Exception:
+            self.state = adataframe.astype(numpy.float32)
+        
+    @classmethod
+    def from_batch(cls, amodel, abatch, method='stochastic'):
+        tmp = cls(amodel, abatch.get('train'), method=method)
+        abatch.reset_generator('all')
+        return tmp
+        
+    def resample_state(self, amodel, visibile, beta=1):
+        energies = amodel.marginal_free_energy(visibile, beta)
+        indices = numpy.random.choice(numpy.arange(len(visibile)), size=len(visibile), replace=True, p=weights)
+        return visibile[list(indices)]          
+        
     def update_state(self, steps, resample=False, temperature=1.0):
         if self.method == 'stochastic':
             self.state = self.model.markov_chain(self.state, steps, resample=resample, temperature=temperature)  
@@ -69,7 +100,7 @@ class ContrastiveDivergence(TrainingMethod):
                             
                 # CD resets the sampler from the visible data at each iteration
                 self.sampler = SequentialMC(self.model, v_data, method=self.update_method) 
-                self.sampler.update_state(self.mcsteps, resample=False)    
+                self.sampler.update_state(self.mcsteps)    
                 
                 # compute the gradient and update the model parameters
                 self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
@@ -114,7 +145,7 @@ class PersistentContrastiveDivergence(TrainingMethod):
                     break
                             
                 # PCD keeps the sampler from the previous iteration
-                self.sampler.update_state(self.mcsteps, resample=False)    
+                self.sampler.update_state(self.mcsteps)    
     
                 # compute the gradient and update the model parameters
                 self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
@@ -203,7 +234,7 @@ class ProgressMonitor(object):
         """
         v_model = model.random(v_data)
         sampler = SequentialMC(model, v_model) 
-        sampler.update_state(self.steps, resample=False, temperature=1.0)
+        sampler.update_state(self.steps)
         return len(v_model) * B.fast_energy_distance(v_data, sampler.state, downsample=100)
         
     def check_progress(self, model, t, store=False):

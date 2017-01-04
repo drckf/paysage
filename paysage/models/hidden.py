@@ -42,12 +42,6 @@ class LatentModel(object):
     def add_weight_decay(self, penalty, method='l2_penalty'):
         self.penalty.update({'weights': getattr(penalties, method)(penalty)})
     
-    def resample_state(self, visibile, temperature=1.0):
-        energies = self.marginal_free_energy(visibile)
-        weights = B.importance_weights(energies, numpy.float32(temperature)).clip(min=0.0)
-        indices = numpy.random.choice(numpy.arange(len(visibile)), size=len(visibile), replace=True, p=weights)
-        return visibile[list(indices)]  
-    
     def mcstep(self, vis, beta=1):
         """gibbs_step(v):
            v -> h -> v'
@@ -57,7 +51,7 @@ class LatentModel(object):
         hid = self.sample_hidden(vis, beta)
         return self.sample_visible(hid, beta)
         
-    def markov_chain(self, vis, steps, resample=False, temperature=1.0, beta=1):
+    def markov_chain(self, vis, steps, beta=1):
         """gibbs_chain(v, n):
            v -> h -> v_1 -> h_1 -> ... -> v_n
            return v_n
@@ -66,8 +60,6 @@ class LatentModel(object):
         new_vis = vis.astype(vis.dtype)
         for t in range(steps):
             new_vis = self.mcstep(new_vis, beta)
-            if resample:
-                new_vis = self.resample_state(new_vis, temperature=temperature)
         return new_vis
         
     def mean_field_step(self, vis, beta=1):
