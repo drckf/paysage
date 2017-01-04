@@ -24,20 +24,26 @@ if __name__ == "__main__":
     learning_rate = 0.001
     
     # set up the batch, model, and optimizer objects
-    filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
-    data = batch.Batch(filepath, 'train/images', batch_size, 
+    filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
+    data = batch.Batch(filepath, 'train/images', 60000, 
                     transform=batch.binarize_color, train_fraction=0.99)
+                    
+    X = data.get('train')
+    data.close()
                     
     rbm = BernoulliRBM(n_components=num_hidden_units, 
                        learning_rate=learning_rate, 
                        batch_size=batch_size, 
                        n_iter=num_epochs, 
                        verbose=1)
-                       
-    rbm.fit(data.chunk['train'])
+                 
+    rbm.fit(X)
+    
+    data = batch.Batch(filepath, 'train/images', batch_size, 
+                    transform=batch.binarize_color, train_fraction=0.99)
     
     # plot some reconstructions
-    v_data = data.chunk['validate']
+    v_data = data.get('validate')
     v_model = rbm.gibbs(v_data)
 
     recon = numpy.sqrt(numpy.sum((v_data - v_model)**2) / len(v_data))

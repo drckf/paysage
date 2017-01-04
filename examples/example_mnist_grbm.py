@@ -47,7 +47,7 @@ if __name__ == "__main__":
     cd.train()  
     
     # plot some reconstructions
-    v_data = data.chunk['validate']
+    v_data = data.get('validate')
     sampler = fit.SequentialMC(rbm, v_data) 
     sampler.update_state(1, resample=False, temperature=1.0)
     v_model = sampler.state

@@ -30,11 +30,11 @@ if __name__ == "__main__":
     data = batch.Batch(filepath, 'train/images', batch_size, 
                     transform=batch.binarize_color, train_fraction=0.99)
               
-
     # set up the model and initialize the parameters
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols, num_hidden_units, 
                         vis_type='bernoulli', hid_type = 'bernoulli')
     rbm.initialize(data, method='hinton')
+    
     
     # set up the optimizer and the fit method
     opt = optimizers.ADAM(rbm, stepsize=learning_rate)
