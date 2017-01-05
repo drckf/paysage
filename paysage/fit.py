@@ -41,6 +41,7 @@ class SequentialSimulatedTemperingImportanceResampling(object):
             self.state = adataframe.as_matrix().astype(numpy.float32)
         except Exception:
             self.state = adataframe.astype(numpy.float32)
+        self.beta = numpy.ones((len(self.state, 1)), dtype=numpy.float32)
         
     @classmethod
     def from_batch(cls, amodel, abatch, method='stochastic'):
@@ -53,9 +54,9 @@ class SequentialSimulatedTemperingImportanceResampling(object):
         indices = numpy.random.choice(numpy.arange(len(visibile)), size=len(visibile), replace=True, p=weights)
         return visibile[list(indices)]          
         
-    def update_state(self, steps, resample=False, temperature=1.0):
+    def update_state(self, steps):
         if self.method == 'stochastic':
-            self.state = self.model.markov_chain(self.state, steps, resample=resample, temperature=temperature)  
+            self.state = self.model.markov_chain(self.state, steps)  
         elif self.method == 'mean_field':
             self.state = self.model.mean_field_iteration(self.state, steps)  
         elif self.method == 'deterministic':
@@ -260,3 +261,4 @@ CD = ContrastiveDivergence
 PCD = PersistentContrastiveDivergence
 HCD = HopfieldContrastiveDivergence
         
+SSTIR = SequentialSimulatedTemperingImportanceResampling
