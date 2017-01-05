@@ -140,12 +140,16 @@ class RestrictedBoltzmannMachine(LatentModel):
         self.enforce_constraints()
 
     def _hidden_field(self, visible, beta=1):
-        W = beta * self.params['weights']
-        return B.xM_plus_a(visible, W, self.params['hidden_bias'], trans=False)
+        result = B.dot(visible, self.params['weights'])
+        result *= beta
+        result += self.params['hidden_bias']
+        return result
 
     def _visible_field(self, hidden, beta=1):
-        W = beta * self.params['weights']
-        return B.xM_plus_a(hidden, W, self.params['visible_bias'], trans=True)
+        result = B.dot(hidden, self.params['weights'].T)
+        result *= beta
+        result += self.params['visible_bias']
+        return result
         
     def sample_hidden(self, visible, beta=1):
         return self.layers['hidden'].sample_state(self._hidden_field(visible, beta))
@@ -179,16 +183,15 @@ class RestrictedBoltzmannMachine(LatentModel):
         return derivs
         
     def joint_energy(self, visible, hidden, beta=1):
-        W = beta * self.params['weights']
         energy = -B.dot(visible, self.params['visible_bias']) - B.dot(hidden, self.params['hidden_bias'])
         if len(visible.shape) == 2:
-            energy -= B.batch_dot(visible.astype(numpy.float32), W, hidden.astype(numpy.float32))
+            energy -= beta * B.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
         else:
-            energy -=  B.quadratic_form(visible, W, hidden)
+            energy -= beta * B.quadratic_form(visible, self.params['weights'], hidden)
         return B.mean(energy)
    
     def marginal_free_energy(self, visible, beta=1):
-        log_Z_hidden = self.layers['hidden'].log_partition_function(self._hidden_field(visible,beta=beta))
+        log_Z_hidden = self.layers['hidden'].log_partition_function(self._hidden_field(visible, beta=beta))
         return -B.dot(visible, self.params['visible_bias']) - B.sum(log_Z_hidden)
 
 
@@ -227,12 +230,16 @@ class HopfieldModel(LatentModel):
         self.enforce_constraints()
     
     def _hidden_loc(self, visible, beta=1):
-        W = beta * self.params['weights']
-        return B.xM_plus_a(visible, W, self.hidden_bias, trans=False)
+        result = B.dot(visible, self.params['weights'])
+        result *= beta
+        result += self.hidden_bias
+        return result
     
     def _visible_field(self, hidden, beta=1):
-        W = beta * self.params['weights']
-        return B.xM_plus_a(hidden, W, self.params['visible_bias'], trans=True)
+        result = B.dot(hidden, self.params['weights'].T)
+        result *= beta
+        result += self.params['visible_bias']
+        return result
         
     def sample_hidden(self, visible, beta=1):
         return self.layers['hidden'].sample_state(self._hidden_loc(visible, beta), self.hidden_scale)
@@ -264,18 +271,16 @@ class HopfieldModel(LatentModel):
         return derivs
         
     def joint_energy(self, visible, hidden, beta=1):
-        W = beta * self.params['weights']
         energy = -B.dot(visible, self.params['visible_bias']) - B.msum(hidden**2, axis=1)
         if len(visible.shape) == 2:
-            energy -= B.batch_dot(visible.astype(numpy.float32), W, hidden.astype(numpy.float32))
+            energy -= beta * B.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
         else:
-            energy -=  B.quadratic_form(visible, self.params['weights'], hidden)
+            energy -=  beta * B.quadratic_form(visible, self.params['weights'], hidden)
         return B.mean(energy)
    
     def marginal_free_energy(self, visible, beta=1):
-        W = beta * self.params['weights']
-        J = B.dot(W, W.T)
-        return -B.dot(visible, self.params['visible_bias']) - B.batch_dot(visible, J, visible)
+        J = B.dot(self.params['weights'], self.params['weights'].T)
+        return -B.dot(visible, self.params['visible_bias']) - beta * B.batch_dot(visible, J, visible)
 
    
 
@@ -311,13 +316,18 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         self.enforce_constraints()
 
     def _hidden_field(self, visible, beta=1):
-        W = beta * self.params['weights']
         scale = B.exp(self.params['visible_scale'])
-        return B.xM_plus_a(visible / scale, W, self.params['hidden_bias'], trans=False)
+        result = B.dot(visible/scale, self.params['weights'])
+        result *= beta
+        result += self.params['hidden_bias']
+        return result
 
     def _visible_loc(self, hidden, beta=1):
         W = beta * self.params['weights']
-        return B.xM_plus_a(hidden, W, self.params['visible_bias'], trans=True)
+        result = B.dot(hidden, self.params['weights'].T)
+        result *= beta
+        result += self.params['visible_bias']
+        return result
         
     def sample_hidden(self, visible, beta=1):
         return self.layers['hidden'].sample_state(self._hidden_field(visible, beta))
@@ -374,18 +384,6 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         log_Z_hidden = self.layers['hidden'].log_partition_function(self.hidden_field(v_scaled, beta))
         return 0.5 * B.mean((visible - self.params['visible_bias'])**2 / scale, axis=1) - B.sum(log_Z_hidden)        
   
-      
-#TODO:
-class HookeMachine(LatentModel):
-    """HookeMachine
-    
-       Unpublished. Charles K. Fisher (2016)
-    
-    """
-    def __init__(self, nvis, nhid, vis_type='gauss', hid_type='expo'):   
-        pass
-
-
     
 # ----- ALIASES ----- #
     
