@@ -41,7 +41,7 @@ class SequentialSimulatedTemperingImportanceResampling(object):
             self.state = adataframe.as_matrix().astype(numpy.float32)
         except Exception:
             self.state = adataframe.astype(numpy.float32)
-        self.beta = numpy.ones((len(self.state, 1)), dtype=numpy.float32)
+        self.beta = numpy.ones((len(self.state), 1), dtype=numpy.float32)
         
     @classmethod
     def from_batch(cls, amodel, abatch, method='stochastic'):
@@ -49,18 +49,31 @@ class SequentialSimulatedTemperingImportanceResampling(object):
         abatch.reset_generator('all')
         return tmp
         
-    def resample_state(self, amodel, visibile, beta=1):
-        energies = amodel.marginal_free_energy(visibile, beta)
-        indices = numpy.random.choice(numpy.arange(len(visibile)), size=len(visibile), replace=True, p=weights)
-        return visibile[list(indices)]          
+    def resample_state(self, amodel, visible):
+        energies = amodel.marginal_free_energy(visible, self.beta)
+        indices = numpy.random.choice(numpy.arange(len(visible)), size=len(visible), replace=True, p=weights)
+        return visible[list(indices)]  
+
+    def update_beta(self, amodel, stepsize = 0.01):
+        trial_beta = B.exp(B.log(self.beta) + stepsize * numpy.random.randn(len(self.beta),1))
+        current_energy = amodel.marginal_free_energy(self.state, self.beta)
+        trial_energy = amodel.marginal_free_energy(self.state, trial_beta)
+        delta_energy = trial_energy - current_energy
+        r = numpy.random.rand(len(delta_energy))
+        print(current_energy)
+        print(trial_energy)
+        print(delta_energy)
+        print(r < delta_energy)
+        return current_energy
+
         
     def update_state(self, steps):
         if self.method == 'stochastic':
-            self.state = self.model.markov_chain(self.state, steps)  
+            self.state = self.model.markov_chain(self.state, steps, self.beta)  
         elif self.method == 'mean_field':
-            self.state = self.model.mean_field_iteration(self.state, steps)  
+            self.state = self.model.mean_field_iteration(self.state, steps, self.beta)  
         elif self.method == 'deterministic':
-            self.state = self.model.deterministic_iteration(self.state, steps)  
+            self.state = self.model.deterministic_iteration(self.state, steps, self.beta)  
         else:
             raise ValueError("Unknown method {}".format(self.method))
 
@@ -72,7 +85,8 @@ class TrainingMethod(object):
         self.batch = abatch
         self.epochs = epochs
         self.update_method = update_method
-        self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
+        #self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
+        self.sampler = SSTIR.from_batch(self.model, self.batch, method=self.update_method)
         self.optimizer = optimizer
         self.monitor = ProgressMonitor(skip, self.batch)
 
