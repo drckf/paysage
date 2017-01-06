@@ -196,7 +196,7 @@ class RestrictedBoltzmannMachine(LatentModel):
    
     def marginal_free_energy(self, visible, beta=None):
         log_Z_hidden = self.layers['hidden'].log_partition_function(self._hidden_field(visible, beta=beta))
-        return -B.dot(visible, self.params['visible_bias']) - B.msum(log_Z_hidden)
+        return -B.dot(visible, self.params['visible_bias']) - B.msum(log_Z_hidden, axis=1)
 
 
 
@@ -392,7 +392,7 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         scale = B.exp(self.params['visible_scale'])
         v_scaled = visible / scale
         log_Z_hidden = self.layers['hidden'].log_partition_function(self.hidden_field(v_scaled, beta))
-        return 0.5 * B.mean((visible - self.params['visible_bias'])**2 / scale, axis=1) - B.msum(log_Z_hidden)        
+        return 0.5 * B.mean((visible - self.params['visible_bias'])**2 / scale, axis=1) - B.msum(log_Z_hidden, axis=1)        
   
     
 # ----- ALIASES ----- #

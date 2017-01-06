@@ -58,14 +58,12 @@ class SequentialSimulatedTemperingImportanceResampling(object):
         trial_beta = B.exp(B.log(self.beta) + stepsize * numpy.random.randn(len(self.beta),1))
         current_energy = amodel.marginal_free_energy(self.state, self.beta)
         trial_energy = amodel.marginal_free_energy(self.state, trial_beta)
-        delta_energy = trial_energy - current_energy
-        r = numpy.random.rand(len(delta_energy))
-        print(current_energy)
-        print(trial_energy)
-        print(delta_energy)
-        print(r < delta_energy)
-        return current_energy
-
+        p = B.exp(current_energy - trial_energy).reshape((-1,1))
+        r = numpy.random.rand(len(p),1)
+        mask = numpy.float32(r < p)  
+        self.beta *= 1 - mask
+        self.beta += mask * trial_beta
+        return (1-mask) * current_energy + mask * trial_energy
         
     def update_state(self, steps):
         if self.method == 'stochastic':
