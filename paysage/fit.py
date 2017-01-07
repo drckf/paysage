@@ -48,11 +48,6 @@ class SequentialSimulatedTemperingImportanceResampling(object):
         tmp = cls(amodel, abatch.get('train'), method=method)
         abatch.reset_generator('all')
         return tmp
-        
-    def resample_state(self, amodel, visible):
-        energies = amodel.marginal_free_energy(visible, self.beta)
-        indices = numpy.random.choice(numpy.arange(len(visible)), size=len(visible), replace=True, p=weights)
-        return visible[list(indices)]  
 
     def update_beta(self, amodel, stepsize = 0.01):
         trial_beta = B.exp(B.log(self.beta) + stepsize * numpy.random.randn(len(self.beta),1))
@@ -65,6 +60,16 @@ class SequentialSimulatedTemperingImportanceResampling(object):
         self.beta *= 1 - mask
         self.beta += mask * trial_beta
         return (1-mask) * current_energy + mask * trial_energy
+        
+    def resample_state(self, amodel, stepsize = 0.01):
+        current_energy = numpy.ravel(self.update_beta(amodel, stepsize))
+        target_energy = amodel.marginal_free_energy(self.state, None)
+        delta = current_energy - target_energy
+        delta -= numpy.mean(delta)
+        weights = B.exp(delta)           
+        weights /= B.msum(weights)
+        indices = numpy.random.choice(numpy.arange(len(weights)), size=len(weights), replace=True, p=weights)
+        return self.state[list(indices)] 
         
     def update_state(self, steps):
         if self.method == 'stochastic':

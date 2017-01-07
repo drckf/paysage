@@ -22,7 +22,7 @@ if __name__ == "__main__":
     
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 10
+    num_epochs = 3
     learning_rate = 0.001
     
     # set up the batch object to read the data
