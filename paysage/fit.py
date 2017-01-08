@@ -1,8 +1,9 @@
 import numpy, time
 from . import backends as B
+from numba import vectorize
     
 # -----  CLASSES ----- #
-
+    
 class SequentialMC(object):
     """SequentialMC
        Simple class for a sequential Monte Carlo sampler. 
@@ -32,8 +33,12 @@ class SequentialMC(object):
         else:
             raise ValueError("Unknown method {}".format(self.method))
             
+    def get_state(self, amodel):
+        return self.state
+            
             
 class SequentialSimulatedTemperingImportanceResampling(object):
+    
     def __init__(self, amodel, adataframe, method='stochastic'):
         self.model = amodel
         self.method = method
@@ -42,36 +47,19 @@ class SequentialSimulatedTemperingImportanceResampling(object):
         except Exception:
             self.state = adataframe.astype(numpy.float32)
         self.beta = numpy.ones((len(self.state), 1), dtype=numpy.float32)
+        self.beta_stepsize = 0.01
         
     @classmethod
     def from_batch(cls, amodel, abatch, method='stochastic'):
         tmp = cls(amodel, abatch.get('train'), method=method)
         abatch.reset_generator('all')
         return tmp
-
-    def update_beta(self, amodel, stepsize = 0.01):
-        trial_beta = B.exp(B.log(self.beta) + stepsize * numpy.random.randn(len(self.beta),1))
-        current_energy = amodel.marginal_free_energy(self.state, self.beta).reshape((-1,1))
-        trial_energy = amodel.marginal_free_energy(self.state, trial_beta).reshape((-1,1))
-        hastings = self.beta / trial_beta
-        p = current_energy - trial_energy +  B.log(hastings)
-        r = B.log(numpy.random.rand(len(p),1))
-        mask = numpy.float32(r < p)  
-        self.beta *= 1 - mask
-        self.beta += mask * trial_beta
-        return (1-mask) * current_energy + mask * trial_energy
-        
-    def resample_state(self, amodel, stepsize = 0.01):
-        current_energy = numpy.ravel(self.update_beta(amodel, stepsize))
-        target_energy = amodel.marginal_free_energy(self.state, None)
-        delta = current_energy - target_energy
-        delta -= numpy.mean(delta)
-        weights = B.exp(delta)           
-        weights /= B.msum(weights)
-        indices = numpy.random.choice(numpy.arange(len(weights)), size=len(weights), replace=True, p=weights)
-        return self.state[list(indices)] 
         
     def update_state(self, steps):
+        self.beta += self.beta_stepsize
+        self.beta += self.beta_stepsize * numpy.random.randn(len(self.beta),1)
+        #self.beta = reflect(self.beta).clip(0,1)
+        self.beta = self.beta.clip(0,1)
         if self.method == 'stochastic':
             self.state = self.model.markov_chain(self.state, steps, self.beta)  
         elif self.method == 'mean_field':
@@ -80,11 +68,22 @@ class SequentialSimulatedTemperingImportanceResampling(object):
             self.state = self.model.deterministic_iteration(self.state, steps, self.beta)  
         else:
             raise ValueError("Unknown method {}".format(self.method))
+        
+    def get_state(self, amodel):
+        current_energy = amodel.marginal_free_energy(self.state, self.beta)
+        target_energy = amodel.marginal_free_energy(self.state, None)
+        delta = current_energy - target_energy
+        delta -= numpy.max(delta)
+        weights = B.exp(delta)           
+        weights /= B.msum(weights)
+        indices = numpy.random.choice(numpy.arange(len(weights)), size=len(weights), replace=True, p=weights)
+        return self.state[list(indices)] 
 
 
 class TrainingMethod(object):
     
-    def __init__(self, model, abatch, optimizer, epochs, skip=100, update_method='stochastic'):
+    def __init__(self, model, abatch, optimizer, epochs, skip=100, 
+                 update_method='stochastic', sampler='SequentialMC'):
         self.model = model
         self.batch = abatch
         self.epochs = epochs
@@ -94,7 +93,7 @@ class TrainingMethod(object):
         self.optimizer = optimizer
         self.monitor = ProgressMonitor(skip, self.batch)
 
-        
+
 class ContrastiveDivergence(TrainingMethod):
     """ContrastiveDivergence
        CD-k algorithm for approximate maximum likelihood inference. 
@@ -122,7 +121,8 @@ class ContrastiveDivergence(TrainingMethod):
                 self.sampler.update_state(self.mcsteps)    
                 
                 # compute the gradient and update the model parameters
-                self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
+                v_model = self.sampler.get_state(self.model)
+                self.optimizer.update(self.model, v_data, v_model, epoch)
                 t += 1
                 
             # end of epoch processing            
@@ -167,50 +167,7 @@ class PersistentContrastiveDivergence(TrainingMethod):
                 self.sampler.update_state(self.mcsteps)    
     
                 # compute the gradient and update the model parameters
-                self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
-                t += 1
-                
-            # end of epoch processing            
-            prog = self.monitor.check_progress(self.model, 0, store=True)
-            print('End of epoch {}: '.format(epoch))
-            print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
-            
-            end_time = time.time()
-            print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')  
-            
-            # convergence check should be part of optimizer
-            is_converged = self.optimizer.check_convergence()
-            if is_converged:
-                print('Convergence criterion reached')
-                break
-        
-        return None
-            
-        
-class HopfieldContrastiveDivergence(TrainingMethod):
-    """HopfieldContrastiveDivergence
-       Algorithm for approximate maximum likelihood inference based on the intuition that the weights of the network are stored as memories, like in the Hopfield model of associate memory.
-
-       Unpublished. Charles K. Fisher (2016)
-    
-    """    
-    def __init__(self, model, abatch, optimizer, epochs, attractive=True, skip=100):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip)
-        self.attractive = attractive
-        
-    def train(self):
-        for epoch in range(self.epochs):          
-            t = 0
-            start_time = time.time()
-            while True:
-                try:
-                    v_data = self.batch.get(mode='train')
-                except StopIteration:
-                    break
-                            
-                # sample near the weights
-                v_model = self.model.layers['visible'].prox(self.attractive * self.model.params['weights']).T 
-                # compute the gradient and update the model parameters
+                v_model = self.sampler.get_state(self.model)
                 self.optimizer.update(self.model, v_data, v_model, epoch)
                 t += 1
                 
@@ -272,11 +229,22 @@ class ProgressMonitor(object):
             if store:
                 self.memory.append([recon, edist])
             return [recon, edist]
+            
+# ----- FUNCTIONS ----- #
+    
+@vectorize('float32(float32)', nopython=True)
+def reflect(x):
+    if 0 < x < 1:
+        return x
+    elif x <= 0:
+        return -x
+    else:
+        return 2 - x
+    
 
 # ----- ALIASES ----- #
          
 CD = ContrastiveDivergence
 PCD = PersistentContrastiveDivergence
-HCD = HopfieldContrastiveDivergence
         
-SSTIR = SequentialSimulatedTemperingImportanceResampling
+SSTIR = sstir = SequentialSimulatedTemperingImportanceResampling
