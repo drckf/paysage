@@ -63,6 +63,7 @@ class Batch(object):
 class TableStatistics(object):
     """TableStatistics
        Stores basic statistics about a table.
+       
     """
     def __init__(self, store, key):
         self.key_store = store.get_storer(key)
@@ -76,6 +77,7 @@ class TableStatistics(object):
         """chunksize
            Returns the sample count that will fit in allowed_mem,
            given the shape of the table.
+
         """
         return int(self.shape[0] * allowed_mem / self.mem_footprint)
 
@@ -106,6 +108,7 @@ class DataShuffler(object):
     def shuffle(self):
         """shuffle
            Shuffles all the tables in the HDFStore.
+
         """
         for k in self.keys:
             numpy.random.seed(self.seed)
@@ -118,6 +121,7 @@ class DataShuffler(object):
     def shuffle_table(self, key):
         """shuffle_table
            Shuffle a table in the HDFStore, write to a new file.
+
         """
         # split up the table into chunks
         num_chunks, chunk_keys, chunk_counts = self.divide_table_into_chunks(key)
