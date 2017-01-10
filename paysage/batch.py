@@ -98,7 +98,6 @@ class DataShuffler(object):
 
         # choose the smallest chunksize
         self.chunksize = min([self.table_stats[k].chunksize(self.allowed_mem) for k in self.keys])
-        print("chunksize:", self.chunksize)
 
         # setup the output file
         self.shuffled_store = pandas.HDFStore(shuffled_filename, mode='w', complevel=5)
@@ -112,15 +111,17 @@ class DataShuffler(object):
             numpy.random.seed(self.seed)
             self.shuffle_table(k)
 
+        self.store.close()
+        self.shuffled_store.close()
+
 
     def shuffle_table(self, key):
         """shuffle_table
            Shuffle a table in the HDFStore, write to a new file.
         """
-        print("shuffling for key:", key)
+        # split up the table into chunks
         num_chunks, chunk_keys, chunk_counts = self.divide_table_into_chunks(key)
 
-        print("shuffling in {} chunks, with sizes {}".format(num_chunks, chunk_counts))
         # if there is one chunk, rename the key and finish
         if num_chunks == 1:
             key_name = key.split('/')[-1]
