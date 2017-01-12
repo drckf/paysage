@@ -1,4 +1,6 @@
-import numpy, pandas
+import os
+import numpy
+import pandas
 
 # ----- CLASSES ----- #
 
@@ -63,7 +65,7 @@ class Batch(object):
 class TableStatistics(object):
     """TableStatistics
        Stores basic statistics about a table.
-       
+
     """
     def __init__(self, store, key):
         self.key_store = store.get_storer(key)
@@ -92,6 +94,8 @@ class DataShuffler(object):
         self.filename = filename
         self.allowed_mem = allowed_mem # in GiB
         self.seed = 137 # should keep this fixed for long-term determinism
+        self.complevel = 5
+        self.complib = 'zlib'
 
         # get the keys and statistics
         self.store = pandas.HDFStore(filename, mode='r')
@@ -101,8 +105,12 @@ class DataShuffler(object):
         # choose the smallest chunksize
         self.chunksize = min([self.table_stats[k].chunksize(self.allowed_mem) for k in self.keys])
 
+        # store for chunked data
+        self.chunk_filename = "chunk_"+filename
+        self.chunk_store = pandas.HDFStore(self.chunk_filename, mode='w')
+
         # setup the output file
-        self.shuffled_store = pandas.HDFStore(shuffled_filename, mode='w', complevel=5)
+        self.shuffled_store = pandas.HDFStore(shuffled_filename, mode='w', complevel=self.complevel, complib=self.complib)
 
 
     def shuffle(self):
@@ -116,6 +124,8 @@ class DataShuffler(object):
 
         self.store.close()
         self.shuffled_store.close()
+        self.chunk_store.close()
+        os.remove(self.chunk_filename)
 
 
     def shuffle_table(self, key):
@@ -126,10 +136,9 @@ class DataShuffler(object):
         # split up the table into chunks
         num_chunks, chunk_keys, chunk_counts = self.divide_table_into_chunks(key)
 
-        # if there is one chunk, rename the key and finish
+        # if there is one chunk, move it and finish
         if num_chunks == 1:
-            key_name = key.split('/')[-1]
-            self.shuffled_store.get_node(chunk_keys[0])._f_rename(key_name)
+            self.shuffled_store.put(key, self.chunk_store[chunk_keys[0]])
             return
 
         self.reassemble_table(key, num_chunks, chunk_keys, chunk_counts)
@@ -150,7 +159,7 @@ class DataShuffler(object):
             x = self.store.select(key, start=i_chunk*self.chunksize, stop=(i_chunk+1)*self.chunksize).as_matrix()
             numpy.random.shuffle(x)
             chunk_key = key + str(i_chunk)
-            self.shuffled_store.put(chunk_key, pandas.DataFrame(x), format='table')
+            self.chunk_store.put(chunk_key, pandas.DataFrame(x), format='table')
 
             # increment counters
             num_read += len(x)
@@ -175,6 +184,7 @@ class DataShuffler(object):
         # stream from the chunks into the shuffled store
         avail_chunks = numpy.arange(num_chunks)
         chunk_read_inds = num_chunks * [0]
+        num_streamed = 0
         # read data in chunks
         for i_chunk in range(num_chunks):
             # get the count for each chunk table
@@ -186,16 +196,15 @@ class DataShuffler(object):
             arr_ix = 0
             for j in range(num_chunks):
                 num_read = chunk_read_counts[j]
-                arr[arr_ix : arr_ix + num_read] = self.shuffled_store.select(chunk_keys[j], start=chunk_read_inds[j], stop=chunk_read_inds[j] + num_read)
+                arr[arr_ix : arr_ix + num_read] = self.chunk_store.select(chunk_keys[j], start=chunk_read_inds[j], stop=chunk_read_inds[j] + num_read)
                 arr_ix += num_read
                 chunk_read_inds[j] += num_read
-            # shuffle the array and write it
+            # shuffle the array and write it, setting the index
             numpy.random.shuffle(arr)
-            self.shuffled_store.append(key, pandas.DataFrame(arr))
-
-        # remove the chunked tables
-        for ck in chunk_keys:
-            self.shuffled_store.remove(ck)
+            df = pandas.DataFrame(arr)
+            df.index = range(num_streamed, num_streamed + len(arr))
+            num_streamed += len(arr)
+            self.shuffled_store.append(key, df)
 
 
 
