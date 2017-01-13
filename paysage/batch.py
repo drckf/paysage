@@ -138,7 +138,7 @@ class DataShuffler(object):
 
         # if there is one chunk, move it and finish
         if num_chunks == 1:
-            self.shuffled_store.put(key, self.chunk_store[chunk_keys[0]])
+            self.shuffled_store.put(key, self.chunk_store[chunk_keys[0]], format='table')
             return
 
         self.reassemble_table(key, num_chunks, chunk_keys, chunk_counts)
@@ -154,12 +154,16 @@ class DataShuffler(object):
         i_chunk = 0
         chunk_keys = []
         chunk_counts = []
+
+        # get the column names
+        column_names = list(self.store.select(key, start=0, stop=0))
+
         # read, shuffle, and write chunks
         while True:
             x = self.store.select(key, start=i_chunk*self.chunksize, stop=(i_chunk+1)*self.chunksize).as_matrix()
             numpy.random.shuffle(x)
             chunk_key = key + str(i_chunk)
-            self.chunk_store.put(chunk_key, pandas.DataFrame(x), format='table')
+            self.chunk_store.put(chunk_key, pandas.DataFrame(x, columns=column_names), format='table')
 
             # increment counters
             num_read += len(x)
@@ -196,12 +200,13 @@ class DataShuffler(object):
             arr_ix = 0
             for j in range(num_chunks):
                 num_read = chunk_read_counts[j]
-                arr[arr_ix : arr_ix + num_read] = self.chunk_store.select(chunk_keys[j], start=chunk_read_inds[j], stop=chunk_read_inds[j] + num_read)
+                df_chunk = self.chunk_store.select(chunk_keys[j], start=chunk_read_inds[j], stop=chunk_read_inds[j] + num_read)
+                arr[arr_ix : arr_ix + num_read] = df_chunk
                 arr_ix += num_read
                 chunk_read_inds[j] += num_read
             # shuffle the array and write it, setting the index
             numpy.random.shuffle(arr)
-            df = pandas.DataFrame(arr)
+            df = pandas.DataFrame(arr, columns=list(df_chunk))
             df.index = range(num_streamed, num_streamed + len(arr))
             num_streamed += len(arr)
             self.shuffled_store.append(key, df)
