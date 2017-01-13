@@ -90,11 +90,11 @@ class DataShuffler(object):
        Synchronized shuffling between tables (with matching numbers of rows).
 
     """
-    def __init__(self, filename, shuffled_filename, allowed_mem=1):
+    def __init__(self, filename, shuffled_filename, allowed_mem=1, complevel=5, seed=137):
         self.filename = filename
         self.allowed_mem = allowed_mem # in GiB
-        self.seed = 137 # should keep this fixed for long-term determinism
-        self.complevel = 5
+        self.seed = seed # should keep this fixed for long-term determinism
+        self.complevel = complevel
         self.complib = 'zlib'
 
         # get the keys and statistics
