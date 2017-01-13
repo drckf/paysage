@@ -288,7 +288,11 @@ class HopfieldModel(LatentModel):
    
     def marginal_free_energy(self, visible, beta=None):
         J = B.dot(self.params['weights'], self.params['weights'].T)
-        return -B.dot(visible, self.params['visible_bias']) - beta * B.batch_dot(visible, J, visible)
+        energy = -B.batch_dot(visible, J, visible)
+        if isinstance(beta, numpy.ndarray):
+            energy *= numpy.ravel(beta)**2            
+        energy -= B.dot(visible, self.params['visible_bias'])
+        return energy
 
    
 

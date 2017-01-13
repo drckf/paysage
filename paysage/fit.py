@@ -33,21 +33,24 @@ class SequentialMC(object):
         else:
             raise ValueError("Unknown method {}".format(self.method))
             
-    def get_state(self, amodel):
+    def get_state(self):
         return self.state
             
             
 class SequentialSimulatedTemperingImportanceResampling(object):
     
-    def __init__(self, amodel, adataframe, method='stochastic'):
+    def __init__(self, amodel, adataframe, method='stochastic', seed = 137):
         self.model = amodel
         self.method = method
         try:
             self.state = adataframe.as_matrix().astype(numpy.float32)
         except Exception:
             self.state = adataframe.astype(numpy.float32)
+        self.beta_loc = numpy.ones((len(self.state), 1), dtype=numpy.float32)
         self.beta = numpy.ones((len(self.state), 1), dtype=numpy.float32)
-        self.beta_stepsize = 0.01
+        self.beta_stepsize = 0.1
+        self.beta_scale = 0.1
+        self.seed = seed
         
     @classmethod
     def from_batch(cls, amodel, abatch, method='stochastic'):
@@ -55,11 +58,21 @@ class SequentialSimulatedTemperingImportanceResampling(object):
         abatch.reset_generator('all')
         return tmp
         
+    def energy(self, beta):
+        return 0.5 * (beta - self.beta_loc)**2 / self.beta_scale
+
+    def update_beta(self):
+        trial_beta = self.beta + self.beta_stepsize * numpy.random.randn(len(self.beta),1)
+        current_energy = self.energy(self.beta)
+        trial_energy = self.energy(trial_beta)
+        delta = B.exp(current_energy - trial_energy)
+        r = numpy.random.rand(*delta.shape)
+        mask = numpy.float32(r < delta)
+        self.beta *= 1 - mask
+        self.beta += mask * trial_beta
+        
     def update_state(self, steps):
-        self.beta += self.beta_stepsize
-        self.beta += self.beta_stepsize * numpy.random.randn(len(self.beta),1)
-        #self.beta = reflect(self.beta).clip(0,1)
-        self.beta = self.beta.clip(0,1)
+        self.update_beta()
         if self.method == 'stochastic':
             self.state = self.model.markov_chain(self.state, steps, self.beta)  
         elif self.method == 'mean_field':
@@ -69,15 +82,18 @@ class SequentialSimulatedTemperingImportanceResampling(object):
         else:
             raise ValueError("Unknown method {}".format(self.method))
         
-    def get_state(self, amodel):
-        current_energy = amodel.marginal_free_energy(self.state, self.beta)
-        target_energy = amodel.marginal_free_energy(self.state, None)
+    def get_state(self):
+        """
+        current_energy = self.model.marginal_free_energy(self.state, self.beta)
+        target_energy = self.model.marginal_free_energy(self.state, None)
         delta = current_energy - target_energy
         delta -= numpy.max(delta)
         weights = B.exp(delta)           
         weights /= B.msum(weights)
         indices = numpy.random.choice(numpy.arange(len(weights)), size=len(weights), replace=True, p=weights)
         return self.state[list(indices)] 
+        """
+        return self.state
 
 
 class TrainingMethod(object):
@@ -121,7 +137,7 @@ class ContrastiveDivergence(TrainingMethod):
                 self.sampler.update_state(self.mcsteps)    
                 
                 # compute the gradient and update the model parameters
-                v_model = self.sampler.get_state(self.model)
+                v_model = self.sampler.get_state()
                 self.optimizer.update(self.model, v_data, v_model, epoch)
                 t += 1
                 
@@ -167,7 +183,7 @@ class PersistentContrastiveDivergence(TrainingMethod):
                 self.sampler.update_state(self.mcsteps)    
     
                 # compute the gradient and update the model parameters
-                v_model = self.sampler.get_state(self.model)
+                v_model = self.sampler.get_state()
                 self.optimizer.update(self.model, v_data, v_model, epoch)
                 t += 1
                 
