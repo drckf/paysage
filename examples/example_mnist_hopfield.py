@@ -43,7 +43,6 @@ if __name__ == "__main__":
     print('training with contrastive divergence')
     cd.train()  
     
-    """
     # plot some reconstructions
     v_data = data.get('validate')
     sampler = fit.SequentialMC(rbm, v_data) 
@@ -69,7 +68,7 @@ if __name__ == "__main__":
     
     # close the HDF5 store
     data.close()
-    """
+
     end = time.time()
     print('Total time: {0:.2f} seconds'.format(end - start))
     

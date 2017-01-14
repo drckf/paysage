@@ -23,7 +23,7 @@ if __name__ == "__main__":
     
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 10
+    num_epochs = 50
     learning_rate = 0.0001
     
     def transform(x):
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     # plot some reconstructions
     v_data = data.get('validate')
     sampler = fit.SequentialMC(rbm, v_data) 
-    sampler.update_state(1, resample=False, temperature=1.0)
+    sampler.update_state(1)
     v_model = sampler.state
     
     recon = numpy.sqrt(numpy.sum((v_data - v_model)**2) / len(v_data))
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     plot_image(v_model[0], (28,28))
     
     # plot some fantasy particles
-    sampler.update_state(1000, resample=False, temperature=1.0)
+    sampler.update_state(1000)
     v_model = sampler.state
     
     plot_image(v_data[0], (28,28))

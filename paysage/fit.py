@@ -49,7 +49,7 @@ class SequentialSimulatedTemperingImportanceResampling(object):
         self.beta_loc = numpy.ones((len(self.state), 1), dtype=numpy.float32)
         self.beta = numpy.ones((len(self.state), 1), dtype=numpy.float32)
         self.beta_stepsize = 0.1
-        self.beta_scale = 0.1
+        self.beta_scale = 0.2
         self.seed = seed
         
     @classmethod
