@@ -29,12 +29,29 @@ class EnergyDistance(object):
         self.downsample = 100
         
     def update(self, minibatch, samples):
-        self.norm += len(minibatch)
+        self.norm += 1
         self.energy_distance += fast_energy_distance(minibatch, samples, self.downsample)
         
     def value(self):
         if self.norm:
             return self.energy_distance / self.norm
+        else:
+            return None
+     
+       
+class EnergyGap(object):
+    
+    def __init__(self):
+        self.energy_gap = 0
+        self.norm = 0
+        
+    def update(self, minibatch, random_samples, amodel):
+        self.norm += 1
+        self.energy_gap += B.mean(amodel.marginal_free_energy(minibatch)) - B.mean(amodel.marginal_free_energy(random_samples)) 
+        
+    def value(self):
+        if self.norm:
+            return self.energy_gap / self.norm
         else:
             return None
         
