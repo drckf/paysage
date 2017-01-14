@@ -1,5 +1,5 @@
-import os, sys, numpy, pandas
-from paysage.backends import numba_engine as en
+import os, sys, numpy, pandas, time
+from paysage import backends as B
 
 from paysage import batch
 from sklearn.neural_network import BernoulliRBM
@@ -16,26 +16,34 @@ def plot_image(image_vector, shape):
     plt.close(f)    
 
 if __name__ == "__main__":
+    start = time.time()
+
     num_hidden_units = 500   
     batch_size = 50
     num_epochs = 10
     learning_rate = 0.001
     
     # set up the batch, model, and optimizer objects
-    filepath = os.path.join(os.path.dirname(__file__), 'mnist', 'mnist.h5')
-    data = batch.Batch(filepath, 'train/images', batch_size, 
+    filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
+    data = batch.Batch(filepath, 'train/images', 60000, 
                     transform=batch.binarize_color, train_fraction=0.99)
+                    
+    X = data.get('train')
+    data.close()
                     
     rbm = BernoulliRBM(n_components=num_hidden_units, 
                        learning_rate=learning_rate, 
                        batch_size=batch_size, 
                        n_iter=num_epochs, 
                        verbose=1)
-                       
-    rbm.fit(data.chunk['train'])
+                 
+    rbm.fit(X)
+    
+    data = batch.Batch(filepath, 'train/images', batch_size, 
+                    transform=batch.binarize_color, train_fraction=0.99)
     
     # plot some reconstructions
-    v_data = data.chunk['validate']
+    v_data = data.get('validate')
     v_model = rbm.gibbs(v_data)
 
     recon = numpy.sqrt(numpy.sum((v_data - v_model)**2) / len(v_data))
@@ -50,11 +58,14 @@ if __name__ == "__main__":
     plot_image(v_data[0], (28,28))
     plot_image(v_model[0], (28,28))
     
-    edist = en.fast_energy_distance(v_data.astype(numpy.float32), v_model.astype(numpy.float32), downsample=100)
+    edist = B.fast_energy_distance(v_data.astype(numpy.float32), v_model.astype(numpy.float32), downsample=100)
     
     print('Reconstruction error:  {0:.2f}'.format(recon))
     print('Energy distance:  {0:.2f}'.format(edist))
     
     # close the HDF5 store
     data.close()
+    
+    end = time.time()
+    print('Total time: {0:.2f} seconds'.format(end - start))
     

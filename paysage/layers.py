@@ -1,14 +1,12 @@
 import numpy
-from .backends import numba_engine as en
-
-LOG2 = 0.6931471805599453
+from . import backends as B
 
 #----- LAYER CLASSES -----#
 
 class GaussianLayer(object):
         
-    def __init__(self):
-        pass
+    def __init__(self, seed = 137):
+        self.rand = numpy.random.randn
         
     def prox(self, vis):
         return vis
@@ -20,87 +18,94 @@ class GaussianLayer(object):
         return mean
         
     def log_partition_function(self, scale):
-        return -numpy.log(scale)
+        return -B.log(scale)
     
     def sample_state(self, loc, scale):
-        return loc + scale * numpy.random.normal(loc=0.0, scale=1.0, size=loc.shape)
+        r = numpy.float32(self.rand(*loc.shape))     
+        return loc + scale * r
         
-    def random(self, loc, scale):
-        return numpy.random.normal(loc=0.0, scale=1.0, size=loc.shape)
+    def random(self, loc):
+        r = numpy.float32(self.rand(*loc.shape))
+        return r
 
 
 class IsingLayer(object):
     
-    def __init__(self):
-        pass
+    def __init__(self, seed = 137):
+        self.rand = numpy.random.rand
         
     def prox(self, vis):
         return 2.0 * (vis > 0.0).astype(numpy.float32) - 1.0
         
     def mean(self, loc):
-        return numpy.tanh(loc)
+        return B.tanh(loc)
         
     def inverse_mean(self, mean):
-        clipped_mean = mean.clip(min= -1 + en.EPSILON,max= 1 - en.EPSILON)
-        return numpy.arctanh(mean)
+        return B.atanh(mean)
         
     def log_partition_function(self, loc):
-        return -LOG2 + numpy.logaddexp(-loc, loc)
+        return B.logcosh(loc)
         
     def sample_state(self, loc):
-        return en.random_ising(en.expit(loc))
+        p = B.expit(loc)
+        r = self.rand(*p.shape)        
+        return 2*numpy.float32(r<p)-1
         
     def random(self, loc):
-        return 2.0 * numpy.random.randint(0, 2, loc.shape).astype(numpy.float32) - 1.0
-        
+        r = self.rand(*loc.shape)        
+        return 2*numpy.float32(r<0.5)-1
+                
         
 class BernoulliLayer(object):
         
-    def __init__(self):
-        pass
+    def __init__(self, seed = 137):
+        self.rand = numpy.random.rand
         
     def prox(self, vis):
         return (vis > 0.0).astype(numpy.float32)
         
     def mean(self, loc):
-        return en.expit(loc)
+        return B.expit(loc)
         
     def inverse_mean(self, mean):
-        clipped_mean = mean.clip(min=en.EPSILON, max = 1 - en.EPSILON)
-        return numpy.log(clipped_mean/(1-clipped_mean))
+        return B.logit(mean)
         
     def log_partition_function(self, loc):
-        return numpy.logaddexp(0, loc)
+        return B.softplus(loc)
         
     def sample_state(self, loc):
-        return en.random_bernoulli(en.expit(loc))
+        p = B.expit(loc)
+        r = self.rand(*p.shape)        
+        return numpy.float32(r<p)
         
     def random(self, loc):
-        return numpy.random.randint(0, 2, loc.shape).astype(numpy.float32)
-
+        r = self.rand(*loc.shape)        
+        return numpy.float32(r<0.5)
 
 class ExponentialLayer(object):
     
-    def __init__(self):
-        pass
+    def __init__(self, seed = 137):
+        self.rand = numpy.random.rand
         
     def prox(self, vis):
-        return vis.clip(min=en.EPSILON)
+        return vis.clip(min=B.EPSILON)
         
     def mean(self, loc):
-        return 1.0 / (en.EPSILON + loc)
+        return B.elementwise_inverse(loc)
         
     def inverse_mean(self, mean):
-        return 1.0 / (en.EPSILON + mean)
+        return B.elementwise_inverse(mean)
         
     def log_partition_function(self, loc):
-        return -numpy.log(loc)
+        return -B.log(loc)
 
     def sample_state(self, loc):
-        return numpy.random.exponential(loc).astype(numpy.float32)
+        r = self.rand(*loc.shape)        
+        return -B.log(r) / loc            
         
     def random(self, loc):
-        return numpy.random.exponential(numpy.ones_like(loc)).astype(numpy.float32)
+        r = self.rand(*loc.shape)        
+        return -B.log(r)   
         
 
 # ---- FUNCTIONS ----- #

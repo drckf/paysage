@@ -1,5 +1,5 @@
 import numpy    
-from .backends import numba_engine as en
+from . import backends as B
 
     
 # ----- OPTIMIZERS ----- #        
@@ -36,7 +36,7 @@ class StochasticGradientDescent(Optimizer):
             for key in model.penalty:
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
-            model.params[key] = model.params[key] - lr * self.grad[key]
+            model.params[key] -= lr * self.grad[key]
         model.enforce_constraints()
          
          
@@ -61,7 +61,7 @@ class Momentum(Optimizer):
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
             self.delta[key] = self.grad[key] + self.momentum * self.delta[key]
-            model.params[key] = model.params[key] - lr * self.delta[key]
+            model.params[key] -= lr * self.delta[key]
         model.enforce_constraints()
         
 
@@ -70,8 +70,8 @@ class RMSProp(Optimizer):
        Geoffrey Hinton's Coursera Course Lecture 6e
     
     """
-    def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, tolerance=10**-6):
-        super().__init__(tolerance)        
+    def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, lr_decay=1.0, tolerance=10**-6):
+        super().__init__(tolerance,  lr_decay)        
         self.stepsize = numpy.float32(stepsize)
         self.mean_square_weight = numpy.float32(mean_square_weight)
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
@@ -84,8 +84,8 @@ class RMSProp(Optimizer):
             for key in model.penalty:
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
-            self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
-            model.params[key] = model.params[key] - self.stepsize * self.grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key])
+            B.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
+            model.params[key] -= self.stepsize * B.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key])
         model.enforce_constraints()
 
 
@@ -95,8 +95,8 @@ class ADAM(Optimizer):
        Kingma, D. P., & Ba, J. L. (2015). Adam: a Method for Stochastic Optimization. International Conference on Learning Representations, 1–13.
     
     """
-    def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.9, tolerance=10**-6):
-        super().__init__(tolerance)        
+    def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.9, lr_decay=1.0, tolerance=10**-6):
+        super().__init__(tolerance, lr_decay)        
         self.stepsize = numpy.float32(stepsize)
         self.mean_weight = numpy.float32(mean_weight)
         self.mean_square_weight = numpy.float32(mean_square_weight)
@@ -111,9 +111,9 @@ class ADAM(Optimizer):
             for key in model.penalty:
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
-            self.mean_square_grad[key] = self.mean_square_weight * self.mean_square_grad[key] + (1-self.mean_square_weight)*self.grad[key]**2
-            self.mean_grad[key] = self.mean_weight * self.mean_grad[key] + (1-self.mean_weight)*self.grad[key]            
-            model.params[key] = model.params[key] - (self.stepsize / (1 - self.mean_weight)) * self.mean_grad[key] / numpy.sqrt(self.epsilon + self.mean_square_grad[key] / (1 - self.mean_square_weight))
+            B.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
+            B.mix_inplace(self.mean_weight, self.mean_grad[key], self.grad[key])            
+            model.params[key] -= (self.stepsize / (1 - self.mean_weight)) * B.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key]/(1 - self.mean_square_weight))            
         model.enforce_constraints()
 
 

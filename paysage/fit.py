@@ -1,5 +1,5 @@
-from .backends import numba_engine as en
 import numpy, time
+from . import backends as B
     
 # -----  CLASSES ----- #
 
@@ -18,8 +18,8 @@ class SequentialMC(object):
         
     @classmethod
     def from_batch(cls, amodel, abatch, method='stochastic'):
-        tmp = cls(amodel, abatch.get(), method=method)
-        abatch.reset('all')
+        tmp = cls(amodel, abatch.get('train'), method=method)
+        abatch.reset_generator('all')
         return tmp
         
     def update_state(self, steps, resample=False, temperature=1.0):
@@ -63,8 +63,6 @@ class ContrastiveDivergence(TrainingMethod):
             start_time = time.time()
             while True:
                 try:
-                    if not t % 100:
-                        print('Sampling batch: {0}'.format(t))
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
@@ -111,9 +109,6 @@ class PersistentContrastiveDivergence(TrainingMethod):
             start_time = time.time()
             while True:
                 try:
-                    if not t % 100:
-                        #print('Sampling batch: {0}'.format(t))
-                        pass
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
@@ -159,8 +154,6 @@ class HopfieldContrastiveDivergence(TrainingMethod):
             start_time = time.time()
             while True:
                 try:
-                    if not t % 100:
-                        print('Sampling batch: {0}'.format(t))
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
@@ -194,7 +187,7 @@ class ProgressMonitor(object):
         self.skip = skip
         self.batch = abatch
         self.steps = update_steps
-        self.num_validation_samples = self.batch.index.nrows - self.batch.index.end
+        self.num_validation_samples = self.batch.num_validation_samples()
         self.memory = []
 
     def reconstruction_error(self, model, v_data):
@@ -211,7 +204,7 @@ class ProgressMonitor(object):
         v_model = model.random(v_data)
         sampler = SequentialMC(model, v_model) 
         sampler.update_state(self.steps, resample=False, temperature=1.0)
-        return len(v_model) * en.fast_energy_distance(v_data, sampler.state, downsample=100)
+        return len(v_model) * B.fast_energy_distance(v_data, sampler.state, downsample=100)
         
     def check_progress(self, model, t, store=False):
         if not (t % self.skip):
