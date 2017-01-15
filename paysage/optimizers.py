@@ -114,7 +114,7 @@ class ADAM(Optimizer):
         for key in self.grad:
             B.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
             B.mix_inplace(self.mean_weight, self.mean_grad[key], self.grad[key])
-            model.params[key] -= (self.stepsize / (1 - self.mean_weight)) * B.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key]/(1 - self.mean_square_weight))
+            model.params[key] -= (self.stepsize / (1 - self.mean_weight)) * B.sqrt_div(self.mean_grad[key], self.epsilon + self.mean_square_grad[key]/(1 - self.mean_square_weight))
         model.enforce_constraints()
 
 
