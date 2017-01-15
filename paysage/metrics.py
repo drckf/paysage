@@ -54,6 +54,25 @@ class EnergyGap(object):
             return self.energy_gap / self.norm
         else:
             return None
+            
+
+class EnergyZscore(object):
+    
+    def __init__(self):
+        self.data_mean = 0
+        self.random_mean = 0
+        self.random_mean_square = 0
+        
+    def update(self, minibatch, random_samples, amodel):
+        self.data_mean += B.mean(amodel.marginal_free_energy(minibatch))
+        self.random_mean +=  B.mean(amodel.marginal_free_energy(random_samples)) 
+        self.random_mean_square +=  B.mean(amodel.marginal_free_energy(random_samples)**2) 
+
+    def value(self):
+        if self.random_mean_square:
+            return (self.data_mean - self.random_mean) / math.sqrt(self.random_mean_square)
+        else:
+            return None
         
         
 # ---- FUNCTIONS ----- #
