@@ -117,6 +117,7 @@ class LatentModel(object):
         return self.layers['visible'].random(visible)
         
    
+   
 class RestrictedBoltzmannMachine(LatentModel):
     """RestrictedBoltzmanMachine
     
@@ -372,21 +373,9 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         log_Z_hidden = self.layers['hidden'].log_partition_function(self.hidden_field(v_scaled))
         return 0.5 * B.mean((visible - self.params['visible_bias'])**2 / scale, axis=1) - B.sum(log_Z_hidden)        
   
-      
-#TODO:
-class HookeMachine(LatentModel):
-    """HookeMachine
-    
-       Unpublished. Charles K. Fisher (2016)
-    
-    """
-    def __init__(self, nvis, nhid, vis_type='gauss', hid_type='expo'):   
-        pass
-
-
     
 # ----- ALIASES ----- #
     
-RBM = RestrictedBoltzmannMachine    
+BernoulliRBM = RBM = RestrictedBoltzmannMachine 
 GRBM = GaussianRBM = GaussianRestrictedBoltzmannMachine
             
