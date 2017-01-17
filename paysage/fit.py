@@ -46,6 +46,7 @@ class TrainingMethod(object):
         self.monitor = ProgressMonitor(skip, abatch)
 
 
+
 class ContrastiveDivergence(TrainingMethod):
     """ContrastiveDivergence
        CD-k algorithm for approximate maximum likelihood inference.
