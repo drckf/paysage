@@ -36,14 +36,15 @@ class SequentialMC(object):
 
 class TrainingMethod(object):
 
-    def __init__(self, model, abatch, optimizer, epochs, skip=100, update_method='stochastic'):
+    def __init__(self, model, abatch, optimizer, epochs, skip=100,
+                 update_method='stochastic', metrics=['ReconstructionError', 'EnergyDistance']):
         self.model = model
         self.batch = abatch
         self.epochs = epochs
         self.update_method = update_method
         self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
         self.optimizer = optimizer
-        self.monitor = ProgressMonitor(skip, abatch)
+        self.monitor = ProgressMonitor(skip, abatch, metrics=metrics)
 
 
 
@@ -55,8 +56,9 @@ class ContrastiveDivergence(TrainingMethod):
        Carreira-Perpinan, Miguel A., and Geoffrey Hinton. "On Contrastive Divergence Learning." AISTATS. Vol. 10. 2005.
 
     """
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100, update_method='stochastic'):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method)
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100,
+                 update_method='stochastic',  metrics=['ReconstructionError', 'EnergyDistance']):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method, metrics=metrics)
         self.mcsteps = mcsteps
 
     def train(self):
@@ -102,8 +104,9 @@ class PersistentContrastiveDivergence(TrainingMethod):
        Tieleman, Tijmen. "Training restricted Boltzmann machines using approximations to the likelihood gradient." Proceedings of the 25th international conference on Machine learning. ACM, 2008.
 
     """
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100, update_method='stochastic'):
-       super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method)
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100,
+                 update_method='stochastic',  metrics=['ReconstructionError', 'EnergyDistance']):
+       super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method, metrics=metrics)
        self.mcsteps = mcsteps
 
     def train(self):
@@ -148,8 +151,9 @@ class HopfieldContrastiveDivergence(TrainingMethod):
        Unpublished. Charles K. Fisher (2016)
 
     """
-    def __init__(self, model, abatch, optimizer, epochs, attractive=True, skip=100):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip)
+    def __init__(self, model, abatch, optimizer, epochs, attractive=True, skip=100,
+                  metrics=['ReconstructionError', 'EnergyDistance']):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip, metrics=metrics)
         self.attractive = attractive
 
     def train(self):
@@ -224,7 +228,7 @@ class ProgressMonitor(object):
                 'reconstructions': reconstructions,
                 'random_samples': random_samples,
                 'samples': fantasy_particles,
-                'model': model
+                'amodel': model
                 }
 
                 # update metrics
