@@ -25,6 +25,7 @@ if __name__ == "__main__":
     batch_size = 50
     num_epochs = 10
     learning_rate = 0.001
+    mc_steps = 1
 
     filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
     shuffled_filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'shuffled_mnist.h5')
@@ -52,7 +53,7 @@ if __name__ == "__main__":
                  data,
                  opt,
                  num_epochs,
-                 1,
+                 mc_steps,
                  skip=200,
                  update_method='stochastic',
                  metrics=['ReconstructionError',

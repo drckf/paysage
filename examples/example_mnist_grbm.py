@@ -25,6 +25,7 @@ if __name__ == "__main__":
     batch_size = 50
     num_epochs = 10
     learning_rate = 0.0001
+    mc_steps = 1
 
     def transform(x):
         return numpy.float32(x) / 255
@@ -55,7 +56,7 @@ if __name__ == "__main__":
                  data,
                  opt,
                  num_epochs,
-                 1,
+                 mc_steps,
                  skip=200,
                  update_method='stochastic',
                  metrics=['ReconstructionError',
@@ -67,28 +68,36 @@ if __name__ == "__main__":
     print('training with contrastive divergence')
     cd.train()
 
+    # evaluate the model
+    # this will be the same as the final epoch results
+    # it is repeated here to be consistent with the sklearn rbm example
+    performance = fit.ProgressMonitor(0,
+                                      data,
+                                      metrics=['ReconstructionError',
+                                               'EnergyDistance',
+                                               'EnergyGap',
+                                               'EnergyZscore'])
+    print('Final performance metrics:')
+    performance.check_progress(rbm, 0, show=True)
+
     # plot some reconstructions
     v_data = data.get('validate')
     sampler = fit.SequentialMC(rbm, v_data)
     sampler.update_state(1, resample=False, temperature=1.0)
     v_model = sampler.state
 
-    recon = numpy.sqrt(numpy.sum((v_data - v_model)**2) / len(v_data))
-
+    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     plot_image(v_data[0], (28,28))
     plot_image(v_model[0], (28,28))
 
     # plot some fantasy particles
+    random_samples = rbm.random(v_data)
+    sampler = fit.SequentialMC(rbm, random_samples)
     sampler.update_state(1000, resample=False, temperature=1.0)
     v_model = sampler.state
 
-    plot_image(v_data[0], (28,28))
+    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     plot_image(v_model[0], (28,28))
-
-    edist = B.fast_energy_distance(v_data, v_model, downsample=100)
-
-    print('Reconstruction error:  {0:.2f}'.format(recon))
-    print('Energy distance:  {0:.2f}'.format(edist))
 
     # close the HDF5 store
     data.close()

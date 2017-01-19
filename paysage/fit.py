@@ -80,10 +80,8 @@ class ContrastiveDivergence(TrainingMethod):
                 t += 1
 
             # end of epoch processing
-            prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
-            for p in prog:
-                print("-{0}: {1:.6f}".format(p, prog[p]))
+            prog = self.monitor.check_progress(self.model, 0, store=True, show=True)
 
             end_time = time.time()
             print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')
@@ -127,10 +125,8 @@ class PersistentContrastiveDivergence(TrainingMethod):
                 t += 1
 
             # end of epoch processing
-            prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
-            for p in prog:
-                print("-{0}: {1:.6f}".format(p, prog[p]))
+            prog = self.monitor.check_progress(self.model, 0, store=True, show=True)
 
             end_time = time.time()
             print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')
@@ -173,10 +169,8 @@ class HopfieldContrastiveDivergence(TrainingMethod):
                 t += 1
 
             # end of epoch processing
-            prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
-            for p in prog:
-                print("-{0}: {1:.6f}".format(p, prog[p]))
+            prog = self.monitor.check_progress(self.model, 0, store=True, show=True)
 
             end_time = time.time()
             print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')
@@ -199,8 +193,8 @@ class ProgressMonitor(object):
         self.metrics = [M.__getattribute__(m)() for m in metrics]
         self.memory = []
 
-    def check_progress(self, model, t, store=False):
-        if not (t % self.skip):
+    def check_progress(self, model, t, store=False, show=False):
+        if not self.skip or not (t % self.skip):
 
             for m in self.metrics:
                 m.reset()
@@ -237,6 +231,9 @@ class ProgressMonitor(object):
 
             # compute metric dictionary
             metdict = {m.name: m.value() for m in self.metrics}
+            if show:
+                for m in metdict:
+                    print("-{0}: {1:.6f}".format(m, metdict[m]))
 
             if store:
                 self.memory.append(metdict)
