@@ -1,5 +1,6 @@
 import numpy, time
 from . import backends as B
+from . import metrics as M
 
 # -----  CLASSES ----- #
 
@@ -35,14 +36,16 @@ class SequentialMC(object):
 
 class TrainingMethod(object):
 
-    def __init__(self, model, abatch, optimizer, epochs, skip=100, update_method='stochastic'):
+    def __init__(self, model, abatch, optimizer, epochs, skip=100,
+                 update_method='stochastic', metrics=['ReconstructionError', 'EnergyDistance']):
         self.model = model
         self.batch = abatch
         self.epochs = epochs
         self.update_method = update_method
         self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
         self.optimizer = optimizer
-        self.monitor = ProgressMonitor(skip, self.batch)
+        self.monitor = ProgressMonitor(skip, abatch, metrics=metrics)
+
 
 
 class ContrastiveDivergence(TrainingMethod):
@@ -53,8 +56,9 @@ class ContrastiveDivergence(TrainingMethod):
        Carreira-Perpinan, Miguel A., and Geoffrey Hinton. "On Contrastive Divergence Learning." AISTATS. Vol. 10. 2005.
 
     """
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100, update_method='stochastic'):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method)
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100,
+                 update_method='stochastic',  metrics=['ReconstructionError', 'EnergyDistance']):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method, metrics=metrics)
         self.mcsteps = mcsteps
 
     def train(self):
@@ -78,7 +82,8 @@ class ContrastiveDivergence(TrainingMethod):
             # end of epoch processing
             prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
-            print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
+            for p in prog:
+                print("-{0}: {1:.6f}".format(p, prog[p]))
 
             end_time = time.time()
             print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')
@@ -99,8 +104,9 @@ class PersistentContrastiveDivergence(TrainingMethod):
        Tieleman, Tijmen. "Training restricted Boltzmann machines using approximations to the likelihood gradient." Proceedings of the 25th international conference on Machine learning. ACM, 2008.
 
     """
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100, update_method='stochastic'):
-       super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method)
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100,
+                 update_method='stochastic',  metrics=['ReconstructionError', 'EnergyDistance']):
+       super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method, metrics=metrics)
        self.mcsteps = mcsteps
 
     def train(self):
@@ -123,7 +129,8 @@ class PersistentContrastiveDivergence(TrainingMethod):
             # end of epoch processing
             prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
-            print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
+            for p in prog:
+                print("-{0}: {1:.6f}".format(p, prog[p]))
 
             end_time = time.time()
             print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')
@@ -144,8 +151,9 @@ class HopfieldContrastiveDivergence(TrainingMethod):
        Unpublished. Charles K. Fisher (2016)
 
     """
-    def __init__(self, model, abatch, optimizer, epochs, attractive=True, skip=100):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip)
+    def __init__(self, model, abatch, optimizer, epochs, attractive=True, skip=100,
+                  metrics=['ReconstructionError', 'EnergyDistance']):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip, metrics=metrics)
         self.attractive = attractive
 
     def train(self):
@@ -167,7 +175,8 @@ class HopfieldContrastiveDivergence(TrainingMethod):
             # end of epoch processing
             prog = self.monitor.check_progress(self.model, 0, store=True)
             print('End of epoch {}: '.format(epoch))
-            print("-Reconstruction Error: {0:.6f}, Energy Distance: {1:.6f}".format(*prog))
+            for p in prog:
+                print("-{0}: {1:.6f}".format(p, prog[p]))
 
             end_time = time.time()
             print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')
@@ -183,45 +192,57 @@ class HopfieldContrastiveDivergence(TrainingMethod):
 
 class ProgressMonitor(object):
 
-    def __init__(self, skip, abatch, update_steps=10):
+    def __init__(self, skip, batch, metrics=['ReconstructionError', 'EnergyDistance']):
         self.skip = skip
-        self.batch = abatch
-        self.steps = update_steps
-        self.num_validation_samples = self.batch.num_validation_samples()
+        self.batch = batch
+        self.update_steps = 10
+        self.metrics = [M.__getattribute__(m)() for m in metrics]
         self.memory = []
-
-    def reconstruction_error(self, model, v_data):
-        sampler = SequentialMC(model, v_data)
-        sampler.update_state(1)
-        return numpy.sum((v_data - sampler.state)**2)
-
-    def energy_distance(self, model, v_data):
-        """energy_distance(model, v_data)
-
-           Székely, Gábor J., and Maria L. Rizzo. "Energy statistics: A class of statistics based on distances." Journal of statistical planning and inference 143.8 (2013): 1249-1272.
-
-        """
-        v_model = model.random(v_data)
-        sampler = SequentialMC(model, v_model)
-        sampler.update_state(self.steps, resample=False, temperature=1.0)
-        return len(v_model) * B.fast_energy_distance(v_data, sampler.state, downsample=100)
 
     def check_progress(self, model, t, store=False):
         if not (t % self.skip):
-            recon = 0
-            edist = 0
+
+            for m in self.metrics:
+                m.reset()
+
             while True:
                 try:
                     v_data = self.batch.get(mode='validate')
                 except StopIteration:
                     break
-                recon += self.reconstruction_error(model, v_data)
-                edist += self.energy_distance(model, v_data)
-            recon = numpy.sqrt(recon / self.num_validation_samples)
-            edist = edist / self.num_validation_samples
+
+                # compute the reconstructions
+                sampler = SequentialMC(model, v_data)
+                sampler.update_state(1)
+                reconstructions = sampler.state
+
+                # compute the fantasy particles
+                random_samples = model.random(v_data)
+                sampler = SequentialMC(model, random_samples)
+                sampler.update_state(self.update_steps)
+                fantasy_particles = sampler.state
+
+                # compile argdict
+                argdict = {
+                'minibatch': v_data,
+                'reconstructions': reconstructions,
+                'random_samples': random_samples,
+                'samples': fantasy_particles,
+                'amodel': model
+                }
+
+                # update metrics
+                for m in self.metrics:
+                    m.update(**argdict)
+
+            # compute metric dictionary
+            metdict = {m.name: m.value() for m in self.metrics}
+
             if store:
-                self.memory.append([recon, edist])
-            return [recon, edist]
+                self.memory.append(metdict)
+
+            return metdict
+
 
 # ----- ALIASES ----- #
 
