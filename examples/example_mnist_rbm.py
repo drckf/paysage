@@ -25,9 +25,15 @@ if __name__ == "__main__":
     num_epochs = 10
     learning_rate = 0.001
 
-    # set up the batch object to read the data
     filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
-    data = batch.Batch(filepath,
+    shuffled_filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'shuffled_mnist.h5')
+
+    # shuffle the data
+    shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
+    shuffler.shuffle()
+
+    # set up the reader to get minibatches
+    data = batch.Batch(shuffled_filepath,
                        'train/images',
                        batch_size,
                        transform=batch.binarize_color,

@@ -23,10 +23,19 @@ if __name__ == "__main__":
     num_epochs = 10
     learning_rate = 0.001
 
-    # set up the batch, model, and optimizer objects
     filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
-    data = batch.Batch(filepath, 'train/images', 60000,
-                    transform=batch.binarize_color, train_fraction=0.99)
+    shuffled_filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'shuffled_mnist.h5')
+
+    # shuffle the data
+    shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
+    shuffler.shuffle()
+
+    # set up the reader to get the whole training set
+    data = batch.Batch(shuffled_filepath,
+                       'train/images',
+                       60000,
+                       transform=batch.binarize_color,
+                       train_fraction=0.99)
 
     X = data.get('train')
     data.close()
@@ -36,11 +45,14 @@ if __name__ == "__main__":
                        batch_size=batch_size,
                        n_iter=num_epochs,
                        verbose=1)
-
     rbm.fit(X)
 
-    data = batch.Batch(filepath, 'train/images', batch_size,
-                    transform=batch.binarize_color, train_fraction=0.99)
+    # set up the reader to read the first batch of the validation set
+    data = batch.Batch(shuffled_filepath,
+                   'train/images',
+                   batch_size,
+                   transform=batch.binarize_color,
+                   train_fraction=0.99)
 
     # plot some reconstructions
     v_data = data.get('validate')
