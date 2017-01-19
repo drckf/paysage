@@ -28,16 +28,31 @@ if __name__ == "__main__":
 
     # set up the batch object to read the data
     filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
-    data = batch.Batch(filepath, 'train/images', batch_size,
-                    transform=batch.binarize_color, train_fraction=0.99)
+    data = batch.Batch(filepath,
+                       'train/images',
+                       batch_size,
+                       transform=batch.binarize_color,
+                       train_fraction=0.99)
 
     # set up the model and initialize the parameters
-    rbm = hidden.HopfieldModel(data.ncols, num_hidden_units, vis_type='bernoulli')
+    rbm = hidden.HopfieldModel(data.ncols,
+                               num_hidden_units,
+                               vis_type='bernoulli')
     rbm.initialize(data, method='hinton')
 
     # set up the optimizer and the fit method
     opt = optimizers.RMSProp(rbm, stepsize=learning_rate)
-    cd = fit.PCD(rbm, data, opt, num_epochs, 1, skip=200, update_method='stochastic')
+    cd = fit.PCD(rbm,
+                 data,
+                 opt,
+                 num_epochs,
+                 1,
+                 skip=200,
+                 update_method='stochastic',
+                 metrics=['ReconstructionError',
+                          'EnergyDistance',
+                          'EnergyGap',
+                          'EnergyZscore'])
 
     # fit the model
     print('training with contrastive divergence')
