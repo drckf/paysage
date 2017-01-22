@@ -8,7 +8,10 @@ from paysage import optimizers
 from paysage import backends as B
 
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gs
 import seaborn as sns
+
+import plotting
 
 def plot_image(image_vector, shape):
     f, ax = plt.subplots(figsize=(4,4))
@@ -87,6 +90,7 @@ if __name__ == "__main__":
     v_model = sampler.state
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
+    grid = numpy.array([[v_data[i], v_model[i]] for i in idx])
     plot_image(v_data[0], (28,28))
     plot_image(v_model[0], (28,28))
 
