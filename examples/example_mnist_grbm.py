@@ -1,28 +1,12 @@
 import os, sys, numpy, pandas, time
 
-#from paysage.backends import numba_engine as en
 from paysage import batch
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
-from paysage import backends as B
-
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gs
-import seaborn as sns
-
 import plotting
 
-def plot_image(image_vector, shape):
-    f, ax = plt.subplots(figsize=(4,4))
-    hm = sns.heatmap(numpy.reshape(image_vector, shape), ax=ax, cmap="gray_r", cbar=False)
-    hm.set(yticks=[])
-    hm.set(xticks=[])
-    plt.show(f)
-    plt.close(f)
-
 if __name__ == "__main__":
-    start = time.time()
 
     num_hidden_units = 500
     batch_size = 50
@@ -31,6 +15,7 @@ if __name__ == "__main__":
     mc_steps = 1
 
     def transform(x):
+        """ scale the grayscale image to be in (0,1) """
         return numpy.float32(x) / 255
 
     filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
@@ -83,7 +68,7 @@ if __name__ == "__main__":
     print('Final performance metrics:')
     performance.check_progress(rbm, 0, show=True)
 
-    # plot some reconstructions
+    print("\nPlot a random sample of reconstructions")
     v_data = data.get('validate')
     sampler = fit.SequentialMC(rbm, v_data)
     sampler.update_state(1, resample=False, temperature=1.0)
@@ -91,20 +76,22 @@ if __name__ == "__main__":
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_data[i], v_model[i]] for i in idx])
-    plot_image(v_data[0], (28,28))
-    plot_image(v_model[0], (28,28))
+    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
 
-    # plot some fantasy particles
+    print("\nPlot a random sample of fantasy particles")
     random_samples = rbm.random(v_data)
     sampler = fit.SequentialMC(rbm, random_samples)
     sampler.update_state(1000, resample=False, temperature=1.0)
     v_model = sampler.state
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
-    plot_image(v_model[0], (28,28))
+    grid = numpy.array([[v_model[i]] for i in idx])
+    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+
+    print("\nPlot a random sample of the weights")
+    idx = numpy.random.choice(range(rbm.params['weights'].shape[1]), 5, replace=False)
+    grid = numpy.array([[rbm.params['weights'][:, i]] for i in idx])
+    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
 
     # close the HDF5 store
     data.close()
-
-    end = time.time()
-    print('Total time: {0:.2f} seconds'.format(end - start))

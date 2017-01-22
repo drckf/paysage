@@ -1,25 +1,12 @@
 import os, sys, numpy, pandas, time
 
-#from paysage.backends import numba_engine as en
 from paysage import batch
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
-from paysage import backends as B
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-def plot_image(image_vector, shape):
-    f, ax = plt.subplots(figsize=(4,4))
-    hm = sns.heatmap(numpy.reshape(image_vector, shape), ax=ax, cmap="gray_r", cbar=False)
-    hm.set(yticks=[])
-    hm.set(xticks=[])
-    plt.show(f)
-    plt.close(f)
+import plotting
 
 if __name__ == "__main__":
-    start = time.time()
 
     num_hidden_units = 500
     batch_size = 50
@@ -65,31 +52,43 @@ if __name__ == "__main__":
     print('training with contrastive divergence')
     cd.train()
 
-    # plot some reconstructions
+    # evaluate the model
+    # this will be the same as the final epoch results
+    # it is repeated here to be consistent with the sklearn rbm example
+    performance = fit.ProgressMonitor(0,
+                                      data,
+                                      metrics=['ReconstructionError',
+                                               'EnergyDistance',
+                                               'EnergyGap',
+                                               'EnergyZscore'])
+    print('Final performance metrics:')
+    performance.check_progress(rbm, 0, show=True)
+
+    print("\nPlot a random sample of reconstructions")
     v_data = data.get('validate')
     sampler = fit.SequentialMC(rbm, v_data)
     sampler.update_state(1, resample=False, temperature=1.0)
     v_model = sampler.state
 
-    recon = numpy.sqrt(numpy.sum((v_data - v_model)**2) / len(v_data))
+    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
+    grid = numpy.array([[v_data[i], v_model[i]] for i in idx])
+    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
 
-    plot_image(v_data[0], (28,28))
-    plot_image(v_model[0], (28,28))
-
-    # plot some fantasy particles
+    print("\nPlot a random sample of fantasy particles")
+    random_samples = rbm.random(v_data)
+    sampler = fit.SequentialMC(rbm, random_samples)
     sampler.update_state(1000, resample=False, temperature=1.0)
     v_model = sampler.state
 
-    plot_image(v_data[0], (28,28))
-    plot_image(v_model[0], (28,28))
+    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
+    grid = numpy.array([[v_model[i]] for i in idx])
+    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
 
-    edist = B.fast_energy_distance(v_data.astype(numpy.float32), v_model.astype(numpy.float32), downsample=100)
-
-    print('Reconstruction error:  {0:.2f}'.format(recon))
-    print('Energy distance:  {0:.2f}'.format(edist))
+    print("\nPlot a random sample of the weights")
+    idx = numpy.random.choice(range(rbm.params['weights'].shape[1]), 5, replace=False)
+    grid = numpy.array([[rbm.params['weights'][:, i]] for i in idx])
+    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
 
     # close the HDF5 store
     data.close()
 
-    end = time.time()
-    print('Total time: {0:.2f} seconds'.format(end - start))

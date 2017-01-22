@@ -12,8 +12,8 @@ def plot_image(image_vector, shape):
     plt.close(f)
 
 def plot_image_grid(image_array, shape, vmin=0, vmax=1):
-    nrows, ncols = image_array.shape[:2]
-    f = plt.figure(figsize=(ncols,nrows))
+    nrows, ncols = image_array.shape[:-1]
+    f = plt.figure(figsize=(2*ncols, 2*nrows))
     grid = gs.GridSpec(nrows, ncols)
     axes = [[plt.subplot(grid[i,j]) for j in range(ncols)] for i in range(nrows)]
     for i in range(nrows):
