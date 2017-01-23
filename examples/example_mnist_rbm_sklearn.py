@@ -62,7 +62,6 @@ if __name__ == "__main__":
                                     ['ReconstructionError',
                                      'EnergyDistance'
                                      ]]
-
     while True:
         try:
             v_data = data.get(mode='validate')
