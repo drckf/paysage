@@ -39,7 +39,7 @@ if __name__ == "__main__":
     rbm.initialize(data, method='hinton')
 
     # set up the optimizer and the fit method
-    opt = optimizers.RMSProp(rbm, stepsize=learning_rate)
+    opt = optimizers.ADAM(rbm, stepsize=learning_rate)
     cd = fit.PCD(rbm,
                  data,
                  opt,
