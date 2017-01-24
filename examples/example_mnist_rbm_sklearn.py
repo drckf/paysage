@@ -2,31 +2,31 @@ import os, sys, numpy, pandas, time
 from paysage import backends as B
 
 from paysage import batch
+from paysage import metrics as M
+from paysage.layers import BernoulliLayer
 from sklearn.neural_network import BernoulliRBM
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-def plot_image(image_vector, shape):
-    f, ax = plt.subplots(figsize=(4,4))
-    hm = sns.heatmap(numpy.reshape(image_vector, shape), ax=ax, cmap="gray_r", cbar=False)
-    hm.set(yticks=[])
-    hm.set(xticks=[])
-    plt.show(f)
-    plt.close(f)
+import plotting
 
 if __name__ == "__main__":
-    start = time.time()
 
     num_hidden_units = 500
     batch_size = 50
     num_epochs = 10
     learning_rate = 0.001
 
-    # set up the batch, model, and optimizer objects
     filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
-    data = batch.Batch(filepath, 'train/images', 60000,
-                    transform=batch.binarize_color, train_fraction=0.99)
+    shuffled_filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'shuffled_mnist.h5')
+
+    # shuffle the data
+    shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
+    shuffler.shuffle()
+
+    # set up the reader to get the whole training set
+    data = batch.Batch(shuffled_filepath,
+                       'train/images',
+                       60000,
+                       transform=batch.binarize_color,
+                       train_fraction=0.99)
 
     X = data.get('train')
     data.close()
@@ -36,35 +36,76 @@ if __name__ == "__main__":
                        batch_size=batch_size,
                        n_iter=num_epochs,
                        verbose=1)
-
     rbm.fit(X)
 
-    data = batch.Batch(filepath, 'train/images', batch_size,
-                    transform=batch.binarize_color, train_fraction=0.99)
+    # set up the reader to read the first batch of the validation set
+    data = batch.Batch(shuffled_filepath,
+                   'train/images',
+                   batch_size,
+                   transform=batch.binarize_color,
+                   train_fraction=0.99)
 
-    # plot some reconstructions
+    # compute some metrics to evaluate the model
+    metrics=['ReconstructionError',
+             'EnergyDistance'
+             ]
+
+    metrics = [M.__getattribute__(m)() for m in
+                                    ['ReconstructionError',
+                                     'EnergyDistance'
+                                     ]]
+    while True:
+        try:
+            v_data = data.get(mode='validate')
+        except StopIteration:
+            break
+
+        reconstructions = rbm.gibbs(v_data)
+
+        random_samples = BernoulliLayer().random(v_data).astype(numpy.float32)
+        fantasy_particles = random_samples.astype(numpy.float32)
+        for t in range(10):
+            fantasy_particles = rbm.gibbs(fantasy_particles)
+
+        argdict = {
+        'minibatch': v_data.astype(numpy.float32),
+        'reconstructions': reconstructions.astype(numpy.float32),
+        'random_samples': random_samples.astype(numpy.float32),
+        'samples': fantasy_particles.astype(numpy.float32),
+        'amodel': rbm
+        }
+
+        for m in metrics:
+            m.update(**argdict)
+
+    print('\nFinal performance metrics:')
+    metdict = {m.name: m.value() for m in metrics}
+    for m in metdict:
+        print("-{0}: {1:.6f}".format(m, metdict[m]))
+
+    print("\nPlot a random sample of reconstructions")
     v_data = data.get('validate')
     v_model = rbm.gibbs(v_data)
 
-    recon = numpy.sqrt(numpy.sum((v_data - v_model)**2) / len(v_data))
+    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
+    grid = numpy.array([[v_data[i], v_model[i]] for i in idx])
+    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
 
-    plot_image(v_data[0], (28,28))
-    plot_image(v_model[0], (28,28))
-
-    # plot some fantasy particles
+    print("\nPlot a random sample of fantasy particles")
+    random_samples = BernoulliLayer().random(v_data).astype(numpy.float32)
+    v_model = random_samples.astype(numpy.float32)
     for t in range(1000):
-        v_model = rbm.gibbs(v_model)
+            v_model = rbm.gibbs(v_model)
 
-    plot_image(v_data[0], (28,28))
-    plot_image(v_model[0], (28,28))
+    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
+    grid = numpy.array([[v_model[i]] for i in idx])
+    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
 
-    edist = B.fast_energy_distance(v_data.astype(numpy.float32), v_model.astype(numpy.float32), downsample=100)
-
-    print('Reconstruction error:  {0:.2f}'.format(recon))
-    print('Energy distance:  {0:.2f}'.format(edist))
+    print("\nPlot a random sample of the weights")
+    W = rbm.components_.T
+    idx = numpy.random.choice(range(W.shape[1]), 5, replace=False)
+    grid = numpy.array([[W[:, i]] for i in idx])
+    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
 
     # close the HDF5 store
     data.close()
-
-    end = time.time()
-    print('Total time: {0:.2f} seconds'.format(end - start))
