@@ -1,5 +1,6 @@
 # Compiled python modules.
-*.pyc
+*.py[cod]
+__pycache__
 
 # os-x store
 .DS_Store
@@ -9,3 +10,6 @@
 
 # Python egg metadata, regenerated from source files by setuptools.
 /*.egg-info
+
+# Ignore h5 files
+*.h5
