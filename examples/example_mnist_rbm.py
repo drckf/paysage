@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 10
+    num_epochs = 20
     learning_rate = 0.001
     mc_steps = 1
 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     print("\nPlot a random sample of fantasy particles")
     random_samples = rbm.random(v_data)
-    sampler = fit.SequentialMC(rbm, random_samples)
+    sampler = fit.SSTIR(rbm, random_samples)
     sampler.update_state(1000)
     v_model = sampler.state
 

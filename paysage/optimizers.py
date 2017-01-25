@@ -71,7 +71,7 @@ class RMSProp(Optimizer):
        Geoffrey Hinton's Coursera Course Lecture 6e
 
     """
-    def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, lr_decay=1.0, tolerance=1e-6):
+    def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, lr_decay=0.9, tolerance=1e-6):
         super().__init__(lr_decay, tolerance)
         self.stepsize = numpy.float32(stepsize)
         self.mean_square_weight = numpy.float32(mean_square_weight)
@@ -96,7 +96,7 @@ class ADAM(Optimizer):
        Kingma, D. P., & Ba, J. L. (2015). Adam: a Method for Stochastic Optimization. International Conference on Learning Representations, 1–13.
 
     """
-    def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.9, lr_decay=1.0, tolerance=1e-6):
+    def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, lr_decay=0.9, tolerance=1e-6):
         super().__init__(lr_decay, tolerance)
         self.stepsize = numpy.float32(stepsize)
         self.mean_weight = numpy.float32(mean_weight)
