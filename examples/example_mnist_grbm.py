@@ -10,8 +10,8 @@ if __name__ == "__main__":
 
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 50
-    learning_rate = 0.0001
+    num_epochs = 30
+    learning_rate = 0.001
     mc_steps = 1
 
     def transform(x):
@@ -39,7 +39,9 @@ if __name__ == "__main__":
     rbm.initialize(data, method='hinton')
 
     # set up the optimizer and the fit method
-    opt = optimizers.ADAM(rbm, stepsize=learning_rate)
+    opt = optimizers.ADAM(rbm,
+                          stepsize=learning_rate,
+                          lr_decay=0.9)
     cd = fit.PCD(rbm,
                  data,
                  opt,
@@ -70,7 +72,7 @@ if __name__ == "__main__":
 
     print("\nPlot a random sample of reconstructions")
     v_data = data.get('validate')
-    sampler = fit.SequentialMC(rbm, v_data)
+    sampler = fit.SSTIR(rbm, v_data)
     sampler.update_state(1)
     v_model = sampler.state
 
@@ -80,7 +82,7 @@ if __name__ == "__main__":
 
     print("\nPlot a random sample of fantasy particles")
     random_samples = rbm.random(v_data)
-    sampler = fit.SequentialMC(rbm, random_samples)
+    sampler = fit.SSTIR(rbm, random_samples)
     sampler.update_state(1000)
     v_model = sampler.state
 

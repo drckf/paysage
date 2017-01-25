@@ -8,11 +8,17 @@ class Optimizer(object):
 
     def __init__(self, lr_decay=0.9, tolerance=1e-3):
         self.lr_decay = lr_decay
+        self.lr = 1
         self.tolerance = tolerance
         self.grad = {}
 
+    def update_lr(self, epoch):
+        self.lr = (self.lr_decay ** epoch)
+        return self.lr
+
     def check_convergence(self):
-        mag = gradient_magnitude(self.grad)
+        mag = gradient_magnitude(self.grad) * self.lr
+        print(mag)
         if mag <= self.tolerance:
             return True
         else:
@@ -30,7 +36,7 @@ class StochasticGradientDescent(Optimizer):
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
 
     def update(self, model, v_data, v_model, epoch):
-        lr = (self.lr_decay ** epoch) * self.stepsize
+        lr = self.update_lr(epoch) * self.stepsize
         self.grad = gradient(model, v_data, v_model)
         if model.penalty:
             for key in model.penalty:
@@ -55,7 +61,7 @@ class Momentum(Optimizer):
         self.delta = {key: numpy.zeros_like(model.params[key]) for key in model.params}
 
     def update(self, model, v_data, v_model, epoch):
-        lr = (self.lr_decay ** epoch) * self.stepsize
+        lr = self.update_lr(epoch) * self.stepsize
         self.grad = gradient(model, v_data, v_model)
         if model.penalty:
             for key in model.penalty:
@@ -80,13 +86,14 @@ class RMSProp(Optimizer):
         self.epsilon = numpy.float32(1e-6)
 
     def update(self, model, v_data, v_model, epoch):
+        lr = self.update_lr(epoch) * self.stepsize
         self.grad = gradient(model, v_data, v_model)
         if model.penalty:
             for key in model.penalty:
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
             B.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
-            model.params[key] -= self.stepsize * B.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key])
+            model.params[key] -= lr * B.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key])
         model.enforce_constraints()
 
 
@@ -107,6 +114,7 @@ class ADAM(Optimizer):
         self.epsilon = numpy.float32(1e-6)
 
     def update(self, model, v_data, v_model, epoch):
+        lr = self.update_lr(epoch) * self.stepsize
         self.grad = gradient(model, v_data, v_model)
         if model.penalty:
             for key in model.penalty:
@@ -114,7 +122,7 @@ class ADAM(Optimizer):
         for key in self.grad:
             B.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
             B.mix_inplace(self.mean_weight, self.mean_grad[key], self.grad[key])
-            model.params[key] -= (self.stepsize / (1 - self.mean_weight)) * B.sqrt_div(self.mean_grad[key], self.epsilon + self.mean_square_grad[key]/(1 - self.mean_square_weight))
+            model.params[key] -= (lr / (1 - self.mean_weight)) * B.sqrt_div(self.mean_grad[key], self.epsilon + self.mean_square_grad[key]/(1 - self.mean_square_weight))
         model.enforce_constraints()
 
 
