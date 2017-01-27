@@ -4,7 +4,11 @@ from paysage import batch
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
-import plotting
+
+try:
+    import plotting
+except ImportError:
+    from . import plotting
 
 if __name__ == "__main__":
 
@@ -18,12 +22,14 @@ if __name__ == "__main__":
         """ scale the grayscale image to be in (0,1) """
         return numpy.float32(x) / 255
 
-    filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
-    shuffled_filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'shuffled_mnist.h5')
+    paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')
+    shuffled_filepath = os.path.join(paysage_path, 'mnist', 'shuffled_mnist.h5')
 
     # shuffle the data
-    shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
-    shuffler.shuffle()
+    if not os.path.exists(shuffled_filepath):
+        shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
+        shuffler.shuffle()
 
     # set up the reader to get minibatches
     data = batch.Batch(shuffled_filepath,
