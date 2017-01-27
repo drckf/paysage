@@ -37,7 +37,7 @@ class SequentialMC(object):
         return self.state
 
 
-class SequentialSimulatedTemperingImportanceResampling(object):
+class DrivenSequentialMC(object):
 
     def __init__(self, amodel, adataframe, method='stochastic', seed = 137):
         self.model = amodel
@@ -99,14 +99,15 @@ class SequentialSimulatedTemperingImportanceResampling(object):
 class TrainingMethod(object):
 
     def __init__(self, model, abatch, optimizer, epochs, skip=100,
-                 update_method='stochastic', sampler='SequentialMC',
+                 update_method='stochastic',
+                 sampler='SequentialMC',
                  metrics=['ReconstructionError', 'EnergyDistance']):
         self.model = model
         self.batch = abatch
         self.epochs = epochs
         self.update_method = update_method
         #self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
-        self.sampler = SSTIR.from_batch(self.model, self.batch, method=self.update_method)
+        self.sampler = DrivenSequentialMC.from_batch(self.model, self.batch, method=self.update_method)
         self.optimizer = optimizer
         self.monitor = ProgressMonitor(skip, abatch, metrics=metrics)
 
@@ -121,8 +122,10 @@ class ContrastiveDivergence(TrainingMethod):
 
     """
     def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100,
-                 update_method='stochastic',  metrics=['ReconstructionError', 'EnergyDistance']):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method, metrics=metrics)
+                 update_method='stochastic',
+                 sampler='SequentialMC',
+                 metrics=['ReconstructionError', 'EnergyDistance']):
+        super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method, sampler=sampler, metrics=metrics)
         self.mcsteps = mcsteps
 
     def train(self):
@@ -168,8 +171,10 @@ class PersistentContrastiveDivergence(TrainingMethod):
 
     """
     def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100,
-                 update_method='stochastic',  metrics=['ReconstructionError', 'EnergyDistance']):
-       super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method, metrics=metrics)
+                 update_method='stochastic',
+                 sampler='SequentialMC',
+                 metrics=['ReconstructionError', 'EnergyDistance']):
+       super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method, sampler=sampler, metrics=metrics)
        self.mcsteps = mcsteps
 
     def train(self):
@@ -230,7 +235,6 @@ class HopfieldContrastiveDivergence(TrainingMethod):
                 # sample near the weights
                 v_model = self.model.layers['visible'].prox(self.attractive * self.model.params['weights']).T
                 # compute the gradient and update the model parameters
-                v_model = self.sampler.get_state()
                 self.optimizer.update(self.model, v_data, v_model, epoch)
                 t += 1
 
@@ -310,5 +314,4 @@ class ProgressMonitor(object):
 
 CD = ContrastiveDivergence
 PCD = PersistentContrastiveDivergence
-SSTIR = sstir = SequentialSimulatedTemperingImportanceResampling
 HCD = HopfieldContrastiveDivergence
