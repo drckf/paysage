@@ -4,7 +4,11 @@ from paysage import batch
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
-import plotting
+
+try:
+    import plotting
+except ImportError:
+    from . import plotting
 
 if __name__ == "__main__":
 
@@ -14,12 +18,14 @@ if __name__ == "__main__":
     learning_rate = 0.001
     mc_steps = 1
 
-    filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
-    shuffled_filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'shuffled_mnist.h5')
+    paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')
+    shuffled_filepath = os.path.join(paysage_path, 'mnist', 'shuffled_mnist.h5')
 
     # shuffle the data
-    shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
-    shuffler.shuffle()
+    if not os.path.exists(shuffled_filepath):
+        shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
+        shuffler.shuffle()
 
     # set up the reader to get minibatches
     data = batch.Batch(shuffled_filepath,
@@ -38,7 +44,7 @@ if __name__ == "__main__":
     # set up the optimizer and the fit method
     opt = optimizers.ADAM(rbm,
                           stepsize=learning_rate,
-                          lr_decay=0.95)
+                          lr_decay=0.993333)
     cd = fit.PCD(rbm,
                  data,
                  opt,
@@ -70,7 +76,7 @@ if __name__ == "__main__":
 
     print("\nPlot a random sample of reconstructions")
     v_data = data.get('validate')
-    sampler = fit.DrivenSequentialMC(rbm, v_data)
+    sampler = fit.AR1DrivenSequentialMC(rbm, v_data)
     sampler.update_state(1)
     v_model = sampler.state
 
@@ -80,7 +86,7 @@ if __name__ == "__main__":
 
     print("\nPlot a random sample of fantasy particles")
     random_samples = rbm.random(v_data)
-    sampler = fit.DrivenSequentialMC(rbm, random_samples)
+    sampler = fit.AR1DrivenSequentialMC(rbm, random_samples)
     sampler.update_state(1000)
     v_model = sampler.state
 

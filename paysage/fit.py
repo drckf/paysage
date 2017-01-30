@@ -37,9 +37,9 @@ class SequentialMC(object):
         return self.state
 
 
-class DrivenSequentialMC(object):
+class RWDrivenSequentialMC(object):
 
-    def __init__(self, amodel, adataframe, method='stochastic', seed = 137):
+    def __init__(self, amodel, adataframe, method='stochastic'):
         self.model = amodel
         self.method = method
         try:
@@ -50,7 +50,6 @@ class DrivenSequentialMC(object):
         self.beta = numpy.ones((len(self.state), 1), dtype=numpy.float32)
         self.beta_stepsize = 0.1
         self.beta_scale = 0.2
-        self.seed = seed
 
     @classmethod
     def from_batch(cls, amodel, abatch, method='stochastic'):
@@ -96,6 +95,53 @@ class DrivenSequentialMC(object):
         return self.state
 
 
+class AR1DrivenSequentialMC(object):
+
+    def __init__(self, amodel, adataframe, method='stochastic'):
+        self.model = amodel
+        self.method = method
+        try:
+            self.state = adataframe.as_matrix().astype(numpy.float32)
+        except Exception:
+            self.state = adataframe.astype(numpy.float32)
+
+        # for an AR(1) process X_t = momentum * X_(t-1) + loc + scale * noise
+        # E[X] = loc / (1 - momentum)-> loc = E[X] * (1 - momentum)
+        # Var[X] = scale ** 2 / (1 - momentum**2) -> scale = sqrt(Var[X] * (1 - momentum**2))
+        self.beta_momentum = 0.99
+        self.beta_loc = (1-self.beta_momentum) * numpy.ones((len(self.state), 1), dtype=numpy.float32)
+        self.beta_scale = numpy.sqrt(1-self.beta_momentum**2) * 0.2
+        self.beta = numpy.ones((len(self.state), 1), dtype=numpy.float32)
+
+    @classmethod
+    def from_batch(cls, amodel, abatch, method='stochastic'):
+        tmp = cls(amodel, abatch.get('train'), method=method)
+        abatch.reset_generator('all')
+        return tmp
+
+    def update_beta(self):
+        """ update beta with an AR(1) process
+
+        """
+        self.beta *= self.beta_momentum
+        self.beta += self.beta_loc
+        self.beta += self.beta_scale * numpy.random.randn(len(self.beta),1)
+
+    def update_state(self, steps):
+        self.update_beta()
+        if self.method == 'stochastic':
+            self.state = self.model.markov_chain(self.state, steps, self.beta)
+        elif self.method == 'mean_field':
+            self.state = self.model.mean_field_iteration(self.state, steps, self.beta)
+        elif self.method == 'deterministic':
+            self.state = self.model.deterministic_iteration(self.state, steps, self.beta)
+        else:
+            raise ValueError("Unknown method {}".format(self.method))
+
+    def get_state(self):
+        return self.state
+
+
 class TrainingMethod(object):
 
     def __init__(self, model, abatch, optimizer, epochs, skip=100,
@@ -107,7 +153,7 @@ class TrainingMethod(object):
         self.epochs = epochs
         self.update_method = update_method
         #self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
-        self.sampler = DrivenSequentialMC.from_batch(self.model, self.batch, method=self.update_method)
+        self.sampler = AR1DrivenSequentialMC.from_batch(self.model, self.batch, method=self.update_method)
         self.optimizer = optimizer
         self.monitor = ProgressMonitor(skip, abatch, metrics=metrics)
 

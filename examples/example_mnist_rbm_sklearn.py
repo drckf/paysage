@@ -1,25 +1,32 @@
 import os, sys, numpy, pandas, time
-from paysage import backends as B
 
+from paysage import backends as B
 from paysage import batch
 from paysage import metrics as M
 from paysage.layers import BernoulliLayer
 from sklearn.neural_network import BernoulliRBM
-import plotting
+
+try:
+    import plotting
+except ImportError:
+    from . import plotting
 
 if __name__ == "__main__":
 
     num_hidden_units = 500
     batch_size = 50
     num_epochs = 10
-    learning_rate = 0.001
+    # the step size has been hand-tuned for the sklearn implementation
+    learning_rate = 0.01
 
-    filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'mnist.h5')
-    shuffled_filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mnist', 'shuffled_mnist.h5')
+    paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')
+    shuffled_filepath = os.path.join(paysage_path, 'mnist', 'shuffled_mnist.h5')
 
     # shuffle the data
-    shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
-    shuffler.shuffle()
+    if not os.path.exists(shuffled_filepath):
+        shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
+        shuffler.shuffle()
 
     # set up the reader to get the whole training set
     data = batch.Batch(shuffled_filepath,
