@@ -36,66 +36,7 @@ class SequentialMC(object):
     def get_state(self):
         return self.state
 
-
-class RWDrivenSequentialMC(object):
-
-    def __init__(self, amodel, adataframe, method='stochastic'):
-        self.model = amodel
-        self.method = method
-        try:
-            self.state = adataframe.as_matrix().astype(numpy.float32)
-        except Exception:
-            self.state = adataframe.astype(numpy.float32)
-        self.beta_loc = numpy.ones((len(self.state), 1), dtype=numpy.float32)
-        self.beta = numpy.ones((len(self.state), 1), dtype=numpy.float32)
-        self.beta_stepsize = 0.1
-        self.beta_scale = 0.2
-
-    @classmethod
-    def from_batch(cls, amodel, abatch, method='stochastic'):
-        tmp = cls(amodel, abatch.get('train'), method=method)
-        abatch.reset_generator('all')
-        return tmp
-
-    def energy(self, beta):
-        return 0.5 * (beta - self.beta_loc)**2 / self.beta_scale
-
-    def update_beta(self):
-        trial_beta = self.beta + self.beta_stepsize * numpy.random.randn(len(self.beta),1)
-        current_energy = self.energy(self.beta)
-        trial_energy = self.energy(trial_beta)
-        delta = B.exp(current_energy - trial_energy)
-        r = numpy.random.rand(*delta.shape)
-        mask = numpy.float32(r < delta)
-        self.beta *= 1 - mask
-        self.beta += mask * trial_beta
-
-    def update_state(self, steps):
-        self.update_beta()
-        if self.method == 'stochastic':
-            self.state = self.model.markov_chain(self.state, steps, self.beta)
-        elif self.method == 'mean_field':
-            self.state = self.model.mean_field_iteration(self.state, steps, self.beta)
-        elif self.method == 'deterministic':
-            self.state = self.model.deterministic_iteration(self.state, steps, self.beta)
-        else:
-            raise ValueError("Unknown method {}".format(self.method))
-
-    def get_state(self):
-        """
-        current_energy = self.model.marginal_free_energy(self.state, self.beta)
-        target_energy = self.model.marginal_free_energy(self.state, None)
-        delta = current_energy - target_energy
-        delta -= numpy.max(delta)
-        weights = B.exp(delta)
-        weights /= B.msum(weights)
-        indices = numpy.random.choice(numpy.arange(len(weights)), size=len(weights), replace=True, p=weights)
-        return self.state[list(indices)]
-        """
-        return self.state
-
-
-class AR1DrivenSequentialMC(object):
+class DrivenSequentialMC(object):
 
     def __init__(self, amodel, adataframe, method='stochastic'):
         self.model = amodel
@@ -152,8 +93,8 @@ class TrainingMethod(object):
         self.batch = abatch
         self.epochs = epochs
         self.update_method = update_method
-        #self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
-        self.sampler = AR1DrivenSequentialMC.from_batch(self.model, self.batch, method=self.update_method)
+        self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
+        #self.sampler = DrivenSequentialMC.from_batch(self.model, self.batch, method=self.update_method)
         self.optimizer = optimizer
         self.monitor = ProgressMonitor(skip, abatch, metrics=metrics)
 
