@@ -21,6 +21,10 @@ if __name__ == "__main__":
 
     paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')
+
+    if not os.path.exists(filepath):
+        raise IOError("{} does not exist. run mnist/download_mnist.py to fetch from the web".format(filepath))
+
     shuffled_filepath = os.path.join(paysage_path, 'mnist', 'shuffled_mnist.h5')
 
     # shuffle the data
