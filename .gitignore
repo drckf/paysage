@@ -11,5 +11,5 @@ __pycache__
 # Python egg metadata, regenerated from source files by setuptools.
 /*.egg-info
 
-# Ignore h5 files
+# HDF5 files
 *.h5

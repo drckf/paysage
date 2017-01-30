@@ -106,7 +106,7 @@ class DataShuffler(object):
         self.chunksize = min([self.table_stats[k].chunksize(self.allowed_mem) for k in self.keys])
 
         # store for chunked data
-        self.chunk_filename = "chunk_"+filename
+        self.chunk_filename = os.path.splitext(filename)[0] + "_chunk.h5"
         self.chunk_store = pandas.HDFStore(self.chunk_filename, mode='w')
 
         # setup the output file
