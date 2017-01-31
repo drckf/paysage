@@ -1,4 +1,4 @@
-import numpy, time
+import numpy, pandas, time
 from . import backends as B
 from . import metrics as M
 
@@ -9,16 +9,28 @@ class SequentialMC(object):
        Simple class for a sequential Monte Carlo sampler.
 
     """
-    def __init__(self, amodel, adataframe, method='stochastic'):
+    def __init__(self, amodel,
+                 adataframe = None,
+                 size = (),
+                 method='stochastic'):
         self.model = amodel
         self.method = method
+        """
+        if isinstance(adataframe, pandas.DataFrame):
+            self.state = adataframe.as_matrix().astype(numpy.float32)
+        elif isinstance(adataframe, numpy.ndarray):
+            self.state = adataframe.astype(numpy.float32)
+        else:
+            self.state = amodel.random()
+        """
         try:
             self.state = adataframe.as_matrix().astype(numpy.float32)
         except Exception:
             self.state = adataframe.astype(numpy.float32)
 
     @classmethod
-    def from_batch(cls, amodel, abatch, method='stochastic'):
+    def from_batch(cls, amodel, abatch,
+                   method='stochastic'):
         tmp = cls(amodel, abatch.get('train'), method=method)
         abatch.reset_generator('all')
         return tmp
@@ -38,7 +50,10 @@ class SequentialMC(object):
 
 class DrivenSequentialMC(object):
 
-    def __init__(self, amodel, adataframe, method='stochastic'):
+    def __init__(self, amodel, adataframe,
+                 beta_momentum=0.9,
+                 beta_scale=0.2,
+                 method='stochastic'):
         self.model = amodel
         self.method = method
         try:
@@ -47,15 +62,21 @@ class DrivenSequentialMC(object):
             self.state = adataframe.astype(numpy.float32)
 
         # for an AR(1) process X_t = momentum * X_(t-1) + loc + scale * noise
-        # E[X] = loc / (1 - momentum)-> loc = E[X] * (1 - momentum)
-        # Var[X] = scale ** 2 / (1 - momentum**2) -> scale = sqrt(Var[X] * (1 - momentum**2))
-        self.beta_momentum = 0.99
-        self.beta_loc = (1-self.beta_momentum) * numpy.ones((len(self.state), 1), dtype=numpy.float32)
-        self.beta_scale = numpy.sqrt(1-self.beta_momentum**2) * 0.2
+        # E[X] = loc / (1 - momentum)
+        #     -> loc = E[X] * (1 - momentum)
+        # Var[X] = scale ** 2 / (1 - momentum**2)
+        #        -> scale = sqrt(Var[X] * (1 - momentum**2))
+        self.beta_momentum = beta_momentum
+        self.beta_loc = (1-self.beta_momentum) * numpy.ones(
+                                                (len(self.state), 1),
+                                                dtype=numpy.float32
+                                                )
+        self.beta_scale = numpy.sqrt(1-self.beta_momentum**2) * beta_scale
         self.beta = numpy.ones((len(self.state), 1), dtype=numpy.float32)
 
     @classmethod
-    def from_batch(cls, amodel, abatch, method='stochastic'):
+    def from_batch(cls, amodel, abatch,
+                   method='stochastic'):
         tmp = cls(amodel, abatch.get('train'), method=method)
         abatch.reset_generator('all')
         return tmp
@@ -71,11 +92,17 @@ class DrivenSequentialMC(object):
     def update_state(self, steps):
         self.update_beta()
         if self.method == 'stochastic':
-            self.state = self.model.markov_chain(self.state, steps, self.beta)
+            self.state = self.model.markov_chain(self.state,
+                                                 steps,
+                                                 self.beta)
         elif self.method == 'mean_field':
-            self.state = self.model.mean_field_iteration(self.state, steps, self.beta)
+            self.state = self.model.mean_field_iteration(self.state,
+                                                         steps,
+                                                         self.beta)
         elif self.method == 'deterministic':
-            self.state = self.model.deterministic_iteration(self.state, steps, self.beta)
+            self.state = self.model.deterministic_iteration(self.state,
+                                                            steps,
+                                                            self.beta)
         else:
             raise ValueError("Unknown method {}".format(self.method))
 
@@ -85,7 +112,8 @@ class DrivenSequentialMC(object):
 
 class TrainingMethod(object):
 
-    def __init__(self, model, abatch, optimizer, epochs, skip=100,
+    def __init__(self, model, abatch, optimizer, epochs,
+                 skip=100,
                  update_method='stochastic',
                  sampler='SequentialMC',
                  metrics=['ReconstructionError', 'EnergyDistance']):
@@ -93,8 +121,9 @@ class TrainingMethod(object):
         self.batch = abatch
         self.epochs = epochs
         self.update_method = update_method
-        self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
-        #self.sampler = DrivenSequentialMC.from_batch(self.model, self.batch, method=self.update_method)
+        #self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
+        self.sampler = DrivenSequentialMC.from_batch(self.model, self.batch,
+                                                     method=self.update_method)
         self.optimizer = optimizer
         self.monitor = ProgressMonitor(skip, abatch, metrics=metrics)
 
@@ -108,7 +137,8 @@ class ContrastiveDivergence(TrainingMethod):
        Carreira-Perpinan, Miguel A., and Geoffrey Hinton. "On Contrastive Divergence Learning." AISTATS. Vol. 10. 2005.
 
     """
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100,
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps,
+                 skip=100,
                  update_method='stochastic',
                  sampler='SequentialMC',
                  metrics=['ReconstructionError', 'EnergyDistance']):
@@ -157,7 +187,8 @@ class PersistentContrastiveDivergence(TrainingMethod):
        Tieleman, Tijmen. "Training restricted Boltzmann machines using approximations to the likelihood gradient." Proceedings of the 25th international conference on Machine learning. ACM, 2008.
 
     """
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps, skip=100,
+    def __init__(self, model, abatch, optimizer, epochs, mcsteps,
+                 skip=100,
                  update_method='stochastic',
                  sampler='SequentialMC',
                  metrics=['ReconstructionError', 'EnergyDistance']):
@@ -204,8 +235,10 @@ class HopfieldContrastiveDivergence(TrainingMethod):
        Unpublished. Charles K. Fisher (2016)
 
     """
-    def __init__(self, model, abatch, optimizer, epochs, attractive=True, skip=100,
-                  metrics=['ReconstructionError', 'EnergyDistance']):
+    def __init__(self, model, abatch, optimizer, epochs,
+                 attractive=True,
+                 skip=100,
+                 metrics=['ReconstructionError', 'EnergyDistance']):
         super().__init__(model, abatch, optimizer, epochs, skip=skip, metrics=metrics)
         self.attractive = attractive
 
@@ -243,14 +276,17 @@ class HopfieldContrastiveDivergence(TrainingMethod):
 
 class ProgressMonitor(object):
 
-    def __init__(self, skip, batch, metrics=['ReconstructionError', 'EnergyDistance']):
+    def __init__(self, skip, batch,
+                 metrics=['ReconstructionError', 'EnergyDistance']):
         self.skip = skip
         self.batch = batch
         self.update_steps = 10
         self.metrics = [M.__getattribute__(m)() for m in metrics]
         self.memory = []
 
-    def check_progress(self, model, t, store=False, show=False):
+    def check_progress(self, model, t,
+                       store=False,
+                       show=False):
         if not self.skip or not (t % self.skip):
 
             for m in self.metrics:

@@ -2,23 +2,55 @@ import numpy
 from . import backends as B
 
 
+# ----- LEARNING RATE SCHEDULERS ----- #
+
+class Scheduler(object):
+
+    def __init__(self):
+        self.lr = 1
+        self.iter = 0
+        self.epoch = 0
+
+    def increment(self, epoch):
+        self.iter += 1
+        self.epoch = epoch
+
+
+class ExponentialDecay(Scheduler):
+
+    def __init__(self, lr_decay=0.9):
+        super().__init__()
+        self.lr_decay = lr_decay
+
+    def get_lr(self):
+        self.lr = (self.lr_decay ** self.epoch)
+        return self.lr
+
+
+class PowerLawDecay(Scheduler):
+
+    def __init__(self, lr_decay=0.1):
+        super().__init__()
+        self.lr_decay = lr_decay
+
+    def get_lr(self):
+        self.lr = 1 / (1 + self.lr_decay * self.epoch)
+        return self.lr
+
+
 # ----- OPTIMIZERS ----- #
 
 class Optimizer(object):
 
-    def __init__(self, lr_decay=0.9, tolerance=1e-3):
-        self.lr_decay = lr_decay
-        self.lr = 1
+    def __init__(self,
+                 scheduler=PowerLawDecay(),
+                 tolerance=1e-3):
+        self.scheduler = scheduler
         self.tolerance = tolerance
         self.grad = {}
 
-    def update_lr(self, epoch):
-        self.lr = (self.lr_decay ** epoch)
-        return self.lr
-
     def check_convergence(self):
-        mag = gradient_magnitude(self.grad) * self.lr
-        print(mag)
+        mag = gradient_magnitude(self.grad) * self.scheduler.lr
         if mag <= self.tolerance:
             return True
         else:
@@ -30,13 +62,18 @@ class StochasticGradientDescent(Optimizer):
        Basic algorithm of gradient descent with minibatches.
 
     """
-    def __init__(self, model, stepsize=0.001, lr_decay=0.5, tolerance=1e-3):
-        super().__init__(lr_decay, tolerance)
+    def __init__(self, model,
+                 stepsize=0.001,
+                 scheduler=PowerLawDecay(),
+                 tolerance=1e-3):
+        super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
 
     def update(self, model, v_data, v_model, epoch):
-        lr = self.update_lr(epoch) * self.stepsize
+        self.scheduler.increment(epoch)
+        lr = self.scheduler.get_lr() * self.stepsize
+
         self.grad = gradient(model, v_data, v_model)
         if model.penalty:
             for key in model.penalty:
@@ -53,15 +90,21 @@ class Momentum(Optimizer):
           Neural Networks : The Official Journal of the International Neural Network Society, 12(1), 145–151
 
     """
-    def __init__(self, model, stepsize=0.001, momentum=0.9, lr_decay=0.5, tolerance=1e-6):
-        super().__init__(lr_decay, tolerance)
+    def __init__(self, model,
+                 stepsize=0.001,
+                 momentum=0.9,
+                 scheduler=PowerLawDecay(),
+                 tolerance=1e-6):
+        super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
         self.momentum = momentum
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
         self.delta = {key: numpy.zeros_like(model.params[key]) for key in model.params}
 
     def update(self, model, v_data, v_model, epoch):
-        lr = self.update_lr(epoch) * self.stepsize
+        self.scheduler.increment(epoch)
+        lr = self.scheduler.get_lr() * self.stepsize
+
         self.grad = gradient(model, v_data, v_model)
         if model.penalty:
             for key in model.penalty:
@@ -77,8 +120,12 @@ class RMSProp(Optimizer):
        Geoffrey Hinton's Coursera Course Lecture 6e
 
     """
-    def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, lr_decay=0.9, tolerance=1e-6):
-        super().__init__(lr_decay, tolerance)
+    def __init__(self, model,
+                 stepsize=0.001,
+                 mean_square_weight=0.9,
+                 scheduler=PowerLawDecay(),
+                 tolerance=1e-6):
+        super().__init__(scheduler, tolerance)
         self.stepsize = numpy.float32(stepsize)
         self.mean_square_weight = numpy.float32(mean_square_weight)
         self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
@@ -86,7 +133,9 @@ class RMSProp(Optimizer):
         self.epsilon = numpy.float32(1e-6)
 
     def update(self, model, v_data, v_model, epoch):
-        lr = self.update_lr(epoch) * self.stepsize
+        self.scheduler.increment(epoch)
+        lr = self.scheduler.get_lr() * self.stepsize
+
         self.grad = gradient(model, v_data, v_model)
         if model.penalty:
             for key in model.penalty:
@@ -103,8 +152,13 @@ class ADAM(Optimizer):
        Kingma, D. P., & Ba, J. L. (2015). Adam: a Method for Stochastic Optimization. International Conference on Learning Representations, 1–13.
 
     """
-    def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, lr_decay=0.9, tolerance=1e-6):
-        super().__init__(lr_decay, tolerance)
+    def __init__(self, model,
+                 stepsize=0.001,
+                 mean_weight=0.9,
+                 mean_square_weight=0.999,
+                 scheduler=PowerLawDecay(),
+                 tolerance=1e-6):
+        super().__init__(scheduler, tolerance)
         self.stepsize = numpy.float32(stepsize)
         self.mean_weight = numpy.float32(mean_weight)
         self.mean_square_weight = numpy.float32(mean_square_weight)
@@ -114,7 +168,9 @@ class ADAM(Optimizer):
         self.epsilon = numpy.float32(1e-6)
 
     def update(self, model, v_data, v_model, epoch):
-        lr = self.update_lr(epoch) * self.stepsize
+        self.scheduler.increment(epoch)
+        lr = self.scheduler.get_lr() * self.stepsize
+
         self.grad = gradient(model, v_data, v_model)
         if model.penalty:
             for key in model.penalty:
