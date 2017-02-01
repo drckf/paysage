@@ -82,7 +82,8 @@ if __name__ == "__main__":
 
     print("\nPlot a random sample of reconstructions")
     v_data = data.get('validate')
-    sampler = fit.DrivenSequentialMC(rbm, v_data)
+    sampler = fit.DrivenSequentialMC(rbm)
+    sampler.initialize(v_data)
     sampler.update_state(1)
     v_model = rbm.deterministic_step(sampler.state)
 
@@ -92,7 +93,8 @@ if __name__ == "__main__":
 
     print("\nPlot a random sample of fantasy particles")
     random_samples = rbm.random(v_data)
-    sampler = fit.DrivenSequentialMC(rbm, random_samples)
+    sampler = fit.DrivenSequentialMC(rbm)
+    sampler.initialize(random_samples)
     sampler.update_state(1000)
     v_model = rbm.deterministic_step(sampler.state)
 

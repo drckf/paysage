@@ -4,38 +4,57 @@ from . import metrics as M
 
 # -----  CLASSES ----- #
 
-class SequentialMC(object):
+class Sampler(object):
+    """
+       A base class for the sequential Monte Carlo samplers
+
+    """
+    def __init__(self, amodel,
+                method='stochastic',
+                **kwargs):
+        self.model = amodel
+        self.method = method
+        self.state = None
+
+    def initialize(self, array_or_shape):
+        """
+           Set up the inital states for each of the Markov Chains.
+           The state is stored in a numpy array.
+           If array_or_shape is a shape tuple, then the initial state
+           is randomly initalized.
+
+        """
+        if isinstance(array_or_shape, pandas.DataFrame):
+            self.state = array_or_shape.as_matrix().astype(numpy.float32)
+        elif isinstance(array_or_shape, numpy.ndarray):
+            self.state = array_or_shape.astype(numpy.float32)
+        else:
+            self.state = self.model.random(array_or_shape)
+
+    @classmethod
+    def from_batch(cls, amodel, abatch,
+                   method='stochastic',
+                   **kwargs):
+        tmp = cls(amodel, method=method, **kwargs)
+        tmp.initialize(abatch.get('train'))
+        abatch.reset_generator('all')
+        return tmp
+
+
+class SequentialMC(Sampler):
     """SequentialMC
        Simple class for a sequential Monte Carlo sampler.
 
     """
     def __init__(self, amodel,
-                 adataframe = None,
-                 size = (),
                  method='stochastic'):
-        self.model = amodel
-        self.method = method
-        """
-        if isinstance(adataframe, pandas.DataFrame):
-            self.state = adataframe.as_matrix().astype(numpy.float32)
-        elif isinstance(adataframe, numpy.ndarray):
-            self.state = adataframe.astype(numpy.float32)
-        else:
-            self.state = amodel.random()
-        """
-        try:
-            self.state = adataframe.as_matrix().astype(numpy.float32)
-        except Exception:
-            self.state = adataframe.astype(numpy.float32)
-
-    @classmethod
-    def from_batch(cls, amodel, abatch,
-                   method='stochastic'):
-        tmp = cls(amodel, abatch.get('train'), method=method)
-        abatch.reset_generator('all')
-        return tmp
+        super().__init__(amodel, method=method)
 
     def update_state(self, steps):
+        if not isinstance(self.state, numpy.ndarray):
+            raise AttributeError(
+                  'You must call the initialize(self, array_or_shape)'
+                  +' method to set the initial state of the Markov Chain')
         if self.method == 'stochastic':
             self.state = self.model.markov_chain(self.state, steps)
         elif self.method == 'mean_field':
@@ -48,18 +67,14 @@ class SequentialMC(object):
     def get_state(self):
         return self.state
 
-class DrivenSequentialMC(object):
 
-    def __init__(self, amodel, adataframe,
+class DrivenSequentialMC(Sampler):
+
+    def __init__(self, amodel,
                  beta_momentum=0.9,
                  beta_scale=0.2,
                  method='stochastic'):
-        self.model = amodel
-        self.method = method
-        try:
-            self.state = adataframe.as_matrix().astype(numpy.float32)
-        except Exception:
-            self.state = adataframe.astype(numpy.float32)
+        super().__init__(amodel, method=method)
 
         # for an AR(1) process X_t = momentum * X_(t-1) + loc + scale * noise
         # E[X] = loc / (1 - momentum)
@@ -67,29 +82,31 @@ class DrivenSequentialMC(object):
         # Var[X] = scale ** 2 / (1 - momentum**2)
         #        -> scale = sqrt(Var[X] * (1 - momentum**2))
         self.beta_momentum = beta_momentum
-        self.beta_loc = (1-self.beta_momentum) * numpy.ones(
-                                                (len(self.state), 1),
-                                                dtype=numpy.float32
-                                                )
-        self.beta_scale = numpy.sqrt(1-self.beta_momentum**2) * beta_scale
-        self.beta = numpy.ones((len(self.state), 1), dtype=numpy.float32)
-
-    @classmethod
-    def from_batch(cls, amodel, abatch,
-                   method='stochastic'):
-        tmp = cls(amodel, abatch.get('train'), method=method)
-        abatch.reset_generator('all')
-        return tmp
+        self.beta_scale = beta_scale
+        self.has_beta = False
 
     def update_beta(self):
         """ update beta with an AR(1) process
 
         """
+        if not self.has_beta:
+            self.has_beta = True
+            self.beta_loc = (1-self.beta_momentum) * numpy.ones(
+                                                (len(self.state), 1),
+                                                dtype=numpy.float32
+                                                )
+            self.beta_scale *= numpy.sqrt(1-self.beta_momentum**2)
+            self.beta = numpy.ones((len(self.state), 1), dtype=numpy.float32)
+
         self.beta *= self.beta_momentum
         self.beta += self.beta_loc
         self.beta += self.beta_scale * numpy.random.randn(len(self.beta),1)
 
     def update_state(self, steps):
+        if not isinstance(self.state, numpy.ndarray):
+            raise AttributeError(
+                  'You must call the initialize(self, array_or_shape)'
+                  +' method to set the initial state of the Markov Chain')
         self.update_beta()
         if self.method == 'stochastic':
             self.state = self.model.markov_chain(self.state,
@@ -121,7 +138,8 @@ class TrainingMethod(object):
         self.batch = abatch
         self.epochs = epochs
         self.update_method = update_method
-        #self.sampler = SequentialMC.from_batch(self.model, self.batch, method=self.update_method)
+        #self.sampler = SequentialMC.from_batch(self.model, self.batch,
+        #                                            method=self.update_method)
         self.sampler = DrivenSequentialMC.from_batch(self.model, self.batch,
                                                      method=self.update_method)
         self.optimizer = optimizer
@@ -133,8 +151,13 @@ class ContrastiveDivergence(TrainingMethod):
     """ContrastiveDivergence
        CD-k algorithm for approximate maximum likelihood inference.
 
-       Hinton, Geoffrey E. "Training products of experts by minimizing contrastive divergence." Neural computation 14.8 (2002): 1771-1800.
-       Carreira-Perpinan, Miguel A., and Geoffrey Hinton. "On Contrastive Divergence Learning." AISTATS. Vol. 10. 2005.
+       Hinton, Geoffrey E.
+       "Training products of experts by minimizing contrastive divergence."
+       Neural computation 14.8 (2002): 1771-1800.
+
+       Carreira-Perpinan, Miguel A., and Geoffrey Hinton.
+       "On Contrastive Divergence Learning."
+       AISTATS. Vol. 10. 2005.
 
     """
     def __init__(self, model, abatch, optimizer, epochs, mcsteps,
@@ -156,7 +179,8 @@ class ContrastiveDivergence(TrainingMethod):
                     break
 
                 # CD resets the sampler from the visible data at each iteration
-                self.sampler = SequentialMC(self.model, v_data, method=self.update_method)
+                self.sampler = SequentialMC(self.model, method=self.update_method)
+                self.sampler.initialize(v_data)
                 self.sampler.update_state(self.mcsteps)
 
                 # compute the gradient and update the model parameters
@@ -299,13 +323,15 @@ class ProgressMonitor(object):
                     break
 
                 # compute the reconstructions
-                sampler = SequentialMC(model, v_data)
+                sampler = SequentialMC(model)
+                sampler.initialize(v_data)
                 sampler.update_state(1)
                 reconstructions = sampler.state
 
                 # compute the fantasy particles
                 random_samples = model.random(v_data)
-                sampler = SequentialMC(model, random_samples)
+                sampler = SequentialMC(model)
+                sampler.initialize(random_samples)
                 sampler.update_state(self.update_steps)
                 fantasy_particles = sampler.state
 
