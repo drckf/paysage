@@ -140,7 +140,6 @@ class TrainingMethod(object):
                                        metrics=metrics)
 
 
-
 class ContrastiveDivergence(TrainingMethod):
     """ContrastiveDivergence
        CD-k algorithm for approximate maximum likelihood inference.
