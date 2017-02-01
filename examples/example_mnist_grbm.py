@@ -48,17 +48,21 @@ if __name__ == "__main__":
                       hid_type = 'bernoulli')
     rbm.initialize(data, method='hinton')
 
-    # set up the optimizer and the fit method
+    # set up the optimizer, sampler, and fit method
     opt = optimizers.ADAM(rbm,
                           stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
+
+    sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
+                                                method='stochastic')
+
     cd = fit.PCD(rbm,
                  data,
                  opt,
+                 sampler,
                  num_epochs,
-                 mc_steps,
+                 mcsteps=mc_steps,
                  skip=200,
-                 update_method='stochastic',
                  metrics=['ReconstructionError',
                           'EnergyDistance',
                           'EnergyGap',

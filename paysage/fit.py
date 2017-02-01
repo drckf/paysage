@@ -128,21 +128,16 @@ class DrivenSequentialMC(Sampler):
 
 class TrainingMethod(object):
 
-    def __init__(self, model, abatch, optimizer, epochs,
+    def __init__(self, model, abatch, optimizer, sampler, epochs,
                  skip=100,
-                 update_method='stochastic',
-                 sampler='SequentialMC',
                  metrics=['ReconstructionError', 'EnergyDistance']):
         self.model = model
         self.batch = abatch
         self.epochs = epochs
-        self.update_method = update_method
-        #self.sampler = SequentialMC.from_batch(self.model, self.batch,
-        #                                            method=self.update_method)
-        self.sampler = DrivenSequentialMC.from_batch(self.model, self.batch,
-                                                     method=self.update_method)
+        self.sampler = sampler
         self.optimizer = optimizer
-        self.monitor = ProgressMonitor(skip, abatch, metrics=metrics)
+        self.monitor = ProgressMonitor(skip, abatch,
+                                       metrics=metrics)
 
 
 
@@ -159,15 +154,12 @@ class ContrastiveDivergence(TrainingMethod):
        AISTATS. Vol. 10. 2005.
 
     """
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps,
+    def __init__(self, model, abatch, optimizer, sampler, epochs,
+                 mcsteps=1,
                  skip=100,
-                 update_method='stochastic',
-                 sampler='SequentialMC',
                  metrics=['ReconstructionError', 'EnergyDistance']):
-        super().__init__(model, abatch, optimizer, epochs,
+        super().__init__(model, abatch, optimizer, sampler, epochs,
                         skip=skip,
-                        update_method=update_method,
-                        sampler=sampler,
                         metrics=metrics)
         self.mcsteps = mcsteps
 
@@ -182,8 +174,6 @@ class ContrastiveDivergence(TrainingMethod):
                     break
 
                 # CD resets the sampler from the visible data at each iteration
-                self.sampler = SequentialMC(self.model,
-                                            method=self.update_method)
                 self.sampler.initialize(v_data)
                 self.sampler.update_state(self.mcsteps)
 
@@ -222,15 +212,12 @@ class PersistentContrastiveDivergence(TrainingMethod):
        ACM, 2008.
 
     """
-    def __init__(self, model, abatch, optimizer, epochs, mcsteps,
+    def __init__(self, model, abatch, optimizer, sampler, epochs,
+                 mcsteps=1,
                  skip=100,
-                 update_method='stochastic',
-                 sampler='SequentialMC',
                  metrics=['ReconstructionError', 'EnergyDistance']):
-       super().__init__(model, abatch, optimizer, epochs,
+       super().__init__(model, abatch, optimizer, sampler, epochs,
                         skip=skip,
-                        update_method=update_method,
-                        sampler=sampler,
                         metrics=metrics)
        self.mcsteps = mcsteps
 
@@ -286,6 +273,8 @@ class ProgressMonitor(object):
                        show=False):
         if not self.skip or not (t % self.skip):
 
+            sampler = SequentialMC(model)
+
             for m in self.metrics:
                 m.reset()
 
@@ -296,14 +285,12 @@ class ProgressMonitor(object):
                     break
 
                 # compute the reconstructions
-                sampler = SequentialMC(model)
                 sampler.initialize(v_data)
                 sampler.update_state(1)
                 reconstructions = sampler.state
 
                 # compute the fantasy particles
                 random_samples = model.random(v_data)
-                sampler = SequentialMC(model)
                 sampler.initialize(random_samples)
                 sampler.update_state(self.update_steps)
                 fantasy_particles = sampler.state

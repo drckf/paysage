@@ -49,13 +49,17 @@ if __name__ == "__main__":
     opt = optimizers.ADAM(rbm,
                           stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
+
+    sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
+                                                method='stochastic')
+
     cd = fit.PCD(rbm,
                  data,
                  opt,
+                 sampler,
                  num_epochs,
-                 mc_steps,
+                 mcsteps=mc_steps,
                  skip=200,
-                 update_method='stochastic',
                  metrics=['ReconstructionError',
                           'EnergyDistance',
                           'EnergyGap',
@@ -83,7 +87,7 @@ if __name__ == "__main__":
     sampler = fit.SequentialMC(rbm)
     sampler.initialize(v_data)
     sampler.update_state(1)
-    v_model = sampler.state
+    v_model = rbm.deterministic_step(sampler.state)
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_data[i], v_model[i]] for i in idx])
@@ -94,7 +98,7 @@ if __name__ == "__main__":
     sampler = fit.SequentialMC(rbm)
     sampler.initialize(random_samples)
     sampler.update_state(1000)
-    v_model = sampler.state
+    v_model = rbm.deterministic_step(sampler.state)
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_model[i]] for i in idx])
