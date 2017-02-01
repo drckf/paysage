@@ -75,12 +75,6 @@ class DrivenSequentialMC(Sampler):
                  beta_scale=0.2,
                  method='stochastic'):
         super().__init__(amodel, method=method)
-
-        # for an AR(1) process X_t = momentum * X_(t-1) + loc + scale * noise
-        # E[X] = loc / (1 - momentum)
-        #     -> loc = E[X] * (1 - momentum)
-        # Var[X] = scale ** 2 / (1 - momentum**2)
-        #        -> scale = sqrt(Var[X] * (1 - momentum**2))
         self.beta_momentum = beta_momentum
         self.beta_scale = beta_scale
         self.has_beta = False
@@ -91,6 +85,11 @@ class DrivenSequentialMC(Sampler):
         """
         if not self.has_beta:
             self.has_beta = True
+            # AR(1) process: X_t = momentum * X_(t-1) + loc + scale * noise
+            # E[X] = loc / (1 - momentum)
+            #     -> loc = E[X] * (1 - momentum)
+            # Var[X] = scale ** 2 / (1 - momentum**2)
+            #        -> scale = sqrt(Var[X] * (1 - momentum**2))
             self.beta_loc = (1-self.beta_momentum) * numpy.ones(
                                                 (len(self.state), 1),
                                                 dtype=numpy.float32
@@ -165,7 +164,11 @@ class ContrastiveDivergence(TrainingMethod):
                  update_method='stochastic',
                  sampler='SequentialMC',
                  metrics=['ReconstructionError', 'EnergyDistance']):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method, sampler=sampler, metrics=metrics)
+        super().__init__(model, abatch, optimizer, epochs,
+                        skip=skip,
+                        update_method=update_method,
+                        sampler=sampler,
+                        metrics=metrics)
         self.mcsteps = mcsteps
 
     def train(self):
@@ -179,7 +182,8 @@ class ContrastiveDivergence(TrainingMethod):
                     break
 
                 # CD resets the sampler from the visible data at each iteration
-                self.sampler = SequentialMC(self.model, method=self.update_method)
+                self.sampler = SequentialMC(self.model,
+                                            method=self.update_method)
                 self.sampler.initialize(v_data)
                 self.sampler.update_state(self.mcsteps)
 
@@ -190,10 +194,13 @@ class ContrastiveDivergence(TrainingMethod):
 
             # end of epoch processing
             print('End of epoch {}: '.format(epoch))
-            prog = self.monitor.check_progress(self.model, 0, store=True, show=True)
+            prog = self.monitor.check_progress(self.model, 0,
+                                               store=True,
+                                               show=True)
 
             end_time = time.time()
-            print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')
+            print('Epoch took {0:.2f} seconds'.format(end_time - start_time),
+                  end='\n\n')
 
             # convergence check should be part of optimizer
             is_converged = self.optimizer.check_convergence()
@@ -208,7 +215,11 @@ class PersistentContrastiveDivergence(TrainingMethod):
     """PersistentContrastiveDivergence
        PCD-k algorithm for approximate maximum likelihood inference.
 
-       Tieleman, Tijmen. "Training restricted Boltzmann machines using approximations to the likelihood gradient." Proceedings of the 25th international conference on Machine learning. ACM, 2008.
+       Tieleman, Tijmen.
+       "Training restricted Boltzmann machines using approximations to the
+       likelihood gradient."
+       Proceedings of the 25th international conference on Machine learning.
+       ACM, 2008.
 
     """
     def __init__(self, model, abatch, optimizer, epochs, mcsteps,
@@ -216,7 +227,11 @@ class PersistentContrastiveDivergence(TrainingMethod):
                  update_method='stochastic',
                  sampler='SequentialMC',
                  metrics=['ReconstructionError', 'EnergyDistance']):
-       super().__init__(model, abatch, optimizer, epochs, skip=skip, update_method=update_method, sampler=sampler, metrics=metrics)
+       super().__init__(model, abatch, optimizer, epochs,
+                        skip=skip,
+                        update_method=update_method,
+                        sampler=sampler,
+                        metrics=metrics)
        self.mcsteps = mcsteps
 
     def train(self):
@@ -233,61 +248,19 @@ class PersistentContrastiveDivergence(TrainingMethod):
                 self.sampler.update_state(self.mcsteps)
 
                 # compute the gradient and update the model parameters
-                self.optimizer.update(self.model, v_data, self.sampler.state, epoch)
+                self.optimizer.update(self.model, v_data, self.sampler.state,
+                                      epoch)
                 t += 1
 
             # end of epoch processing
             print('End of epoch {}: '.format(epoch))
-            prog = self.monitor.check_progress(self.model, 0, store=True, show=True)
+            prog = self.monitor.check_progress(self.model, 0,
+                                               store=True,
+                                               show=True)
 
             end_time = time.time()
-            print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')
-
-            # convergence check should be part of optimizer
-            is_converged = self.optimizer.check_convergence()
-            if is_converged:
-                print('Convergence criterion reached')
-                break
-
-        return None
-
-
-class HopfieldContrastiveDivergence(TrainingMethod):
-    """HopfieldContrastiveDivergence
-       Algorithm for approximate maximum likelihood inference based on the intuition that the weights of the network are stored as memories, like in the Hopfield model of associate memory.
-
-       Unpublished. Charles K. Fisher (2016)
-
-    """
-    def __init__(self, model, abatch, optimizer, epochs,
-                 attractive=True,
-                 skip=100,
-                 metrics=['ReconstructionError', 'EnergyDistance']):
-        super().__init__(model, abatch, optimizer, epochs, skip=skip, metrics=metrics)
-        self.attractive = attractive
-
-    def train(self):
-        for epoch in range(self.epochs):
-            t = 0
-            start_time = time.time()
-            while True:
-                try:
-                    v_data = self.batch.get(mode='train')
-                except StopIteration:
-                    break
-
-                # sample near the weights
-                v_model = self.model.layers['visible'].prox(self.attractive * self.model.params['weights']).T
-                # compute the gradient and update the model parameters
-                self.optimizer.update(self.model, v_data, v_model, epoch)
-                t += 1
-
-            # end of epoch processing
-            print('End of epoch {}: '.format(epoch))
-            prog = self.monitor.check_progress(self.model, 0, store=True, show=True)
-
-            end_time = time.time()
-            print('Epoch took {0:.2f} seconds'.format(end_time - start_time), end='\n\n')
+            print('Epoch took {0:.2f} seconds'.format(end_time - start_time),
+                  end='\n\n')
 
             # convergence check should be part of optimizer
             is_converged = self.optimizer.check_convergence()
@@ -363,4 +336,3 @@ class ProgressMonitor(object):
 
 CD = ContrastiveDivergence
 PCD = PersistentContrastiveDivergence
-HCD = HopfieldContrastiveDivergence
