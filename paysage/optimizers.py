@@ -86,8 +86,9 @@ class StochasticGradientDescent(Optimizer):
 class Momentum(Optimizer):
     """Momentum
        Stochastic gradient descent with momentum.
-       Qian, N. (1999). On the momentum term in gradient descent learning algorithms.
-          Neural Networks : The Official Journal of the International Neural Network Society, 12(1), 145–151
+       Qian, N. (1999).
+       On the momentum term in gradient descent learning algorithms.
+       Neural Networks, 12(1), 145–151
 
     """
     def __init__(self, model,
@@ -149,7 +150,9 @@ class RMSProp(Optimizer):
 class ADAM(Optimizer):
     """ADAM
        Adaptive Moment Estimation algorithm.
-       Kingma, D. P., & Ba, J. L. (2015). Adam: a Method for Stochastic Optimization. International Conference on Learning Representations, 1–13.
+       Kingma, D. P., & Ba, J. L. (2015).
+       Adam: a Method for Stochastic Optimization.
+       International Conference on Learning Representations, 1–13.
 
     """
     def __init__(self, model,
@@ -202,6 +205,5 @@ def gradient(model, minibatch, samples):
 def gradient_magnitude(grad):
     mag = 0
     for key in grad:
-        # numba doesn't seem to speed this up
         mag += numpy.linalg.norm(grad[key])**2 / len(grad[key])
     return numpy.sqrt(mag / len(grad))

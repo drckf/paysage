@@ -14,8 +14,8 @@ if __name__ == "__main__":
 
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 20
-    learning_rate = 0.001
+    num_epochs = 10
+    learning_rate = 0.01
     mc_steps = 1
 
     paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # set up the optimizer and the fit method
     opt = optimizers.ADAM(rbm,
                           stepsize=learning_rate,
-                          lr_decay=0.993333)
+                          scheduler=optimizers.PowerLawDecay(0.1))
     cd = fit.PCD(rbm,
                  data,
                  opt,

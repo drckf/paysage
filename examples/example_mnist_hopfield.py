@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # set up the optimizer and the fit method
     opt = optimizers.ADAM(rbm,
                           stepsize=learning_rate,
-                          lr_decay=0.9)
+                          scheduler=optimizers.PowerLawDecay(0.1))
     cd = fit.PCD(rbm,
                  data,
                  opt,
