@@ -118,7 +118,7 @@ class IsingModel(VisibleModel):
         self.enforce_constraints()
 
     def _effective_field(self, vis):
-        self.params['visible_bias']+numpy.dot(vis, self.params['weights'])
+        return self.params['visible_bias'] + numpy.dot(vis, self.params['weights'])
 
 
 
