@@ -5,7 +5,7 @@ from . import backends as B
 
 class GaussianLayer(object):
 
-    def __init__(self, seed = 137):
+    def __init__(self):
         self.rand = numpy.random.randn
 
     def prox(self, vis):
@@ -24,14 +24,17 @@ class GaussianLayer(object):
         r = numpy.float32(self.rand(*loc.shape))
         return loc + scale * r
 
-    def random(self, loc):
-        r = numpy.float32(self.rand(*loc.shape))
+    def random(self, array_or_shape):
+        try:
+            r = numpy.float32(self.rand(*array_or_shape.shape))
+        except AttributeError:
+            r = numpy.float32(self.rand(*array_or_shape))
         return r
 
 
 class IsingLayer(object):
 
-    def __init__(self, seed = 137):
+    def __init__(self):
         self.rand = numpy.random.rand
 
     def prox(self, vis):
@@ -51,14 +54,17 @@ class IsingLayer(object):
         r = self.rand(*p.shape)
         return 2*numpy.float32(r<p)-1
 
-    def random(self, loc):
-        r = self.rand(*loc.shape)
+    def random(self, array_or_shape):
+        try:
+            r = self.rand(*array_or_shape.shape)
+        except AttributeError:
+            r = self.rand(*array_or_shape)
         return 2*numpy.float32(r<0.5)-1
 
 
 class BernoulliLayer(object):
 
-    def __init__(self, seed = 137):
+    def __init__(self):
         self.rand = numpy.random.rand
 
     def prox(self, vis):
@@ -78,13 +84,16 @@ class BernoulliLayer(object):
         r = self.rand(*p.shape)
         return numpy.float32(r<p)
 
-    def random(self, loc):
-        r = self.rand(*loc.shape)
+    def random(self, array_or_shape):
+        try:
+            r = self.rand(*array_or_shape.shape)
+        except AttributeError:
+            r = self.rand(*array_or_shape)
         return numpy.float32(r<0.5)
 
 class ExponentialLayer(object):
 
-    def __init__(self, seed = 137):
+    def __init__(self):
         self.rand = numpy.random.rand
 
     def prox(self, vis):
@@ -103,8 +112,11 @@ class ExponentialLayer(object):
         r = self.rand(*loc.shape)
         return -B.log(r) / loc
 
-    def random(self, loc):
-        r = self.rand(*loc.shape)
+    def random(self, array_or_shape):
+        try:
+            r = self.rand(*array_or_shape.shape)
+        except AttributeError:
+            r = self.rand(*array_or_shape)
         return -B.log(r)
 
 

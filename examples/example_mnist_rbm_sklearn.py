@@ -16,7 +16,8 @@ if __name__ == "__main__":
     num_hidden_units = 500
     batch_size = 50
     num_epochs = 10
-    learning_rate = 0.001
+    # the step size has been hand-tuned for the sklearn implementation
+    learning_rate = 0.01
 
     paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')

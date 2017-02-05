@@ -14,7 +14,7 @@ Routines for matrix operations
 def elementwise_inverse(x):
     """
        Compute a safe element-wise inverse of a non-negative matrix.
-    
+
     """
     y = EPSILON + x
     return 1/y
@@ -73,11 +73,11 @@ def euclidean_distance(a, b):
 
 # ----- THE FOLLOWING FUNCTIONS ARE THE MAIN BOTTLENECKS ----- #
 
-def mean(x, axis=None):
-    return numpy.mean(x, axis=axis)
+def mean(x, axis=None, keepdims=False):
+    return numpy.mean(x, axis=axis, keepdims=keepdims)
 
-def msum(x, axis=None):
-    return numpy.sum(x, axis=axis)
+def msum(x, axis=None, keepdims=False):
+    return numpy.sum(x, axis=axis, keepdims=keepdims)
 
 def dot(a,b):
     return numpy.dot(a, b)
