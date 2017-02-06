@@ -99,7 +99,7 @@ class IsingModel(VisibleModel):
 
     """
     def __init__(self, nvis, vis_type='ising'):
-        assert vis_type in ['ising', 'bernoulli']
+        assert vis_type == 'ising'
 
         super().__init__()
 
@@ -117,11 +117,33 @@ class IsingModel(VisibleModel):
         func(data, self)
         self.enforce_constraints()
 
-    def _effective_field(self, vis):
-        return self.params['visible_bias'] + numpy.dot(vis, self.params['weights'])
+    def _visible_field(self, vis, beta=None):
+        self.visible_field = B.dot(vis, self.params['weights'])
+        if isinstance(beta, numpy.ndarray):
+            self.visible_field *= beta
+        self.visible_field += self.params['visible_bias']
+        return self.visible_field
 
+    def visible_mean(self, vis, beta=None):
+        return self.layers['visible'].mean(self._visible_field(vis, beta))
 
+    def visible_mode(self, vis, beta=None):
+        return self.layers['visible'].prox(self._visible_field(vis, beta))
 
+    def sample_visible(self, vis, beta=None):
+        new_vis = vis.astype(vis.dtype)
+        self._visible_field(new_vis, beta)
+        for j in range(self.nvis):
+            # try to flip spin j (i.e., column j of the matrix)
+            new_col = self.layers['visible'].sample_state(self.visible_field[:,j])
+            diff = new_vis[:, j] - new_col
+            # update the field and the spins
+            if isinstance(beta, numpy.ndarray):
+                self.visible_field -= beta * B.outer(diff, self.params['weights'][:,j])
+            else:
+                self.visible_field -= B.outer(diff, self.params['weights'][:,j])
+            new_vis[:, j] = new_col
+        return new_vis
 
 # ----- ALIASES ----- #
 
