@@ -134,7 +134,7 @@ class IsingModel(VisibleModel):
         new_vis = vis.astype(vis.dtype)
         self._visible_field(new_vis, beta)
         for j in range(self.nvis):
-            # try to flip spin j (i.e., column j of the matrix)
+            # glauber updates of spin (column) j
             new_col = self.layers['visible'].sample_state(self.visible_field[:,j])
             diff = new_vis[:, j] - new_col
             # update the field and the spins
