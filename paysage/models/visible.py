@@ -145,6 +145,24 @@ class IsingModel(VisibleModel):
             new_vis[:, j] = new_col
         return new_vis
 
+    def derivatives(self, visible):
+        derivs = {}
+        if len(visible.shape) == 2:
+            derivs['visible_bias'] = -B.mean(visible, axis=0)
+            derivs['weights'] = -B.dot(visible.T, visible) / len(visible)
+        else:
+            derivs['visible_bias'] = -visible
+            derivs['weights'] = -B.outer(visible, visible)
+        return derivs
+
+    def marginal_free_energy(self, visible, beta=None):
+        energy = -B.batch_dot(visible, self.params['weights'], visible)
+        if isinstance(beta, numpy.ndarray):
+            energy *= numpy.ravel(beta)**2
+        energy -= B.dot(visible, self.params['visible_bias'])
+        return energy
+
+
 # ----- ALIASES ----- #
 
 BinaryMarkovRandomField = BinaryMRF = IsingModel
