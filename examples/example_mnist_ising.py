@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     # fit the model
     print('training with contrastive divergence')
-    cd.train()
+    #cd.train()
 
     # evaluate the model
     # this will be the same as the final epoch results

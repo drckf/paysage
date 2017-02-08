@@ -50,12 +50,53 @@ def mean_field(batch, model):
         x2 += B.dot(v_data.T, v_data)
         nsamples += len(v_data)
 
-    cov = x2/nsamples - (x/nsamples)**2
+    ave = x / nsamples
+    cov = x2/nsamples - (ave)**2
     J = -numpy.linalg.pinv(cov)
     numpy.fill_diagonal(J, 0)
     model.params['weights'] = J
-    model.params['visible_bias'] = model.layers['visible'].inverse_mean(x/nsamples)
-    model.params['visible_bias'] -= B.dot(J, x/nsamples)
+    model.params['visible_bias'] = model.layers['visible'].inverse_mean(ave)
+    model.params['visible_bias'] -= B.dot(J, ave)
+
+def tap(batch, model):
+    """
+    Yasser Roudi, Erik Aurell, John A. Hertz.
+    "Statistical physics of pairwise probability models"
+    https://arxiv.org/pdf/0905.1410.pdf
+
+    """
+    nvis = len(model.params['visible_bias'])
+    x = numpy.zeros(nvis, dtype=numpy.float32)
+    x2 = numpy.zeros((nvis,nvis), dtype=numpy.float32)
+    nsamples = 0
+    while True:
+        try:
+            v_data = batch.get(mode='train')
+        except StopIteration:
+            break
+        x += B.msum(v_data, axis=0)
+        x2 += B.dot(v_data.T, v_data)
+        nsamples += len(v_data)
+
+    # compute the necessary moments
+    ave = x / nsamples
+    cov = x2/nsamples - (ave)**2
+    out = B.outer(ave, ave)
+    inv = numpy.linalg.pinv(cov)
+
+    # compute J_{ij} using Newton's method
+    J = -inv
+    for iteration in range(5):
+        J -= (inv + J + 2 * out * J**2) / (1 + 4 * out * J)
+
+    # remove the diagonal terms
+    numpy.fill_diagonal(J, 0)
+    model.params['weights'] = J
+
+    # compute the fields
+    model.params['visible_bias'] = model.layers['visible'].inverse_mean(ave)
+    model.params['visible_bias'] -= B.dot(J, ave)
+    model.params['visible_bias'] += B.dot(J**2, ave * (1-ave**2))
 
 def jacquin_rancon(batch, model):
     """
@@ -77,9 +118,19 @@ def jacquin_rancon(batch, model):
         x2 += B.dot(v_data.T, v_data)
         nsamples += len(v_data)
 
-    cov = x2/nsamples - (x/nsamples)**2
+    ave = x / nsamples
+    cov = x2/nsamples - (ave)**2
     J = -numpy.linalg.pinv(cov)
     numpy.fill_diagonal(J, 0)
     model.params['weights'] = J
-    model.params['visible_bias'] = model.layers['visible'].inverse_mean(x/nsamples)
-    model.params['visible_bias'] -= B.dot(J, x/nsamples)
+    model.params['visible_bias'] = model.layers['visible'].inverse_mean(ave)
+    model.params['visible_bias'] -= B.dot(J, ave)
+
+def fisher(batch, model):
+    """
+    Charles K. Fisher.
+    "Variational Pseudolikelihood for Regularized Ising Inference."
+    https://arxiv.org/pdf/1409.7074.pdf
+
+    """
+    pass
