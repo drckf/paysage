@@ -16,6 +16,7 @@ def hinton(batch, model):
     nvis = len(model.params['visible_bias'])
     model.params['weights'] = numpy.random.normal(loc=0.0, scale=0.001,
                                 size=(nvis, nvis)).astype(dtype=numpy.float32)
+    numpy.fill_diagonal(model.params['weights'], 0)
 
     x = numpy.zeros(batch.ncols, dtype=numpy.float32)
     nsamples = 0
@@ -34,6 +35,7 @@ def mean_field(batch, model):
     Yasser Roudi, Erik Aurell, John A. Hertz.
     "Statistical physics of pairwise probability models"
     https://arxiv.org/pdf/0905.1410.pdf
+
     """
     nvis = len(model.params['visible_bias'])
     x = numpy.zeros(nvis, dtype=numpy.float32)
@@ -60,6 +62,7 @@ def jacquin_rancon(batch, model):
     Jacquin, Hugo, and A. Rançon.
     "Resummed mean-field inference for strongly coupled data."
     Physical Review E 94.4 (2016): 042118.
+
     """
     nvis = len(model.params['visible_bias'])
     x = numpy.zeros(nvis, dtype=numpy.float32)

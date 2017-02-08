@@ -106,8 +106,9 @@ class IsingModel(VisibleModel):
         self.nvis = nvis
         self.layers['visible'] = layers.get(vis_type)
         self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)
-        self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01,
+        self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.001,
                                 size=(nvis, nvis)).astype(dtype=numpy.float32)
+        numpy.fill_diagonal(self.params['weights'] , 0)
 
     def initialize(self, data, method='hinton'):
         try:
@@ -150,9 +151,11 @@ class IsingModel(VisibleModel):
         if len(visible.shape) == 2:
             derivs['visible_bias'] = -B.mean(visible, axis=0)
             derivs['weights'] = -B.dot(visible.T, visible) / len(visible)
+            numpy.fill_diagonal(derivs['weights'] , 0)
         else:
             derivs['visible_bias'] = -visible
             derivs['weights'] = -B.outer(visible, visible)
+            numpy.fill_diagonal(derivs['weights'] , 0)
         return derivs
 
     def marginal_free_energy(self, visible, beta=None):
