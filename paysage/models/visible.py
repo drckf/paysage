@@ -160,6 +160,7 @@ class IsingModel(VisibleModel):
 
     def marginal_free_energy(self, visible, beta=None):
         energy = -B.batch_dot(visible, self.params['weights'], visible)
+        energy /= 2
         if isinstance(beta, numpy.ndarray):
             energy *= numpy.ravel(beta)**2
         energy -= B.dot(visible, self.params['visible_bias'])

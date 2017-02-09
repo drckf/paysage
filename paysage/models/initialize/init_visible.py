@@ -58,7 +58,7 @@ def mean_field(batch, model):
     model.params['visible_bias'] = model.layers['visible'].inverse_mean(ave)
     model.params['visible_bias'] -= B.dot(J, ave)
 
-def tap(batch, model):
+def tap(batch, model, iterations=5):
     """
     Yasser Roudi, Erik Aurell, John A. Hertz.
     "Statistical physics of pairwise probability models"
@@ -86,7 +86,7 @@ def tap(batch, model):
 
     # compute J_{ij} using Newton's method
     J = -inv
-    for iteration in range(5):
+    for iteration in range(iterations):
         J -= (inv + J + 2 * out * J**2) / (1 + 4 * out * J)
 
     # remove the diagonal terms
@@ -98,7 +98,7 @@ def tap(batch, model):
     model.params['visible_bias'] -= B.dot(J, ave)
     model.params['visible_bias'] += B.dot(J**2, ave * (1-ave**2))
 
-def jacquin_rancon(batch, model):
+def jacquin_rancon(batch, model, iterations=10):
     """
     Jacquin, Hugo, and A. Rançon.
     "Resummed mean-field inference for strongly coupled data."
@@ -120,8 +120,14 @@ def jacquin_rancon(batch, model):
 
     ave = x / nsamples
     cov = x2/nsamples - (ave)**2
-    J = -numpy.linalg.pinv(cov)
-    numpy.fill_diagonal(J, 0)
+    Linv = numpy.diag( 1 / (1 - ave**2) )
+    # initialize the diagonal matrix
+    D = numpy.diag(1 - ave**2)
+    # compute J and D self-consistently
+    for i in range(iterations):
+        J = -numpy.linalg.inv(cov + D)
+        numpy.fill_diagonal(J, 0)
+        D = numpy.diag(numpy.diag(numpy.linalg.inv(Linv - J)) - numpy.diag(cov))
     model.params['weights'] = J
     model.params['visible_bias'] = model.layers['visible'].inverse_mean(ave)
     model.params['visible_bias'] -= B.dot(J, ave)
