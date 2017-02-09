@@ -60,7 +60,7 @@ def mean_field(batch, model, pseudocount=0.01):
     model.params['visible_bias'] = model.layers['visible'].inverse_mean(ave)
     model.params['visible_bias'] -= B.dot(J, ave)
 
-def tap(batch, model, iterations=5):
+def tap(batch, model, pseudocount=0.01, iterations=5):
     """
     Yasser Roudi, Erik Aurell, John A. Hertz.
     "Statistical physics of pairwise probability models"
@@ -81,10 +81,12 @@ def tap(batch, model, iterations=5):
         nsamples += len(v_data)
 
     # compute the necessary moments
-    ave = x / nsamples
+    ave = (1 - pseudocount) * x / nsamples
     out = B.outer(ave, ave)
-    cov = x2/nsamples - out
-    inv = numpy.linalg.pinv(cov)
+    identity = numpy.identity(len(ave), ave.dtype)
+    cov = pseudocount * identity + (1 - pseudocount) * x2 / nsamples
+    cov -= out
+    inv = numpy.linalg.inv(cov)
 
     # compute J_{ij} using Newton's method
     J = -inv
@@ -100,7 +102,7 @@ def tap(batch, model, iterations=5):
     model.params['visible_bias'] -= B.dot(J, ave)
     model.params['visible_bias'] += B.dot(J**2, ave * (1-ave**2))
 
-def jacquin_rancon(batch, model, iterations=10):
+def jacquin_rancon(batch, model, iterations=10, pseudocount=0.01):
     """
     Jacquin, Hugo, and A. Rançon.
     "Resummed mean-field inference for strongly coupled data."
@@ -120,14 +122,15 @@ def jacquin_rancon(batch, model, iterations=10):
         x2 += B.dot(v_data.T, v_data)
         nsamples += len(v_data)
 
-    ave = x / nsamples
-    cov = x2/nsamples - B.outer(ave, ave)
+    ave = (1 - pseudocount) * x / nsamples
+    identity = numpy.identity(len(ave), ave.dtype)
+    cov = pseudocount * identity + (1 - pseudocount) * x2 / nsamples
+    cov -= B.outer(ave, ave)
     Linv = numpy.diag( 1 / (1 - ave**2) )
     # initialize the diagonal matrix
     D = numpy.diag(1 - ave**2)
     # compute J and D self-consistently
     for i in range(iterations):
-        print(cov)
         J = -numpy.linalg.inv(cov + D)
         numpy.fill_diagonal(J, 0)
         D = numpy.diag(numpy.diag(numpy.linalg.inv(Linv - J)) - numpy.diag(cov))

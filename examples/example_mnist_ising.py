@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     # set up the model and initialize the parameters
     rbm = visible.IsingModel(data.ncols)
-    rbm.initialize(data, method='mean_field')
+    rbm.initialize(data, method='jacquin_rancon')
 
     # set up the optimizer and the fit method
     opt = optimizers.ADAM(rbm,
@@ -96,11 +96,6 @@ if __name__ == "__main__":
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
-
-    print("\nPlot a random sample of the weights")
-    idx = numpy.random.choice(range(rbm.params['weights'].shape[1]), 5, replace=False)
-    grid = numpy.array([[rbm.params['weights'][:, i]] for i in idx])
     plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
 
     # close the HDF5 store
