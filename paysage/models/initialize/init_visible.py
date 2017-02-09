@@ -30,7 +30,7 @@ def hinton(batch, model):
 
     model.params['visible_bias'] = model.layers['visible'].inverse_mean(x/nsamples)
 
-def mean_field(batch, model):
+def mean_field(batch, model, pseudocount=0.01):
     """
     Yasser Roudi, Erik Aurell, John A. Hertz.
     "Statistical physics of pairwise probability models"
@@ -50,9 +50,11 @@ def mean_field(batch, model):
         x2 += B.dot(v_data.T, v_data)
         nsamples += len(v_data)
 
-    ave = x / nsamples
-    cov = x2/nsamples - (ave)**2
-    J = -numpy.linalg.pinv(cov)
+    ave = (1 - pseudocount) * x / nsamples
+    identity = numpy.identity(len(ave), ave.dtype)
+    cov = pseudocount * identity + (1 - pseudocount) * x2 / nsamples
+    cov -= B.outer(ave, ave)
+    J = -numpy.linalg.inv(cov)
     numpy.fill_diagonal(J, 0)
     model.params['weights'] = J
     model.params['visible_bias'] = model.layers['visible'].inverse_mean(ave)
@@ -80,8 +82,8 @@ def tap(batch, model, iterations=5):
 
     # compute the necessary moments
     ave = x / nsamples
-    cov = x2/nsamples - (ave)**2
     out = B.outer(ave, ave)
+    cov = x2/nsamples - out
     inv = numpy.linalg.pinv(cov)
 
     # compute J_{ij} using Newton's method
@@ -119,12 +121,13 @@ def jacquin_rancon(batch, model, iterations=10):
         nsamples += len(v_data)
 
     ave = x / nsamples
-    cov = x2/nsamples - (ave)**2
+    cov = x2/nsamples - B.outer(ave, ave)
     Linv = numpy.diag( 1 / (1 - ave**2) )
     # initialize the diagonal matrix
     D = numpy.diag(1 - ave**2)
     # compute J and D self-consistently
     for i in range(iterations):
+        print(cov)
         J = -numpy.linalg.inv(cov + D)
         numpy.fill_diagonal(J, 0)
         D = numpy.diag(numpy.diag(numpy.linalg.inv(Linv - J)) - numpy.diag(cov))
