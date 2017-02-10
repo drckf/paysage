@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     # set up the model and initialize the parameters
     rbm = visible.IsingModel(data.ncols)
-    rbm.initialize(data, method='jacquin_rancon')
+    rbm.initialize(data, method='tap')
 
     # set up the optimizer and the fit method
     opt = optimizers.ADAM(rbm,
