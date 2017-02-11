@@ -10,14 +10,26 @@ This section provides some wrappers to basic numpy operations with arrays.
 
 """
 
+def float_scalar(scalar):
+    return numpy.float32(scalar)
+
 def float_tensor(tensor):
     return numpy.array(tensor, dtype=numpy.float32)
+
+def shape(tensor):
+    return tensor.shape
 
 def zeros(shape):
     return numpy.zeros(shape, dtype=numpy.float32)
 
+def zeros_like(tensor):
+    return zeros(shape(tensor))
+
 def ones(shape):
     return numpy.ones(shape, dtype=numpy.float32)
+
+def ones_like(tensor):
+    return ones(shape(tensor))
 
 def diag(vec):
     return numpy.diag(vec)
@@ -87,27 +99,11 @@ def normalize(x):
     y = EPSILON + x
     return x/numpy.sum(y)
 
-@jit('float32(float32[:],float32[:])',nopython=True)
-def squared_euclidean_distance(a, b):
-    """
-        Compute the squared euclidean distance between two vectors.
-
-    """
-    result = numpy.float32(0.0)
-    for i in range(len(a)):
-        result += (a[i] - b[i])**2
-    return result
-
-@jit('float32(float32[:],float32[:])',nopython=True)
-def euclidean_distance(a, b):
-    """
-        Compute the euclidean distance between two vectors.
-
-    """
-    return math.sqrt(squared_euclidean_distance(a, b))
-
 
 # ----- THE FOLLOWING FUNCTIONS ARE THE MAIN BOTTLENECKS ----- #
+
+def norm(x):
+    return numpy.linalg.norm(x)
 
 def mean(x, axis=None, keepdims=False):
     return numpy.mean(x, axis=axis, keepdims=keepdims)
@@ -173,6 +169,25 @@ def xMy(x,M,y):
 # ------------------------------------------------------------ #
 
 # ----- SPECIALIZED MATRIX FUNCTIONS ----- #
+
+@jit('float32(float32[:],float32[:])',nopython=True)
+def squared_euclidean_distance(a, b):
+    """
+        Compute the squared euclidean distance between two vectors.
+
+    """
+    result = numpy.float32(0.0)
+    for i in range(len(a)):
+        result += (a[i] - b[i])**2
+    return result
+
+@jit('float32(float32[:],float32[:])',nopython=True)
+def euclidean_distance(a, b):
+    """
+        Compute the euclidean distance between two vectors.
+
+    """
+    return math.sqrt(squared_euclidean_distance(a, b))
 
 @jit('float32(float32[:,:],float32[:,:], int16)',nopython=True)
 def fast_energy_distance(minibatch, samples, downsample=100):
