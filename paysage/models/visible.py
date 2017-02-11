@@ -150,11 +150,11 @@ class IsingModel(VisibleModel):
         derivs = {}
         if len(visible.shape) == 2:
             derivs['visible_bias'] = -B.mean(visible, axis=0)
-            derivs['weights'] = -B.dot(visible.T, visible) / len(visible)
+            derivs['weights'] = -B.dot(visible.T, visible) / len(visible) / 2
             numpy.fill_diagonal(derivs['weights'] , 0)
         else:
             derivs['visible_bias'] = -visible
-            derivs['weights'] = -B.outer(visible, visible)
+            derivs['weights'] = -B.outer(visible, visible) / 2
             numpy.fill_diagonal(derivs['weights'] , 0)
         return derivs
 
