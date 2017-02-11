@@ -4,6 +4,29 @@ import numexpr as ne
 
 EPSILON = numpy.finfo(numpy.float32).eps
 
+# ----- TENSORS ----- #
+
+def float_tensor(tensor):
+    return numpy.array(tensor, dtype=numpy.float32)
+
+def zeros(shape):
+    return numpy.zeros(shape, dtype=numpy.float32)
+
+def ones(shape):
+    return numpy.ones(shape, dtype=numpy.float32)
+
+def diag(vec):
+    return numpy.diag(vec)
+
+def diagonal_matrix(mat):
+    return numpy.diag(mat)
+
+def fill_diagonal(mat, val):
+    return numpy.fill_diagonal(mat, val)
+
+
+######################
+
 """
 Routines for matrix operations
 
@@ -75,6 +98,12 @@ def euclidean_distance(a, b):
 
 def mean(x, axis=None, keepdims=False):
     return numpy.mean(x, axis=axis, keepdims=keepdims)
+
+def var(x, axis=None, keepdims=False):
+    return numpy.var(x, axis=axis, keepdims=keepdims)
+
+def std(x, axis=None, keepdims=False):
+    return numpy.std(x, axis=axis, keepdims=keepdims)
 
 def msum(x, axis=None, keepdims=False):
     return numpy.sum(x, axis=axis, keepdims=keepdims)
