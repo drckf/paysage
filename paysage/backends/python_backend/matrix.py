@@ -31,6 +31,12 @@ def fill_diagonal(mat, val):
 def sign(tensor):
     return numpy.sign(tensor)
 
+def clip(tensor, a_min=None, a_max=None):
+    return tensor.clip(a_min, a_max)
+
+def clip_inplace(tensor, a_min=None, a_max=None):
+    tensor.clip(a_min, a_max, out=tensor)
+
 
 ######################
 
