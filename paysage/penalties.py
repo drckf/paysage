@@ -1,5 +1,4 @@
-import numpy
-from . import backends as B
+from . import backends as be
 
 # ----- FUNCTIONS ----- #
 
@@ -8,11 +7,11 @@ class l2_penalty(object):
     def __init__(self, penalty):
         self.penalty = penalty
 
-    def value(self, anarray):
-        return 0.5 * self.penalty * numpy.sum(anarray**2)
+    def value(self, tensor):
+        return 0.5 * self.penalty * be.tensor_sum(tensor**2)
 
-    def grad(self, anarray):
-        return self.penalty * anarray
+    def grad(self, tensor):
+        return self.penalty * tensor
 
 
 class l1_penalty(object):
@@ -20,11 +19,11 @@ class l1_penalty(object):
     def __init__(self, penalty):
         self.penalty = penalty
 
-    def value(self, anarray):
-        return self.penalty * numpy.sum(numpy.abs(anarray))
+    def value(self, tensor):
+        return self.penalty * be.tensor_sum(be.tensor_abs(tensor))
 
-    def grad(self, anarray):
-        return self.penalty * numpy.sign(anarray)
+    def grad(self, tensor):
+        return self.penalty * be.sign(tensor)
 
 
 class log_penalty(object):
@@ -32,11 +31,11 @@ class log_penalty(object):
     def __init__(self, penalty):
         self.penalty = penalty
 
-    def value(self, anarray):
-        return -self.penalty * B.log(anarray)
+    def value(self, tensor):
+        return -self.penalty * be.log(tensor)
 
-    def grad(self, anarray):
-        return -self.penalty / anarray
+    def grad(self, tensor):
+        return -self.penalty / tensor
 
 
 # ----- ALIASES ----- #

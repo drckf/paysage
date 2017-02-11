@@ -5,6 +5,10 @@ import numexpr as ne
 EPSILON = numpy.finfo(numpy.float32).eps
 
 # ----- TENSORS ----- #
+"""
+This section provides some wrappers to basic numpy operations with arrays.
+
+"""
 
 def float_tensor(tensor):
     return numpy.array(tensor, dtype=numpy.float32)
@@ -23,6 +27,9 @@ def diagonal_matrix(mat):
 
 def fill_diagonal(mat, val):
     return numpy.fill_diagonal(mat, val)
+
+def sign(tensor):
+    return numpy.sign(tensor)
 
 
 ######################
@@ -104,6 +111,9 @@ def var(x, axis=None, keepdims=False):
 
 def std(x, axis=None, keepdims=False):
     return numpy.std(x, axis=axis, keepdims=keepdims)
+
+def tensor_sum(x, axis=None, keepdims=False):
+    return numpy.sum(x, axis=axis, keepdims=keepdims)
 
 def msum(x, axis=None, keepdims=False):
     return numpy.sum(x, axis=axis, keepdims=keepdims)
