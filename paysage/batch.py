@@ -30,10 +30,15 @@ class Batch(object):
 
         # create iterators over the data for the train/validate sets
         self.iterators = {}
-        self.iterators['train'] = self.store.select(key, stop=self.split, iterator=True, chunksize=self.batch_size)
-        self.iterators['validate'] = self.store.select(key, start=self.split, iterator=True, chunksize=self.batch_size)
+        self.iterators['train'] = self.store.select(key, stop=self.split,
+                                                    iterator=True,
+                                                    chunksize=self.batch_size)
+        self.iterators['validate'] = self.store.select(key, start=self.split,
+                                                       iterator=True,
+                                                       chunksize=self.batch_size)
 
-        self.generators = {mode: self.iterators[mode].__iter__() for mode in self.iterators}
+        self.generators = {mode: self.iterators[mode].__iter__()
+                           for mode in self.iterators}
 
     def num_validation_samples(self):
         return self.nrows - self.split
@@ -47,7 +52,8 @@ class Batch(object):
         elif mode == 'validate':
             self.generators['validate'] = self.iterators['validate'].__iter__()
         else:
-            self.generators = {mode: self.iterators[mode].__iter__() for mode in self.iterators}
+            self.generators = {mode: self.iterators[mode].__iter__()
+                               for mode in self.iterators}
 
     def get(self, mode):
         try:
@@ -90,7 +96,8 @@ class DataShuffler(object):
        Synchronized shuffling between tables (with matching numbers of rows).
 
     """
-    def __init__(self, filename, shuffled_filename, allowed_mem=1, complevel=5, seed=137):
+    def __init__(self, filename, shuffled_filename, allowed_mem=1, complevel=5,
+                 seed=137):
         self.filename = filename
         self.allowed_mem = allowed_mem # in GiB
         self.seed = seed # should keep this fixed for long-term determinism
@@ -103,14 +110,17 @@ class DataShuffler(object):
         self.table_stats = {k : TableStatistics(self.store, k) for k in self.keys}
 
         # choose the smallest chunksize
-        self.chunksize = min([self.table_stats[k].chunksize(self.allowed_mem) for k in self.keys])
+        self.chunksize = min([self.table_stats[k].chunksize(self.allowed_mem)
+                              for k in self.keys])
 
         # store for chunked data
         self.chunk_filename = os.path.splitext(filename)[0] + "_chunk.h5"
         self.chunk_store = pandas.HDFStore(self.chunk_filename, mode='w')
 
         # setup the output file
-        self.shuffled_store = pandas.HDFStore(shuffled_filename, mode='w', complevel=self.complevel, complib=self.complib)
+        self.shuffled_store = pandas.HDFStore(shuffled_filename, mode='w',
+                                              complevel=self.complevel,
+                                              complib=self.complib)
 
 
     def shuffle(self):
@@ -138,7 +148,8 @@ class DataShuffler(object):
 
         # if there is one chunk, move it and finish
         if num_chunks == 1:
-            self.shuffled_store.put(key, self.chunk_store[chunk_keys[0]], format='table')
+            self.shuffled_store.put(key, self.chunk_store[chunk_keys[0]],
+                                    format='table')
             return
 
         self.reassemble_table(key, num_chunks, chunk_keys, chunk_counts)
@@ -160,10 +171,13 @@ class DataShuffler(object):
 
         # read, shuffle, and write chunks
         while True:
-            x = self.store.select(key, start=i_chunk*self.chunksize, stop=(i_chunk+1)*self.chunksize).as_matrix()
+            x = self.store.select(key, start=i_chunk*self.chunksize,
+                                  stop=(i_chunk+1)*self.chunksize).as_matrix()
             numpy.random.shuffle(x)
             chunk_key = key + str(i_chunk)
-            self.chunk_store.put(chunk_key, pandas.DataFrame(x, columns=column_names), format='table')
+            self.chunk_store.put(chunk_key,
+                                 pandas.DataFrame(x, columns=column_names),
+                                 format='table')
 
             # increment counters
             num_read += len(x)
@@ -182,7 +196,8 @@ class DataShuffler(object):
 
         """
         # find a streaming map
-        stream_map = numpy.concatenate([chunk_counts[i]*[i] for i in range(len(chunk_counts))])
+        stream_map = numpy.concatenate([chunk_counts[i]*[i]
+                                        for i in range(len(chunk_counts))])
         numpy.random.shuffle(stream_map)
 
         # stream from the chunks into the shuffled store
@@ -192,15 +207,20 @@ class DataShuffler(object):
         # read data in chunks
         for i_chunk in range(num_chunks):
             # get the count for each chunk table
-            chunk_inds = stream_map[i_chunk*self.chunksize : (i_chunk+1)*self.chunksize]
-            chunk_read_counts = [numpy.sum(chunk_inds == j) for j in range(num_chunks)]
+            chunk_inds = stream_map[i_chunk*self.chunksize
+                                    : (i_chunk+1)*self.chunksize]
+            chunk_read_counts = [numpy.sum(chunk_inds == j)
+                                 for j in range(num_chunks)]
 
             # now read chunks into an empty array
-            arr = numpy.zeros((len(chunk_inds), self.table_stats[key].shape[1]), self.table_stats[key].dtype)
+            arr = numpy.zeros((len(chunk_inds), self.table_stats[key].shape[1]),
+                              self.table_stats[key].dtype)
             arr_ix = 0
             for j in range(num_chunks):
                 num_read = chunk_read_counts[j]
-                df_chunk = self.chunk_store.select(chunk_keys[j], start=chunk_read_inds[j], stop=chunk_read_inds[j] + num_read)
+                df_chunk = self.chunk_store.select(chunk_keys[j],
+                                                   start=chunk_read_inds[j],
+                                                   stop=chunk_read_inds[j] + num_read)
                 arr[arr_ix : arr_ix + num_read] = df_chunk
                 arr_ix += num_read
                 chunk_read_inds[j] += num_read

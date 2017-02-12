@@ -5,15 +5,16 @@ from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
 
-try:
-    import plotting
-except ImportError:
-    from . import plotting
+import pytest
 
-def example_mnist_rbm(paysage_path=None):
+def test_rbm(paysage_path=None):
+    """TODO : this is just a placeholder, need to clean up & simplifiy setup. Also
+    need to figure how to deal with consistent random seeding throughout the
+    codebase to obtain deterministic checkable results.
+    """
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 10
+    num_epochs = 1
     learning_rate = 0.01
     mc_steps = 1
 
@@ -82,35 +83,16 @@ def example_mnist_rbm(paysage_path=None):
     print('Final performance metrics:')
     performance.check_progress(rbm, 0, show=True)
 
-    print("\nPlot a random sample of reconstructions")
-    v_data = data.get('validate')
-    sampler = fit.SequentialMC(rbm)
-    sampler.initialize(v_data)
-    sampler.update_state(1)
-    v_model = rbm.deterministic_step(sampler.state)
+    metdict = {m.name: m.value() for m in performance.metrics}
 
-    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
-    grid = numpy.array([[v_data[i], v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    assert metdict['ReconstructionError'] < 9, \
+        "Reconstruction error too high after 1 epoch"
 
-    print("\nPlot a random sample of fantasy particles")
-    random_samples = rbm.random(v_data)
-    sampler = fit.SequentialMC(rbm)
-    sampler.initialize(random_samples)
-    sampler.update_state(1000)
-    v_model = rbm.deterministic_step(sampler.state)
-
-    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
-    grid = numpy.array([[v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
-
-    print("\nPlot a random sample of the weights")
-    idx = numpy.random.choice(range(rbm.params['weights'].shape[1]), 5, replace=False)
-    grid = numpy.array([[rbm.params['weights'][:, i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    assert metdict['EnergyDistance'] < 4, \
+        "Energy distance too high after 1 epoch"
 
     # close the HDF5 store
     data.close()
 
 if __name__ == "__main__":
-    example_mnist_rbm()
+    test_rbm()
