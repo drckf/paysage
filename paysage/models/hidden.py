@@ -193,7 +193,8 @@ class RestrictedBoltzmannMachine(LatentModel):
 
     def joint_energy(self, visible, hidden, beta=None):
         if len(visible.shape) == 2:
-            energy = -B.batch_dot(visible.astype(numpy.float32), self.params['weights'],
+            energy = -B.batch_dot(visible.astype(numpy.float32),
+                                  self.params['weights'],
                                   hidden.astype(numpy.float32))
         else:
             energy = -B.quadratic_form(visible, self.params['weights'], hidden)
@@ -204,8 +205,11 @@ class RestrictedBoltzmannMachine(LatentModel):
         return B.mean(energy)
 
     def marginal_free_energy(self, visible, beta=None):
-        log_Z_hidden = self.layers['hidden'].log_partition_function(self._hidden_field(visible, beta=beta))
-        return -B.dot(visible, self.params['visible_bias']) - B.msum(log_Z_hidden, axis=1)
+        log_Z_hidden = \
+            (self.layers['hidden']
+             .log_partition_function(self._hidden_field(visible, beta=beta)))
+        return (-B.dot(visible, self.params['visible_bias'])
+                - B.msum(log_Z_hidden, axis=1))
 
 
 

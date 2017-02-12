@@ -43,7 +43,8 @@ class EnergyDistance(object):
 
     def update(self, minibatch=None, samples=None, **kwargs):
         self.norm += 1
-        self.energy_distance += fast_energy_distance(minibatch, samples, self.downsample)
+        self.energy_distance += fast_energy_distance(minibatch, samples,
+                                                     self.downsample)
 
     def value(self):
         if self.norm:
