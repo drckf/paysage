@@ -68,7 +68,8 @@ class StochasticGradientDescent(Optimizer):
                  tolerance=1e-3):
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
-        self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
+        self.grad = {key: numpy.zeros_like(model.params[key])
+                     for key in model.params}
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
@@ -99,8 +100,10 @@ class Momentum(Optimizer):
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
         self.momentum = momentum
-        self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
-        self.delta = {key: numpy.zeros_like(model.params[key]) for key in model.params}
+        self.grad = {key: numpy.zeros_like(model.params[key])
+                     for key in model.params}
+        self.delta = {key: numpy.zeros_like(model.params[key])
+                      for key in model.params}
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
@@ -129,8 +132,10 @@ class RMSProp(Optimizer):
         super().__init__(scheduler, tolerance)
         self.stepsize = numpy.float32(stepsize)
         self.mean_square_weight = numpy.float32(mean_square_weight)
-        self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
-        self.mean_square_grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
+        self.grad = {key: numpy.zeros_like(model.params[key])
+                     for key in model.params}
+        self.mean_square_grad = {key: numpy.zeros_like(model.params[key])
+                                 for key in model.params}
         self.epsilon = numpy.float32(1e-6)
 
     def update(self, model, v_data, v_model, epoch):
@@ -165,9 +170,12 @@ class ADAM(Optimizer):
         self.stepsize = numpy.float32(stepsize)
         self.mean_weight = numpy.float32(mean_weight)
         self.mean_square_weight = numpy.float32(mean_square_weight)
-        self.grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
-        self.mean_square_grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
-        self.mean_grad = {key: numpy.zeros_like(model.params[key]) for key in model.params}
+        self.grad = {key: numpy.zeros_like(model.params[key])
+                     for key in model.params}
+        self.mean_square_grad = {key: numpy.zeros_like(model.params[key])
+                                 for key in model.params}
+        self.mean_grad = {key: numpy.zeros_like(model.params[key])
+                          for key in model.params}
         self.epsilon = numpy.float32(1e-6)
 
     def update(self, model, v_data, v_model, epoch):

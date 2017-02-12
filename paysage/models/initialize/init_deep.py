@@ -1,7 +1,3 @@
 import numpy
 
 # ----- FUNCTIONS ----- #
-
-
-
-    
