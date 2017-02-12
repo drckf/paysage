@@ -11,15 +11,15 @@ try:
 except ImportError:
     from . import plotting
 
-if (__name__ == "__main__"):
-
+def example_mnist_rbm_sklearn(paysage_path=None):
     num_hidden_units = 500
     batch_size = 50
     num_epochs = 10
     # the step size has been hand-tuned for the sklearn implementation
     learning_rate = 0.01
 
-    paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if not paysage_path:
+        paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')
 
     if not os.path.exists(filepath):
@@ -120,3 +120,6 @@ if (__name__ == "__main__"):
 
     # close the HDF5 store
     data.close()
+
+if __name__ == "__main__":
+    example_mnist_rbm_sklearn()
