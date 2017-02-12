@@ -1,12 +1,12 @@
 import numpy
-from . import backends as B
+from . import backends as be
 
 #----- LAYER CLASSES -----#
 
 class GaussianLayer(object):
 
     def __init__(self):
-        self.rand = numpy.random.randn
+        self.rand = be.randn
 
     def prox(self, vis):
         return vis
@@ -21,103 +21,103 @@ class GaussianLayer(object):
         return -B.log(scale)
 
     def sample_state(self, loc, scale):
-        r = numpy.float32(self.rand(*loc.shape))
+        r = be.float_tensor(self.rand(be.shape(loc)))
         return loc + scale * r
 
     def random(self, array_or_shape):
         try:
-            r = numpy.float32(self.rand(*array_or_shape.shape))
+            r = be.float_tensor(self.rand(be.shape(array_or_shape)))
         except AttributeError:
-            r = numpy.float32(self.rand(*array_or_shape))
+            r = be.float_tensor(self.rand(array_or_shape))
         return r
 
 
 class IsingLayer(object):
 
     def __init__(self):
-        self.rand = numpy.random.rand
+        self.rand = be.rand
 
     def prox(self, vis):
-        return 2.0 * (vis > 0.0).astype(numpy.float32) - 1.0
+        return 2.0 * be.float_tensor(vis > 0.0) - 1.0
 
     def mean(self, loc):
-        return B.tanh(loc)
+        return be.tanh(loc)
 
     def inverse_mean(self, mean):
-        return B.atanh(mean)
+        return be.atanh(mean)
 
     def log_partition_function(self, loc):
-        return B.logcosh(loc)
+        return be.logcosh(loc)
 
     def sample_state(self, loc):
-        p = B.expit(loc)
-        r = self.rand(*p.shape)
-        return 2*numpy.float32(r<p)-1
+        p = be.expit(loc)
+        r = self.rand(p.shape)
+        return 2*be.float_tensor(r<p)-1
 
     def random(self, array_or_shape):
         try:
-            r = self.rand(*array_or_shape.shape)
+            r = self.rand(be.shape(array_or_shape))
         except AttributeError:
-            r = self.rand(*array_or_shape)
+            r = self.rand(array_or_shape)
         return 2*numpy.float32(r<0.5)-1
 
 
 class BernoulliLayer(object):
 
     def __init__(self):
-        self.rand = numpy.random.rand
+        self.rand = be.rand
 
     def prox(self, vis):
-        return (vis > 0.0).astype(numpy.float32)
+        return be.float_tensor(vis > 0.0)
 
     def mean(self, loc):
-        return B.expit(loc)
+        return be.expit(loc)
 
     def inverse_mean(self, mean):
-        return B.logit(mean)
+        return be.logit(mean)
 
     def log_partition_function(self, loc):
-        return B.softplus(loc)
+        return be.softplus(loc)
 
     def sample_state(self, loc):
-        p = B.expit(loc)
-        r = self.rand(*p.shape)
-        return numpy.float32(r<p)
+        p = be.expit(loc)
+        r = self.rand(p.shape)
+        return be.float_tensor(r<p)
 
     def random(self, array_or_shape):
         try:
-            r = self.rand(*array_or_shape.shape)
+            r = self.rand(be.shape(array_or_shape))
         except AttributeError:
-            r = self.rand(*array_or_shape)
+            r = self.rand(array_or_shape)
         return numpy.float32(r<0.5)
 
 class ExponentialLayer(object):
 
     def __init__(self):
-        self.rand = numpy.random.rand
+        self.rand = be.rand
 
     def prox(self, vis):
-        return vis.clip(min=B.EPSILON)
+        return be.clip(vis, a_min=be.EPSILON)
 
     def mean(self, loc):
-        return B.elementwise_inverse(loc)
+        return be.elementwise_inverse(loc)
 
     def inverse_mean(self, mean):
-        return B.elementwise_inverse(mean)
+        return be.elementwise_inverse(mean)
 
     def log_partition_function(self, loc):
-        return -B.log(loc)
+        return -be.log(loc)
 
     def sample_state(self, loc):
-        r = self.rand(*loc.shape)
-        return -B.log(r) / loc
+        r = self.rand(be.shape(loc))
+        return -be.log(r) / loc
 
     def random(self, array_or_shape):
         try:
-            r = self.rand(*array_or_shape.shape)
+            r = self.rand(be.shape(array_or_shape))
         except AttributeError:
-            r = self.rand(*array_or_shape)
-        return -B.log(r)
+            r = self.rand(array_or_shape)
+        return -be.log(r)
 
 
 # ---- FUNCTIONS ----- #
