@@ -113,3 +113,4 @@ if __name__ == "__main__":
 
     # close the HDF5 store
     data.close()
+

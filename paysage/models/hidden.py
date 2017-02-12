@@ -67,8 +67,10 @@ class LatentModel(object):
            v -> h -> v'
            return v'
 
-           It may be worth looking into extended approaches:
-           Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala. "Training Restricted Boltzmann Machine via the￼ Thouless-Anderson-Palmer free energy." Advances in Neural Information Processing Systems. 2015.
+           It may be worth looking into extended approaches: Gabrié, Marylou,
+           Eric W. Tramel, and Florent Krzakala. "Training Restricted Boltzmann
+           Machine via the Thouless-Anderson-Palmer free energy." Advances in
+           Neural Information Processing Systems. 2015.
 
         """
         hid = self.hidden_mean(vis, beta)
@@ -113,7 +115,8 @@ class LatentModel(object):
 class RestrictedBoltzmannMachine(LatentModel):
     """RestrictedBoltzmanMachine
 
-       Hinton, Geoffrey. "A practical guide to training restricted Boltzmann machines." Momentum 9.1 (2010): 926.
+       Hinton, Geoffrey. "A practical guide to training restricted Boltzmann
+       machines." Momentum 9.1 (2010): 926.
 
     """
     def __init__(self, nvis, nhid, vis_type='ising', hid_type='bernoulli'):
@@ -187,17 +190,23 @@ class RestrictedBoltzmannMachine(LatentModel):
 
     def joint_energy(self, visible, hidden, beta=None):
         if len(visible.shape) == 2:
-            energy = -B.batch_dot(visible.astype(numpy.float32), self.params['weights'], hidden.astype(numpy.float32))
+            energy = -B.batch_dot(visible.astype(numpy.float32),
+                                  self.params['weights'],
+                                  hidden.astype(numpy.float32))
         else:
             energy = -B.quadratic_form(visible, self.params['weights'], hidden)
         if isinstance(beta, numpy.ndarray):
             energy *= beta
-        energy -= B.dot(visible, self.params['visible_bias']) + B.dot(hidden, self.params['hidden_bias'])
+        energy -= B.dot(visible, self.params['visible_bias']) \
+                  + B.dot(hidden, self.params['hidden_bias'])
         return B.mean(energy)
 
     def marginal_free_energy(self, visible, beta=None):
-        log_Z_hidden = self.layers['hidden'].log_partition_function(self._hidden_field(visible, beta=beta))
-        return -B.dot(visible, self.params['visible_bias']) - B.msum(log_Z_hidden, axis=1)
+        log_Z_hidden = \
+            (self.layers['hidden']
+             .log_partition_function(self._hidden_field(visible, beta=beta)))
+        return (-B.dot(visible, self.params['visible_bias'])
+                - B.msum(log_Z_hidden, axis=1))
 
 
 
@@ -205,7 +214,9 @@ class HopfieldModel(LatentModel):
     """HopfieldModel
        A model of associative memory with binary visible units and Gaussian hidden units.
 
-       Hopfield, John J. "Neural networks and physical systems with emergent collective computational abilities." Proceedings of the national academy of sciences 79.8 (1982): 2554-2558.
+       Hopfield, John J. "Neural networks and physical systems with emergent
+       collective computational abilities." Proceedings of the national academy
+       of sciences 79.8 (1982): 2554-2558.
 
     """
     def __init__(self, nvis, nhid, vis_type='ising'):
@@ -219,7 +230,9 @@ class HopfieldModel(LatentModel):
         self.layers['visible'] = layers.get(vis_type)
         self.layers['hidden'] = layers.get('gaussian')
 
-        self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01, size=(nvis, nhid)).astype(dtype=numpy.float32)
+        self.params['weights'] = (
+            numpy.random.normal(loc=0.0, scale=0.01, size=(nvis, nhid))
+            .astype(dtype=numpy.float32))
         self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)
 
         # the parameters of the hidden layer are not trainable

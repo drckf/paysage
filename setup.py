@@ -13,11 +13,13 @@ setup(name='paysage',
       license='MIT',
       packages=['paysage'],
       install_requires=[
-                        'numpy',
                         'h5py',
+                        'matplotlib',
+                        'numba',
+                        'numexpr',
+                        'numpy',
                         'pandas',
                         'scikit-learn',
-                        'numba',
-                        'numexpr'
+                        'seaborn'
                         ],
       zip_safe=False)

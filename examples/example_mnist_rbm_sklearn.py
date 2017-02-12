@@ -11,7 +11,7 @@ try:
 except ImportError:
     from . import plotting
 
-if __name__ == "__main__":
+if (__name__ == "__main__"):
 
     num_hidden_units = 500
     batch_size = 50
