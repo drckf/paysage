@@ -18,7 +18,7 @@ class GaussianLayer(object):
         return mean
 
     def log_partition_function(self, scale):
-        return -B.log(scale)
+        return -be.log(scale)
 
     def sample_state(self, loc, scale):
         r = be.float_tensor(self.rand(be.shape(loc)))
@@ -51,7 +51,7 @@ class IsingLayer(object):
 
     def sample_state(self, loc):
         p = be.expit(loc)
-        r = self.rand(p.shape)
+        r = self.rand(be.shape(p))
         return 2*be.float_tensor(r<p)-1
 
     def random(self, array_or_shape):
