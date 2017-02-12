@@ -43,7 +43,8 @@ class EnergyDistance(object):
 
     def update(self, minibatch=None, samples=None, **kwargs):
         self.norm += 1
-        self.energy_distance += fast_energy_distance(minibatch, samples, self.downsample)
+        self.energy_distance += fast_energy_distance(minibatch, samples,
+                                                     self.downsample)
 
     def value(self):
         if self.norm:
@@ -66,7 +67,8 @@ class EnergyGap(object):
 
     def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs):
         self.norm += 1
-        self.energy_gap += B.mean(amodel.marginal_free_energy(minibatch)) - B.mean(amodel.marginal_free_energy(random_samples))
+        self.energy_gap += B.mean(amodel.marginal_free_energy(minibatch)) \
+                           - B.mean(amodel.marginal_free_energy(random_samples))
 
     def value(self):
         if self.norm:
@@ -117,7 +119,8 @@ def fast_energy_distance(minibatch, samples, downsample=100):
 
     for i in range(n-1):
         for j in range(i+1, n):
-            d1 += B.euclidean_distance(minibatch[index_1[i]], minibatch[index_1[j]])
+            d1 += B.euclidean_distance(minibatch[index_1[i]],
+                                       minibatch[index_1[j]])
     d1 = 2.0 * d1 / (n*n - n)
 
     for i in range(m-1):
