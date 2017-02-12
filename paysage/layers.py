@@ -1,4 +1,3 @@
-import numpy
 from . import backends as be
 
 #----- LAYER CLASSES -----#
@@ -59,7 +58,7 @@ class IsingLayer(object):
             r = self.rand(be.shape(array_or_shape))
         except AttributeError:
             r = self.rand(array_or_shape)
-        return 2*numpy.float32(r<0.5)-1
+        return 2*be.float_tensor(r<0.5)-1
 
 
 class BernoulliLayer(object):
@@ -89,7 +88,7 @@ class BernoulliLayer(object):
             r = self.rand(be.shape(array_or_shape))
         except AttributeError:
             r = self.rand(array_or_shape)
-        return numpy.float32(r<0.5)
+        return be.float_tensor(r<0.5)
 
 class ExponentialLayer(object):
 
