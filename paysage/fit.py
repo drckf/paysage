@@ -1,4 +1,4 @@
-import numpy, time
+import time, math
 from . import backends as be
 from . import metrics as M
 
@@ -39,7 +39,6 @@ class Sampler(object):
     def set_state(self, tensor):
         """
            Set up the inital states for each of the Markov Chains.
-           The state is stored in a numpy array.
 
         """
         self.state = be.float_tensor(tensor)
@@ -70,17 +69,6 @@ class SequentialMC(Sampler):
                   'You must set the initial state of the Markov Chain')
         self.state = self.updater(self.state, steps)
 
-        """
-        if self.method == 'stochastic':
-            self.state = self.model.markov_chain(self.state, steps)
-        elif self.method == 'mean_field':
-            self.state = self.model.mean_field_iteration(self.state, steps)
-        elif self.method == 'deterministic':
-            self.state = self.model.deterministic_iteration(self.state, steps)
-        else:
-            raise ValueError("Unknown method {}".format(self.method))
-        """
-
     def get_state(self):
         return self.state
 
@@ -107,16 +95,14 @@ class DrivenSequentialMC(Sampler):
             #     -> loc = E[X] * (1 - momentum)
             # Var[X] = scale ** 2 / (1 - momentum**2)
             #        -> scale = sqrt(Var[X] * (1 - momentum**2))
-            self.beta_loc = (1-self.beta_momentum) * numpy.ones(
-                                                (len(self.state), 1),
-                                                dtype=numpy.float32
-                                                )
-            self.beta_scale *= numpy.sqrt(1-self.beta_momentum**2)
-            self.beta = numpy.ones((len(self.state), 1), dtype=numpy.float32)
+            self.beta_shape = (len(self.state), 1)
+            self.beta_loc = (1-self.beta_momentum) * be.ones(self.beta_shape)
+            self.beta_scale *= math.sqrt(1-self.beta_momentum**2)
+            self.beta = be.ones(self.beta_shape)
 
         self.beta *= self.beta_momentum
         self.beta += self.beta_loc
-        self.beta += self.beta_scale * numpy.random.randn(len(self.beta),1)
+        self.beta += self.beta_scale * be.randn(self.beta_shape)
 
     def update_state(self, steps):
         if not self.has_state:
