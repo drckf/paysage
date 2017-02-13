@@ -13,9 +13,19 @@ class Sampler(object):
                 method='stochastic',
                 **kwargs):
         self.model = amodel
-        self.method = method
         self.state = None
         self.has_state = False
+
+        self.method = method
+        if self.method == 'stochastic':
+            self.updater = self.model.markov_chain
+        elif self.method == 'mean_field':
+            self.updater = self.model.mean_field_iteration
+        elif self.method == 'deterministic':
+            self.updater = self.model.deterministic_iteration
+        else:
+            raise ValueError("Unknown method {}".format(self.method))
+
 
     def randomize_state(self, shape):
         """
@@ -58,6 +68,9 @@ class SequentialMC(Sampler):
         if not self.has_state:
             raise AttributeError(
                   'You must set the initial state of the Markov Chain')
+        self.state = self.updater(self.state, steps)
+
+        """
         if self.method == 'stochastic':
             self.state = self.model.markov_chain(self.state, steps)
         elif self.method == 'mean_field':
@@ -66,6 +79,7 @@ class SequentialMC(Sampler):
             self.state = self.model.deterministic_iteration(self.state, steps)
         else:
             raise ValueError("Unknown method {}".format(self.method))
+        """
 
     def get_state(self):
         return self.state
@@ -110,20 +124,7 @@ class DrivenSequentialMC(Sampler):
                   'You must call the initialize(self, array_or_shape)'
                   +' method to set the initial state of the Markov Chain')
         self.update_beta()
-        if self.method == 'stochastic':
-            self.state = self.model.markov_chain(self.state,
-                                                 steps,
-                                                 self.beta)
-        elif self.method == 'mean_field':
-            self.state = self.model.mean_field_iteration(self.state,
-                                                         steps,
-                                                         self.beta)
-        elif self.method == 'deterministic':
-            self.state = self.model.deterministic_iteration(self.state,
-                                                            steps,
-                                                            self.beta)
-        else:
-            raise ValueError("Unknown method {}".format(self.method))
+        self.state = self.updater(self.state, steps, self.beta)
 
     def get_state(self):
         return self.state
