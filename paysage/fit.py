@@ -1,5 +1,5 @@
-import numpy, pandas, time
-from . import backends as B
+import numpy, time
+from . import backends as be
 from . import metrics as M
 
 # -----  CLASSES ----- #
@@ -15,28 +15,32 @@ class Sampler(object):
         self.model = amodel
         self.method = method
         self.state = None
+        self.has_state = False
 
-    def initialize(self, array_or_shape):
+    def randomize_state(self, shape):
+        """
+           Set up the inital states for each of the Markov Chains.
+           The initial state is randomly initalized.
+
+        """
+        self.state = self.model.random(shape)
+        self.has_state = True
+
+    def set_state(self, tensor):
         """
            Set up the inital states for each of the Markov Chains.
            The state is stored in a numpy array.
-           If array_or_shape is a shape tuple, then the initial state
-           is randomly initalized.
 
         """
-        if isinstance(array_or_shape, pandas.DataFrame):
-            self.state = array_or_shape.as_matrix().astype(numpy.float32)
-        elif isinstance(array_or_shape, numpy.ndarray):
-            self.state = array_or_shape.astype(numpy.float32)
-        else:
-            self.state = self.model.random(array_or_shape)
+        self.state = be.float_tensor(tensor)
+        self.has_state = True
 
     @classmethod
     def from_batch(cls, amodel, abatch,
                    method='stochastic',
                    **kwargs):
         tmp = cls(amodel, method=method, **kwargs)
-        tmp.initialize(abatch.get('train'))
+        tmp.set_state(abatch.get('train'))
         abatch.reset_generator('all')
         return tmp
 
@@ -51,10 +55,9 @@ class SequentialMC(Sampler):
         super().__init__(amodel, method=method)
 
     def update_state(self, steps):
-        if not isinstance(self.state, numpy.ndarray):
+        if not self.has_state:
             raise AttributeError(
-                  'You must call the initialize(self, array_or_shape)'
-                  +' method to set the initial state of the Markov Chain')
+                  'You must set the initial state of the Markov Chain')
         if self.method == 'stochastic':
             self.state = self.model.markov_chain(self.state, steps)
         elif self.method == 'mean_field':
@@ -102,7 +105,7 @@ class DrivenSequentialMC(Sampler):
         self.beta += self.beta_scale * numpy.random.randn(len(self.beta),1)
 
     def update_state(self, steps):
-        if not isinstance(self.state, numpy.ndarray):
+        if not self.has_state:
             raise AttributeError(
                   'You must call the initialize(self, array_or_shape)'
                   +' method to set the initial state of the Markov Chain')
@@ -173,7 +176,7 @@ class ContrastiveDivergence(TrainingMethod):
                     break
 
                 # CD resets the sampler from the visible data at each iteration
-                self.sampler.initialize(v_data)
+                self.sampler.set_state(v_data)
                 self.sampler.update_state(self.mcsteps)
 
                 # compute the gradient and update the model parameters
@@ -283,13 +286,13 @@ class ProgressMonitor(object):
                     break
 
                 # compute the reconstructions
-                sampler.initialize(v_data)
+                sampler.set_state(v_data)
                 sampler.update_state(1)
                 reconstructions = sampler.state
 
                 # compute the fantasy particles
                 random_samples = model.random(v_data)
-                sampler.initialize(random_samples)
+                sampler.set_state(random_samples)
                 sampler.update_state(self.update_steps)
                 fantasy_particles = sampler.state
 
