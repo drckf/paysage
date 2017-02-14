@@ -1,18 +1,23 @@
 import os
 import numpy
 import pandas
+from . import backends as be
 
 # ----- CLASSES ----- #
 
 class Batch(object):
     """Batch
        Serves up minibatches from an HDFStore.
-       The validation set is taken as the last (1 - train_fraction) samples in the store.
-       The data should probably be randomly shuffled if being used to train a non-recurrent model.
+       The validation set is taken as the last (1 - train_fraction)
+       samples in the store.
+       The data should probably be randomly shuffled if being used to
+       train a non-recurrent model.
 
     """
-    def __init__(self, filename, key, batch_size, train_fraction=0.9,
-                 transform=None, dtype=numpy.float32):
+    def __init__(self, filename, key, batch_size,
+                 train_fraction=0.9,
+                 transform=None,
+                 dtype=numpy.float32):
         if transform:
             assert callable(transform)
         self.transform = transform
@@ -96,7 +101,9 @@ class DataShuffler(object):
        Synchronized shuffling between tables (with matching numbers of rows).
 
     """
-    def __init__(self, filename, shuffled_filename, allowed_mem=1, complevel=5,
+    def __init__(self, filename, shuffled_filename,
+                 allowed_mem=1,
+                 complevel=5,
                  seed=137):
         self.filename = filename
         self.allowed_mem = allowed_mem # in GiB
@@ -107,7 +114,8 @@ class DataShuffler(object):
         # get the keys and statistics
         self.store = pandas.HDFStore(filename, mode='r')
         self.keys = self.store.keys()
-        self.table_stats = {k : TableStatistics(self.store, k) for k in self.keys}
+        self.table_stats = {k: TableStatistics(self.store, k)
+                            for k in self.keys}
 
         # choose the smallest chunksize
         self.chunksize = min([self.table_stats[k].chunksize(self.allowed_mem)
@@ -201,7 +209,6 @@ class DataShuffler(object):
         numpy.random.shuffle(stream_map)
 
         # stream from the chunks into the shuffled store
-        avail_chunks = numpy.arange(num_chunks)
         chunk_read_inds = num_chunks * [0]
         num_streamed = 0
         # read data in chunks
