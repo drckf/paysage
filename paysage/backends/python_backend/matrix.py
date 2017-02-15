@@ -37,6 +37,9 @@ def diag(vec):
 def diagonal_matrix(mat):
     return numpy.diag(mat)
 
+def identity(n):
+    return numpy.identity(n, dtype=numpy.float32)
+
 def fill_diagonal(mat, val):
     return numpy.fill_diagonal(mat, val)
 
@@ -165,6 +168,9 @@ def xM_plus_a(x,M,a,trans=False):
 
 def xMy(x,M,y):
     return numpy.dot(x,numpy.dot(M,y))
+
+def inv(mat):
+    return numpy.linalg.inv(mat)
 
 # ------------------------------------------------------------ #
 
