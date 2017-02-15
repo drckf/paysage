@@ -1,6 +1,5 @@
-import numpy
 from .. import layers
-from .. import backends as B
+from .. import backends as be
 from ..models.initialize import init_visible as init
 from .. import constraints
 from .. import penalties
@@ -105,10 +104,9 @@ class IsingModel(VisibleModel):
 
         self.nvis = nvis
         self.layers['visible'] = layers.get(vis_type)
-        self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)
-        self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.001,
-                                size=(nvis, nvis)).astype(dtype=numpy.float32)
-        numpy.fill_diagonal(self.params['weights'] , 0)
+        self.params['visible_bias'] = be.zeros(nvis)
+        self.params['weights'] = 0.001 * be.randn((nvis, nvis))
+        be.fill_diagonal(self.params['weights'] , 0)
 
     def initialize(self, data, method='hinton'):
         try:
@@ -119,8 +117,8 @@ class IsingModel(VisibleModel):
         self.enforce_constraints()
 
     def _visible_field(self, vis, beta=None):
-        self.visible_field = B.dot(vis, self.params['weights'])
-        if isinstance(beta, numpy.ndarray):
+        self.visible_field = be.dot(vis, self.params['weights'])
+        if beta is not None:
             self.visible_field *= beta
         self.visible_field += self.params['visible_bias']
         return self.visible_field
@@ -139,31 +137,31 @@ class IsingModel(VisibleModel):
             new_col = self.layers['visible'].sample_state(self.visible_field[:,j])
             diff = new_vis[:, j] - new_col
             # update the field and the spins
-            if isinstance(beta, numpy.ndarray):
-                self.visible_field -= beta * B.outer(diff, self.params['weights'][:,j])
+            if beta is not None:
+                self.visible_field -= beta * be.outer(diff, self.params['weights'][:,j])
             else:
-                self.visible_field -= B.outer(diff, self.params['weights'][:,j])
+                self.visible_field -= be.outer(diff, self.params['weights'][:,j])
             new_vis[:, j] = new_col
         return new_vis
 
     def derivatives(self, visible):
         derivs = {}
         if len(visible.shape) == 2:
-            derivs['visible_bias'] = -B.mean(visible, axis=0)
-            derivs['weights'] = -B.dot(visible.T, visible) / len(visible) / 2
-            numpy.fill_diagonal(derivs['weights'] , 0)
+            derivs['visible_bias'] = -be.mean(visible, axis=0)
+            derivs['weights'] = -be.dot(visible.T, visible) / len(visible) / 2
+            be.fill_diagonal(derivs['weights'] , 0)
         else:
             derivs['visible_bias'] = -visible
-            derivs['weights'] = -B.outer(visible, visible) / 2
-            numpy.fill_diagonal(derivs['weights'] , 0)
+            derivs['weights'] = -be.outer(visible, visible) / 2
+            be.fill_diagonal(derivs['weights'] , 0)
         return derivs
 
     def marginal_free_energy(self, visible, beta=None):
-        energy = -B.batch_dot(visible, self.params['weights'], visible)
+        energy = -be.batch_dot(visible, self.params['weights'], visible)
         energy /= 2
-        if isinstance(beta, numpy.ndarray):
-            energy *= numpy.ravel(beta)**2
-        energy -= B.dot(visible, self.params['visible_bias'])
+        if beta is not None:
+            energy *= be.flatten(beta)**2
+        energy -= be.dot(visible, self.params['visible_bias'])
         return energy
 
 

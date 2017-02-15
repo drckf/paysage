@@ -10,6 +10,9 @@ This section provides some wrappers to basic numpy operations with arrays.
 
 """
 
+def flatten(tensor):
+    return numpy.ravel(tensor)
+
 def float_scalar(scalar):
     return numpy.float32(scalar)
 
