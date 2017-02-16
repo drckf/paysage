@@ -25,4 +25,7 @@ setup(name='paysage',
           'seaborn',
           'tables'
       ],
+      tests_require=[
+          'pytest'
+      ],
       zip_safe=False)
