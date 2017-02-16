@@ -146,7 +146,7 @@ class IsingModel(VisibleModel):
 
     def derivatives(self, visible):
         derivs = {}
-        if len(visible.shape) == 2:
+        if len(be.shape(visible)) == 2:
             derivs['visible_bias'] = -be.mean(visible, axis=0)
             derivs['weights'] = -be.dot(visible.T, visible) / len(visible) / 2
             be.fill_diagonal(derivs['weights'] , 0)
