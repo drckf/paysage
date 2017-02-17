@@ -1,6 +1,6 @@
 import numpy
 from .. import layers
-from .. import backends as B
+from .. import backends as be
 from ..models.initialize import init_hidden as init
 from .. import constraints
 from .. import penalties
@@ -147,14 +147,14 @@ class RestrictedBoltzmannMachine(LatentModel):
         self.enforce_constraints()
 
     def _hidden_field(self, visible, beta=None):
-        result = B.dot(visible, self.params['weights'])
+        result = be.dot(visible, self.params['weights'])
         if isinstance(beta, numpy.ndarray):
             result *= beta
         result += self.params['hidden_bias']
         return result
 
     def _visible_field(self, hidden, beta=None):
-        result = B.dot(hidden, self.params['weights'].T)
+        result = be.dot(hidden, self.params['weights'].T)
         if isinstance(beta, numpy.ndarray):
             result *= beta
         result += self.params['visible_bias']
@@ -181,35 +181,27 @@ class RestrictedBoltzmannMachine(LatentModel):
     def derivatives(self, visible):
         mean_hidden = self.hidden_mean(visible, beta=None)
         derivs = {}
-        if len(mean_hidden.shape) == 2:
-            derivs['visible_bias'] = -B.mean(visible, axis=0)
-            derivs['hidden_bias'] = -B.mean(mean_hidden, axis=0)
-            derivs['weights'] = -B.dot(visible.T, mean_hidden) / len(visible)
-        else:
-            derivs['visible_bias'] = -visible
-            derivs['hidden_bias'] = -mean_hidden
-            derivs['weights'] = -B.outer(visible, mean_hidden)
+        derivs['visible_bias'] = -be.mean(visible, axis=0)
+        derivs['hidden_bias'] = -be.mean(mean_hidden, axis=0)
+        derivs['weights'] = -be.dot(visible.T, mean_hidden) / len(visible)
         return derivs
 
     def joint_energy(self, visible, hidden, beta=None):
-        if len(visible.shape) == 2:
-            energy = -B.batch_dot(visible.astype(numpy.float32),
+        energy = -be.batch_dot(visible.astype(numpy.float32),
                                   self.params['weights'],
                                   hidden.astype(numpy.float32))
-        else:
-            energy = -B.quadratic_form(visible, self.params['weights'], hidden)
         if isinstance(beta, numpy.ndarray):
             energy *= beta
-        energy -= B.dot(visible, self.params['visible_bias'])
-        energy -= B.dot(hidden, self.params['hidden_bias'])
-        return B.mean(energy)
+        energy -= be.dot(visible, self.params['visible_bias'])
+        energy -= be.dot(hidden, self.params['hidden_bias'])
+        return be.mean(energy)
 
     def marginal_free_energy(self, visible, beta=None):
         log_Z_hidden = \
             (self.layers['hidden']
              .log_partition_function(self._hidden_field(visible, beta=beta)))
-        return (-B.dot(visible, self.params['visible_bias'])
-                - B.msum(log_Z_hidden, axis=1))
+        return (-be.dot(visible, self.params['visible_bias'])
+                - be.msum(log_Z_hidden, axis=1))
 
 
 
@@ -252,14 +244,14 @@ class HopfieldModel(LatentModel):
         self.enforce_constraints()
 
     def _hidden_loc(self, visible, beta=None):
-        result = B.dot(visible, self.params['weights'])
+        result = be.dot(visible, self.params['weights'])
         if isinstance(beta, numpy.ndarray):
             result *= beta
         result += self.hidden_bias
         return result
 
     def _visible_field(self, hidden, beta=None):
-        result = B.dot(hidden, self.params['weights'].T)
+        result = be.dot(hidden, self.params['weights'].T)
         if isinstance(beta, numpy.ndarray):
             result *= beta
         result += self.params['visible_bias']
@@ -286,32 +278,26 @@ class HopfieldModel(LatentModel):
     def derivatives(self, visible):
         mean_hidden = self.hidden_mean(visible, beta=None)
         derivs = {}
-        if len(mean_hidden.shape) == 2:
-            derivs['visible_bias'] = -B.mean(visible, axis=0)
-            derivs['weights'] = -B.batch_outer(visible, mean_hidden) / len(visible)
-        else:
-            derivs['visible_bias'] = -visible
-            derivs['weights'] = -B.outer(visible, mean_hidden)
+        derivs['visible_bias'] = -be.mean(visible, axis=0)
+        derivs['weights'] = -be.batch_outer(visible, mean_hidden) / len(visible)
         return derivs
 
     def joint_energy(self, visible, hidden, beta=None):
-        if len(visible.shape) == 2:
-            energy = -B.batch_dot(visible.astype(numpy.float32), self.params['weights'],
-                                  hidden.astype(numpy.float32))
-        else:
-            energy = -B.quadratic_form(visible, self.params['weights'], hidden)
+        energy = -be.batch_dot(visible.astype(numpy.float32),
+                               self.params['weights'],
+                                hidden.astype(numpy.float32))
         if isinstance(beta, numpy.ndarray):
             energy *= beta
-        energy -= B.dot(visible, self.params['visible_bias'])
-        energy -= B.msum(hidden**2, axis=1)
-        return B.mean(energy)
+        energy -= be.dot(visible, self.params['visible_bias'])
+        energy -= be.msum(hidden**2, axis=1)
+        return be.mean(energy)
 
     def marginal_free_energy(self, visible, beta=None):
-        J = B.dot(self.params['weights'], self.params['weights'].T)
-        energy = -B.batch_dot(visible, J, visible)
+        J = be.dot(self.params['weights'], self.params['weights'].T)
+        energy = -be.batch_dot(visible, J, visible)
         if isinstance(beta, numpy.ndarray):
             energy *= numpy.ravel(beta)**2
-        energy -= B.dot(visible, self.params['visible_bias'])
+        energy -= be.dot(visible, self.params['visible_bias'])
         return energy
 
 
@@ -351,15 +337,15 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         self.enforce_constraints()
 
     def _hidden_field(self, visible, beta=None):
-        scale = B.exp(self.params['visible_scale'])
-        result = B.dot(visible/scale, self.params['weights'])
+        scale = be.exp(self.params['visible_scale'])
+        result = be.dot(visible/scale, self.params['weights'])
         if isinstance(beta, numpy.ndarray):
             result *= beta
         result += self.params['hidden_bias']
         return result
 
     def _visible_loc(self, hidden, beta=None):
-        result = B.dot(hidden, self.params['weights'].T)
+        result = be.dot(hidden, self.params['weights'].T)
         if isinstance(beta, numpy.ndarray):
             result *= beta
         result += self.params['visible_bias']
@@ -375,7 +361,7 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         return self.layers['hidden'].prox(self._hidden_field(visible, beta))
 
     def sample_visible(self, hidden, beta=None):
-        scale = B.exp(0.5 * self.params['visible_scale'])
+        scale = be.exp(0.5 * self.params['visible_scale'])
         return self.layers['visible'].sample_state(self._visible_loc(hidden, beta), scale)
 
     def visible_mean(self, hidden, beta=None):
@@ -386,43 +372,32 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
 
     def derivatives(self, visible):
         mean_hidden = self.hidden_mean(visible, beta=None)
-        scale = B.exp(self.params['visible_scale'])
+        scale = be.exp(self.params['visible_scale'])
         v_scaled = visible / scale
         derivs = {}
-        if len(mean_hidden.shape) == 2:
-            derivs['visible_bias'] = -B.mean(v_scaled, axis=0)
-            derivs['hidden_bias'] = -B.mean(mean_hidden, axis=0)
-            derivs['weights'] = -B.dot(v_scaled.T, mean_hidden) / len(visible)
-            derivs['visible_scale'] = -0.5 * B.mean((visible-self.params['visible_bias'])**2, axis=0)
-            derivs['visible_scale'] += B.batch_dot(mean_hidden, self.params['weights'].T, visible, axis=0) / len(visible)
-            derivs['visible_scale'] /= scale
-        else:
-            derivs['visible_bias'] = -v_scaled
-            derivs['hidden_bias'] = -mean_hidden
-            derivs['weights'] = -B.outer(v_scaled, mean_hidden)
-            derivs['visible_scale'] = -0.5 * (visible - self.params['visible_bias'])**2
-            derivs['visible_scale'] += B.dot(self.params['weights'], mean_hidden)
-            derivs['visible_scale'] /= scale
+        derivs['visible_bias'] = -be.mean(v_scaled, axis=0)
+        derivs['hidden_bias'] = -be.mean(mean_hidden, axis=0)
+        derivs['weights'] = -be.dot(v_scaled.T, mean_hidden) / len(visible)
+        derivs['visible_scale'] = -0.5 * be.mean((visible-self.params['visible_bias'])**2, axis=0)
+        derivs['visible_scale'] += be.batch_dot(mean_hidden, self.params['weights'].T, visible, axis=0) / len(visible)
+        derivs['visible_scale'] /= scale
         return derivs
 
     def joint_energy(self, visible, hidden, beta=None):
-        scale = B.exp(self.params['visible_scale'])
+        scale = be.exp(self.params['visible_scale'])
         v_scaled = visible / scale
-        if len(visible.shape) == 2:
-            energy = -B.batch_dot(v_scaled, self.params['weights'], hidden)
-        else:
-            energy = -B.quadratic_form(v_scaled, self.params['weights'], hidden)
+        energy = -be.batch_dot(v_scaled, self.params['weights'], hidden)
         if isinstance(beta, numpy.ndarray):
             energy *= beta
-        energy -= -0.5 * B.mean((visible - self.params['visible_bias'])**2 / scale, axis=1)
-        energy -= B.dot(hidden, self.params['hidden_bias'])
-        return B.mean(energy)
+        energy -= -0.5 * be.mean((visible - self.params['visible_bias'])**2 / scale, axis=1)
+        energy -= be.dot(hidden, self.params['hidden_bias'])
+        return be.mean(energy)
 
     def marginal_free_energy(self, visible, beta=None):
-        scale = B.exp(self.params['visible_scale'])
+        scale = be.exp(self.params['visible_scale'])
         v_scaled = visible / scale
         log_Z_hidden = self.layers['hidden'].log_partition_function(self._hidden_field(v_scaled, beta))
-        return 0.5 * B.mean((visible - self.params['visible_bias'])**2 / scale, axis=1) - B.msum(log_Z_hidden, axis=1)
+        return 0.5 * be.mean((visible - self.params['visible_bias'])**2 / scale, axis=1) - be.msum(log_Z_hidden, axis=1)
 
 
 # ----- ALIASES ----- #
