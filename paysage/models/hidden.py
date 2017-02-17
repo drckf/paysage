@@ -133,10 +133,9 @@ class RestrictedBoltzmannMachine(LatentModel):
         self.layers['visible'] = layers.get(vis_type)
         self.layers['hidden'] = layers.get(hid_type)
 
-        self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01,
-                                size=(nvis, nhid)).astype(dtype=numpy.float32)
-        self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)
-        self.params['hidden_bias'] = numpy.zeros(nhid, dtype=numpy.float32)
+        self.params['weights'] = 0.01 * be.randn((nvis, nhid))
+        self.params['visible_bias'] = be.zeros(nvis)
+        self.params['hidden_bias'] = be.zeros(nhid)
 
     def initialize(self, data, method='hinton'):
         try:
@@ -148,14 +147,14 @@ class RestrictedBoltzmannMachine(LatentModel):
 
     def _hidden_field(self, visible, beta=None):
         result = be.dot(visible, self.params['weights'])
-        if isinstance(beta, numpy.ndarray):
+        if beta is not None:
             result *= beta
         result += self.params['hidden_bias']
         return result
 
     def _visible_field(self, hidden, beta=None):
         result = be.dot(hidden, self.params['weights'].T)
-        if isinstance(beta, numpy.ndarray):
+        if beta is not None:
             result *= beta
         result += self.params['visible_bias']
         return result
@@ -187,22 +186,19 @@ class RestrictedBoltzmannMachine(LatentModel):
         return derivs
 
     def joint_energy(self, visible, hidden, beta=None):
-        energy = -be.batch_dot(visible.astype(numpy.float32),
-                                  self.params['weights'],
-                                  hidden.astype(numpy.float32))
-        if isinstance(beta, numpy.ndarray):
+        energy = -be.batch_dot(visible, self.params['weights'], hidden)
+        if beta is not None:
             energy *= beta
         energy -= be.dot(visible, self.params['visible_bias'])
         energy -= be.dot(hidden, self.params['hidden_bias'])
         return be.mean(energy)
 
     def marginal_free_energy(self, visible, beta=None):
-        log_Z_hidden = \
-            (self.layers['hidden']
+        log_Z_hidden = (self.layers['hidden']
              .log_partition_function(self._hidden_field(visible, beta=beta)))
-        return (-be.dot(visible, self.params['visible_bias'])
-                - be.msum(log_Z_hidden, axis=1))
-
+        energy = - be.tensor_sum(log_Z_hidden, axis=1)
+        energy -= be.dot(visible, self.params['visible_bias'])
+        return energy
 
 
 class HopfieldModel(LatentModel):
@@ -227,13 +223,12 @@ class HopfieldModel(LatentModel):
         self.layers['visible'] = layers.get(vis_type)
         self.layers['hidden'] = layers.get('gaussian')
 
-        self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01,
-                                size=(nvis, nhid)).astype(dtype=numpy.float32)
-        self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)
+        self.params['weights'] = 0.1 * be.randn((nvis, nhid))
+        self.params['visible_bias'] = be.zeros(nvis)
 
         # the parameters of the hidden layer are not trainable
-        self.hidden_bias = numpy.zeros(nhid, dtype=numpy.float32)
-        self.hidden_scale = numpy.ones(nhid, dtype=numpy.float32)
+        self.hidden_bias = be.zeros(nhid)
+        self.hidden_scale = be.ones(nhid)
 
     def initialize(self, data, method='hinton'):
         try:
@@ -245,14 +240,14 @@ class HopfieldModel(LatentModel):
 
     def _hidden_loc(self, visible, beta=None):
         result = be.dot(visible, self.params['weights'])
-        if isinstance(beta, numpy.ndarray):
+        if beta is not None:
             result *= beta
         result += self.hidden_bias
         return result
 
     def _visible_field(self, hidden, beta=None):
         result = be.dot(hidden, self.params['weights'].T)
-        if isinstance(beta, numpy.ndarray):
+        if beta is not None:
             result *= beta
         result += self.params['visible_bias']
         return result
@@ -283,19 +278,17 @@ class HopfieldModel(LatentModel):
         return derivs
 
     def joint_energy(self, visible, hidden, beta=None):
-        energy = -be.batch_dot(visible.astype(numpy.float32),
-                               self.params['weights'],
-                                hidden.astype(numpy.float32))
-        if isinstance(beta, numpy.ndarray):
+        energy = -be.batch_dot(visible, self.params['weights'], hidden)
+        if beta is not None:
             energy *= beta
         energy -= be.dot(visible, self.params['visible_bias'])
-        energy -= be.msum(hidden**2, axis=1)
+        energy -= be.tensor_sum(hidden**2, axis=1)
         return be.mean(energy)
 
     def marginal_free_energy(self, visible, beta=None):
         J = be.dot(self.params['weights'], self.params['weights'].T)
         energy = -be.batch_dot(visible, J, visible)
-        if isinstance(beta, numpy.ndarray):
+        if beta is not None:
             energy *= numpy.ravel(beta)**2
         energy -= be.dot(visible, self.params['visible_bias'])
         return energy
