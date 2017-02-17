@@ -1,4 +1,3 @@
-import numpy
 from .. import layers
 from .. import backends as be
 from ..models.initialize import init_hidden as init
@@ -289,7 +288,7 @@ class HopfieldModel(LatentModel):
         J = be.dot(self.params['weights'], self.params['weights'].T)
         energy = -be.batch_dot(visible, J, visible)
         if beta is not None:
-            energy *= numpy.ravel(beta)**2
+            energy *= be.flatten(beta)**2
         energy -= be.dot(visible, self.params['visible_bias'])
         return energy
 
@@ -315,11 +314,10 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         self.layers['visible'] = layers.get('gaussian')
         self.layers['hidden'] = layers.get(hid_type)
 
-        self.params['weights'] = numpy.random.normal(loc=0.0, scale=0.01,
-                                size=(nvis, nhid)).astype(dtype=numpy.float32)
-        self.params['visible_bias'] = numpy.zeros(nvis, dtype=numpy.float32)
-        self.params['visible_scale'] = numpy.zeros(nvis, dtype=numpy.float32)
-        self.params['hidden_bias'] = numpy.zeros(nhid, dtype=numpy.float32)
+        self.params['weights'] = 0.01 * be.randn((nvis, nhid))
+        self.params['visible_bias'] = be.zeros(nvis)
+        self.params['visible_scale'] = be.zeros(nvis)
+        self.params['hidden_bias'] = be.zeros(nhid)
 
     def initialize(self, data, method='hinton'):
         try:
@@ -332,14 +330,14 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
     def _hidden_field(self, visible, beta=None):
         scale = be.exp(self.params['visible_scale'])
         result = be.dot(visible/scale, self.params['weights'])
-        if isinstance(beta, numpy.ndarray):
+        if beta is not None:
             result *= beta
         result += self.params['hidden_bias']
         return result
 
     def _visible_loc(self, hidden, beta=None):
         result = be.dot(hidden, self.params['weights'].T)
-        if isinstance(beta, numpy.ndarray):
+        if beta is not None:
             result *= beta
         result += self.params['visible_bias']
         return result
@@ -380,7 +378,7 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         scale = be.exp(self.params['visible_scale'])
         v_scaled = visible / scale
         energy = -be.batch_dot(v_scaled, self.params['weights'], hidden)
-        if isinstance(beta, numpy.ndarray):
+        if beta is not None:
             energy *= beta
         energy -= -0.5 * be.mean((visible - self.params['visible_bias'])**2 / scale, axis=1)
         energy -= be.dot(hidden, self.params['hidden_bias'])
@@ -390,7 +388,9 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         scale = be.exp(self.params['visible_scale'])
         v_scaled = visible / scale
         log_Z_hidden = self.layers['hidden'].log_partition_function(self._hidden_field(v_scaled, beta))
-        return 0.5 * be.mean((visible - self.params['visible_bias'])**2 / scale, axis=1) - be.msum(log_Z_hidden, axis=1)
+        energy = 0.5 * be.mean((visible - self.params['visible_bias'])**2 / scale, axis=1)
+        energy -= be.tensor_sum(log_Z_hidden, axis=1)
+        return energy
 
 
 # ----- ALIASES ----- #

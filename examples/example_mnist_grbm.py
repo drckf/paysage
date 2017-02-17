@@ -10,9 +10,9 @@ try:
 except ImportError:
     from . import plotting
 
-def transform(x):
-    """ scale the grayscale image to be in (0,1) """
-    return numpy.float32(x) / 255
+from functools import partial
+
+transform = partial(batch.scale, denominator=255)
 
 def example_mnist_grbm(paysage_path = None):
 
@@ -88,7 +88,7 @@ def example_mnist_grbm(paysage_path = None):
     print("\nPlot a random sample of reconstructions")
     v_data = data.get('validate')
     sampler = fit.DrivenSequentialMC(rbm)
-    sampler.initialize(v_data)
+    sampler.set_state(v_data)
     sampler.update_state(1)
     v_model = rbm.deterministic_step(sampler.state)
 
@@ -99,7 +99,7 @@ def example_mnist_grbm(paysage_path = None):
     print("\nPlot a random sample of fantasy particles")
     random_samples = rbm.random(v_data)
     sampler = fit.DrivenSequentialMC(rbm)
-    sampler.initialize(random_samples)
+    sampler.set_state(random_samples)
     sampler.update_state(1000)
     v_model = rbm.deterministic_step(sampler.state)
 

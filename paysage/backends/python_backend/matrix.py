@@ -55,6 +55,9 @@ def clip(tensor, a_min=None, a_max=None):
 def clip_inplace(tensor, a_min=None, a_max=None):
     tensor.clip(a_min, a_max, out=tensor)
 
+def round(tensor):
+    return numpy.round(tensor)
+
 
 ######################
 
