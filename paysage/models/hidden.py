@@ -56,7 +56,7 @@ class LatentModel(object):
            return v_n
 
         """
-        new_vis = vis.astype(vis.dtype)
+        new_vis = be.float_tensor(vis)
         for t in range(steps):
             new_vis = self.mcstep(new_vis, beta)
         return new_vis
@@ -82,7 +82,7 @@ class LatentModel(object):
            return v_n
 
         """
-        new_vis = vis.astype(vis.dtype)
+        new_vis = be.float_tensor(vis)
         for t in range(steps):
             new_vis = self.mean_field_step(new_vis, beta)
         return new_vis
@@ -102,7 +102,7 @@ class LatentModel(object):
            return v_n
 
         """
-        new_vis = vis.astype(vis.dtype)
+        new_vis = be.float_tensor(vis)
         for t in range(steps):
             new_vis = self.deterministic_step(new_vis, beta)
         return new_vis
