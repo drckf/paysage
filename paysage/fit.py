@@ -229,7 +229,6 @@ class PersistentContrastiveDivergence(TrainingMethod):
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
-
                 # PCD keeps the sampler from the previous iteration
                 self.sampler.update_state(self.mcsteps)
 
