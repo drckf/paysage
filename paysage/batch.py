@@ -8,26 +8,29 @@ from . import backends as be
 def do_nothing(tensor):
     return tensor
 
-def binarize_color(anarray):
+def scale(tensor, denominator):
+    return be.float_tensor(tensor) / denominator
+
+def binarize_color(tensor):
     """binarize_color
        Scales an int8 "color" value to [0, 1].  Converts to float32.
 
     """
-    return be.float_tensor(numpy.round(anarray/255))
+    return be.float_tensor(be.round(tensor/255))
 
-def binary_to_ising(anarray):
+def binary_to_ising(tensor):
     """binary_to_ising
        Scales a [0, 1] value to [-1, 1].  Converts to float32.
 
     """
-    return 2.0 * be.float_tensor(anarray) - 1.0
+    return 2.0 * be.float_tensor(tensor) - 1.0
 
-def color_to_ising(anarray):
+def color_to_ising(tensor):
     """color_to_ising
        Scales an int8 "color" value to [-1, 1].  Converts to float32.
 
     """
-    return binary_to_ising(binarize_color(anarray))
+    return binary_to_ising(binarize_color(tensor))
 
 # ----- CLASSES ----- #
 
