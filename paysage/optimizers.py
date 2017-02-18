@@ -1,5 +1,4 @@
-import numpy
-from . import backends as B
+from . import backends as be
 
 
 # ----- LEARNING RATE SCHEDULERS ----- #
@@ -68,8 +67,8 @@ class StochasticGradientDescent(Optimizer):
                  tolerance=1e-3):
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
-        self.grad = {key: numpy.zeros_like(model.params[key])
-                     for key in model.params}
+        self.grad = {key: be.zeros_like(model.params[key])
+                        for key in model.params}
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
@@ -100,10 +99,10 @@ class Momentum(Optimizer):
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
         self.momentum = momentum
-        self.grad = {key: numpy.zeros_like(model.params[key])
-                     for key in model.params}
-        self.delta = {key: numpy.zeros_like(model.params[key])
-                      for key in model.params}
+        self.grad = {key: be.zeros_like(model.params[key])
+                        for key in model.params}
+        self.delta = {key: be.zeros_like(model.params[key])
+                        for key in model.params}
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
@@ -130,13 +129,13 @@ class RMSProp(Optimizer):
                  scheduler=PowerLawDecay(),
                  tolerance=1e-6):
         super().__init__(scheduler, tolerance)
-        self.stepsize = numpy.float32(stepsize)
-        self.mean_square_weight = numpy.float32(mean_square_weight)
-        self.grad = {key: numpy.zeros_like(model.params[key])
-                     for key in model.params}
-        self.mean_square_grad = {key: numpy.zeros_like(model.params[key])
-                                 for key in model.params}
-        self.epsilon = numpy.float32(1e-6)
+        self.stepsize = be.float_scalar(stepsize)
+        self.mean_square_weight = be.float_scalar(mean_square_weight)
+        self.grad = {key: be.zeros_like(model.params[key])
+                        for key in model.params}
+        self.mean_square_grad = {key: be.zeros_like(model.params[key])
+                                    for key in model.params}
+        self.epsilon = be.float_scalar(1e-6)
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
@@ -147,8 +146,8 @@ class RMSProp(Optimizer):
             for key in model.penalty:
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
-            B.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
-            model.params[key] -= lr * B.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key])
+            be.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
+            model.params[key] -= lr * be.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key])
         model.enforce_constraints()
 
 
@@ -167,16 +166,16 @@ class ADAM(Optimizer):
                  scheduler=PowerLawDecay(),
                  tolerance=1e-6):
         super().__init__(scheduler, tolerance)
-        self.stepsize = numpy.float32(stepsize)
-        self.mean_weight = numpy.float32(mean_weight)
-        self.mean_square_weight = numpy.float32(mean_square_weight)
-        self.grad = {key: numpy.zeros_like(model.params[key])
-                     for key in model.params}
-        self.mean_square_grad = {key: numpy.zeros_like(model.params[key])
-                                 for key in model.params}
-        self.mean_grad = {key: numpy.zeros_like(model.params[key])
-                          for key in model.params}
-        self.epsilon = numpy.float32(1e-6)
+        self.stepsize = be.float_scalar(stepsize)
+        self.mean_weight = be.float_scalar(mean_weight)
+        self.mean_square_weight = be.float_scalar(mean_square_weight)
+        self.grad = {key: be.zeros_like(model.params[key])
+                        for key in model.params}
+        self.mean_square_grad = {key: be.zeros_like(model.params[key])
+                                    for key in model.params}
+        self.mean_grad = {key: be.zeros_like(model.params[key])
+                            for key in model.params}
+        self.epsilon = be.float_scalar(1e-6)
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
@@ -187,9 +186,9 @@ class ADAM(Optimizer):
             for key in model.penalty:
                 self.grad[key] += model.penalty[key].grad(model.params[key])
         for key in self.grad:
-            B.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
-            B.mix_inplace(self.mean_weight, self.mean_grad[key], self.grad[key])
-            model.params[key] -= (lr / (1 - self.mean_weight)) * B.sqrt_div(
+            be.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
+            be.mix_inplace(self.mean_weight, self.mean_grad[key], self.grad[key])
+            model.params[key] -= (lr / (1 - self.mean_weight)) * be.sqrt_div(
             self.mean_grad[key], self.epsilon + self.mean_square_grad[key]/(1 - self.mean_square_weight)
             )
         model.enforce_constraints()
@@ -205,15 +204,14 @@ adam = ADAM
 
 # ----- FUNCTIONS ----- #
 
-# gradient: (LatentModel, numpy.ndarray, numpy.ndarray) -> numpy.ndarray
 def gradient(model, minibatch, samples):
-    positive_phase = model.derivatives(minibatch.astype(numpy.float32))
-    negative_phase = model.derivatives(samples.astype(numpy.float32))
-    return {key: (positive_phase[key] - negative_phase[key]) for key in positive_phase}
+    positive_phase = model.derivatives(minibatch)
+    negative_phase = model.derivatives(samples)
+    return {key: (positive_phase[key] - negative_phase[key])
+                for key in positive_phase}
 
-# gradient_magnitude: (dict) -> float:
 def gradient_magnitude(grad):
     mag = 0
     for key in grad:
-        mag += numpy.linalg.norm(grad[key])**2 / len(grad[key])
-    return numpy.sqrt(mag / len(grad))
+        mag += be.norm(grad[key])**2 / len(grad[key])
+    return be.sqrt(mag / len(grad))

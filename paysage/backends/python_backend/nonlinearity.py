@@ -4,6 +4,9 @@ import numexpr as ne
 EPSILON = numpy.finfo(numpy.float32).eps
 LOG2 = 0.6931471805599453
 
+def tensor_abs(x):
+    ne.evaluate('abs(x)')
+
 def exp(x):
     return ne.evaluate('exp(x)')
 

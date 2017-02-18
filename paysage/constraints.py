@@ -1,9 +1,9 @@
-import numpy
+from . import backends as be
 
 # ----- FUNCTIONS ----- #
 
-def non_negative(anarray):
-    anarray.clip(min=0.0, out=anarray).astype(numpy.float32)
+def non_negative(tensor):
+    be.clip_inplace(tensor, a_min=0.0)
 
-def non_positive(anarray):
-    anarray.clip(max=0.0, out=anarray).astype(numpy.float32)
+def non_positive(tensor):
+    be.clip_inplace(tensor, a_max=0.0)

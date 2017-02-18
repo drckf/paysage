@@ -1,6 +1,6 @@
-import numpy, math
+import math
 from numba import jit
-from . import backends as B
+from . import backends as be
 
 # ----- CLASSES ----- #
 
@@ -19,11 +19,11 @@ class ReconstructionError(object):
 
     def update(self, minibatch=None, reconstructions=None, **kwargs):
         self.norm += len(minibatch)
-        self.mean_square_error += B.msum((minibatch - reconstructions)**2)
+        self.mean_square_error += be.tensor_sum((minibatch - reconstructions)**2)
 
     def value(self):
         if self.norm:
-            return numpy.sqrt(self.mean_square_error / self.norm)
+            return math.sqrt(self.mean_square_error / self.norm)
         else:
             return None
 
@@ -67,8 +67,8 @@ class EnergyGap(object):
 
     def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs):
         self.norm += 1
-        self.energy_gap += B.mean(amodel.marginal_free_energy(minibatch)) \
-                           - B.mean(amodel.marginal_free_energy(random_samples))
+        self.energy_gap += be.mean(amodel.marginal_free_energy(minibatch))
+        self.energy_gap -= be.mean(amodel.marginal_free_energy(random_samples))
 
     def value(self):
         if self.norm:
@@ -92,9 +92,9 @@ class EnergyZscore(object):
         self.random_mean_square = 0
 
     def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs):
-        self.data_mean += B.mean(amodel.marginal_free_energy(minibatch))
-        self.random_mean +=  B.mean(amodel.marginal_free_energy(random_samples))
-        self.random_mean_square +=  B.mean(amodel.marginal_free_energy(random_samples)**2)
+        self.data_mean += be.mean(amodel.marginal_free_energy(minibatch))
+        self.random_mean +=  be.mean(amodel.marginal_free_energy(random_samples))
+        self.random_mean_square +=  be.mean(amodel.marginal_free_energy(random_samples)**2)
 
     def value(self):
         if self.random_mean_square:
@@ -104,6 +104,7 @@ class EnergyZscore(object):
 
 
 # ---- FUNCTIONS ----- #
+import numpy
 
 @jit('float32(float32[:,:],float32[:,:], int16)',nopython=True)
 def fast_energy_distance(minibatch, samples, downsample=100):
@@ -119,18 +120,17 @@ def fast_energy_distance(minibatch, samples, downsample=100):
 
     for i in range(n-1):
         for j in range(i+1, n):
-            d1 += B.euclidean_distance(minibatch[index_1[i]],
-                                       minibatch[index_1[j]])
+            d1 += be.euclidean_distance(minibatch[index_1[i]], minibatch[index_1[j]])
     d1 = 2.0 * d1 / (n*n - n)
 
     for i in range(m-1):
         for j in range(i+1, m):
-            d2 += B.euclidean_distance(samples[index_1[i]], samples[index_2[j]])
+            d2 += be.euclidean_distance(samples[index_1[i]], samples[index_2[j]])
     d2 = 2.0 * d2 / (m*m - m)
 
     for i in index_1:
         for j in index_2:
-            d3 += B.euclidean_distance(minibatch[i], samples[j])
+            d3 += be.euclidean_distance(minibatch[i], samples[j])
     d3 = d3 / (n*m)
 
     return 2.0 * d3 - d2 - d1

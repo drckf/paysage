@@ -1,28 +1,55 @@
 import os
 import numpy
 import pandas
+from . import backends as be
+
+# ----- FUNCTIONS ----- #
+
+def do_nothing(tensor):
+    return tensor
+
+def binarize_color(anarray):
+    """binarize_color
+       Scales an int8 "color" value to [0, 1].  Converts to float32.
+
+    """
+    return be.float_tensor(numpy.round(anarray/255))
+
+def binary_to_ising(anarray):
+    """binary_to_ising
+       Scales a [0, 1] value to [-1, 1].  Converts to float32.
+
+    """
+    return 2.0 * be.float_tensor(anarray) - 1.0
+
+def color_to_ising(anarray):
+    """color_to_ising
+       Scales an int8 "color" value to [-1, 1].  Converts to float32.
+
+    """
+    return binary_to_ising(binarize_color(anarray))
 
 # ----- CLASSES ----- #
 
 class Batch(object):
     """Batch
        Serves up minibatches from an HDFStore.
-       The validation set is taken as the last (1 - train_fraction) samples in the store.
-       The data should probably be randomly shuffled if being used to train a non-recurrent model.
+       The validation set is taken as the last (1 - train_fraction)
+       samples in the store.
+       The data should probably be randomly shuffled if being used to
+       train a non-recurrent model.
 
     """
-    def __init__(self, filename, key, batch_size, train_fraction=0.9,
-                 transform=None, dtype=numpy.float32):
-        if transform:
-            assert callable(transform)
+    def __init__(self, filename, key, batch_size,
+                 train_fraction=0.9,
+                 transform=be.float_tensor):
+
+        assert callable(transform)
         self.transform = transform
 
         # open the store, get the dimensions of the keyed table
         self.store = pandas.HDFStore(filename, mode='r')
         self.key = key
-        self.dtype = dtype
-        if not (self.transform or self.dtype):
-            self.dtype = self.store.get_storer(self.key).dtype[1].base
         self.batch_size = batch_size
         self.ncols = self.store.get_storer(key).ncols
         self.nrows = self.store.get_storer(key).nrows
@@ -61,10 +88,7 @@ class Batch(object):
         except StopIteration:
             self.reset_generator(mode)
             raise StopIteration
-        if self.transform:
-            return self.transform(vals).astype(self.dtype)
-        else:
-            return vals.astype(self.dtype)
+        return self.transform(vals)
 
 
 
@@ -96,7 +120,9 @@ class DataShuffler(object):
        Synchronized shuffling between tables (with matching numbers of rows).
 
     """
-    def __init__(self, filename, shuffled_filename, allowed_mem=1, complevel=5,
+    def __init__(self, filename, shuffled_filename,
+                 allowed_mem=1,
+                 complevel=5,
                  seed=137):
         self.filename = filename
         self.allowed_mem = allowed_mem # in GiB
@@ -107,7 +133,8 @@ class DataShuffler(object):
         # get the keys and statistics
         self.store = pandas.HDFStore(filename, mode='r')
         self.keys = self.store.keys()
-        self.table_stats = {k : TableStatistics(self.store, k) for k in self.keys}
+        self.table_stats = {k: TableStatistics(self.store, k)
+                            for k in self.keys}
 
         # choose the smallest chunksize
         self.chunksize = min([self.table_stats[k].chunksize(self.allowed_mem)
@@ -201,7 +228,6 @@ class DataShuffler(object):
         numpy.random.shuffle(stream_map)
 
         # stream from the chunks into the shuffled store
-        avail_chunks = numpy.arange(num_chunks)
         chunk_read_inds = num_chunks * [0]
         num_streamed = 0
         # read data in chunks
@@ -230,31 +256,3 @@ class DataShuffler(object):
             df.index = range(num_streamed, num_streamed + len(arr))
             num_streamed += len(arr)
             self.shuffled_store.append(key, df)
-
-
-
-# ----- FUNCTIONS ----- #
-
-# vectorize('int8(int8)')
-def binarize_color(anarray):
-    """binarize_color
-       Scales an int8 "color" value to [0, 1].  Converts to float32.
-
-    """
-    return numpy.round(anarray/255).astype(numpy.float32)
-
-# vectorize('float32(int8)')
-def binary_to_ising(anarray):
-    """binary_to_ising
-       Scales a [0, 1] value to [-1, 1].  Converts to float32.
-
-    """
-    return 2.0 * anarray.astype(numpy.float32) - 1.0
-
-# vectorize('float32(int8)')
-def color_to_ising(anarray):
-    """color_to_ising
-       Scales an int8 "color" value to [-1, 1].  Converts to float32.
-
-    """
-    return binary_to_ising(binarize_color(anarray))

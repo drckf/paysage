@@ -193,7 +193,8 @@ class RestrictedBoltzmannMachine(LatentModel):
 
     def joint_energy(self, visible, hidden, beta=None):
         if len(visible.shape) == 2:
-            energy = -B.batch_dot(visible.astype(numpy.float32), self.params['weights'],
+            energy = -B.batch_dot(visible.astype(numpy.float32),
+                                  self.params['weights'],
                                   hidden.astype(numpy.float32))
         else:
             energy = -B.quadratic_form(visible, self.params['weights'], hidden)

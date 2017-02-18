@@ -52,7 +52,7 @@ if __name__ == "__main__":
     v_data = data.get('validate')
     random_samples = ising.random(v_data)
     sampler = fit.DrivenSequentialMC(ising)
-    sampler.initialize(random_samples)
+    sampler.set_state(random_samples)
     sampler.update_state(1000)
     v_model = ising.deterministic_step(sampler.state)
 
