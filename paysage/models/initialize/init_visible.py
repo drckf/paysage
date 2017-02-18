@@ -1,5 +1,4 @@
-import numpy
-from ... import backends as B
+from ... import backends as be
 
 # ----- FUNCTIONS ----- #
 
@@ -14,21 +13,21 @@ def hinton(batch, model):
 
     """
     nvis = len(model.params['visible_bias'])
-    model.params['weights'] = numpy.random.normal(loc=0.0, scale=0.001,
-                                size=(nvis, nvis)).astype(dtype=numpy.float32)
-    numpy.fill_diagonal(model.params['weights'], 0)
+    model.params['weights'] = 0.001 * be.randn((nvis, nvis))
+    be.fill_diagonal(model.params['weights'], 0)
 
-    x = numpy.zeros(batch.ncols, dtype=numpy.float32)
+    x = be.zeros(nvis)
     nsamples = 0
     while True:
         try:
             v_data = batch.get(mode='train')
         except StopIteration:
             break
-        x += B.msum(v_data, axis=0)
+        x += be.tensor_sum(v_data, axis=0)
         nsamples += len(v_data)
 
-    model.params['visible_bias'] = model.layers['visible'].inverse_mean(x/nsamples)
+    ave = x / nsamples
+    model.params['visible_bias'] = model.layers['visible'].inverse_mean(ave)
 
 def mean_field(batch, model,
                pseudocount=0.01):
@@ -39,27 +38,27 @@ def mean_field(batch, model,
 
     """
     nvis = len(model.params['visible_bias'])
-    x = numpy.zeros(nvis, dtype=numpy.float32)
-    x2 = numpy.zeros((nvis,nvis), dtype=numpy.float32)
+    x = be.zeros(nvis)
+    x2 = be.zeros((nvis,nvis))
     nsamples = 0
     while True:
         try:
             v_data = batch.get(mode='train')
         except StopIteration:
             break
-        x += B.msum(v_data, axis=0)
-        x2 += B.dot(v_data.T, v_data)
+        x += be.tensor_sum(v_data, axis=0)
+        x2 += be.dot(v_data.T, v_data)
         nsamples += len(v_data)
 
     ave = (1 - pseudocount) * x / nsamples
-    identity = numpy.identity(len(ave), ave.dtype)
+    identity = be.identity(len(ave))
     cov = pseudocount * identity + (1 - pseudocount) * x2 / nsamples
-    cov -= B.outer(ave, ave)
-    J = -numpy.linalg.inv(cov)
-    numpy.fill_diagonal(J, 0)
+    cov -= be.outer(ave, ave)
+    J = -be.inv(cov)
+    be.fill_diagonal(J, 0)
     model.params['weights'] = J
     model.params['visible_bias'] = model.layers['visible'].inverse_mean(ave)
-    model.params['visible_bias'] -= B.dot(J, ave)
+    model.params['visible_bias'] -= be.dot(J, ave)
 
 def tap(batch, model,
         pseudocount=0.01,
@@ -71,25 +70,25 @@ def tap(batch, model,
 
     """
     nvis = len(model.params['visible_bias'])
-    x = numpy.zeros(nvis, dtype=numpy.float32)
-    x2 = numpy.zeros((nvis,nvis), dtype=numpy.float32)
+    x = be.zeros(nvis)
+    x2 = be.zeros((nvis,nvis))
     nsamples = 0
     while True:
         try:
             v_data = batch.get(mode='train')
         except StopIteration:
             break
-        x += B.msum(v_data, axis=0)
-        x2 += B.dot(v_data.T, v_data)
+        x += be.tensor_sum(v_data, axis=0)
+        x2 += be.dot(v_data.T, v_data)
         nsamples += len(v_data)
 
     # compute the necessary moments
     ave = (1 - pseudocount) * x / nsamples
-    out = B.outer(ave, ave)
-    identity = numpy.identity(len(ave), ave.dtype)
+    out = be.outer(ave, ave)
+    identity = be.identity(len(ave))
     cov = pseudocount * identity + (1 - pseudocount) * x2 / nsamples
     cov -= out
-    inv = numpy.linalg.inv(cov)
+    inv = be.inv(cov)
 
     # compute J_{ij} using Newton's method
     J = -inv
@@ -97,10 +96,10 @@ def tap(batch, model,
         J -= (inv + J + 2 * out * J**2) / (1 + 4 * out * J)
 
     # remove the diagonal terms
-    numpy.fill_diagonal(J, 0)
+    be.fill_diagonal(J, 0)
     model.params['weights'] = J
 
     # compute the fields
     model.params['visible_bias'] = model.layers['visible'].inverse_mean(ave)
-    model.params['visible_bias'] -= B.dot(J, ave)
-    model.params['visible_bias'] += B.dot(J**2, ave * (1-ave**2))
+    model.params['visible_bias'] -= be.dot(J, ave)
+    model.params['visible_bias'] += be.dot(J**2, ave * (1-ave**2))

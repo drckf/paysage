@@ -85,7 +85,7 @@ def example_mnist_rbm(paysage_path=None):
     print("\nPlot a random sample of reconstructions")
     v_data = data.get('validate')
     sampler = fit.SequentialMC(rbm)
-    sampler.initialize(v_data)
+    sampler.set_state(v_data)
     sampler.update_state(1)
     v_model = rbm.deterministic_step(sampler.state)
 
@@ -96,7 +96,7 @@ def example_mnist_rbm(paysage_path=None):
     print("\nPlot a random sample of fantasy particles")
     random_samples = rbm.random(v_data)
     sampler = fit.SequentialMC(rbm)
-    sampler.initialize(random_samples)
+    sampler.set_state(random_samples)
     sampler.update_state(1000)
     v_model = rbm.deterministic_step(sampler.state)
 
