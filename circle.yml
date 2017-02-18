@@ -1,0 +1,20 @@
+machine:
+  python:
+    version: 3.6.0
+  environment:
+    LLVM_CONFIG: /usr/lib/llvm-3.8/bin/llvm-config
+
+dependencies:
+  pre:
+    - sudo apt-get install libhdf5-dev;
+    - sudo apt-get install llvm-3.8;
+  post:
+    - pip install -e .
+
+test:
+  pre:
+    - python mnist/download_mnist.py
+  override:
+    - pytest test/test.py
+    - pytest test/test_rbm.py
+

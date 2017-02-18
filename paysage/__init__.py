@@ -1,4 +1,4 @@
-from . import backends as B
+from . import backends
 from . import layers
 from . import batch
 from . import fit
