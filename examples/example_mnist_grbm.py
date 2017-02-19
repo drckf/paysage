@@ -4,6 +4,7 @@ from paysage import batch
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
+from paysage import backends as be
 
 try:
     import plotting
@@ -108,7 +109,7 @@ def example_mnist_grbm(paysage_path = None):
     plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
 
     print("\nPlot a random sample of the weights")
-    idx = numpy.random.choice(range(rbm.params['weights'].shape[1]), 5, replace=False)
+    idx = numpy.random.choice(range(be.shape(rbm.params['weights'])[1]), 5, replace=False)
     grid = numpy.array([[rbm.params['weights'][:, i]] for i in idx])
     plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
 

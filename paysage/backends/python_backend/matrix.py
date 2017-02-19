@@ -58,6 +58,9 @@ def clip_inplace(tensor, a_min=None, a_max=None):
 def round(tensor):
     return numpy.round(tensor)
 
+def to_numpy_array(tensor):
+    return tensor
+
 
 ######################
 
