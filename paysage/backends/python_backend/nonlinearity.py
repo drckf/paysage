@@ -1,4 +1,4 @@
-import numpy, math
+import numpy
 import numexpr as ne
 
 EPSILON = numpy.finfo(numpy.float32).eps
