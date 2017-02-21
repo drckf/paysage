@@ -129,9 +129,6 @@ def std(x, axis=None, keepdims=False):
 def tensor_sum(x, axis=None, keepdims=False):
     return numpy.sum(x, axis=axis, keepdims=keepdims)
 
-def msum(x, axis=None, keepdims=False):
-    return numpy.sum(x, axis=axis, keepdims=keepdims)
-
 def dot(a,b):
     return numpy.dot(a, b)
 
