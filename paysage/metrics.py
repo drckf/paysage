@@ -19,7 +19,7 @@ class ReconstructionError(object):
 
     def update(self, minibatch=None, reconstructions=None, **kwargs):
         self.norm += len(minibatch)
-        self.mean_square_error += be.tensor_sum((minibatch - reconstructions)**2)
+        self.mean_square_error += be.tsum((minibatch - reconstructions)**2)
 
     def value(self):
         if self.norm:

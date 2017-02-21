@@ -16,7 +16,7 @@ def binarize_color(tensor):
        Scales an int8 "color" value to [0, 1].  Converts to float32.
 
     """
-    return be.float_tensor(be.round(tensor/255))
+    return be.float_tensor(be.tround(tensor/255))
 
 def binary_to_ising(tensor):
     """binary_to_ising

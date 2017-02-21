@@ -10,8 +10,8 @@ This section provides some wrappers to basic numpy operations with arrays.
 
 """
 
-def flatten(tensor):
-    return numpy.ravel(tensor)
+def to_numpy_array(tensor):
+    return tensor
 
 def float_scalar(scalar):
     return numpy.float32(scalar)
@@ -21,6 +21,12 @@ def float_tensor(tensor):
 
 def shape(tensor):
     return tensor.shape
+
+def ndim(tensor):
+    return tensor.ndim
+
+def transpose(tensor):
+    return numpy.transpose(tensor)
 
 def zeros(shape):
     return numpy.zeros(shape, dtype=numpy.float32)
@@ -55,11 +61,17 @@ def clip(tensor, a_min=None, a_max=None):
 def clip_inplace(tensor, a_min=None, a_max=None):
     tensor.clip(a_min, a_max, out=tensor)
 
-def round(tensor):
+def tround(tensor):
     return numpy.round(tensor)
 
-def to_numpy_array(tensor):
-    return tensor
+def flatten(tensor):
+    return numpy.ravel(tensor)
+
+def reshape(tensor, newshape):
+    return numpy.reshape(tensor, newshape)
+
+def dtype(tensor):
+    return tensor.dtype
 
 
 ######################
@@ -68,16 +80,6 @@ def to_numpy_array(tensor):
 Routines for matrix operations
 
 """
-
-# ----- ELEMENTWISE ----- #
-
-def elementwise_inverse(x):
-    """
-       Compute a safe element-wise inverse of a non-negative matrix.
-
-    """
-    y = EPSILON + x
-    return 1/y
 
 def mix_inplace(w,x,y):
     """
@@ -117,6 +119,12 @@ def normalize(x):
 def norm(x):
     return numpy.linalg.norm(x)
 
+def tmax(x, axis=None, keepdims=False):
+    return numpy.max(x, axis=axis, keepdims=keepdims)
+
+def tmin(x, axis=None, keepdims=False):
+    return numpy.min(x, axis=axis, keepdims=keepdims)
+
 def mean(x, axis=None, keepdims=False):
     return numpy.mean(x, axis=axis, keepdims=keepdims)
 
@@ -126,20 +134,65 @@ def var(x, axis=None, keepdims=False):
 def std(x, axis=None, keepdims=False):
     return numpy.std(x, axis=axis, keepdims=keepdims)
 
-def tensor_sum(x, axis=None, keepdims=False):
+def tsum(x, axis=None, keepdims=False):
     return numpy.sum(x, axis=axis, keepdims=keepdims)
+
+def tprod(x, axis=None, keepdims=False):
+    return numpy.prod(x, axis=axis, keepdims=keepdims)
+
+def tany(x, axis=None, keepdims=False):
+    return numpy.any(x, axis=axis, keepdims=keepdims)
+
+def tall(x, axis=None, keepdims=False):
+    return numpy.all(x, axis=axis, keepdims=keepdims)
+
+def equal(x, y):
+    return numpy.equal(x, y)
+
+def allclose(x, y):
+    return numpy.allclose(x, y)
+
+def not_equal(x, y):
+    return numpy.not_equal(x, y)
+
+def greater(x, y):
+    return numpy.greater(x, y)
+
+def greater_equal(x, y):
+    return numpy.greater_equal(x, y)
+
+def lesser(x, y):
+    return numpy.less(x, y)
+
+def lesser_equal(x, y):
+    return numpy.less_equal(x, y)
+
+def maximum(x, y):
+    return numpy.maximum(x, y)
+
+def minimum(x, y):
+    return numpy.minimum(x, y)
+
+def argmax(x, axis=-1):
+    return numpy.argmax(x, axis=axis, keepdims=False)
+
+def argmin(x, axis=-1):
+    return numpy.argmin(x, axis=axis, keepdims=False)
 
 def dot(a,b):
     return numpy.dot(a, b)
 
-def dot_plus(a,b,c):
-    return numpy.dot(a,b) + c
-
-def quadratic_form(x,M,y):
-    return numpy.dot(x,numpy.dot(M,y))
-
 def outer(x,y):
     return numpy.outer(x,y)
+
+def affine(a,b,W):
+    return a + numpy.dot(W,b)
+
+def quadratic(a,b,W):
+    return numpy.dot(a, numpy.dot(W, b))
+
+def inv(mat):
+    return numpy.linalg.inv(mat)
 
 def batch_dot(vis, W, hid, axis=1):
     """
@@ -166,17 +219,21 @@ def batch_outer(vis, hid):
     """
     return numpy.dot(vis.T, hid)
 
-def xM_plus_a(x,M,a,trans=False):
-    if not trans:
-        return a + numpy.dot(x,M)
-    else:
-        return a + numpy.dot(x,M.T)
+def repeat(tensor, n, axis):
+    return numpy.repeat(tensor, n, axis=axis)
 
-def xMy(x,M,y):
-    return numpy.dot(x,numpy.dot(M,y))
+def stack(tensors, axis):
+    return numpy.stack(tensors, axis=axis)
 
-def inv(mat):
-    return numpy.linalg.inv(mat)
+def hstack(tensors):
+    return numpy.hstack(tensors)
+
+def vstack(tensors):
+    return numpy.vstack(tensors)
+
+def trange(start, end, step=1):
+    return numpy.arange(start, end, step, dtype=numpy.float32)
+
 
 # ------------------------------------------------------------ #
 

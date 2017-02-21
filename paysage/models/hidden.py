@@ -195,7 +195,7 @@ class RestrictedBoltzmannMachine(LatentModel):
     def marginal_free_energy(self, visible, beta=None):
         log_Z_hidden = (self.layers['hidden']
              .log_partition_function(self._hidden_field(visible, beta=beta)))
-        energy = - be.tensor_sum(log_Z_hidden, axis=1)
+        energy = - be.tsum(log_Z_hidden, axis=1)
         energy -= be.dot(visible, self.params['visible_bias'])
         return energy
 
@@ -281,7 +281,7 @@ class HopfieldModel(LatentModel):
         if beta is not None:
             energy *= beta
         energy -= be.dot(visible, self.params['visible_bias'])
-        energy -= be.tensor_sum(hidden**2, axis=1)
+        energy -= be.tsum(hidden**2, axis=1)
         return be.mean(energy)
 
     def marginal_free_energy(self, visible, beta=None):
@@ -389,7 +389,7 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         v_scaled = visible / scale
         log_Z_hidden = self.layers['hidden'].log_partition_function(self._hidden_field(v_scaled, beta))
         energy = 0.5 * be.mean((visible - self.params['visible_bias'])**2 / scale, axis=1)
-        energy -= be.tensor_sum(log_Z_hidden, axis=1)
+        energy -= be.tsum(log_Z_hidden, axis=1)
         return energy
 
 

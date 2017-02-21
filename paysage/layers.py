@@ -99,10 +99,10 @@ class ExponentialLayer(object):
         return be.clip(vis, a_min=be.EPSILON)
 
     def mean(self, loc):
-        return be.elementwise_inverse(loc)
+        return be.repicrocal(loc)
 
     def inverse_mean(self, mean):
-        return be.elementwise_inverse(mean)
+        return be.reciprocal(mean)
 
     def log_partition_function(self, loc):
         return -be.log(loc)
