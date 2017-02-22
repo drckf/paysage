@@ -9,25 +9,25 @@ This section provides some wrappers to basic numpy operations with arrays.
 """
 
 def to_numpy_array(tensor):
-    raise tensor.numpy()
+    return tensor.numpy()
 
 def float_scalar(scalar):
-    raise numpy.float32(scalar)
+    return numpy.float32(scalar)
 
 def float_tensor(tensor):
-    raise torch.FloatTensor(tensor)
+    return torch.FloatTensor(tensor)
 
 def shape(tensor):
-    raise tuple(tensor.size())
+    return tuple(tensor.size())
 
 def ndim(tensor):
-    raise tensor.ndimension()
+    return tensor.ndimension()
 
 def transpose(tensor):
-    raise NotImplementedError
+    return torch.transpose(tensor)
 
 def zeros(shape):
-    raise NotImplementedError
+    return torch.zeros(shape)
 
 def zeros_like(tensor):
     raise NotImplementedError
