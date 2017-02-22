@@ -9,19 +9,19 @@ This section provides some wrappers to basic numpy operations with arrays.
 """
 
 def to_numpy_array(tensor):
-    raise NotImplementedError
+    raise tensor.numpy()
 
 def float_scalar(scalar):
-    raise NotImplementedError
+    raise numpy.float32(scalar)
 
 def float_tensor(tensor):
-    raise NotImplementedError
+    raise torch.FloatTensor(tensor)
 
 def shape(tensor):
-    raise NotImplementedError
+    raise tuple(tensor.size())
 
 def ndim(tensor):
-    raise NotImplementedError
+    raise tensor.ndimension()
 
 def transpose(tensor):
     raise NotImplementedError

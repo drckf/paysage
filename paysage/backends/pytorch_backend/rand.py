@@ -1,13 +1,12 @@
-from . import matrix
 import torch
 
 DEFAULT_SEED = 137
 
 def set_seed(n=DEFAULT_SEED):
-    raise NotImplementedError
+    torch.manual_seed(int(n))
 
 def rand(shape):
-    raise NotImplementedError
+    return torch.rand(shape)
 
 def randn(shape):
-    raise NotImplementedError
+    return torch.randn(shape)
