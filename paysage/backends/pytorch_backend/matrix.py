@@ -30,22 +30,22 @@ def zeros(shape):
     return torch.zeros(shape)
 
 def zeros_like(tensor):
-    raise NotImplementedError
+    return zeros(shape(tensor))
 
 def ones(shape):
-    raise NotImplementedError
+    return torch.ones(shape)
 
 def ones_like(tensor):
-    raise NotImplementedError
+    return ones(shape(tensor))
 
-def diag(vec):
-    raise NotImplementedError
+def diag(mat):
+    return torch.diag(mat)
 
-def diagonal_matrix(mat):
-    raise NotImplementedError
+def diagonal_matrix(vec):
+    return torch.diag(vec)
 
 def identity(n):
-    raise NotImplementedError
+    return torch.eye(n)
 
 def fill_diagonal(mat, val):
     raise NotImplementedError
