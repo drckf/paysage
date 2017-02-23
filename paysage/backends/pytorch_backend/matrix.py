@@ -95,30 +95,36 @@ def mix_inplace(w,x,y):
         Compute a weighted average of two matrices (x and y) and store the results in x.
         Useful for keeping track of running averages during training.
 
+        x <- w * x + (1-w) * y
+
     """
-    raise NotImplementedError
+    x *= w
+    x += (1-w) * y
 
 def square_mix_inplace(w,x,y):
     """
         Compute a weighted average of two matrices (x and y^2) and store the results in x.
         Useful for keeping track of running averages of squared matrices during training.
 
+        x < w x + (1-w) * y**2
+
     """
-    raise NotImplementedError
+    x *= w
+    x += (1-w) * y * y
 
 def sqrt_div(x,y):
     """
         Elementwise division of x by sqrt(y).
 
     """
-    raise NotImplementedError
+    return x / torch.sqrt(EPSILON + y)
 
 def normalize(x):
     """
         Divide x by it's sum.
 
     """
-    raise NotImplementedError
+    return x / torch.sum(EPSILON + x)
 
 
 # ----- THE FOLLOWING FUNCTIONS ARE THE MAIN BOTTLENECKS ----- #
