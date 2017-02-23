@@ -4,7 +4,7 @@ EPSILON = numpy.finfo(numpy.float32).eps
 
 # ----- TENSORS ----- #
 """
-This section provides some wrappers to basic numpy operations with arrays.
+This section provides some wrappers to basic torch operations with arrays.
 
 """
 
@@ -57,22 +57,32 @@ def sign(tensor):
     return torch.sign(tensor)
 
 def clip(tensor, a_min=None, a_max=None):
-    raise NotImplementedError
+    if a_min is None:
+        return torch.clamp(tensor, max=a_max)
+    elif a_max is None:
+        return torch.clamp(tensor, min=a_min)
+    else:
+        return torch.clamp(tensor, min=a_min, max=a_max)
 
 def clip_inplace(tensor, a_min=None, a_max=None):
-    raise NotImplementedError
+    if a_min is None:
+        return tensor.clamp_(tensor, max=a_max)
+    elif a_max is None:
+        return tensor.clamp_(tensor, min=a_min)
+    else:
+        return tensor.clamp_(tensor, min=a_min, max=a_max)
 
 def tround(tensor):
-    raise NotImplementedError
+    return torch.round(tensor)
 
 def flatten(tensor):
-    raise NotImplementedError
+    return tensor.view(int(numpy.prod(shape(tensor))))
 
 def reshape(tensor, newshape):
-    raise NotImplementedError
+    return tensor.view(*newshape)
 
 def dtype(tensor):
-    raise NotImplementedError
+    raise tensor.type()
 
 
 ######################
