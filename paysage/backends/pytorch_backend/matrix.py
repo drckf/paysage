@@ -48,10 +48,13 @@ def identity(n):
     return torch.eye(n)
 
 def fill_diagonal(mat, val):
-    raise NotImplementedError
+    newmat = mat.copy_
+    for i in range(len(newmat)):
+        newmat[i,i] = val
+    return newmat
 
 def sign(tensor):
-    raise NotImplementedError
+    return torch.sign(tensor)
 
 def clip(tensor, a_min=None, a_max=None):
     raise NotImplementedError
