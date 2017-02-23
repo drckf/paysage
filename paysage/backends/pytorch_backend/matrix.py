@@ -48,10 +48,8 @@ def identity(n):
     return torch.eye(n)
 
 def fill_diagonal(mat, val):
-    newmat = mat.copy_
-    for i in range(len(newmat)):
-        newmat[i,i] = val
-    return newmat
+    for i in range(len(mat)):
+        mat[i,i] = val
 
 def sign(tensor):
     return torch.sign(tensor)
