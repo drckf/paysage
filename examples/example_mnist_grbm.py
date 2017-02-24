@@ -8,12 +8,12 @@ from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
 
-from helper import default_paths
+from helper import default_paths, example_plot
 import plotting
 
 transform = partial(batch.scale, denominator=255)
 
-def example_mnist_grbm(paysage_path = None):
+def example_mnist_grbm(paysage_path = None, show_plot = True):
 
     num_hidden_units = 500
     batch_size = 50
@@ -81,7 +81,7 @@ def example_mnist_grbm(paysage_path = None):
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_data[i], v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    example_plot(grid, show_plot)
 
     print("\nPlot a random sample of fantasy particles")
     random_samples = rbm.random(v_data)
@@ -92,15 +92,15 @@ def example_mnist_grbm(paysage_path = None):
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    example_plot(grid, show_plot)
 
     print("\nPlot a random sample of the weights")
     idx = numpy.random.choice(range(be.shape(rbm.params['weights'])[1]), 5, replace=False)
     grid = numpy.array([[rbm.params['weights'][:, i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    example_plot(grid, show_plot)
 
     # close the HDF5 store
     data.close()
 
 if __name__ == "__main__":
-    example_mnist_grbm()
+    example_mnist_grbm(show_plot = False)

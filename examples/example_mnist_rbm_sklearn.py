@@ -6,7 +6,7 @@ from paysage import metrics as M
 from paysage.layers import BernoulliLayer
 from sklearn.neural_network import BernoulliRBM
 
-from helper import default_paths
+from helper import default_paths, example_plot
 import plotting
 
 def example_mnist_rbm_sklearn(paysage_path=None):
@@ -86,7 +86,7 @@ def example_mnist_rbm_sklearn(paysage_path=None):
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_data[i], v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    example_plot(grid, show_plot)
 
     print("\nPlot a random sample of fantasy particles")
     random_samples = BernoulliLayer().random(v_data).astype(numpy.float32)
@@ -96,13 +96,13 @@ def example_mnist_rbm_sklearn(paysage_path=None):
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    example_plot(grid, show_plot)
 
     print("\nPlot a random sample of the weights")
     W = rbm.components_.T
     idx = numpy.random.choice(range(W.shape[1]), 5, replace=False)
     grid = numpy.array([[W[:, i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    example_plot(grid, show_plot)
 
     # close the HDF5 store
     data.close()

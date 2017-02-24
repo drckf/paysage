@@ -1,4 +1,5 @@
 import os
+import plotting
 from paysage import batch
 
 def default_paysage_path():
@@ -31,3 +32,7 @@ def default_paths(paysage_path = None):
         raise IOError("{} does not exist. run mnist/download_mnist.py to fetch from the web".format(filepath))
     shuffled_path = default_shuffled_filepath(paysage_path)
     return (paysage_path, mnist_path, shuffled_path)
+
+def example_plot(grid, show_plot):
+    if show_plot:
+        plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())

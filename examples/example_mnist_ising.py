@@ -4,10 +4,10 @@ from paysage import batch
 from paysage.models import visible
 from paysage import fit
 
-from helper import default_paths
+from helper import default_paths, example_plot
 import plotting
 
-def example_mnist_ising(paysage_path=None):
+def example_mnist_ising(paysage_path=None, show_plot = False):
 
     batch_size = 50
 
@@ -45,10 +45,10 @@ def example_mnist_ising(paysage_path=None):
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    example_plot(grid, show_plot)
 
     # close the HDF5 store
     data.close()
 
 if __name__ == "__main__":
-    example_mnist_ising()
+    example_mnist_ising(show_plot = False)
