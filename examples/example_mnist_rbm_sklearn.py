@@ -9,7 +9,7 @@ from sklearn.neural_network import BernoulliRBM
 from helper import default_paths, example_plot
 import plotting
 
-def example_mnist_rbm_sklearn(paysage_path=None):
+def example_mnist_rbm_sklearn(paysage_path=None, show_plot=False):
     num_hidden_units = 500
     batch_size = 50
     num_epochs = 10
@@ -108,4 +108,4 @@ def example_mnist_rbm_sklearn(paysage_path=None):
     data.close()
 
 if __name__ == "__main__":
-    example_mnist_rbm_sklearn()
+    example_mnist_rbm_sklearn(show_plot = False)
