@@ -23,7 +23,7 @@ def hinton(batch, model):
             v_data = batch.get(mode='train')
         except StopIteration:
             break
-        x += be.tensor_sum(v_data, axis=0)
+        x += be.tsum(v_data, axis=0)
         nsamples += len(v_data)
 
     ave = x / nsamples
@@ -46,7 +46,7 @@ def mean_field(batch, model,
             v_data = batch.get(mode='train')
         except StopIteration:
             break
-        x += be.tensor_sum(v_data, axis=0)
+        x += be.tsum(v_data, axis=0)
         x2 += be.dot(v_data.T, v_data)
         nsamples += len(v_data)
 
@@ -78,7 +78,7 @@ def tap(batch, model,
             v_data = batch.get(mode='train')
         except StopIteration:
             break
-        x += be.tensor_sum(v_data, axis=0)
+        x += be.tsum(v_data, axis=0)
         x2 += be.dot(v_data.T, v_data)
         nsamples += len(v_data)
 

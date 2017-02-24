@@ -8,7 +8,7 @@ class l2_penalty(object):
         self.penalty = penalty
 
     def value(self, tensor):
-        return 0.5 * self.penalty * be.tensor_sum(tensor**2)
+        return 0.5 * self.penalty * be.tsum(tensor**2)
 
     def grad(self, tensor):
         return self.penalty * tensor
@@ -20,7 +20,7 @@ class l1_penalty(object):
         self.penalty = penalty
 
     def value(self, tensor):
-        return self.penalty * be.tensor_sum(be.tensor_abs(tensor))
+        return self.penalty * be.tsum(be.tabs(tensor))
 
     def grad(self, tensor):
         return self.penalty * be.sign(tensor)

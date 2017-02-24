@@ -1,10 +1,10 @@
-import numpy, math
+import numpy
 import numexpr as ne
 
 EPSILON = numpy.finfo(numpy.float32).eps
 LOG2 = 0.6931471805599453
 
-def tensor_abs(x):
+def tabs(x):
     ne.evaluate('abs(x)')
 
 def exp(x):
@@ -19,12 +19,21 @@ def tanh(x):
 def expit(x):
     return ne.evaluate('(1 + tanh(x/2))/2')
 
+def reciprocal(x):
+    return numpy.reciprocal(EPSILON + x)
+
 def atanh(x):
     y = numpy.clip(x, a_min=EPSILON-1, a_max=1-EPSILON)
     return ne.evaluate('arctanh(y)')
 
 def sqrt(x):
     return ne.evaluate('sqrt(x)')
+
+def square(x):
+    return ne.evaluate('x**2')
+
+def tpow(x, a):
+    return ne.evaluate('x**a')
 
 def cosh(x):
     return ne.evaluate('cosh(x)')
