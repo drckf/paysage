@@ -6,7 +6,7 @@ from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
 
-from helper import default_paths
+from helper import default_paths, example_plot
 import plotting
 
 def example_mnist_hopfield(paysage_path = None, show_plot = False):
