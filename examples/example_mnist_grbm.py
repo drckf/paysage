@@ -1,17 +1,15 @@
 import os, sys, numpy, pandas, time
 
+from functools import partial
+
 from paysage import batch
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
 
-try:
-    import plotting
-except ImportError:
-    from . import plotting
-
-from functools import partial
+from helper import default_paths
+import plotting
 
 transform = partial(batch.scale, denominator=255)
 
@@ -23,19 +21,7 @@ def example_mnist_grbm(paysage_path = None):
     learning_rate = 0.001
     mc_steps = 1
 
-    if not paysage_path:
-        paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')
-
-    if not os.path.exists(filepath):
-        raise IOError("{} does not exist. run mnist/download_mnist.py to fetch from the web".format(filepath))
-
-    shuffled_filepath = os.path.join(paysage_path, 'mnist', 'shuffled_mnist.h5')
-
-    # shuffle the data
-    if not os.path.exists(shuffled_filepath):
-        shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
-        shuffler.shuffle()
+    (paysage_path, filepath, shuffled_filepath) = default_paths(paysage_path)
 
     # set up the reader to get minibatches
     data = batch.Batch(shuffled_filepath,

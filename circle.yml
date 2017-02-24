@@ -13,8 +13,16 @@ dependencies:
 
 test:
   pre:
-    - python mnist/download_mnist.py
+    - python3 mnist/download_mnist.py
   override:
+    # tests
     - pytest test/test.py
     - pytest test/test_rbm.py
+
+    # check that examples run to completion
+    - python3 examples/example_mnist_grbm.py
+    - python3 examples/example_mnist_hopfield.py
+    - python3 examples/example_mnist_ising.py
+    - python3 examples/example_mnist_rbm.py
+    - python3 examples/example_mnist_rbm_sklearn.py
 

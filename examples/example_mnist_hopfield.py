@@ -6,10 +6,8 @@ from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
 
-try:
-    import plotting
-except ImportError:
-    from . import plotting
+from helper import default_paths
+import plotting
 
 def example_mnist_hopfield(paysage_path = None):
     num_hidden_units = 500
@@ -18,19 +16,7 @@ def example_mnist_hopfield(paysage_path = None):
     learning_rate = 0.001
     mc_steps = 1
 
-    if not paysage_path:
-        paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')
-
-    if not os.path.exists(filepath):
-        raise IOError("{} does not exist. run mnist/download_mnist.py to fetch from the web".format(filepath))
-
-    shuffled_filepath = os.path.join(paysage_path, 'mnist', 'shuffled_mnist.h5')
-
-    # shuffle the data
-    if not os.path.exists(shuffled_filepath):
-        shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
-        shuffler.shuffle()
+    (paysage_path, filepath, shuffled_filepath) = default_paths(paysage_path)
 
     # set up the reader to get minibatches
     data = batch.Batch(shuffled_filepath,

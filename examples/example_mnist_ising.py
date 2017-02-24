@@ -4,27 +4,14 @@ from paysage import batch
 from paysage.models import visible
 from paysage import fit
 
-try:
-    import plotting
-except ImportError:
-    from . import plotting
+from helper import default_paths
+import plotting
 
-if __name__ == "__main__":
+def example_mnist_ising(paysage_path=None):
 
     batch_size = 50
 
-    paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')
-
-    if not os.path.exists(filepath):
-        raise IOError("{} does not exist. run mnist/download_mnist.py to fetch from the web".format(filepath))
-
-    shuffled_filepath = os.path.join(paysage_path, 'mnist', 'shuffled_mnist.h5')
-
-    # shuffle the data
-    if not os.path.exists(shuffled_filepath):
-        shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
-        shuffler.shuffle()
+    (paysage_path, filepath, shuffled_filepath) = default_paths(paysage_path)
 
     # set up the reader to get minibatches
     data = batch.Batch(shuffled_filepath,
@@ -62,3 +49,6 @@ if __name__ == "__main__":
 
     # close the HDF5 store
     data.close()
+
+if __name__ == "__main__":
+    example_mnist_ising()
