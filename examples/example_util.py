@@ -17,12 +17,12 @@ def default_paysage_path():
         paysage_path = os.path.dirname(os.getcwd())
     return(paysage_path)
 
-def default_mnist_path(paysage_path = None):
+def default_filepath(paysage_path = None):
     if not paysage_path:
         paysage_path = default_paysage_path()
     return os.path.join(paysage_path, 'mnist', 'mnist.h5')
 
-def default_shuffled_filepath(paysage_path):
+def default_shuffled_filepath(paysage_path, filepath):
     shuffled_filepath = os.path.join(paysage_path, 'mnist', 'shuffled_mnist.h5')
     if not os.path.exists(shuffled_filepath):
         print("Shuffled file does not exist, creating a shuffled dataset.")
@@ -33,11 +33,12 @@ def default_shuffled_filepath(paysage_path):
 def default_paths(paysage_path = None):
     if not paysage_path:
         paysage_path = default_paysage_path()
-    mnist_path = default_mnist_path(paysage_path)
-    if not os.path.exists(mnist_path):
-        raise IOError("{} does not exist. run mnist/download_mnist.py to fetch from the web".format(filepath))
-    shuffled_path = default_shuffled_filepath(paysage_path)
-    return (paysage_path, mnist_path, shuffled_path)
+    filepath = default_filepath(paysage_path)
+    if not os.path.exists(filepath):
+        raise IOError("{} does not exist. run mnist/download_mnist.py to fetch from the web"
+                      .format(filepath))
+    shuffled_path = default_shuffled_filepath(paysage_path, filepath)
+    return (paysage_path, filepath, shuffled_path)
 
 # ----- CHECK MODEL ----- #
 

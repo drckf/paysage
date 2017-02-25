@@ -200,7 +200,7 @@ class DataShuffler(object):
         column_names = list(self.store.select(key, start=0, stop=0))
 
         # read, shuffle, and write chunks
-        while True:
+        while num_read < self.table_stats[key].shape[0]:
             x = self.store.select(key, start=i_chunk*self.chunksize,
                                   stop=(i_chunk+1)*self.chunksize).as_matrix()
             numpy.random.shuffle(x)
@@ -214,8 +214,6 @@ class DataShuffler(object):
             i_chunk += 1
             chunk_counts.append(len(x))
             chunk_keys.append(chunk_key)
-            if num_read >= self.table_stats[key].shape[0]:
-                break
 
         return (i_chunk, chunk_keys, chunk_counts)
 
