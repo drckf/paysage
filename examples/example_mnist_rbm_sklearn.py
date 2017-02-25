@@ -6,7 +6,7 @@ from paysage import metrics as M
 from paysage.layers import BernoulliLayer
 from sklearn.neural_network import BernoulliRBM
 
-from helper import default_paths, example_plot
+import example_util as util
 import plotting
 
 def example_mnist_rbm_sklearn(paysage_path=None, show_plot=False):

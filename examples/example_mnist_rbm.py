@@ -6,7 +6,7 @@ from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
 
-from helper import default_paths, example_plot
+import example_util as util
 import plotting
 
 def example_mnist_rbm(paysage_path=None, show_plot = False):
@@ -16,7 +16,8 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     learning_rate = 0.01
     mc_steps = 1
 
-    (paysage_path, filepath, shuffled_filepath) = default_paths(paysage_path)
+    (paysage_path, filepath, shuffled_filepath) = \
+            util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
     data = batch.Batch(shuffled_filepath,
