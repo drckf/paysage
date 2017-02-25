@@ -4,6 +4,7 @@ import numpy
 
 import plotting
 from paysage import batch
+from paysage import backends as be
 
 # ----- DEFALT PATHS ----- #
 
@@ -59,7 +60,7 @@ def compute_reconstructions(rbm, v_data, fit):
 
 def show_reconstructions(rbm, v_data, fit, show_plot):
     print("\nPlot a random sample of reconstructions")
-    compute_reconstructions(data, rbm)
+    grid = compute_reconstructions(rbm, v_data, fit)
     example_plot(grid, show_plot)
 
 def compute_fantasy_particles(rbm, v_data, fit):

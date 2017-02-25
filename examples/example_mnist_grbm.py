@@ -6,7 +6,6 @@ from paysage import batch
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
-from paysage import backends as be
 
 import example_util as util
 import plotting
@@ -71,7 +70,7 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
     util.show_metrics(rbm, performance)
     util.show_reconstructions(rbm, data.get('validate'), fit, show_plot)
     util.show_fantasy_particles(rbm, data.get('validate'), fit, show_plot)
-    util.show_weights()
+    util.show_weights(rbm, show_plot)
 
     # close the HDF5 store
     data.close()

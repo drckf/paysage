@@ -4,7 +4,6 @@ from paysage import batch
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
-from paysage import backends as be
 
 import example_util as util
 import plotting
