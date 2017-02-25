@@ -13,7 +13,7 @@ import plotting
 
 transform = partial(batch.scale, denominator=255)
 
-def example_mnist_grbm(paysage_path = None, show_plot = True):
+def example_mnist_grbm(paysage_path = None, show_plot = False):
 
     num_hidden_units = 500
     batch_size = 50
