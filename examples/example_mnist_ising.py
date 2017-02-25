@@ -37,6 +37,5 @@ def example_mnist_ising(paysage_path=None, show_plot = False):
     data.close()
     print("Done")
 
-
 if __name__ == "__main__":
     example_mnist_ising(show_plot = False)

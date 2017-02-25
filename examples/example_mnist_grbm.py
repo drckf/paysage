@@ -75,6 +75,7 @@ def example_mnist_grbm(paysage_path = None, show_plot = True):
 
     # close the HDF5 store
     data.close()
+    print("Done")
 
 if __name__ == "__main__":
     example_mnist_grbm(show_plot = False)
