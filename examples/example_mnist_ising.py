@@ -30,7 +30,7 @@ def example_mnist_ising(paysage_path=None, show_plot = False):
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
 
     # check model
-    util.show_metrics(performance, ising)
+    util.show_metrics(ising, performance)
     util.show_fantasy_particles(ising, data.get('validate'), fit, show_plot)
 
     # close the HDF5 store
