@@ -6,7 +6,7 @@ import plotting
 from paysage import batch
 from paysage import backends as be
 
-# ----- DEFALT PATHS ----- #
+# ----- DEFAULT PATHS ----- #
 
 def default_paysage_path():
     try:
