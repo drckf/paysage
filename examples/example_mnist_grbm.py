@@ -1,21 +1,18 @@
 import os, sys, numpy, pandas, time
 
+from functools import partial
+
 from paysage import batch
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
-from paysage import backends as be
 
-try:
-    import plotting
-except ImportError:
-    from . import plotting
-
-from functools import partial
+import example_util as util
+import plotting
 
 transform = partial(batch.scale, denominator=255)
 
-def example_mnist_grbm(paysage_path = None):
+def example_mnist_grbm(paysage_path = None, show_plot = False):
 
     num_hidden_units = 500
     batch_size = 50
@@ -23,19 +20,8 @@ def example_mnist_grbm(paysage_path = None):
     learning_rate = 0.001
     mc_steps = 1
 
-    if not paysage_path:
-        paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')
-
-    if not os.path.exists(filepath):
-        raise IOError("{} does not exist. run mnist/download_mnist.py to fetch from the web".format(filepath))
-
-    shuffled_filepath = os.path.join(paysage_path, 'mnist', 'shuffled_mnist.h5')
-
-    # shuffle the data
-    if not os.path.exists(shuffled_filepath):
-        shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
-        shuffler.shuffle()
+    (paysage_path, filepath, shuffled_filepath) = \
+        util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
     data = batch.Batch(shuffled_filepath,
@@ -77,44 +63,18 @@ def example_mnist_grbm(paysage_path = None):
     # evaluate the model
     # this will be the same as the final epoch results
     # it is repeated here to be consistent with the sklearn rbm example
-    performance = fit.ProgressMonitor(0,
-                                      data,
-                                      metrics=['ReconstructionError',
-                                               'EnergyDistance',
-                                               'EnergyGap',
-                                               'EnergyZscore'])
-    print('Final performance metrics:')
-    performance.check_progress(rbm, 0, show=True)
+    metrics = ['ReconstructionError', 'EnergyDistance',
+               'EnergyGap', 'EnergyZscore']
+    performance = fit.ProgressMonitor(0, data, metrics=metrics)
 
-    print("\nPlot a random sample of reconstructions")
-    v_data = data.get('validate')
-    sampler = fit.DrivenSequentialMC(rbm)
-    sampler.set_state(v_data)
-    sampler.update_state(1)
-    v_model = rbm.deterministic_step(sampler.state)
-
-    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
-    grid = numpy.array([[v_data[i], v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
-
-    print("\nPlot a random sample of fantasy particles")
-    random_samples = rbm.random(v_data)
-    sampler = fit.DrivenSequentialMC(rbm)
-    sampler.set_state(random_samples)
-    sampler.update_state(1000)
-    v_model = rbm.deterministic_step(sampler.state)
-
-    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
-    grid = numpy.array([[v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
-
-    print("\nPlot a random sample of the weights")
-    idx = numpy.random.choice(range(be.shape(rbm.params['weights'])[1]), 5, replace=False)
-    grid = numpy.array([[rbm.params['weights'][:, i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    util.show_metrics(rbm, performance)
+    util.show_reconstructions(rbm, data.get('validate'), fit, show_plot)
+    util.show_fantasy_particles(rbm, data.get('validate'), fit, show_plot)
+    util.show_weights(rbm, show_plot)
 
     # close the HDF5 store
     data.close()
+    print("Done")
 
 if __name__ == "__main__":
-    example_mnist_grbm()
+    example_mnist_grbm(show_plot = False)
