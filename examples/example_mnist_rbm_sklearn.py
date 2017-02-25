@@ -6,31 +6,17 @@ from paysage import metrics as M
 from paysage.layers import BernoulliLayer
 from sklearn.neural_network import BernoulliRBM
 
-try:
-    import plotting
-except ImportError:
-    from . import plotting
+import example_util as util
+import plotting
 
-def example_mnist_rbm_sklearn(paysage_path=None):
+def example_mnist_rbm_sklearn(paysage_path=None, show_plot=False):
     num_hidden_units = 500
     batch_size = 50
     num_epochs = 10
     # the step size has been hand-tuned for the sklearn implementation
     learning_rate = 0.01
 
-    if not paysage_path:
-        paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')
-
-    if not os.path.exists(filepath):
-        raise IOError("{} does not exist. run mnist/download_mnist.py to fetch from the web".format(filepath))
-
-    shuffled_filepath = os.path.join(paysage_path, 'mnist', 'shuffled_mnist.h5')
-
-    # shuffle the data
-    if not os.path.exists(shuffled_filepath):
-        shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
-        shuffler.shuffle()
+    (paysage_path, filepath, shuffled_filepath) = default_paths(paysage_path)
 
     # set up the reader to get the whole training set
     data = batch.Batch(shuffled_filepath,
@@ -100,7 +86,7 @@ def example_mnist_rbm_sklearn(paysage_path=None):
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_data[i], v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    example_plot(grid, show_plot)
 
     print("\nPlot a random sample of fantasy particles")
     random_samples = BernoulliLayer().random(v_data).astype(numpy.float32)
@@ -110,16 +96,16 @@ def example_mnist_rbm_sklearn(paysage_path=None):
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_model[i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    example_plot(grid, show_plot)
 
     print("\nPlot a random sample of the weights")
     W = rbm.components_.T
     idx = numpy.random.choice(range(W.shape[1]), 5, replace=False)
     grid = numpy.array([[W[:, i]] for i in idx])
-    plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+    example_plot(grid, show_plot)
 
     # close the HDF5 store
     data.close()
 
 if __name__ == "__main__":
-    example_mnist_rbm_sklearn()
+    example_mnist_rbm_sklearn(show_plot = False)
