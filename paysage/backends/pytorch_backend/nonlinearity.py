@@ -1,40 +1,42 @@
 import numpy, torch
+from . import matrix
 
 EPSILON = numpy.finfo(numpy.float32).eps
 LOG2 = 0.6931471805599453
 
 def tabs(x):
-    raise NotImplementedError
+    return torch.abs(x)
 
 def exp(x):
-    raise NotImplementedError
+    return torch.exp(x)
 
 def log(x):
-    raise NotImplementedError
+    return torch.log(x)
 
 def tanh(x):
-    raise NotImplementedError
+    return torch.tanh(x)
 
 def expit(x):
-    raise NotImplementedError
+    return 0.5 * (1.0 + tanh(0.5 * x))
 
 def reciprocal(x):
-    raise NotImplementedError
+    return torch.reciprocal(x)
 
 def atanh(x):
-    raise NotImplementedError
+    y = matrix.clip(x, a_min=EPSILON, a_max = 1 - EPSILON)
+    return 0.5 * (log(1+y) - log(1-y))
 
 def sqrt(x):
-    raise NotImplementedError
+    return torch.sqrt(x)
 
 def square(x):
-    raise NotImplementedError
+    return x * x
 
 def tpow(x, a):
-    raise NotImplementedError
+    return torch.pow(x, a)
 
 def cosh(x):
-    raise NotImplementedError
+    return torch.cosh
 
 def logcosh(x):
     raise NotImplementedError
@@ -49,7 +51,7 @@ def softplus(x):
     raise NotImplementedError
 
 def cos(x):
-    raise NotImplementedError
+    return torch.cos(s)
 
 def sin(x):
-    raise NotImplementedError
+    return torch.sin(x)
