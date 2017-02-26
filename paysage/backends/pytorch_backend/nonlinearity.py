@@ -38,20 +38,29 @@ def tpow(x, a):
 def cosh(x):
     return torch.cosh
 
+def logaddexp(x1, x2):
+    # log(exp(x1) + exp(x2))
+    # = log( exp(x1) (1 + exp(x2 - x1))) = x1 + log(1 + exp(x2 - x1))
+    # = log( exp(x2) (exp(x1 - x2) + 1)) = x2 + log(1 + exp(x1 - x2))
+    diff = torch.min(x2 - x1, x1 - x2)
+    return torch.max(x1, x2) + torch.log1p(exp(diff))
+
 def logcosh(x):
-    raise NotImplementedError
+    return -LOG2 + logaddexp(-x, x)
 
 def acosh(x):
-    raise NotImplementedError
+    y = matrix.clip(x, a_min=EPSILON, a_max = 1 - EPSILON)
+    return sqrt((y-1)/(1-y)) * torch.acos(x)
 
 def logit(x):
-    raise NotImplementedError
+    y = matrix.clip(x, a_min=EPSILON, a_max = 1 - EPSILON)
+    return torch.log(y / (1 - y))
 
 def softplus(x):
-    raise NotImplementedError
+    return torch.log1p(exp(x))
 
 def cos(x):
-    return torch.cos(s)
+    return torch.cos(x)
 
 def sin(x):
     return torch.sin(x)
