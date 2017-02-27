@@ -130,61 +130,82 @@ def normalize(x):
 # ----- THE FOLLOWING FUNCTIONS ARE THE MAIN BOTTLENECKS ----- #
 
 def norm(x):
-    raise NotImplementedError
+    return torch.norm(x)
 
 def tmax(x, axis=None, keepdims=False):
-    raise NotImplementedError
+    if axis is not None:
+        return torch.max(x, dim=axis)
+    else:
+        return torch.max(x)
 
 def tmin(x, axis=None, keepdims=False):
-    raise NotImplementedError
+    if axis is not None:
+        return torch.min(x, dim=axis)
+    else:
+        return torch.min(x)
 
 def mean(x, axis=None, keepdims=False):
-    raise NotImplementedError
+    if axis is not None:
+        return torch.mean(x, dim=axis)
+    else:
+        return torch.mean(x)
 
 def var(x, axis=None, keepdims=False):
-    raise NotImplementedError
+    if axis is not None:
+        return torch.var(x, dim=axis)
+    else:
+        return torch.var(x)
 
 def std(x, axis=None, keepdims=False):
-    raise NotImplementedError
+    if axis is not None:
+        return torch.std(x, dim=axis)
+    else:
+        return torch.std(x)
 
 def tsum(x, axis=None, keepdims=False):
-    raise NotImplementedError
+    if axis is not None:
+        return torch.sum(x, dim=axis)
+    else:
+        return torch.sum(x)
 
 def tprod(x, axis=None, keepdims=False):
-    raise NotImplementedError
+    if axis is not None:
+        return torch.prod(x, dim=axis)
+    else:
+        return torch.prod(x)
 
 def tany(x, axis=None, keepdims=False):
-    raise NotImplementedError
+    return tmax(x == True, axis=axis)
 
 def tall(x, axis=None, keepdims=False):
-    raise NotImplementedError
+    return tmin(x == True, axis=axis)
 
 def equal(x, y):
-    raise NotImplementedError
+    return torch.eq(x, y)
 
 def allclose(x, y):
-    raise NotImplementedError
+    return torch.le(torch.abs(x - y), EPSILON)
 
 def not_equal(x, y):
-    raise NotImplementedError
+    return torch.neq(x, y)
 
 def greater(x, y):
-    raise NotImplementedError
+    return torch.gt(x, y)
 
 def greater_equal(x, y):
-    raise NotImplementedError
+    return torch.ge(x, y)
 
 def lesser(x, y):
-    raise NotImplementedError
+    return torch.lt(x, y)
 
 def lesser_equal(x, y):
-    raise NotImplementedError
+    return torch.le(x, y)
 
 def maximum(x, y):
-    raise NotImplementedError
+    return torch.max(x, y)
 
 def minimum(x, y):
-    raise NotImplementedError
+    return torch.min(x, y)
 
 def argmax(x, axis=-1):
     raise NotImplementedError
@@ -205,7 +226,7 @@ def quadratic(a,b,W):
     raise NotImplementedError
 
 def inv(mat):
-    raise NotImplementedError
+    return torch.inverse(mat)
 
 def batch_dot(vis, W, hid, axis=1):
     """
