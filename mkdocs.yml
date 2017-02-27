@@ -1,0 +1,14 @@
+site_name: Paysage Documentation
+pages:
+    - Home: index.md
+    - Overview: overview.md
+    - Models: models.md
+    - Layers: layers.md
+    - Data Processing: batch.md
+    - Model Fitting: fit.md
+    - Optimizers: optimizers.md
+    - Metrics: metrics.md
+    - Constraints: constraints.md
+    - Penalties: penalties.md
+theme: readthedocs
+
