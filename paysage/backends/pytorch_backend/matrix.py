@@ -134,13 +134,13 @@ def norm(x):
 
 def tmax(x, axis=None, keepdims=False):
     if axis is not None:
-        return torch.max(x, dim=axis)
+        return torch.max(x, dim=axis)[0]
     else:
         return torch.max(x)
 
 def tmin(x, axis=None, keepdims=False):
     if axis is not None:
-        return torch.min(x, dim=axis)
+        return torch.min(x, dim=axis)[0]
     else:
         return torch.min(x)
 
@@ -208,10 +208,20 @@ def minimum(x, y):
     return torch.min(x, y)
 
 def argmax(x, axis=-1):
-    raise NotImplementedError
+    if axis is not None:
+        return torch.max(x, dim=axis)[1]
+    else:
+        a,b = torch.max(x, dim=0)
+        index = torch.max(a, dim=1)[1]
+        return b[0, index[0,0]]
 
 def argmin(x, axis=-1):
-    raise NotImplementedError
+    if axis is not None:
+        return torch.min(x, dim=axis)[1]
+    else:
+        a,b = torch.min(x, dim=0)
+        index = torch.min(a, dim=1)[1]
+        return b[0, index[0,0]]
 
 def dot(a,b):
     raise NotImplementedError
