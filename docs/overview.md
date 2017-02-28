@@ -25,7 +25,7 @@ in an image or the letters in a word. A visible Boltzmann machine describes
 interactions between visible neurons. The probability distribution P(v) is
 determined from an energy function E(v) by P(v) = exp(-E(v))/Z where
 
-E(v) = -sum_i a_i(v_i) - sum_{i<j} W_{ij} v_i v_j
+1) E(v) = -sum_i a_i(v_i) - sum_{i<j} W_{ij} v_i v_j
 
 and Z is a normalizing constant. Here, a_i(v_i) is a function and W_{ij} is
 a parameter that determines the interaction between neurons i and j.
@@ -37,10 +37,26 @@ interactions between visible neurons. The joint probability distribuiton
 P(v, h) is determined from an energy function E(v, h) by
 P(v, h) = exp(-E(v, h ))/Z where
 
-E(v, h) = -sum_i a_i(v_i) - sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j
+2) E(v, h) = -sum_i a_i(v_i) - sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j
 
 and Z is a normalizing constant. Here, a_i(v_i) and b_j(h_j) are functions and
 W_{ij} is a parameter that determines the interaction between visible neuron i
 and hidden neuron j.
 
-# The structure of paysage
+# The structure of models in paysage
+
+### Layers:
+
+Boltzmann machines are constructed from
+[layers](https://github.com/drckf/paysage/blob/master/paysage/layers.py).
+Visible Boltzmann machines have a single layer of visible neurons, whereas
+latent Boltzmann machines have two layers: one of visible neurons and one of
+hidden neurons.
+
+### Models:
+
+### Initialize:
+
+### Fit:
+
+### Optimizer:
