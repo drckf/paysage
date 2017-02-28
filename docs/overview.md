@@ -32,5 +32,10 @@ a parameter that determines the interaction between neurons i and j.
 
 ## Boltzmann machines with a single hidden layer
 
+A hidden neuron captures an unobserved latent variable that controls the
+interactions between visible neurons.
+
+E(v, h) = -sum_i a_i(v_i) - sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j
+
 
 # The structure of paysage

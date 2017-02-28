@@ -1,4 +1,5 @@
 import numpy, torch
+from multipledispatch import dispatch
 
 EPSILON = numpy.finfo(numpy.float32).eps
 
@@ -224,10 +225,18 @@ def argmin(x, axis=-1):
         return b[0, index[0,0]]
 
 def dot(a,b):
-    raise NotImplementedError
+    dims = ndim(a) * ndim(b)
+    if dims == 4:
+        return torch.mm(a, b)
+    elif dims == 2:
+        return torch.mv(a, b)
+    elif dims == 1:
+        return torch.dot(a, b)
+    else:
+        raise ValueError('Cannot determine appropriate matrix product')
 
 def outer(x,y):
-    raise NotImplementedError
+    return torch.ger(x, y)
 
 def affine(a,b,W):
     raise NotImplementedError
