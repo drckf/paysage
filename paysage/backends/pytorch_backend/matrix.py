@@ -227,10 +227,13 @@ def argmin(x, axis=-1):
 def dot(a,b):
     dims = ndim(a) * ndim(b)
     if dims == 4:
+        # matrix-matrix product
         return torch.mm(a, b)
     elif dims == 2:
+        # matrix-vector product
         return torch.mv(a, b)
     elif dims == 1:
+        # vector-vector product
         return torch.dot(a, b)
     else:
         raise ValueError('Cannot determine appropriate matrix product')
@@ -239,7 +242,7 @@ def outer(x,y):
     return torch.ger(x, y)
 
 def affine(a,b,W):
-    raise NotImplementedError
+    return torch.addmv(a, W, b)
 
 def quadratic(a,b,W):
     raise NotImplementedError
