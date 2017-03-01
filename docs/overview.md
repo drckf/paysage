@@ -48,12 +48,34 @@ and hidden neuron j.
 ### Layers:
 
 Boltzmann machines are constructed from
-[layers](https://github.com/drckf/paysage/blob/master/paysage/layers.py).
+[layers](layers.md).
 Visible Boltzmann machines have a single layer of visible neurons, whereas
 latent Boltzmann machines have two layers: one of visible neurons and one of
-hidden neurons.
+hidden neurons. Paysage layers describe the conditional activity of their
+neurons. Using the notation from the previous section, layers are used to
+specify the functions a_i(v_i) and b_j(h_j), and to draw random samples from
+the conditional distributions (i.e., P(v|h)). Currently, the layer types are:
+
+- [GaussianLayer](layers.md#GaussianLayer)
+- [IsingLayer](layers.md#IsingLayer)
+- [BernoulliLayer](layers.md#BernoulliLayer)
+- [ExponentialLayer](layers.md#ExponentialLayer)
 
 ### Models:
+
+[Models](models.md) can be fully [visible](models.md#visibile) or they can
+have a single [hidden](models.md#hidden) layer. The model classes in paysage
+contain the layers and the weights (i.e. W_ij) and define the functionality for
+sampling from the Boltzmann machine and computing its derivatives. Currently,
+there is one type of visible model:
+
+- [IsingModel](models.md#visible##IsingModel)
+
+and there are two types of latent models:
+
+- [RestrictedBoltzmannMachine](models.md#hidden##RestrictedBoltzmannMachine)
+- [GaussianRestrictedBoltzmannMachine](
+    models.md#hidden##GaussianRestrictedBoltzmannMachine)
 
 ### Initialize:
 
