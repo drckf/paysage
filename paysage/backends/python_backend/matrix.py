@@ -119,35 +119,32 @@ def normalize(x):
 def norm(x):
     return numpy.linalg.norm(x)
 
-# use keepdims = True so that behavior is the same as torch
-# can always call flatten() explicitly if it is needed
+def tmax(x, axis=None, keepdims=False):
+    return numpy.max(x, axis=axis, keepdims=keepdims)
 
-def tmax(x, axis=None):
-    return numpy.max(x, axis=axis, keepdims=True)
+def tmin(x, axis=None, keepdims=False):
+    return numpy.min(x, axis=axis, keepdims=keepdims)
 
-def tmin(x, axis=None):
-    return numpy.min(x, axis=axis, keepdims=True)
+def mean(x, axis=None, keepdims=False):
+    return numpy.mean(x, axis=axis, keepdims=keepdims)
 
-def mean(x, axis=None):
-    return numpy.mean(x, axis=axis, keepdims=True)
+def var(x, axis=None, keepdims=False):
+    return numpy.var(x, axis=axis, keepdims=keepdims)
 
-def var(x, axis=None):
-    return numpy.var(x, axis=axis, keepdims=True)
+def std(x, axis=None, keepdims=False):
+    return numpy.std(x, axis=axis, keepdims=keepdims)
 
-def std(x, axis=None):
-    return numpy.std(x, axis=axis, keepdims=True)
+def tsum(x, axis=None, keepdims=False):
+    return numpy.sum(x, axis=axis, keepdims=keepdims)
 
-def tsum(x, axis=None):
-    return numpy.sum(x, axis=axis, keepdims=True)
+def tprod(x, axis=None, keepdims=False):
+    return numpy.prod(x, axis=axis, keepdims=keepdims)
 
-def tprod(x, axis=None):
-    return numpy.prod(x, axis=axis, keepdims=True)
+def tany(x, axis=None, keepdims=False):
+    return numpy.any(x, axis=axis, keepdims=keepdims)
 
-def tany(x, axis=None):
-    return numpy.any(x, axis=axis, keepdims=True)
-
-def tall(x, axis=None):
-    return numpy.all(x, axis=axis, keepdims=True)
+def tall(x, axis=None, keepdims=False):
+    return numpy.all(x, axis=axis, keepdims=keepdims)
 
 def equal(x, y):
     return numpy.equal(x, y)
