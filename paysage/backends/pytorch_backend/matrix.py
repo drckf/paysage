@@ -72,7 +72,7 @@ def clip_inplace(tensor, a_min=None, a_max=None):
     return tensor.clamp_(a_min, a_max)
 
 def tround(tensor):
-    return torch.round(tensor)
+    return tensor.round()
 
 def flatten(tensor):
     return tensor.view(int(numpy.prod(shape(tensor))))
@@ -99,8 +99,8 @@ def mix_inplace(w,x,y):
         x <- w * x + (1-w) * y
 
     """
-    x *= w
-    x += (1-w) * y
+    x.mul_(w)
+    x.add_(y.mul(1-w))
 
 def square_mix_inplace(w,x,y):
     """
@@ -110,28 +110,28 @@ def square_mix_inplace(w,x,y):
         x < w x + (1-w) * y**2
 
     """
-    x *= w
-    x += (1-w) * y * y
+    x.mul_(w)
+    x.add_(y.mul(y).mul(1-w))
 
 def sqrt_div(x,y):
     """
         Elementwise division of x by sqrt(y).
 
     """
-    return x / torch.sqrt(EPSILON + y)
+    return x.div_(torch.sqrt(EPSILON + y))
 
 def normalize(x):
     """
         Divide x by it's sum.
 
     """
-    return x / torch.sum(EPSILON + x)
+    return x.div(torch.sum(EPSILON + x))
 
 
 # ----- THE FOLLOWING FUNCTIONS ARE THE MAIN BOTTLENECKS ----- #
 
 def norm(x):
-    return torch.norm(x)
+    return x.norm()
 
 def tmax(x, axis=None, keepdims=False):
     if axis is not None:
