@@ -5,7 +5,17 @@ EPSILON = numpy.finfo(numpy.float32).eps
 
 # ----- TENSORS ----- #
 """
+pytorch does not have broadcasting yet!
+
 This section provides some wrappers to basic torch operations with arrays.
+
+For standard RBMs, we deal with the following tensors:
+
+visible ~ (batch_size, num_visible)
+visible_bias ~ num_visible
+weights ~ (num_visible, num_hidden)
+hidden ~ (batch_size, num_hidden)
+hidden_bias ~ num_hidden
 
 """
 
@@ -25,7 +35,7 @@ def ndim(tensor):
     return tensor.ndimension()
 
 def transpose(tensor):
-    return torch.transpose(tensor)
+    return tensor.t()
 
 def zeros(shape):
     return torch.zeros(shape)
@@ -40,7 +50,7 @@ def ones_like(tensor):
     return ones(shape(tensor))
 
 def diag(mat):
-    return torch.diag(mat)
+    return mat.diag()
 
 def diagonal_matrix(vec):
     return torch.diag(vec)
@@ -53,23 +63,13 @@ def fill_diagonal(mat, val):
         mat[i,i] = val
 
 def sign(tensor):
-    return torch.sign(tensor)
+    return tensor.sign()
 
-def clip(tensor, a_min=None, a_max=None):
-    if a_min is None:
-        return torch.clamp(tensor, max=a_max)
-    elif a_max is None:
-        return torch.clamp(tensor, min=a_min)
-    else:
-        return torch.clamp(tensor, min=a_min, max=a_max)
+def clip(tensor, a_min=-numpy.inf, a_max=numpy.inf):
+    return tensor.clamp(a_min, a_max)
 
 def clip_inplace(tensor, a_min=None, a_max=None):
-    if a_min is None:
-        return tensor.clamp_(tensor, max=a_max)
-    elif a_max is None:
-        return tensor.clamp_(tensor, min=a_min)
-    else:
-        return tensor.clamp_(tensor, min=a_min, max=a_max)
+    return tensor.clamp_(a_min, a_max)
 
 def tround(tensor):
     return torch.round(tensor)
@@ -242,7 +242,9 @@ def outer(x,y):
     return torch.ger(x, y)
 
 def affine(a,b,W):
-    return torch.addmv(a, W, b)
+    tmp = torch.mm(W, b)
+    tmp += a.unsqueeze(0).expand(tmp.size(0), a.size(0))
+    return tmp
 
 def quadratic(a,b,W):
     raise NotImplementedError
