@@ -4,20 +4,6 @@ from multipledispatch import dispatch
 EPSILON = numpy.finfo(numpy.float32).eps
 
 # ----- TENSORS ----- #
-"""
-pytorch does not have broadcasting yet!
-
-This section provides some wrappers to basic torch operations with arrays.
-
-For standard RBMs, we deal with the following tensors:
-
-visible ~ (batch_size, num_visible)
-visible_bias ~ num_visible
-weights ~ (num_visible, num_hidden)
-hidden ~ (batch_size, num_hidden)
-hidden_bias ~ num_hidden
-
-"""
 
 def to_numpy_array(tensor):
     return tensor.numpy()
@@ -289,19 +275,20 @@ def trange(start, end, step=1):
 
 # ----- SPECIALIZED MATRIX FUNCTIONS ----- #
 
-def squared_euclidean_distance(a, b):
-    """
-        Compute the squared euclidean distance between two vectors.
-
-    """
-    raise NotImplementedError
 
 def euclidean_distance(a, b):
     """
         Compute the euclidean distance between two vectors.
 
     """
-    raise NotImplementedError
+    raise (a - b).norm()
+
+def squared_euclidean_distance(a, b):
+    """
+        Compute the squared euclidean distance between two vectors.
+
+    """
+    return euclidean_distance(a, b)**2
 
 def fast_energy_distance(minibatch, samples, downsample=100):
     raise NotImplementedError
