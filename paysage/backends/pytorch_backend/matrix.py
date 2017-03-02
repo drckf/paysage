@@ -133,52 +133,52 @@ def normalize(x):
 def norm(x):
     return x.norm()
 
-def tmax(x, axis=None, keepdims=False):
+def tmax(x, axis=None):
     if axis is not None:
         return torch.max(x, dim=axis)[0]
     else:
         return torch.max(x)
 
-def tmin(x, axis=None, keepdims=False):
+def tmin(x, axis=None):
     if axis is not None:
         return torch.min(x, dim=axis)[0]
     else:
         return torch.min(x)
 
-def mean(x, axis=None, keepdims=False):
+def mean(x, axis=None):
     if axis is not None:
         return torch.mean(x, dim=axis)
     else:
         return torch.mean(x)
 
-def var(x, axis=None, keepdims=False):
+def var(x, axis=None):
     if axis is not None:
         return torch.var(x, dim=axis)
     else:
         return torch.var(x)
 
-def std(x, axis=None, keepdims=False):
+def std(x, axis=None):
     if axis is not None:
         return torch.std(x, dim=axis)
     else:
         return torch.std(x)
 
-def tsum(x, axis=None, keepdims=False):
+def tsum(x, axis=None):
     if axis is not None:
         return torch.sum(x, dim=axis)
     else:
         return torch.sum(x)
 
-def tprod(x, axis=None, keepdims=False):
+def tprod(x, axis=None):
     if axis is not None:
         return torch.prod(x, dim=axis)
     else:
         return torch.prod(x)
 
-def tany(x, axis=None, keepdims=False):
+def tany(x, axis=None):
     return tmax(x == True, axis=axis)
 
-def tall(x, axis=None, keepdims=False):
+def tall(x, axis=None):
     return tmin(x == True, axis=axis)
 
 def equal(x, y):
@@ -208,7 +208,7 @@ def maximum(x, y):
 def minimum(x, y):
     return torch.min(x, y)
 
-def argmax(x, axis=-1):
+def argmax(x, axis=None):
     if axis is not None:
         return torch.max(x, dim=axis)[1]
     else:
@@ -216,7 +216,7 @@ def argmax(x, axis=-1):
         index = torch.max(a, dim=1)[1]
         return b[0, index[0,0]]
 
-def argmin(x, axis=-1):
+def argmin(x, axis=None):
     if axis is not None:
         return torch.min(x, dim=axis)[1]
     else:
@@ -224,33 +224,25 @@ def argmin(x, axis=-1):
         index = torch.min(a, dim=1)[1]
         return b[0, index[0,0]]
 
-def dot(a,b):
-    dims = ndim(a) * ndim(b)
-    if dims == 4:
-        # matrix-matrix product
-        return torch.mm(a, b)
-    elif dims == 2:
-        # matrix-vector product
-        return torch.mv(a, b)
-    elif dims == 1:
-        # vector-vector product
-        return torch.dot(a, b)
-    else:
-        raise ValueError('Cannot determine appropriate matrix product')
+def dot(a, b):
+    return a @ b
 
 def outer(x,y):
     return torch.ger(x, y)
 
+def broadcast(vec, mat):
+    return vec.unsqueeze(0).expand(mat.size(0), vec.size(0))
+
 def affine(a,b,W):
-    tmp = torch.mm(W, b)
-    tmp += a.unsqueeze(0).expand(tmp.size(0), a.size(0))
+    tmp = dot(W, b)
+    tmp += broadcast(a, tmp)
     return tmp
 
 def quadratic(a,b,W):
-    raise NotImplementedError
+    return a @ W @ b
 
 def inv(mat):
-    return torch.inverse(mat)
+    return mat.inverse()
 
 def batch_dot(vis, W, hid, axis=1):
     """
