@@ -230,6 +230,10 @@ def minimum(x, y):
     return torch.min(x, y)
 
 def argmax(x, axis=None):
+    """
+    Compute the indices of the maximal elements in x along the specified axis.
+
+    """
     if axis is not None:
         return x.max(dim=axis)[1]
     else:
@@ -238,6 +242,10 @@ def argmax(x, axis=None):
         return b[0, index[0,0]]
 
 def argmin(x, axis=None):
+    """
+    Compute the indices of the minimal elements in x along the specified axis.
+
+    """
     if axis is not None:
         return x.min(dim=axis)[1]
     else:
@@ -246,23 +254,47 @@ def argmin(x, axis=None):
         return b[0, index[0,0]]
 
 def dot(a, b):
+    """
+    Compute the matrix/dot product of tensors a and b.
+
+    """
     return a @ b
 
 def outer(x,y):
+    """
+    Compute the outer product of vectors x and y.
+
+    """
     return torch.ger(x, y)
 
 def broadcast(vec, mat):
+    """
+    Like the numpy.broadcast_to function.
+
+    """
     return vec.unsqueeze(0).expand(mat.size(0), vec.size(0))
 
 def affine(a,b,W):
+    """
+    Evaluate the affine transformation a + W b.
+
+    """
     tmp = dot(W, b)
     tmp += broadcast(a, tmp)
     return tmp
 
 def quadratic(a,b,W):
+    """
+    Evaluate the quadratic form a W b.
+
+    """
     return a @ W @ b
 
 def inv(mat):
+    """
+    Compute matrix inverse.
+
+    """
     return mat.inverse()
 
 def batch_dot(vis, W, hid, axis=1):
@@ -291,19 +323,39 @@ def batch_outer(vis, hid):
     return dot(transpose(vis), hid)
 
 def repeat(tensor, n, axis):
+    """
+    Repeat tensor n times along specified axis.
+
+    """
     shapes  = tuple(n if i == axis else 1 for i in range(ndim(tensor)))
     return tensor.repeat(*shapes)
 
 def stack(tensors, axis):
+    """
+    Stack tensors along the specified axis.
+
+    """
     return torch.stack(tensors, dim=axis)
 
 def hstack(tensors):
+    """
+    Concatenate tensors along the first axis.
+
+    """
     return torch.stack(tensors, 1)
 
 def vstack(tensors):
+    """
+    Concatenate tensors along the zeroth axis.
+
+    """
     return torch.cat(tensors, 0)
 
 def trange(start, end, step=1):
+    """
+    Generate a tensor like a python range.
+
+    """
     return torch.range(start, end-1, step)
 
 
@@ -314,19 +366,23 @@ def trange(start, end, step=1):
 
 def euclidean_distance(a, b):
     """
-        Compute the euclidean distance between two vectors.
+    Compute the euclidean distance between two vectors.
 
     """
     return (a - b).norm()
 
 def squared_euclidean_distance(a, b):
     """
-        Compute the squared euclidean distance between two vectors.
+    Compute the squared euclidean distance between two vectors.
 
     """
     return euclidean_distance(a, b)**2
 
 def resample(tensor, n, replace=True):
+    """
+    Resample a tensor along the zeroth axis.
+
+    """
     index = torch.LongTensor(
     numpy.random.choice(numpy.arange(len(tensor)), size=n, replace=replace)
     )
