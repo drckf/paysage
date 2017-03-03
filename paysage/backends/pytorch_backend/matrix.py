@@ -326,5 +326,11 @@ def squared_euclidean_distance(a, b):
     """
     return euclidean_distance(a, b)**2
 
+def downsample(tensor, n, replace=True):
+    index = torch.LongTensor(
+    numpy.random.choice(numpy.arange(len(tensor)), size=n, replace=replace)
+    )
+    return tensor.index_select(0, index)
+
 def fast_energy_distance(minibatch, samples, downsample=100):
     raise NotImplementedError
