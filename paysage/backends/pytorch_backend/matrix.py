@@ -1,5 +1,4 @@
 import numpy, torch
-from multipledispatch import dispatch
 
 EPSILON = numpy.finfo(numpy.float32).eps
 
