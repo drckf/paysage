@@ -54,7 +54,7 @@ def sign(tensor):
 def clip(tensor, a_min=-numpy.inf, a_max=numpy.inf):
     return tensor.clamp(a_min, a_max)
 
-def clip_inplace(tensor, a_min=None, a_max=None):
+def clip_inplace(tensor, a_min=-numpy.inf, a_max=numpy.inf):
     return tensor.clamp_(a_min, a_max)
 
 def tround(tensor):
@@ -119,53 +119,89 @@ def normalize(x):
 def norm(x):
     return x.norm()
 
-def tmax(x, axis=None):
+def tmax(x, axis=None, keepdims=False):
     if axis is not None:
-        return torch.max(x, dim=axis)[0]
+        tmp = torch.max(x, dim=axis)[0]
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
     else:
         return torch.max(x)
 
-def tmin(x, axis=None):
+def tmin(x, axis=None, keepdims=False):
     if axis is not None:
-        return torch.min(x, dim=axis)[0]
+        tmp = torch.min(x, dim=axis)[0]
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
     else:
         return torch.min(x)
 
-def mean(x, axis=None):
+def mean(x, axis=None, keepdims=False):
     if axis is not None:
-        return torch.mean(x, dim=axis)
+        tmp = torch.mean(x, dim=axis)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
     else:
         return torch.mean(x)
 
-def var(x, axis=None):
+def var(x, axis=None, keepdims=False):
     if axis is not None:
-        return torch.var(x, dim=axis)
+        tmp = torch.var(x, dim=axis)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
     else:
         return torch.var(x)
 
-def std(x, axis=None):
+def std(x, axis=None, keepdims=False):
     if axis is not None:
-        return torch.std(x, dim=axis)
+        tmp = torch.std(x, dim=axis)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
     else:
         return torch.std(x)
 
-def tsum(x, axis=None):
+def tsum(x, axis=None, keepdims=False):
     if axis is not None:
-        return torch.sum(x, dim=axis)
+        tmp = torch.sum(x, dim=axis)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
     else:
         return torch.sum(x)
 
-def tprod(x, axis=None):
+def tprod(x, axis=None, keepdims=False):
     if axis is not None:
-        return torch.prod(x, dim=axis)
+        tmp = torch.prod(x, dim=axis)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
     else:
         return torch.prod(x)
 
-def tany(x, axis=None):
-    return tmax(x == True, axis=axis)
+def tany(x, axis=None, keepdims=False):
+    tmp = tmax(x == True, axis=axis)
+    if keepdims:
+        return tmp
+    else:
+        return flatten(tmp)
 
-def tall(x, axis=None):
-    return tmin(x == True, axis=axis)
+def tall(x, axis=None, keepdims=False):
+    tmp = tmin(x == True, axis=axis)
+    if keepdims:
+        return tmp
+    else:
+        return flatten(tmp)
 
 def equal(x, y):
     return torch.eq(x, y)
