@@ -6,7 +6,6 @@ from paysage import fit
 from paysage import optimizers
 
 import example_util as util
-import plotting
 
 def example_mnist_rbm(paysage_path=None, show_plot = False):
     num_hidden_units = 500

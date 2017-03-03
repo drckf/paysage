@@ -326,7 +326,7 @@ def squared_euclidean_distance(a, b):
     """
     return euclidean_distance(a, b)**2
 
-def downsample(tensor, n, replace=True):
+def resample(tensor, n, replace=True):
     index = torch.LongTensor(
     numpy.random.choice(numpy.arange(len(tensor)), size=n, replace=replace)
     )
