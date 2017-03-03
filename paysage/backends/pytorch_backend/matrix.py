@@ -231,18 +231,18 @@ def minimum(x, y):
 
 def argmax(x, axis=None):
     if axis is not None:
-        return torch.max(x, dim=axis)[1]
+        return x.max(dim=axis)[1]
     else:
-        a,b = torch.max(x, dim=0)
-        index = torch.max(a, dim=1)[1]
+        a,b = x.max(dim=0)
+        index = a.max(dim=1)[1]
         return b[0, index[0,0]]
 
 def argmin(x, axis=None):
     if axis is not None:
-        return torch.min(x, dim=axis)[1]
+        return x.min(dim=axis)[1]
     else:
-        a,b = torch.min(x, dim=0)
-        index = torch.min(a, dim=1)[1]
+        a,b = x.min(dim=0)
+        index = a.min(dim=1)[1]
         return b[0, index[0,0]]
 
 def dot(a, b):
