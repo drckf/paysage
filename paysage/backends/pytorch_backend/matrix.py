@@ -276,7 +276,7 @@ def batch_dot(vis, W, hid, axis=1):
         The actual computation is performed with a vectorized expression.
 
     """
-    raise NotImplementedError
+    return tsum(dot(vis, W) * hid, axis)
 
 def batch_outer(vis, hid):
     """
@@ -288,7 +288,7 @@ def batch_outer(vis, hid):
         The actual computation is performed with a vectorized expression.
 
     """
-    raise NotImplementedError
+    return dot(transpose(vis), hid)
 
 def repeat(tensor, n, axis):
     raise NotImplementedError
