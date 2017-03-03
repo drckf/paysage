@@ -304,7 +304,7 @@ def vstack(tensors):
     raise NotImplementedError
 
 def trange(start, end, step=1):
-    raise NotImplementedError
+    return torch.range(start, end-1, step)
 
 
 # ------------------------------------------------------------ #
