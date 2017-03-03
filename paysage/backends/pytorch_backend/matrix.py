@@ -317,7 +317,7 @@ def euclidean_distance(a, b):
         Compute the euclidean distance between two vectors.
 
     """
-    raise (a - b).norm()
+    return (a - b).norm()
 
 def squared_euclidean_distance(a, b):
     """
@@ -333,4 +333,29 @@ def resample(tensor, n, replace=True):
     return tensor.index_select(0, index)
 
 def fast_energy_distance(minibatch, samples, downsample=100):
-    raise NotImplementedError
+    d1 = 0
+    d2 = 0
+    d3 = 0
+
+    n = min(len(minibatch), downsample)
+    m = min(len(samples), downsample)
+
+    X = resample(minibatch, n, replace=True)
+    Y = resample(samples, m, replace=True)
+
+    for i in range(n):
+        for j in range(i+1, n):
+            d1 += euclidean_distance(X[i], X[j])
+    d1 = 2.0 * d1 / (n*n - n)
+
+    for i in range(m-1):
+        for j in range(i+1, m):
+            d2 += euclidean_distance(Y[i], Y[j])
+    d2 = 2.0 * d2 / (m*m - m)
+
+    for i in range(n):
+        for j in range(m):
+            d3 += euclidean_distance(X[i], Y[j])
+    d3 = d3 / (n*m)
+
+    return 2.0 * d3 - d2 - d1
