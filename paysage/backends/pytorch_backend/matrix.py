@@ -291,16 +291,17 @@ def batch_outer(vis, hid):
     return dot(transpose(vis), hid)
 
 def repeat(tensor, n, axis):
-    raise NotImplementedError
+    shapes  = tuple(n if i == axis else 1 for i in range(ndim(tensor)))
+    return tensor.repeat(*shapes)
 
 def stack(tensors, axis):
-    raise NotImplementedError
+    return torch.stack(tensors, dim=axis)
 
 def hstack(tensors):
-    raise NotImplementedError
+    return torch.stack(tensors, 1)
 
 def vstack(tensors):
-    raise NotImplementedError
+    return torch.cat(tensors, 0)
 
 def trange(start, end, step=1):
     return torch.range(start, end-1, step)
