@@ -103,7 +103,7 @@ def sqrt_div(x,y):
         Elementwise division of x by sqrt(y).
 
     """
-    return x.div_(torch.sqrt(EPSILON + y))
+    return x.div(torch.sqrt(EPSILON + y))
 
 def normalize(x):
     """
@@ -120,73 +120,73 @@ def norm(x):
 
 def tmax(x, axis=None, keepdims=False):
     if axis is not None:
-        tmp = torch.max(x, dim=axis)[0]
+        tmp = x.max(dim=axis)[0]
         if keepdims:
             return tmp
         else:
             return flatten(tmp)
     else:
-        return torch.max(x)
+        return x.max()
 
 def tmin(x, axis=None, keepdims=False):
     if axis is not None:
-        tmp = torch.min(x, dim=axis)[0]
+        tmp = x.min(dim=axis)[0]
         if keepdims:
             return tmp
         else:
             return flatten(tmp)
     else:
-        return torch.min(x)
+        return x.min()
 
 def mean(x, axis=None, keepdims=False):
     if axis is not None:
-        tmp = torch.mean(x, dim=axis)
+        tmp = x.mean(dim=axis)
         if keepdims:
             return tmp
         else:
             return flatten(tmp)
     else:
-        return torch.mean(x)
+        return x.mean()
 
 def var(x, axis=None, keepdims=False):
     if axis is not None:
-        tmp = torch.var(x, dim=axis)
+        tmp = x.var(dim=axis)
         if keepdims:
             return tmp
         else:
             return flatten(tmp)
     else:
-        return torch.var(x)
+        return x.var()
 
 def std(x, axis=None, keepdims=False):
     if axis is not None:
-        tmp = torch.std(x, dim=axis)
+        tmp = x.std(dim=axis)
         if keepdims:
             return tmp
         else:
             return flatten(tmp)
     else:
-        return torch.std(x)
+        return x.std()
 
 def tsum(x, axis=None, keepdims=False):
     if axis is not None:
-        tmp = torch.sum(x, dim=axis)
+        tmp = x.sum(dim=axis)
         if keepdims:
             return tmp
         else:
             return flatten(tmp)
     else:
-        return torch.sum(x)
+        return x.sum()
 
 def tprod(x, axis=None, keepdims=False):
     if axis is not None:
-        tmp = torch.prod(x, dim=axis)
+        tmp = x.prod(dim=axis)
         if keepdims:
             return tmp
         else:
             return flatten(tmp)
     else:
-        return torch.prod(x)
+        return x.prod()
 
 def tany(x, axis=None, keepdims=False):
     tmp = tmax(x == True, axis=axis)
