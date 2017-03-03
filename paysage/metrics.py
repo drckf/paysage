@@ -1,5 +1,4 @@
 import math
-from numba import jit
 from . import backends as be
 
 # ----- CLASSES ----- #
