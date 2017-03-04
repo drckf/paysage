@@ -4,82 +4,155 @@ import numexpr as ne
 
 EPSILON = numpy.finfo(numpy.float32).eps
 
-# ----- TENSORS ----- #
-"""
-This section provides some wrappers to basic numpy operations with arrays.
-
-"""
-
 def to_numpy_array(tensor):
+    """
+    Return tensor as a numpy array.
+
+    """
     return tensor
 
 def float_scalar(scalar):
+    """
+    Cast scalar to a 32-bit float.
+
+    """
     return numpy.float32(scalar)
 
 def float_tensor(tensor):
+    """
+    Cast tensor to a float tensor.
+
+    """
     return numpy.array(tensor, dtype=numpy.float32)
 
 def shape(tensor):
+    """
+    Return a tuple with the shape of the tensor.
+
+    """
     return tensor.shape
 
 def ndim(tensor):
+    """
+    Return the number of dimensions of a tensor.
+
+    """
     return tensor.ndim
 
 def transpose(tensor):
+    """
+    Return the transpose of a tensor.
+
+    """
     return numpy.transpose(tensor)
 
 def zeros(shape):
+    """
+    Return a tensor of a specified shape filled with zeros.
+
+    """
     return numpy.zeros(shape, dtype=numpy.float32)
 
 def zeros_like(tensor):
+    """
+    Return a tensor of zeros with the same shape as the input tensor.
+
+    """
     return zeros(shape(tensor))
 
 def ones(shape):
+    """
+    Return a tensor of a specified shape filled with ones.
+
+    """
     return numpy.ones(shape, dtype=numpy.float32)
 
 def ones_like(tensor):
+    """
+    Return a tensor of ones with the same shape as the input tensor.
+
+    """
     return ones(shape(tensor))
 
 def diag(vec):
+    """
+    Return the diagonal elements of a matrix.
+
+    """
     return numpy.diag(vec)
 
 def diagonal_matrix(mat):
+    """
+    Return a matrix with vec along the diagonal.
+
+    """
     return numpy.diag(mat)
 
 def identity(n):
+    """
+    Return the n-dimensional identity matrix.
+
+    """
     return numpy.identity(n, dtype=numpy.float32)
 
 def fill_diagonal(mat, val):
+    """
+    Fill the diagonal of the matirx with a specified value.
+    In-place function.
+
+    """
     return numpy.fill_diagonal(mat, val)
 
 def sign(tensor):
+    """
+    Return the elementwise sign of a tensor.
+
+    """
     return numpy.sign(tensor)
 
 def clip(tensor, a_min=None, a_max=None):
+    """
+    Return a tensor with its values clipped between a_min and a_max.
+
+    """
     return tensor.clip(a_min, a_max)
 
 def clip_inplace(tensor, a_min=None, a_max=None):
+    """
+    Clip the values of a tensor between a_min and a_max.
+    In-place function.
+
+    """
     tensor.clip(a_min, a_max, out=tensor)
 
 def tround(tensor):
+    """
+    Return a tensor with rounded elements.
+
+    """
     return numpy.round(tensor)
 
 def flatten(tensor):
+    """
+    Return a flattened tensor.
+
+    """
     return numpy.ravel(tensor)
 
 def reshape(tensor, newshape):
+    """
+    Return tensor with a new shape.
+
+    """
     return numpy.reshape(tensor, newshape)
 
 def dtype(tensor):
+    """
+    Return the type of the tensor.
+
+    """
     return tensor.dtype
 
-
-######################
-
-"""
-Routines for matrix operations
-
-"""
 
 def mix_inplace(w,x,y):
     """

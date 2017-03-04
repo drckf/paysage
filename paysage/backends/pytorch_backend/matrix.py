@@ -2,11 +2,9 @@ import numpy, torch
 
 EPSILON = numpy.finfo(numpy.float32).eps
 
-# ----- TENSORS ----- #
-
 def to_numpy_array(tensor):
     """
-    Convert tensor into a numpy array.
+    Return tensor as a numpy array.
 
     """
     return tensor.numpy()
