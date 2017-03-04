@@ -206,7 +206,7 @@ def equal(x, y):
     return torch.eq(x, y)
 
 def allclose(x, y):
-    return torch.le(torch.abs(x - y), EPSILON)
+    return torch.max(torch.abs(x - y)) <= EPSILON
 
 def not_equal(x, y):
     return torch.neq(x, y)
