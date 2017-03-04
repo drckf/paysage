@@ -9,6 +9,7 @@ import pytorch_backend.matrix as torch_matrix
 import pytorch_backend.nonlinearity as torch_func
 import pytorch_backend.rand as torch_rand
 
+import pytest
 
 def test_conversion():
 
@@ -27,3 +28,7 @@ def test_conversion():
 
     assert torch_matrix.allclose(torch_y, torch_py_y), \
     "torch -> python -> torch failure"
+
+
+if __name__ == "__main__":
+    test_conversion()

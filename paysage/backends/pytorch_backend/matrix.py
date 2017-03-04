@@ -5,76 +5,155 @@ EPSILON = numpy.finfo(numpy.float32).eps
 # ----- TENSORS ----- #
 
 def to_numpy_array(tensor):
+    """
+    Convert tensor into a numpy array.
+
+    """
     return tensor.numpy()
 
 def float_scalar(scalar):
+    """
+    Cast scalar to a 32-bit float.
+
+    """
     return numpy.float32(scalar)
 
 def float_tensor(tensor):
+    """
+    Cast tensor to a float tensor.
+
+    """
     return torch.FloatTensor(tensor)
 
 def shape(tensor):
+    """
+    Return a tuple with the shape of the tensor.
+
+    """
     return tuple(tensor.size())
 
 def ndim(tensor):
+    """
+    Return the number of dimensions of a tensor.
+
+    """
     return tensor.ndimension()
 
 def transpose(tensor):
+    """
+    Return the transpose of a tensor.
+
+    """
     return tensor.t()
 
 def zeros(shape):
+    """
+    Return a tensor of a specified shape filled with zeros.
+
+    """
     return torch.zeros(shape)
 
 def zeros_like(tensor):
+    """
+    Return a tensor of zeros with the same shape as the input tensor.
+
+    """
     return zeros(shape(tensor))
 
 def ones(shape):
+    """
+    Return a tensor of a specified shape filled with ones.
+
+    """
     return torch.ones(shape)
 
 def ones_like(tensor):
+    """
+    Return a tensor of ones with the same shape as the input tensor.
+
+    """
     return ones(shape(tensor))
 
 def diag(mat):
+    """
+    Return the diagonal elements of a matrix.
+
+    """
     return mat.diag()
 
 def diagonal_matrix(vec):
+    """
+    Return a matrix with vec along the diagonal.
+
+    """
     return torch.diag(vec)
 
 def identity(n):
+    """
+    Return the n-dimensional identity matrix.
+
+    """
     return torch.eye(n)
 
 def fill_diagonal(mat, val):
+    """
+    Fill the diagonal of the matirx with a specified value.
+    In-place function.
+
+    """
     for i in range(len(mat)):
         mat[i,i] = val
 
 def sign(tensor):
+    """
+    Return the elementwise sign of a tensor.
+
+    """
     return tensor.sign()
 
 def clip(tensor, a_min=-numpy.inf, a_max=numpy.inf):
+    """
+    Return a tensor with its values clipped between a_min and a_max.
+
+    """
     return tensor.clamp(a_min, a_max)
 
 def clip_inplace(tensor, a_min=-numpy.inf, a_max=numpy.inf):
+    """
+    Clip the values of a tensor between a_min and a_max.
+    In-place function.
+
+    """
     return tensor.clamp_(a_min, a_max)
 
 def tround(tensor):
+    """
+    Return a tensor with rounded elements.
+
+    """
     return tensor.round()
 
 def flatten(tensor):
+    """
+    Return a flattened tensor.
+
+    """
     return tensor.view(int(numpy.prod(shape(tensor))))
 
 def reshape(tensor, newshape):
+    """
+    Return tensor with a new shape.
+
+    """
     return tensor.view(*newshape)
 
 def dtype(tensor):
+    """
+    Return the type of the tensor.
+
+    """
     raise tensor.type()
 
-
-######################
-
-"""
-Routines for matrix operations
-
-"""
 
 def mix_inplace(w,x,y):
     """
@@ -113,12 +192,18 @@ def normalize(x):
     return x.div(torch.sum(EPSILON + x))
 
 
-# ----- THE FOLLOWING FUNCTIONS ARE THE MAIN BOTTLENECKS ----- #
-
 def norm(x):
+    """
+    Return the L2 norm of a tensor.
+
+    """
     return x.norm()
 
 def tmax(x, axis=None, keepdims=False):
+    """
+    Return the elementwise maximum of a tensor along the specified axis.
+
+    """
     if axis is not None:
         tmp = x.max(dim=axis)[0]
         if keepdims:
@@ -129,6 +214,10 @@ def tmax(x, axis=None, keepdims=False):
         return x.max()
 
 def tmin(x, axis=None, keepdims=False):
+    """
+    Return the elementwise minimum of a tensor along the specified axis.
+
+    """
     if axis is not None:
         tmp = x.min(dim=axis)[0]
         if keepdims:
@@ -139,6 +228,10 @@ def tmin(x, axis=None, keepdims=False):
         return x.min()
 
 def mean(x, axis=None, keepdims=False):
+    """
+    Return the mean of the elements of a tensor along the specified axis.
+
+    """
     if axis is not None:
         tmp = x.mean(dim=axis)
         if keepdims:
@@ -149,6 +242,10 @@ def mean(x, axis=None, keepdims=False):
         return x.mean()
 
 def var(x, axis=None, keepdims=False):
+    """
+    Return the variance of the elements of a tensor along the specified axis.
+
+    """
     if axis is not None:
         tmp = x.var(dim=axis)
         if keepdims:
@@ -159,6 +256,10 @@ def var(x, axis=None, keepdims=False):
         return x.var()
 
 def std(x, axis=None, keepdims=False):
+    """
+    Return the standard deviation of the elements of a tensor along the specified axis.
+
+    """
     if axis is not None:
         tmp = x.std(dim=axis)
         if keepdims:
@@ -169,6 +270,10 @@ def std(x, axis=None, keepdims=False):
         return x.std()
 
 def tsum(x, axis=None, keepdims=False):
+    """
+    Return the sum of the elements of a tensor along the specified axis.
+
+    """
     if axis is not None:
         tmp = x.sum(dim=axis)
         if keepdims:
@@ -179,6 +284,10 @@ def tsum(x, axis=None, keepdims=False):
         return x.sum()
 
 def tprod(x, axis=None, keepdims=False):
+    """
+    Return the product of the elements of a tensor along the specified axis.
+
+    """
     if axis is not None:
         tmp = x.prod(dim=axis)
         if keepdims:
@@ -189,6 +298,11 @@ def tprod(x, axis=None, keepdims=False):
         return x.prod()
 
 def tany(x, axis=None, keepdims=False):
+    """
+    Return True if any elements of the input tensor are true along the
+    specified axis.
+
+    """
     tmp = tmax(x == True, axis=axis)
     if keepdims:
         return tmp
@@ -196,6 +310,11 @@ def tany(x, axis=None, keepdims=False):
         return flatten(tmp)
 
 def tall(x, axis=None, keepdims=False):
+    """
+    Return True if all elements of the input tensor are true along the
+    specified axis.
+
+    """
     tmp = tmin(x == True, axis=axis)
     if keepdims:
         return tmp
@@ -203,30 +322,66 @@ def tall(x, axis=None, keepdims=False):
         return flatten(tmp)
 
 def equal(x, y):
+    """
+    Elementwise if two tensors are equal.
+
+    """
     return torch.eq(x, y)
 
 def allclose(x, y):
+    """
+    Test if all elements in the two tensors are approximately equal.
+
+    """
     return torch.max(torch.abs(x - y)) <= EPSILON
 
 def not_equal(x, y):
-    return torch.neq(x, y)
+    """
+    Elementwise test if two tensors are not equal.
+
+    """
+    return torch.ne(x, y)
 
 def greater(x, y):
+    """
+    Elementwise test if x > y.
+
+    """
     return torch.gt(x, y)
 
 def greater_equal(x, y):
+    """
+    Elementwise test if x >= y.
+
+    """
     return torch.ge(x, y)
 
 def lesser(x, y):
+    """
+    Elementwise test if x < y.
+
+    """
     return torch.lt(x, y)
 
 def lesser_equal(x, y):
+    """
+    Elementwise test if x <= y.
+
+    """
     return torch.le(x, y)
 
 def maximum(x, y):
+    """
+    Elementwise maximum of two tensors.
+
+    """
     return torch.max(x, y)
 
 def minimum(x, y):
+    """
+    Elementwise minimum of two tensors.
+
+    """
     return torch.min(x, y)
 
 def argmax(x, axis=None):
@@ -358,12 +513,6 @@ def trange(start, end, step=1):
     """
     return torch.range(start, end-1, step)
 
-
-# ------------------------------------------------------------ #
-
-# ----- SPECIALIZED MATRIX FUNCTIONS ----- #
-
-
 def euclidean_distance(a, b):
     """
     Compute the euclidean distance between two vectors.
@@ -389,6 +538,10 @@ def resample(tensor, n, replace=True):
     return tensor.index_select(0, index)
 
 def fast_energy_distance(minibatch, samples, downsample=100):
+    """
+    Compute an approximate energy distance between two tensors.
+
+    """
     d1 = 0
     d2 = 0
     d3 = 0
