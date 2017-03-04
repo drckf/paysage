@@ -156,23 +156,27 @@ def dtype(tensor):
 
 def mix_inplace(w,x,y):
     """
-        Compute a weighted average of two matrices (x and y) and store the results in x.
-        Useful for keeping track of running averages during training.
+    Compute a weighted average of two matrices (x and y) and store the results in x.
+    Useful for keeping track of running averages during training.
+
+    x <- w * x + (1-w) * y
 
     """
     ne.evaluate('w*x + (1-w)*y', out=x)
 
 def square_mix_inplace(w,x,y):
     """
-        Compute a weighted average of two matrices (x and y^2) and store the results in x.
-        Useful for keeping track of running averages of squared matrices during training.
+    Compute a weighted average of two matrices (x and y^2) and store the results in x.
+    Useful for keeping track of running averages of squared matrices during training.
+
+    x < w x + (1-w) * y**2
 
     """
     ne.evaluate('w*x + (1-w)*y*y', out=x)
 
 def sqrt_div(x,y):
     """
-        Elementwise division of x by sqrt(y).
+    Elementwise division of x by sqrt(y).
 
     """
     z = EPSILON + y
@@ -180,7 +184,7 @@ def sqrt_div(x,y):
 
 def normalize(x):
     """
-        Divide x by it's sum.
+    Divide x by it's sum.
 
     """
     y = EPSILON + x

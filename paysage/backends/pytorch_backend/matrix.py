@@ -155,10 +155,10 @@ def dtype(tensor):
 
 def mix_inplace(w,x,y):
     """
-        Compute a weighted average of two matrices (x and y) and store the results in x.
-        Useful for keeping track of running averages during training.
+    Compute a weighted average of two matrices (x and y) and store the results in x.
+    Useful for keeping track of running averages during training.
 
-        x <- w * x + (1-w) * y
+    x <- w * x + (1-w) * y
 
     """
     x.mul_(w)
@@ -166,10 +166,10 @@ def mix_inplace(w,x,y):
 
 def square_mix_inplace(w,x,y):
     """
-        Compute a weighted average of two matrices (x and y^2) and store the results in x.
-        Useful for keeping track of running averages of squared matrices during training.
+    Compute a weighted average of two matrices (x and y^2) and store the results in x.
+    Useful for keeping track of running averages of squared matrices during training.
 
-        x < w x + (1-w) * y**2
+    x < w x + (1-w) * y**2
 
     """
     x.mul_(w)
@@ -177,14 +177,14 @@ def square_mix_inplace(w,x,y):
 
 def sqrt_div(x,y):
     """
-        Elementwise division of x by sqrt(y).
+    Elementwise division of x by sqrt(y).
 
     """
     return x.div(torch.sqrt(EPSILON + y))
 
 def normalize(x):
     """
-        Divide x by it's sum.
+    Divide x by it's sum.
 
     """
     return x.div(torch.sum(EPSILON + x))
