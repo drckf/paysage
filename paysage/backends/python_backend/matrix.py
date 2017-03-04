@@ -185,6 +185,9 @@ def dot(a,b):
 def outer(x,y):
     return numpy.outer(x,y)
 
+def broadcast(vec, matrix):
+    return numpy.broadcast_to(vec, shape(matrix))
+
 def affine(a,b,W):
     return a + numpy.dot(W,b)
 
