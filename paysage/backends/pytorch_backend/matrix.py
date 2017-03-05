@@ -425,7 +425,13 @@ def broadcast(vec, mat):
     Like the numpy.broadcast_to function.
 
     """
-    return vec.unsqueeze(0).expand(mat.size(0), vec.size(0))
+    needs_transpose = (ndim(vec)==2 and not shape(vec)[0] == 1)
+    flat = flatten(vec)
+    result = flat.unsqueeze(0).expand(mat.size(0), flat.size(0))
+    if needs_transpose:
+        return transpose(result)
+    else:
+        return result
 
 def affine(a,b,W):
     """

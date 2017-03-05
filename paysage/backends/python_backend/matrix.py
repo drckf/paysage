@@ -358,7 +358,12 @@ def broadcast(vec, matrix):
     Like the numpy.broadcast_to function.
 
     """
-    return numpy.broadcast_to(vec, shape(matrix))
+    needs_transpose = (ndim(vec)==2 and not shape(vec)[0] == 1)
+    result = numpy.broadcast_to(flatten(vec), shape(matrix))
+    if needs_transpose:
+        return transpose(result)
+    else:
+        return result
 
 def affine(a,b,W):
     """

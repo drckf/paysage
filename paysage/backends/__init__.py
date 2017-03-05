@@ -9,6 +9,7 @@ if config['backend'] == 'python':
     from .python_backend.nonlinearity import *
     from .python_backend.rand import *
 elif config['backend'] == 'pytorch':
+    raise NotImplementedError
     from .pytorch_backend.matrix import *
     from .pytorch_backend.nonlinearity import *
     from .pytorch_backend.rand import *
