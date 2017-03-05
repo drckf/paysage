@@ -154,7 +154,7 @@ class RestrictedBoltzmannMachine(LatentModel):
     def _visible_field(self, hidden, beta=None):
         result = be.dot(hidden, self.params['weights'].T)
         if beta is not None:
-            result *= beta
+            result *= be.broadcast(beta, result)
         result += self.params['visible_bias']
         return result
 

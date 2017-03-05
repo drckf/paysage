@@ -420,18 +420,24 @@ def outer(x,y):
     """
     return torch.ger(x, y)
 
-def broadcast(vec, mat):
+class BroadcastError(ValueError): pass
+
+def broadcast(vec, matrix):
     """
-    Like the numpy.broadcast_to function.
+    Broadcasts vec into the shape of matrix following numpy rules:
+
+    vec ~ (N, 1) broadcasts to matrix ~ (N, M)
+    vec ~ (1, N) and (N,) broadcast to matrix ~ (M, N)
 
     """
-    needs_transpose = (ndim(vec)==2 and not shape(vec)[0] == 1)
-    flat = flatten(vec)
-    result = flat.unsqueeze(0).expand(mat.size(0), flat.size(0))
-    if needs_transpose:
-        return transpose(result)
-    else:
-        return result
+    try:
+        if ndim(vec) == 1:
+            return vec.unsqueeze(0).expand(matrix.size(0), matrix.size(1))
+        else:
+            return vec.expand(matrix.size(0), matrix.size(1))
+    except ValueError:
+        raise BroadcastError('cannot broadcast vector of dimension {} \
+onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
 
 def affine(a,b,W):
     """
