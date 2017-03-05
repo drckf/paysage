@@ -147,15 +147,15 @@ class RestrictedBoltzmannMachine(LatentModel):
     def _hidden_field(self, visible, beta=None):
         result = be.dot(visible, self.params['weights'])
         if beta is not None:
-            result *= beta
-        result += self.params['hidden_bias']
+            result *= be.broadcast(beta, result)
+        result += be.broadcast(self.params['hidden_bias'], result)
         return result
 
     def _visible_field(self, hidden, beta=None):
         result = be.dot(hidden, self.params['weights'].T)
         if beta is not None:
             result *= be.broadcast(beta, result)
-        result += self.params['visible_bias']
+        result += be.broadcast(self.params['visible_bias'], result)
         return result
 
     def sample_hidden(self, visible, beta=None):
@@ -187,7 +187,7 @@ class RestrictedBoltzmannMachine(LatentModel):
     def joint_energy(self, visible, hidden, beta=None):
         energy = -be.batch_dot(visible, self.params['weights'], hidden)
         if beta is not None:
-            energy *= beta
+            energy *= be.flatten(beta)
         energy -= be.dot(visible, self.params['visible_bias'])
         energy -= be.dot(hidden, self.params['hidden_bias'])
         return be.mean(energy)
@@ -240,15 +240,15 @@ class HopfieldModel(LatentModel):
     def _hidden_loc(self, visible, beta=None):
         result = be.dot(visible, self.params['weights'])
         if beta is not None:
-            result *= beta
-        result += self.hidden_bias
+            result *= be.broadcast(beta, result)
+        result += be.broadcast(self.hidden_bias, result)
         return result
 
     def _visible_field(self, hidden, beta=None):
         result = be.dot(hidden, self.params['weights'].T)
         if beta is not None:
-            result *= beta
-        result += self.params['visible_bias']
+            result *= be.broadcast(beta, result)
+        result += be.broadcast(self.params['visible_bias'], result)
         return result
 
     def sample_hidden(self, visible, beta=None):
@@ -279,7 +279,7 @@ class HopfieldModel(LatentModel):
     def joint_energy(self, visible, hidden, beta=None):
         energy = -be.batch_dot(visible, self.params['weights'], hidden)
         if beta is not None:
-            energy *= beta
+            energy *= be.flatten(beta)
         energy -= be.dot(visible, self.params['visible_bias'])
         energy -= be.tsum(hidden**2, axis=1)
         return be.mean(energy)
@@ -331,15 +331,15 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         scale = be.exp(self.params['visible_scale'])
         result = be.dot(visible/scale, self.params['weights'])
         if beta is not None:
-            result *= beta
-        result += self.params['hidden_bias']
+            result *= be.broadcast(beta, result)
+        result += be.broadcast(self.params['hidden_bias'], result)
         return result
 
     def _visible_loc(self, hidden, beta=None):
         result = be.dot(hidden, self.params['weights'].T)
         if beta is not None:
-            result *= beta
-        result += self.params['visible_bias']
+            result *= be.broadcast(beta, result)
+        result += be.broadcast(self.params['visible_bias'], result)
         return result
 
     def sample_hidden(self, visible, beta=None):
@@ -379,7 +379,7 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         v_scaled = visible / scale
         energy = -be.batch_dot(v_scaled, self.params['weights'], hidden)
         if beta is not None:
-            energy *= beta
+            energy *= be.flatten(beta)
         energy -= -0.5 * be.mean((visible - self.params['visible_bias'])**2 / scale, axis=1)
         energy -= be.dot(hidden, self.params['hidden_bias'])
         return be.mean(energy)
