@@ -9,7 +9,7 @@ def tabs(x):
     Elementwise absolute value of a tensor.
 
     """
-    ne.evaluate('abs(x)')
+    return ne.evaluate('abs(x)')
 
 def exp(x):
     """
