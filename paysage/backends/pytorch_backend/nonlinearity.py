@@ -105,8 +105,9 @@ def acosh(x):
     Elementwise inverse hyperbolic cosine of a tensor.
 
     """
-    y = matrix.clip(x, a_min=EPSILON, a_max = 1 - EPSILON)
-    return sqrt((y-1)/(1-y)) * torch.acos(x)
+    y = matrix.clip(x, a_min=1+EPSILON)
+    return log(y + sqrt(y+1) * sqrt(y-1))
+    #return sqrt((y-1)/(1-y)) * torch.acos(x)
 
 def logit(x):
     """

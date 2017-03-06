@@ -101,7 +101,7 @@ def acosh(x):
     Elementwise inverse hyperbolic cosine of a tensor.
 
     """
-    y = numpy.clip(x, a_min=EPSILON+1)
+    y = numpy.clip(x,1+EPSILON, numpy.inf)
     return ne.evaluate('arccosh(y)')
 
 def logit(x):
