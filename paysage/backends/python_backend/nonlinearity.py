@@ -38,8 +38,11 @@ def tpow(x, a):
 def cosh(x):
     return ne.evaluate('cosh(x)')
 
+def logaddexp(x1, x2):
+    return numpy.logaddexp(x1, x2)
+
 def logcosh(x):
-    return -LOG2 + numpy.logaddexp(-x, x)
+    return -LOG2 + logaddexp(-x, x)
 
 def acosh(x):
     y = numpy.clip(x, a_min=EPSILON+1)
