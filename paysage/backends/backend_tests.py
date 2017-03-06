@@ -31,32 +31,25 @@ def test_conversion():
     assert torch_matrix.allclose(torch_y, torch_py_y), \
     "torch -> python -> torch failure"
 
-def test_nonlinearities():
-    from collections import OrderedDict
-    from inspect import getmembers, isfunction
-    python_nonlinearities = OrderedDict(getmembers(py_func, isfunction))
-    torch_nonlinearities = OrderedDict(getmembers(torch_func, isfunction))
-
+def test_acosh():
     shape = (100, 100)
     py_rand.set_seed()
     py_x = 1 + py_rand.rand(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
-    for key in python_nonlinearities:
-        print(key)
-        py_y = python_nonlinearities[key](py_x)
-        torch_y = torch_nonlinearities[key](torch_x)
+    py_y = py_func.acosh(py_x)
+    torch_y = torch_func.acosh(torch_x)
 
-        torch_py_y = torch_matrix.float_tensor(py_y)
-        py_torch_y = torch_matrix.to_numpy_array(torch_y)
+    torch_py_y = torch_matrix.float_tensor(py_y)
+    py_torch_y = torch_matrix.to_numpy_array(torch_y)
 
-        assert py_matrix.allclose(py_y, py_torch_y), \
-        "python -> torch -> python failure: {}".format(key)
+    assert py_matrix.allclose(py_y, py_torch_y), \
+    "python -> torch -> python failure: acosh"
 
-        assert torch_matrix.allclose(torch_y, torch_py_y), \
-        "torch -> python -> torch failure: {}".format(key)
+    assert torch_matrix.allclose(torch_y, torch_py_y), \
+    "torch -> python -> torch failure: acosh"
 
 
 if __name__ == "__main__":
     test_conversion()
-    test_nonlinearities()
+    test_acosh()
