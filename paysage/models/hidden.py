@@ -181,7 +181,7 @@ class RestrictedBoltzmannMachine(LatentModel):
         derivs = {}
         derivs['visible_bias'] = -be.mean(visible, axis=0)
         derivs['hidden_bias'] = -be.mean(mean_hidden, axis=0)
-        derivs['weights'] = -be.dot(be.transpose(visible), mean_hidden) / len(visible)
+        derivs['weights'] = -be.batch_outer(visible, mean_hidden) / len(visible)
         return derivs
 
     def joint_energy(self, visible, hidden, beta=None):
@@ -368,7 +368,7 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         derivs = {}
         derivs['visible_bias'] = -be.mean(v_scaled, axis=0)
         derivs['hidden_bias'] = -be.mean(mean_hidden, axis=0)
-        derivs['weights'] = -be.dot(be.transpose(v_scaled), mean_hidden) / len(visible)
+        derivs['weights'] = -be.batch_outer(v_scaled, mean_hidden) / len(visible)
         derivs['visible_scale'] = -0.5 * be.mean((visible-self.params['visible_bias'])**2, axis=0)
         derivs['visible_scale'] += be.batch_dot(mean_hidden, be.transpose(self.params['weights']), visible, axis=0) / len(visible)
         derivs['visible_scale'] /= scale
