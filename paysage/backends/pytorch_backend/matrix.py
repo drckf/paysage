@@ -136,7 +136,10 @@ def flatten(tensor):
     Return a flattened tensor.
 
     """
-    return tensor.view(int(numpy.prod(shape(tensor))))
+    try:
+        return tensor.view(int(numpy.prod(shape(tensor))))
+    except AttributeError:
+        return tensor
 
 def reshape(tensor, newshape):
     """
@@ -326,12 +329,12 @@ def equal(x, y):
     """
     return torch.eq(x, y)
 
-def allclose(x, y):
+def allclose(x, y, rtol=1e-05, atol=1e-08):
     """
     Test if all elements in the two tensors are approximately equal.
 
     """
-    return torch.max(torch.abs(x - y)) <= EPSILON
+    return tall(torch.abs(x - y).le((atol + rtol * torch.abs(y))))
 
 def not_equal(x, y):
     """

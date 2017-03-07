@@ -68,7 +68,28 @@ def test_tabs():
     "torch -> python -> torch failure: tabs"
 
 
+def test_exp():
+    shape = (100, 100)
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_y = py_func.exp(py_x)
+    torch_y = torch_func.exp(torch_x)
+
+    torch_py_y = torch_matrix.float_tensor(py_y)
+    py_torch_y = torch_matrix.to_numpy_array(torch_y)
+
+    assert py_matrix.allclose(py_y, py_torch_y), \
+    "python -> torch -> python failure: exp"
+
+    assert torch_matrix.allclose(torch_y, torch_py_y), \
+    "torch -> python -> torch failure: exp"
+
+
+
 if __name__ == "__main__":
     test_conversion()
     test_acosh()
+    test_exp()
     test_tabs()
