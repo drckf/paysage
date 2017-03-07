@@ -381,3 +381,4 @@ if __name__ == "__main__":
     test_logit()
     test_softplus()
     test_cos()
+    test_sin()
