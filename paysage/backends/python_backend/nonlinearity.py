@@ -9,7 +9,7 @@ def tabs(x):
     Elementwise absolute value of a tensor.
 
     """
-    ne.evaluate('abs(x)')
+    return ne.evaluate('abs(x)')
 
 def exp(x):
     """
@@ -44,7 +44,7 @@ def reciprocal(x):
     Elementwise inverse of a tensor.
 
     """
-    return numpy.reciprocal(EPSILON + x)
+    return numpy.reciprocal(x)
 
 def atanh(x):
     """
@@ -101,7 +101,7 @@ def acosh(x):
     Elementwise inverse hyperbolic cosine of a tensor.
 
     """
-    y = numpy.clip(x, a_min=EPSILON+1)
+    y = numpy.clip(x,1+EPSILON, numpy.inf)
     return ne.evaluate('arccosh(y)')
 
 def logit(x):

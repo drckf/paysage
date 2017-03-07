@@ -51,8 +51,8 @@ def atanh(x):
     Elementwise inverse hyperbolic tangent of a tensor.
 
     """
-    y = matrix.clip(x, a_min=EPSILON, a_max = 1 - EPSILON)
-    return 0.5 * (log(1+y) - log(1-y))
+    y = matrix.clip(x, a_min=EPSILON - 1, a_max=1 - EPSILON)
+    return (log(1+y) - log(1-y)) / 2
 
 def sqrt(x):
     """
@@ -105,8 +105,9 @@ def acosh(x):
     Elementwise inverse hyperbolic cosine of a tensor.
 
     """
-    y = matrix.clip(x, a_min=EPSILON, a_max = 1 - EPSILON)
-    return sqrt((y-1)/(1-y)) * torch.acos(x)
+    y = matrix.clip(x, a_min=1+EPSILON)
+    return log(y + sqrt(y+1) * sqrt(y-1))
+    #return sqrt((y-1)/(1-y)) * torch.acos(x)
 
 def logit(x):
     """

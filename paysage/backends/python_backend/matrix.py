@@ -137,7 +137,10 @@ def flatten(tensor):
     Return a flattened tensor.
 
     """
-    return numpy.ravel(tensor)
+    try:
+        return tensor.ravel()
+    except AttributeError:
+        return tensor
 
 def reshape(tensor, newshape):
     """
@@ -269,12 +272,12 @@ def equal(x, y):
     """
     return numpy.equal(x, y)
 
-def allclose(x, y):
+def allclose(x, y, rtol=1e-05, atol=1e-08):
     """
     Test if all elements in the two tensors are approximately equal.
 
     """
-    return numpy.allclose(x, y)
+    return numpy.allclose(x, y, rtol=rtol, atol=atol)
 
 def not_equal(x, y):
     """
