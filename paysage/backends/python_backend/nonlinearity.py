@@ -1,7 +1,7 @@
 import numpy
 import numexpr as ne
 
-EPSILON = numpy.finfo(numpy.float32).eps
+EPSILON = float(numpy.finfo(numpy.float32).eps)
 LOG2 = 0.6931471805599453
 
 def tabs(x):

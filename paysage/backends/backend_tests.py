@@ -289,6 +289,24 @@ def test_acosh():
     assert torch_matrix.allclose(torch_y, torch_py_y), \
     "torch -> python -> torch failure: acosh"
 
+def test_logit():
+    shape = (100, 100)
+    py_rand.set_seed()
+    py_x = py_rand.rand(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_y = py_func.logit(py_x)
+    torch_y = torch_func.logit(torch_x)
+
+    torch_py_y = torch_matrix.float_tensor(py_y)
+    py_torch_y = torch_matrix.to_numpy_array(torch_y)
+
+    assert py_matrix.allclose(py_y, py_torch_y), \
+    "python -> torch -> python failure: logit"
+
+    assert torch_matrix.allclose(torch_y, torch_py_y), \
+    "torch -> python -> torch failure: logit"
+
 
 if __name__ == "__main__":
     test_conversion()
@@ -306,4 +324,5 @@ if __name__ == "__main__":
     test_logaddexp()
     test_logcosh()
     test_acosh()
+    test_logit()
 
