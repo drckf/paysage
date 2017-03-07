@@ -250,6 +250,27 @@ def test_cosh():
     assert torch_matrix.allclose(torch_y, torch_py_y), \
     "torch -> python -> torch failure: cosh"
 
+def test_logaddexp():
+    shape = (100, 100)
+    py_rand.set_seed()
+    py_x_1 = py_rand.randn(shape)
+    py_x_2 = py_rand.randn(shape)
+
+    torch_x_1 = torch_matrix.float_tensor(py_x_1)
+    torch_x_2 = torch_matrix.float_tensor(py_x_2)
+
+    py_y = py_func.logaddexp(py_x_1, py_x_2)
+    torch_y = torch_func.logaddexp(torch_x_1, torch_x_2)
+
+    torch_py_y = torch_matrix.float_tensor(py_y)
+    py_torch_y = torch_matrix.to_numpy_array(torch_y)
+
+    assert py_matrix.allclose(py_y, py_torch_y), \
+    "python -> torch -> python failure: cosh"
+
+    assert torch_matrix.allclose(torch_y, torch_py_y), \
+    "torch -> python -> torch failure: cosh"
+
 
 if __name__ == "__main__":
     test_conversion()
@@ -264,4 +285,5 @@ if __name__ == "__main__":
     test_square()
     test_tpow()
     test_cosh()
+    test_logaddexp()
     test_tabs()
