@@ -98,11 +98,28 @@ def test_log():
     py_torch_y = torch_matrix.to_numpy_array(torch_y)
 
     assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: exp"
+    "python -> torch -> python failure: log"
 
     assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: exp"
+    "torch -> python -> torch failure: log"
 
+def test_tanh():
+    shape = (100, 100)
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_y = py_func.tanh(py_x)
+    torch_y = torch_func.tanh(torch_x)
+
+    torch_py_y = torch_matrix.float_tensor(py_y)
+    py_torch_y = torch_matrix.to_numpy_array(torch_y)
+
+    assert py_matrix.allclose(py_y, py_torch_y), \
+    "python -> torch -> python failure: tanh"
+
+    assert torch_matrix.allclose(torch_y, torch_py_y), \
+    "torch -> python -> torch failure: tanh"
 
 
 if __name__ == "__main__":
@@ -110,4 +127,5 @@ if __name__ == "__main__":
     test_acosh()
     test_exp()
     test_log()
+    test_tanh()
     test_tabs()
