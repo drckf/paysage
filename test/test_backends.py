@@ -1,13 +1,10 @@
-#from .python_backend import matrix as pymat
-#from .pytorch_backend import matrix as torchmat
+import paysage.backends.python_backend.matrix as py_matrix
+import paysage.backends.python_backend.nonlinearity as py_func
+import paysage.backends.python_backend.rand as py_rand
 
-import python_backend.matrix as py_matrix
-import python_backend.nonlinearity as py_func
-import python_backend.rand as py_rand
-
-import pytorch_backend.matrix as torch_matrix
-import pytorch_backend.nonlinearity as torch_func
-import pytorch_backend.rand as torch_rand
+import paysage.backends.pytorch_backend.matrix as torch_matrix
+import paysage.backends.pytorch_backend.nonlinearity as torch_func
+import paysage.backends.pytorch_backend.rand as torch_rand
 
 import pytest
 
