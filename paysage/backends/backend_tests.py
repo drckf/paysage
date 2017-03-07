@@ -169,6 +169,8 @@ def test_atanh():
     torch_py_y = torch_matrix.float_tensor(py_y)
     py_torch_y = torch_matrix.to_numpy_array(torch_y)
 
+    # the atanh function is a bit less precise than the others
+    # so the tolerance is a bit more flexible
     assert py_matrix.allclose(py_y, py_torch_y, rtol=1e-05, atol=1e-07), \
     "python -> torch -> python failure: atanh"
 
