@@ -44,7 +44,7 @@ def reciprocal(x):
     Elementwise inverse of a tensor.
 
     """
-    return numpy.reciprocal(EPSILON + x)
+    return numpy.reciprocal(x)
 
 def atanh(x):
     """
