@@ -232,6 +232,25 @@ def test_tpow():
     assert torch_matrix.allclose(torch_y, torch_py_y), \
     "torch -> python -> torch failure: tpow"
 
+def test_cosh():
+    shape = (100, 100)
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_y = py_func.cosh(py_x)
+    torch_y = torch_func.cosh(torch_x)
+
+    torch_py_y = torch_matrix.float_tensor(py_y)
+    py_torch_y = torch_matrix.to_numpy_array(torch_y)
+
+    assert py_matrix.allclose(py_y, py_torch_y), \
+    "python -> torch -> python failure: cosh"
+
+    assert torch_matrix.allclose(torch_y, torch_py_y), \
+    "torch -> python -> torch failure: cosh"
+
+
 if __name__ == "__main__":
     test_conversion()
     test_acosh()
@@ -244,4 +263,5 @@ if __name__ == "__main__":
     test_sqrt()
     test_square()
     test_tpow()
+    test_cosh()
     test_tabs()
