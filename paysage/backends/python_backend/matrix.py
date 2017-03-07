@@ -137,7 +137,10 @@ def flatten(tensor):
     Return a flattened tensor.
 
     """
-    return numpy.ravel(tensor)
+    try:
+        return tensor.ravel()
+    except AttributeError:
+        return tensor
 
 def reshape(tensor, newshape):
     """
