@@ -121,6 +121,24 @@ def test_tanh():
     assert torch_matrix.allclose(torch_y, torch_py_y), \
     "torch -> python -> torch failure: tanh"
 
+def test_expit():
+    shape = (100, 100)
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_y = py_func.expit(py_x)
+    torch_y = torch_func.expit(torch_x)
+
+    torch_py_y = torch_matrix.float_tensor(py_y)
+    py_torch_y = torch_matrix.to_numpy_array(torch_y)
+
+    assert py_matrix.allclose(py_y, py_torch_y), \
+    "python -> torch -> python failure: expit"
+
+    assert torch_matrix.allclose(torch_y, torch_py_y), \
+    "torch -> python -> torch failure: expit"
+
 
 if __name__ == "__main__":
     test_conversion()
@@ -128,4 +146,5 @@ if __name__ == "__main__":
     test_exp()
     test_log()
     test_tanh()
+    test_expit()
     test_tabs()
