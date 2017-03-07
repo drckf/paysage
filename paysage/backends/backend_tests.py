@@ -152,10 +152,28 @@ def test_reciprocal():
     py_torch_y = torch_matrix.to_numpy_array(torch_y)
 
     assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: expit"
+    "python -> torch -> python failure: reciprocal"
 
     assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: expit"
+    "torch -> python -> torch failure: reciprocal"
+
+def test_atanh():
+    shape = (100, 100)
+    py_rand.set_seed()
+    py_x = 2 * py_rand.rand(shape) - 1
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_y = py_func.atanh(py_x)
+    torch_y = torch_func.atanh(torch_x)
+
+    torch_py_y = torch_matrix.float_tensor(py_y)
+    py_torch_y = torch_matrix.to_numpy_array(torch_y)
+
+    assert py_matrix.allclose(py_y, py_torch_y, rtol=1e-05, atol=1e-07), \
+    "python -> torch -> python failure: atanh"
+
+    assert torch_matrix.allclose(torch_y, torch_py_y, rtol=1e-05, atol=1e-07), \
+    "torch -> python -> torch failure: atanh"
 
 
 if __name__ == "__main__":
@@ -166,4 +184,5 @@ if __name__ == "__main__":
     test_tanh()
     test_expit()
     test_reciprocal()
+    test_atanh()
     test_tabs()

@@ -277,7 +277,7 @@ def allclose(x, y, rtol=1e-05, atol=1e-08):
     Test if all elements in the two tensors are approximately equal.
 
     """
-    return numpy.allclose(x, y, rtol=1e-05, atol=1e-08)
+    return numpy.allclose(x, y, rtol=rtol, atol=atol)
 
 def not_equal(x, y):
     """

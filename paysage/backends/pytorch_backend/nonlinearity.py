@@ -51,8 +51,8 @@ def atanh(x):
     Elementwise inverse hyperbolic tangent of a tensor.
 
     """
-    y = matrix.clip(x, a_min=EPSILON, a_max = 1 - EPSILON)
-    return 0.5 * (log(1+y) - log(1-y))
+    y = matrix.clip(x, a_min=EPSILON - 1, a_max=1 - EPSILON)
+    return (log(1+y) - log(1-y)) / 2
 
 def sqrt(x):
     """
