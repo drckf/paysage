@@ -177,6 +177,24 @@ def test_atanh():
     assert torch_matrix.allclose(torch_y, torch_py_y, rtol=1e-05, atol=1e-07), \
     "torch -> python -> torch failure: atanh"
 
+def test_sqrt():
+    shape = (100, 100)
+    py_rand.set_seed()
+    py_x = py_rand.rand(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_y = py_func.sqrt(py_x)
+    torch_y = torch_func.sqrt(torch_x)
+
+    torch_py_y = torch_matrix.float_tensor(py_y)
+    py_torch_y = torch_matrix.to_numpy_array(torch_y)
+
+    assert py_matrix.allclose(py_y, py_torch_y), \
+    "python -> torch -> python failure: sqrt"
+
+    assert torch_matrix.allclose(torch_y, torch_py_y), \
+    "torch -> python -> torch failure: sqrt"
+
 
 if __name__ == "__main__":
     test_conversion()
@@ -187,4 +205,5 @@ if __name__ == "__main__":
     test_expit()
     test_reciprocal()
     test_atanh()
+    test_sqrt()
     test_tabs()
