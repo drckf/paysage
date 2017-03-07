@@ -343,6 +343,24 @@ def test_cos():
     assert torch_matrix.allclose(torch_y, torch_py_y), \
     "torch -> python -> torch failure: cos"
 
+def test_sin():
+    shape = (100, 100)
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_y = py_func.sin(py_x)
+    torch_y = torch_func.sin(torch_x)
+
+    torch_py_y = torch_matrix.float_tensor(py_y)
+    py_torch_y = torch_matrix.to_numpy_array(torch_y)
+
+    assert py_matrix.allclose(py_y, py_torch_y), \
+    "python -> torch -> python failure: sin"
+
+    assert torch_matrix.allclose(torch_y, torch_py_y), \
+    "torch -> python -> torch failure: sin"
+
 
 if __name__ == "__main__":
     test_conversion()
