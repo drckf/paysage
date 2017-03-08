@@ -28,6 +28,33 @@ def test_conversion():
     assert torch_matrix.allclose(torch_y, torch_py_y), \
     "torch -> python -> torch failure"
 
+def test_transpose():
+
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.rand(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_x_T = py_matrix.transpose(py_x)
+    py_torch_x_T = torch_matrix.to_numpy_array(torch_matrix.transpose(torch_x))
+
+    assert py_matrix.allclose(py_x_T, py_torch_x_T), \
+    "python -> torch -> python failure"
+
+    torch_rand.set_seed()
+    torch_y = torch_rand.rand(shape)
+    py_y = torch_matrix.to_numpy_array(torch_y)
+
+    torch_y_T = torch_matrix.transpose(torch_y)
+    torch_py_y_T = torch_matrix.float_tensor(py_matrix.transpose(py_y))
+
+    assert torch_matrix.allclose(torch_y_T, torch_py_y_T), \
+    "torch -> python -> torch failure"
+
+
+# ----- Nonlinearities ----- #
+
 def test_tabs():
     shape = (100, 100)
     py_rand.set_seed()
