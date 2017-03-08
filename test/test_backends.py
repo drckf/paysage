@@ -88,19 +88,19 @@ def test_diag():
 
     shape = (100,)
 
-    py_ones = py_rand.randn(shape)
-    '''
-    torch_ones = torch_matrix.ones(shape)
+    py_vec = py_rand.randn(shape)
+    py_mat = py_matrix.diagonal_matrix(py_vec)
+    py_diag = py_matrix.diag(py_mat)
 
-    torch_py_ones = torch_matrix.float_tensor(py_ones)
-    py_torch_ones = torch_matrix.to_numpy_array(torch_ones)
+    assert py_matrix.allclose(py_vec, py_diag), \
+    "python vec -> matrix -> vec failure: diag"
 
-    assert py_matrix.allclose(py_ones, py_torch_ones), \
-    "python -> torch -> python failure: ones"
+    torch_vec = torch_rand.randn(shape)
+    torch_mat = torch_matrix.diagonal_matrix(torch_vec)
+    torch_diag = torch_matrix.diag(torch_mat)
 
-    assert torch_matrix.allclose(torch_ones, torch_py_ones), \
-    "torch -> python -> torch failure: ones"
-    '''
+    assert torch_matrix.allclose(torch_vec, torch_diag), \
+    "torch vec -> matrix -> vec failure: diag"
 
 
 # ----- Nonlinearities ----- #
@@ -441,6 +441,7 @@ if __name__ == "__main__":
     test_transpose()
     test_zeros()
     test_ones()
+    test_diag()
 
     test_tabs()
     test_exp()
