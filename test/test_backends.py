@@ -56,7 +56,7 @@ def test_zeros():
 
     shape = (100, 100)
 
-    py_zeros = py_rand.zeros(shape)
+    py_zeros = py_matrix.zeros(shape)
     torch_zeros = torch_matrix.zeros(shape)
 
     torch_py_zeros = torch_matrix.float_tensor(py_zeros)
@@ -72,7 +72,7 @@ def test_ones():
 
     shape = (100, 100)
 
-    py_ones = py_rand.ones(shape)
+    py_ones = py_matrix.ones(shape)
     torch_ones = torch_matrix.ones(shape)
 
     torch_py_ones = torch_matrix.float_tensor(py_ones)
@@ -83,6 +83,24 @@ def test_ones():
 
     assert torch_matrix.allclose(torch_ones, torch_py_ones), \
     "torch -> python -> torch failure: ones"
+
+def test_diag():
+
+    shape = (100,)
+
+    py_ones = py_rand.randn(shape)
+    '''
+    torch_ones = torch_matrix.ones(shape)
+
+    torch_py_ones = torch_matrix.float_tensor(py_ones)
+    py_torch_ones = torch_matrix.to_numpy_array(torch_ones)
+
+    assert py_matrix.allclose(py_ones, py_torch_ones), \
+    "python -> torch -> python failure: ones"
+
+    assert torch_matrix.allclose(torch_ones, torch_py_ones), \
+    "torch -> python -> torch failure: ones"
+    '''
 
 
 # ----- Nonlinearities ----- #
@@ -420,6 +438,10 @@ def test_sin():
 
 if __name__ == "__main__":
     test_conversion()
+    test_transpose()
+    test_zeros()
+    test_ones()
+
     test_tabs()
     test_exp()
     test_log()
