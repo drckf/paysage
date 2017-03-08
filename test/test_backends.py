@@ -68,6 +68,22 @@ def test_zeros():
     assert torch_matrix.allclose(torch_zeros, torch_py_zeros), \
     "torch -> python -> torch failure: zeros"
 
+def test_ones():
+
+    shape = (100, 100)
+
+    py_ones = py_rand.ones(shape)
+    torch_ones = torch_matrix.ones(shape)
+
+    torch_py_ones = torch_matrix.float_tensor(py_ones)
+    py_torch_ones = torch_matrix.to_numpy_array(torch_ones)
+
+    assert py_matrix.allclose(py_ones, py_torch_ones), \
+    "python -> torch -> python failure: ones"
+
+    assert torch_matrix.allclose(torch_ones, torch_py_ones), \
+    "torch -> python -> torch failure: ones"
+
 
 # ----- Nonlinearities ----- #
 
