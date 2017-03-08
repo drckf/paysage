@@ -40,7 +40,7 @@ def test_transpose():
     py_torch_x_T = torch_matrix.to_numpy_array(torch_matrix.transpose(torch_x))
 
     assert py_matrix.allclose(py_x_T, py_torch_x_T), \
-    "python -> torch -> python failure"
+    "python -> torch -> python failure: transpose"
 
     torch_rand.set_seed()
     torch_y = torch_rand.rand(shape)
@@ -50,7 +50,23 @@ def test_transpose():
     torch_py_y_T = torch_matrix.float_tensor(py_matrix.transpose(py_y))
 
     assert torch_matrix.allclose(torch_y_T, torch_py_y_T), \
-    "torch -> python -> torch failure"
+    "torch -> python -> torch failure: transpose"
+
+def test_zeros():
+
+    shape = (100, 100)
+
+    py_zeros = py_rand.zeros(shape)
+    torch_zeros = torch_matrix.zeros(shape)
+
+    torch_py_zeros = torch_matrix.float_tensor(py_zeros)
+    py_torch_zeros = torch_matrix.to_numpy_array(torch_zeros)
+
+    assert py_matrix.allclose(py_zeros, py_torch_zeros), \
+    "python -> torch -> python failure: zeros"
+
+    assert torch_matrix.allclose(torch_zeros, torch_py_zeros), \
+    "torch -> python -> torch failure: zeros"
 
 
 # ----- Nonlinearities ----- #
