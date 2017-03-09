@@ -128,7 +128,6 @@ def test_fill_diagonal():
     assert py_matrix.allclose(py_torch_mat, py_mat), \
     "torch fill != python fill"
 
-
 def test_sign():
 
     shape = (100,100)
@@ -563,6 +562,8 @@ if __name__ == "__main__":
     test_fill_diagonal()
     test_sign()
     test_clip()
+    test_clip_inplace()
+
 
     test_tabs()
     test_exp()
