@@ -28,6 +28,83 @@ def test_conversion():
     assert torch_matrix.allclose(torch_y, torch_py_y), \
     "torch -> python -> torch failure"
 
+def test_transpose():
+
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.rand(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_x_T = py_matrix.transpose(py_x)
+    py_torch_x_T = torch_matrix.to_numpy_array(torch_matrix.transpose(torch_x))
+
+    assert py_matrix.allclose(py_x_T, py_torch_x_T), \
+    "python -> torch -> python failure: transpose"
+
+    torch_rand.set_seed()
+    torch_y = torch_rand.rand(shape)
+    py_y = torch_matrix.to_numpy_array(torch_y)
+
+    torch_y_T = torch_matrix.transpose(torch_y)
+    torch_py_y_T = torch_matrix.float_tensor(py_matrix.transpose(py_y))
+
+    assert torch_matrix.allclose(torch_y_T, torch_py_y_T), \
+    "torch -> python -> torch failure: transpose"
+
+def test_zeros():
+
+    shape = (100, 100)
+
+    py_zeros = py_matrix.zeros(shape)
+    torch_zeros = torch_matrix.zeros(shape)
+
+    torch_py_zeros = torch_matrix.float_tensor(py_zeros)
+    py_torch_zeros = torch_matrix.to_numpy_array(torch_zeros)
+
+    assert py_matrix.allclose(py_zeros, py_torch_zeros), \
+    "python -> torch -> python failure: zeros"
+
+    assert torch_matrix.allclose(torch_zeros, torch_py_zeros), \
+    "torch -> python -> torch failure: zeros"
+
+def test_ones():
+
+    shape = (100, 100)
+
+    py_ones = py_matrix.ones(shape)
+    torch_ones = torch_matrix.ones(shape)
+
+    torch_py_ones = torch_matrix.float_tensor(py_ones)
+    py_torch_ones = torch_matrix.to_numpy_array(torch_ones)
+
+    assert py_matrix.allclose(py_ones, py_torch_ones), \
+    "python -> torch -> python failure: ones"
+
+    assert torch_matrix.allclose(torch_ones, torch_py_ones), \
+    "torch -> python -> torch failure: ones"
+
+def test_diag():
+
+    shape = (100,)
+
+    py_vec = py_rand.randn(shape)
+    py_mat = py_matrix.diagonal_matrix(py_vec)
+    py_diag = py_matrix.diag(py_mat)
+
+    assert py_matrix.allclose(py_vec, py_diag), \
+    "python vec -> matrix -> vec failure: diag"
+
+    torch_vec = torch_rand.randn(shape)
+    torch_mat = torch_matrix.diagonal_matrix(torch_vec)
+    torch_diag = torch_matrix.diag(torch_mat)
+
+    assert torch_matrix.allclose(torch_vec, torch_diag), \
+    "torch vec -> matrix -> vec failure: diag"
+
+
+# ----- Nonlinearities ----- #
+
 def test_tabs():
     shape = (100, 100)
     py_rand.set_seed()
@@ -361,6 +438,11 @@ def test_sin():
 
 if __name__ == "__main__":
     test_conversion()
+    test_transpose()
+    test_zeros()
+    test_ones()
+    test_diag()
+
     test_tabs()
     test_exp()
     test_log()
