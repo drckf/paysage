@@ -218,6 +218,21 @@ def test_clip_inplace():
     assert py_matrix.allclose(py_mat, py_torch_clipped), \
     "python clip inplace != torch clip inplace: upper"
 
+def test_tround():
+
+    shape = (100,100)
+
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_round = py_matrix.tround(py_mat)
+    torch_round = torch_matrix.tround(torch_mat)
+
+    py_torch_round = torch_matrix.to_numpy_array(torch_round)
+    py_py_round = py_matrix.to_numpy_array(py_round)
+
+    assert py_matrix.allclose(py_torch_round, py_py_round), \
+    "python round != torch round"
 
 
 # ----- Nonlinearities ----- #
@@ -563,7 +578,7 @@ if __name__ == "__main__":
     test_sign()
     test_clip()
     test_clip_inplace()
-
+    test_tround()
 
     test_tabs()
     test_exp()
