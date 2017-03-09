@@ -122,7 +122,7 @@ def clip_inplace(tensor, a_min=-numpy.inf, a_max=numpy.inf):
     In-place function.
 
     """
-    return tensor.clamp_(a_min, a_max)
+    return torch.clamp(tensor, a_min, a_max, out=tensor)
 
 def tround(tensor):
     """

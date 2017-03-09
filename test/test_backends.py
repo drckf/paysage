@@ -179,6 +179,46 @@ def test_clip():
     assert py_matrix.allclose(py_clipped, py_torch_clipped), \
     "python clip != torch clip: upper"
 
+def test_clip_inplace():
+
+    shape = (100,100)
+
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    # test two sided clip
+    py_matrix.clip_inplace(py_mat, a_min=0, a_max=1)
+    torch_matrix.clip_inplace(torch_mat, a_min=0, a_max=1)
+
+    py_torch_clipped = torch_matrix.to_numpy_array(torch_mat)
+
+    assert py_matrix.allclose(py_mat, py_torch_clipped), \
+    "python clip inplace != torch clip inplace: two sided"
+
+    # test lower clip
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_matrix.clip_inplace(py_mat, a_min=0)
+    torch_matrix.clip_inplace(torch_mat, a_min=0)
+
+    py_torch_clipped = torch_matrix.to_numpy_array(torch_mat)
+
+    assert py_matrix.allclose(py_mat, py_torch_clipped), \
+    "python clip inplace != torch clip inplace: lower"
+
+    # test upper clip
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_matrix.clip_inplace(py_mat, a_max=1)
+    torch_matrix.clip_inplace(torch_mat, a_max=1)
+
+    py_torch_clipped = torch_matrix.to_numpy_array(torch_mat)
+
+    assert py_matrix.allclose(py_mat, py_torch_clipped), \
+    "python clip inplace != torch clip inplace: upper"
+
 
 
 # ----- Nonlinearities ----- #
