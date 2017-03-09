@@ -102,6 +102,32 @@ def test_diag():
     assert torch_matrix.allclose(torch_vec, torch_diag), \
     "torch vec -> matrix -> vec failure: diag"
 
+def test_fill_diagonal():
+
+    n = 10
+
+    py_mat = py_matrix.identity(n)
+    torch_mat = torch_matrix.identity(n)
+
+    fill_value = 2.0
+
+    py_mult = fill_value * py_mat
+    py_matrix.fill_diagonal(py_mat, fill_value)
+
+    assert py_matrix.allclose(py_mat, py_mult), \
+    "python fill != python multiplly for diagonal matrix"
+
+    torch_mult = fill_value * torch_mat
+    torch_matrix.fill_diagonal(torch_mat, fill_value)
+
+    assert torch_matrix.allclose(torch_mat, torch_mult), \
+    "torch fill != python multiplly for diagonal matrix"
+
+    py_torch_mat = torch_matrix.to_numpy_array(torch_mat)
+
+    assert py_matrix.allclose(py_torch_mat, py_mat), \
+    "torch fill != python fill"
+
 
 # ----- Nonlinearities ----- #
 
@@ -442,6 +468,7 @@ if __name__ == "__main__":
     test_zeros()
     test_ones()
     test_diag()
+    test_fill_diagonal()
 
     test_tabs()
     test_exp()
