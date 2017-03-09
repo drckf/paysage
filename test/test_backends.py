@@ -129,6 +129,23 @@ def test_fill_diagonal():
     "torch fill != python fill"
 
 
+def test_sign():
+
+    shape = (100,100)
+
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_sign = py_matrix.sign(py_mat)
+    torch_sign = torch_matrix.sign(torch_mat)
+
+    py_torch_sign = torch_matrix.to_numpy_array(torch_sign)
+    py_py_sign = py_matrix.to_numpy_array(py_sign)
+
+    assert py_matrix.allclose(py_torch_sign, py_py_sign), \
+    "python sign != torch sign"
+
+
 # ----- Nonlinearities ----- #
 
 def test_tabs():
@@ -469,6 +486,7 @@ if __name__ == "__main__":
     test_ones()
     test_diag()
     test_fill_diagonal()
+    test_sign()
 
     test_tabs()
     test_exp()
