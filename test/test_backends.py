@@ -145,6 +145,41 @@ def test_sign():
     assert py_matrix.allclose(py_torch_sign, py_py_sign), \
     "python sign != torch sign"
 
+def test_clip():
+
+    shape = (100,100)
+
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    # test two sided clip
+    py_clipped = py_matrix.clip(py_mat, a_min=0, a_max=1)
+    torch_clipped = torch_matrix.clip(torch_mat, a_min=0, a_max=1)
+
+    py_torch_clipped = torch_matrix.to_numpy_array(torch_clipped)
+
+    assert py_matrix.allclose(py_clipped, py_torch_clipped), \
+    "python clip != torch clip: two sided"
+
+    # test lower clip
+    py_clipped = py_matrix.clip(py_mat, a_min=0)
+    torch_clipped = torch_matrix.clip(torch_mat, a_min=0)
+
+    py_torch_clipped = torch_matrix.to_numpy_array(torch_clipped)
+
+    assert py_matrix.allclose(py_clipped, py_torch_clipped), \
+    "python clip != torch clip: lower"
+
+    # test upper clip
+    py_clipped = py_matrix.clip(py_mat, a_max=1)
+    torch_clipped = torch_matrix.clip(torch_mat, a_max=1)
+
+    py_torch_clipped = torch_matrix.to_numpy_array(torch_clipped)
+
+    assert py_matrix.allclose(py_clipped, py_torch_clipped), \
+    "python clip != torch clip: upper"
+
+
 
 # ----- Nonlinearities ----- #
 
@@ -487,6 +522,7 @@ if __name__ == "__main__":
     test_diag()
     test_fill_diagonal()
     test_sign()
+    test_clip()
 
     test_tabs()
     test_exp()
