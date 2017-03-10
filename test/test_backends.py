@@ -354,6 +354,24 @@ def test_sqrt_div():
     assert torch_matrix.allclose(torch_sqrt_div, torch_py_sqrt_div), \
     "torch sqrt_div != python sqrt_div"
 
+def test_normalize():
+    shape = (100,)
+
+    py_x = py_rand.rand(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_norm = py_matrix.normalize(py_x)
+    torch_norm = torch_matrix.normalize(torch_x)
+
+    py_torch_norm = torch_matrix.to_numpy_array(torch_norm)
+    torch_py_norm = torch_matrix.float_tensor(py_norm)
+
+    assert py_matrix.allclose(py_norm, py_torch_norm), \
+    "python normalize != torch normalize"
+
+    assert torch_matrix.allclose(torch_norm, torch_py_norm), \
+    "torch normalize != python normalize"
 
 
 # ----- Nonlinearities ----- #
@@ -705,6 +723,7 @@ if __name__ == "__main__":
     test_mix_inplace()
     test_square_mix_inplace()
     test_sqrt_div()
+    test_normalize()
 
     test_tabs()
     test_exp()
