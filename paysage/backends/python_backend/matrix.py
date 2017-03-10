@@ -101,7 +101,7 @@ def fill_diagonal(mat, val):
     In-place function.
 
     """
-    return numpy.fill_diagonal(mat, val)
+    numpy.fill_diagonal(mat, val)
 
 def sign(tensor):
     """
