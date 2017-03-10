@@ -373,6 +373,19 @@ def test_normalize():
     assert torch_matrix.allclose(torch_norm, torch_py_norm), \
     "torch normalize != python normalize"
 
+def test_norm():
+    shape = (100,)
+
+    py_x = py_rand.rand(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_norm = py_matrix.norm(py_x)
+    torch_norm = torch_matrix.norm(torch_x)
+
+    from numpy import allclose
+    assert allclose(py_norm, torch_norm), \
+    "python l2 norm != torch l2 norm"
+
 
 # ----- Nonlinearities ----- #
 

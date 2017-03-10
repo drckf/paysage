@@ -192,7 +192,6 @@ def normalize(x):
     """
     return x.div(torch.sum(EPSILON + x))
 
-
 def norm(x):
     """
     Return the L2 norm of a tensor.
