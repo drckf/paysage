@@ -14,7 +14,7 @@ def float_scalar(scalar):
     Cast scalar to a 32-bit float.
 
     """
-    return numpy.float32(scalar)
+    return float(scalar)
 
 def float_tensor(tensor):
     """

@@ -310,6 +310,29 @@ def test_mix_inplace():
     assert torch_matrix.allclose(torch_x, torch_py_x), \
     "torch mix_inplace != python mix_inplace"
 
+def test_square_mix_inplace():
+    shape = (100,100)
+    torch_w = 0.1
+    py_w = py_matrix.float_scalar(torch_w)
+
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_matrix.square_mix_inplace(py_w, py_x, py_y)
+    torch_matrix.square_mix_inplace(torch_w, torch_x, torch_y)
+
+    py_torch_x = torch_matrix.to_numpy_array(torch_x)
+    torch_py_x = torch_matrix.float_tensor(py_x)
+
+    assert py_matrix.allclose(py_x, py_torch_x), \
+    "python square_mix_inplace != torch square_mix_inplace"
+
+    assert torch_matrix.allclose(torch_x, torch_py_x), \
+    "torch square_mix_inplace != python square_mix_inplace"
+
 
 
 # ----- Nonlinearities ----- #
@@ -659,6 +682,7 @@ if __name__ == "__main__":
     test_flatten()
     test_reshape()
     test_mix_inplace()
+    test_square_mix_inplace()
 
     test_tabs()
     test_exp()
