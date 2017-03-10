@@ -287,6 +287,30 @@ def test_reshape():
     assert torch_matrix.allclose(torch_new, torch_py_new), \
     "torch reshape != python reshape"
 
+def test_mix_inplace():
+    shape = (100,100)
+    torch_w = 0.1
+    py_w = py_matrix.float_scalar(torch_w)
+
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_matrix.mix_inplace(py_w, py_x, py_y)
+    torch_matrix.mix_inplace(torch_w, torch_x, torch_y)
+
+    py_torch_x = torch_matrix.to_numpy_array(torch_x)
+    torch_py_x = torch_matrix.float_tensor(py_x)
+
+    assert py_matrix.allclose(py_x, py_torch_x), \
+    "python mix_inplace != torch mix_inplace"
+
+    assert torch_matrix.allclose(torch_x, torch_py_x), \
+    "torch mix_inplace != python mix_inplace"
+
+
 
 # ----- Nonlinearities ----- #
 
@@ -634,6 +658,7 @@ if __name__ == "__main__":
     test_tround()
     test_flatten()
     test_reshape()
+    test_mix_inplace()
 
     test_tabs()
     test_exp()
