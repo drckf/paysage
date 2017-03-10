@@ -268,6 +268,24 @@ def test_flatten():
     assert torch_matrix.allclose(torch_flatten, torch_py_flatten), \
     "torch flatten != python flatten"
 
+def test_reshape():
+    shape = (100,100)
+    newshape = (5, 2000)
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_new = py_matrix.reshape(py_mat, newshape)
+    torch_new = torch_matrix.reshape(torch_mat, newshape)
+
+    py_torch_new = torch_matrix.to_numpy_array(torch_new)
+    torch_py_new = torch_matrix.float_tensor(py_new)
+
+    assert py_matrix.allclose(py_new, py_torch_new), \
+    "python reshape != torch reshape"
+
+    assert torch_matrix.allclose(torch_new, torch_py_new), \
+    "torch reshape != python reshape"
 
 
 # ----- Nonlinearities ----- #
@@ -615,6 +633,7 @@ if __name__ == "__main__":
     test_clip_inplace()
     test_tround()
     test_flatten()
+    test_reshape()
 
     test_tabs()
     test_exp()
