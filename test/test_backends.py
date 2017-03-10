@@ -88,6 +88,7 @@ def test_diag():
 
     shape = (100,)
 
+    py_rand.set_seed()
     py_vec = py_rand.randn(shape)
     py_mat = py_matrix.diagonal_matrix(py_vec)
     py_diag = py_matrix.diag(py_mat)
@@ -132,6 +133,7 @@ def test_sign():
 
     shape = (100,100)
 
+    py_rand.set_seed()
     py_mat = py_rand.randn(shape)
     torch_mat = torch_matrix.float_tensor(py_mat)
 
@@ -148,6 +150,7 @@ def test_clip():
 
     shape = (100,100)
 
+    py_rand.set_seed()
     py_mat = py_rand.randn(shape)
     torch_mat = torch_matrix.float_tensor(py_mat)
 
@@ -182,6 +185,7 @@ def test_clip_inplace():
 
     shape = (100,100)
 
+    py_rand.set_seed()
     py_mat = py_rand.randn(shape)
     torch_mat = torch_matrix.float_tensor(py_mat)
 
@@ -222,6 +226,7 @@ def test_tround():
 
     shape = (100,100)
 
+    py_rand.set_seed()
     py_mat = py_rand.randn(shape)
     torch_mat = torch_matrix.float_tensor(py_mat)
 
@@ -233,6 +238,36 @@ def test_tround():
 
     assert py_matrix.allclose(py_torch_round, py_py_round), \
     "python round != torch round"
+
+def test_flatten():
+    # flatten a scalar
+    # in contrast to numpy (which returns a 1 element array)
+    # the backend flatten functions do nothing to scalars
+    scalar = 5.7
+    py_scalar = py_matrix.flatten(scalar)
+    torch_scalar = torch_matrix.flatten(scalar)
+
+    assert py_scalar == torch_scalar, \
+    "error applying flatten to a scalar"
+
+    # flatten a tensor
+    shape = (100,100)
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_flatten = py_matrix.flatten(py_mat)
+    torch_flatten = torch_matrix.flatten(torch_mat)
+
+    py_torch_flatten = torch_matrix.to_numpy_array(torch_flatten)
+    torch_py_flatten = torch_matrix.float_tensor(py_flatten)
+
+    assert py_matrix.allclose(py_flatten, py_torch_flatten), \
+    "python flatten != torch flatten"
+
+    assert torch_matrix.allclose(torch_flatten, torch_py_flatten), \
+    "torch flatten != python flatten"
+
 
 
 # ----- Nonlinearities ----- #
@@ -579,6 +614,7 @@ if __name__ == "__main__":
     test_clip()
     test_clip_inplace()
     test_tround()
+    test_flatten()
 
     test_tabs()
     test_exp()
