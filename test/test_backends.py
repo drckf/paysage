@@ -426,6 +426,40 @@ def test_mean():
     torch_mean = torch_matrix.mean(torch_mat, axis=1, keepdims=True)
     assert_close(py_mean, torch_mean, "mean (axis-1, keepdims)")
 
+def test_var():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    # overall var
+    py_var = py_matrix.var(py_mat)
+    torch_var = torch_matrix.var(torch_mat)
+
+    assert allclose(py_var, torch_var), \
+    "python overal var != torch overall var"
+
+    # var over axis 0
+    py_var = py_matrix.var(py_mat, axis=0)
+    torch_var = torch_matrix.var(torch_mat, axis=0)
+    assert_close(py_var, torch_var, "var (axis-0)")
+
+    # var over axis 1
+    py_var = py_matrix.var(py_mat, axis=1)
+    torch_var = torch_matrix.var(torch_mat, axis=1)
+    assert_close(py_var, torch_var, "var (axis-1)")
+
+    # var over axis 0, keepdims = True
+    py_var = py_matrix.var(py_mat, axis=0, keepdims=True)
+    torch_var = torch_matrix.var(torch_mat, axis=0)
+    assert_close(py_var, torch_var, "var (axis-0, keepdims)")
+
+    # var over axis 1, keepdims = True
+    py_var = py_matrix.var(py_mat, axis=1, keepdims=True)
+    torch_var = torch_matrix.var(torch_mat, axis=1, keepdims=True)
+    assert_close(py_var, torch_var, "var (axis-1, keepdims)")
+
 
 # ----- Nonlinearities ----- #
 

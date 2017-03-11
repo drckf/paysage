@@ -226,14 +226,14 @@ def var(x, axis=None, keepdims=False):
     Return the variance of the elements of a tensor along the specified axis.
 
     """
-    return numpy.var(x, axis=axis, keepdims=keepdims)
+    return numpy.var(x, axis=axis, keepdims=keepdims, ddof=1)
 
 def std(x, axis=None, keepdims=False):
     """
     Return the standard deviation of the elements of a tensor along the specified axis.
 
     """
-    return numpy.std(x, axis=axis, keepdims=keepdims)
+    return numpy.std(x, axis=axis, keepdims=keepdims, ddof=1)
 
 def tsum(x, axis=None, keepdims=False):
     """
