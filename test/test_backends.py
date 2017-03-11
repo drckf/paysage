@@ -494,6 +494,40 @@ def test_std():
     torch_std = torch_matrix.std(torch_mat, axis=1, keepdims=True)
     assert_close(py_std, torch_std, "std (axis-1, keepdims)")
 
+def test_tsum():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    # overall tsum
+    py_tsum = py_matrix.tsum(py_mat)
+    torch_tsum = torch_matrix.tsum(torch_mat)
+
+    assert allclose(py_tsum, torch_tsum), \
+    "python overal tsum != torch overall tsum"
+
+    # tsum over axis 0
+    py_tsum = py_matrix.tsum(py_mat, axis=0)
+    torch_tsum = torch_matrix.tsum(torch_mat, axis=0)
+    assert_close(py_tsum, torch_tsum, "tsum (axis-0)")
+
+    # tsum over axis 1
+    py_tsum = py_matrix.tsum(py_mat, axis=1)
+    torch_tsum = torch_matrix.tsum(torch_mat, axis=1)
+    assert_close(py_tsum, torch_tsum, "tsum (axis-1)")
+
+    # tsum over axis 0, keepdims = True
+    py_tsum = py_matrix.tsum(py_mat, axis=0, keepdims=True)
+    torch_tsum = torch_matrix.tsum(torch_mat, axis=0)
+    assert_close(py_tsum, torch_tsum, "tsum (axis-0, keepdims)")
+
+    # tsum over axis 1, keepdims = True
+    py_tsum = py_matrix.tsum(py_mat, axis=1, keepdims=True)
+    torch_tsum = torch_matrix.tsum(torch_mat, axis=1, keepdims=True)
+    assert_close(py_tsum, torch_tsum, "tsum (axis-1, keepdims)")
+
 
 # ----- Nonlinearities ----- #
 
