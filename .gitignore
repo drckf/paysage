@@ -1,6 +1,7 @@
 # Compiled python modules.
 *.py[cod]
 __pycache__
+/.cache/
 
 # os-x store
 .DS_Store
