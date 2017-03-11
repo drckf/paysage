@@ -341,22 +341,90 @@ def test_tmax():
     # max over axis 0
     py_max = py_matrix.tmax(py_mat, axis=0)
     torch_max = torch_matrix.tmax(torch_mat, axis=0)
-    assert_close(py_max, torch_max, "allclose (axis-0)")
+    assert_close(py_max, torch_max, "tmax (axis-0)")
 
     # max over axis 1
     py_max = py_matrix.tmax(py_mat, axis=1)
     torch_max = torch_matrix.tmax(torch_mat, axis=1)
-    assert_close(py_max, torch_max, "allclose (axis-1)")
+    assert_close(py_max, torch_max, "tmax (axis-1)")
 
     # max over axis 0, keepdims = True
     py_max = py_matrix.tmax(py_mat, axis=0, keepdims=True)
     torch_max = torch_matrix.tmax(torch_mat, axis=0)
-    assert_close(py_max, torch_max, "allclose (axis-0, keepdims)")
+    assert_close(py_max, torch_max, "tmax (axis-0, keepdims)")
 
     # max over axis 1, keepdims = True
     py_max = py_matrix.tmax(py_mat, axis=1, keepdims=True)
     torch_max = torch_matrix.tmax(torch_mat, axis=1, keepdims=True)
-    assert_close(py_max, torch_max, "allclose (axis-1, keepdims)")
+    assert_close(py_max, torch_max, "tmax (axis-1, keepdims)")
+
+def test_tmin():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    # overall min
+    py_min = py_matrix.tmin(py_mat)
+    torch_min = torch_matrix.tmin(torch_mat)
+
+    assert allclose(py_min, torch_min), \
+    "python overal min != torch overall min"
+
+    # min over axis 0
+    py_min = py_matrix.tmin(py_mat, axis=0)
+    torch_min = torch_matrix.tmin(torch_mat, axis=0)
+    assert_close(py_min, torch_min, "tmin (axis-0)")
+
+    # min over axis 1
+    py_min = py_matrix.tmin(py_mat, axis=1)
+    torch_min = torch_matrix.tmin(torch_mat, axis=1)
+    assert_close(py_min, torch_min, "tmin (axis-1)")
+
+    # min over axis 0, keepdims = True
+    py_min = py_matrix.tmin(py_mat, axis=0, keepdims=True)
+    torch_min = torch_matrix.tmin(torch_mat, axis=0)
+    assert_close(py_min, torch_min, "tmin (axis-0, keepdims)")
+
+    # min over axis 1, keepdims = True
+    py_min = py_matrix.tmin(py_mat, axis=1, keepdims=True)
+    torch_min = torch_matrix.tmin(torch_mat, axis=1, keepdims=True)
+    assert_close(py_min, torch_min, "tmin (axis-1, keepdims)")
+
+def test_mean():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    # overall mean
+    py_mean = py_matrix.mean(py_mat)
+    torch_mean = torch_matrix.mean(torch_mat)
+
+    assert allclose(py_mean, torch_mean), \
+    "python overal mean != torch overall mean"
+
+    # mean over axis 0
+    py_mean = py_matrix.mean(py_mat, axis=0)
+    torch_mean = torch_matrix.mean(torch_mat, axis=0)
+    assert_close(py_mean, torch_mean, "mean (axis-0)")
+
+    # mean over axis 1
+    py_mean = py_matrix.mean(py_mat, axis=1)
+    torch_mean = torch_matrix.mean(torch_mat, axis=1)
+    assert_close(py_mean, torch_mean, "mean (axis-1)")
+
+    # mean over axis 0, keepdims = True
+    py_mean = py_matrix.mean(py_mat, axis=0, keepdims=True)
+    torch_mean = torch_matrix.mean(torch_mat, axis=0)
+    assert_close(py_mean, torch_mean, "mean (axis-0, keepdims)")
+
+    # mean over axis 1, keepdims = True
+    py_mean = py_matrix.mean(py_mat, axis=1, keepdims=True)
+    torch_mean = torch_matrix.mean(torch_mat, axis=1, keepdims=True)
+    assert_close(py_mean, torch_mean, "mean (axis-1, keepdims)")
 
 
 # ----- Nonlinearities ----- #
