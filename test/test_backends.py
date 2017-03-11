@@ -363,103 +363,68 @@ def test_tmax():
 
 def test_tabs():
     shape = (100, 100)
+
     py_rand.set_seed()
     py_x = py_rand.randn(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
     py_y = py_func.tabs(py_x)
     torch_y = torch_func.tabs(torch_x)
-
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
-    assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: tabs"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: tabs"
+    assert_close(py_y, torch_y, "tabs")
 
 def test_exp():
     shape = (100, 100)
+
     py_rand.set_seed()
     py_x = py_rand.randn(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
     py_y = py_func.exp(py_x)
     torch_y = torch_func.exp(torch_x)
-
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
-    assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: exp"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: exp"
+    assert_close(py_y, torch_y, "exp")
 
 def test_log():
     shape = (100, 100)
+
     py_rand.set_seed()
     py_x = py_rand.rand(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
     py_y = py_func.log(py_x)
     torch_y = torch_func.log(torch_x)
-
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
-    assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: log"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: log"
+    assert_close(py_y, torch_y, "log")
 
 def test_tanh():
     shape = (100, 100)
+
     py_rand.set_seed()
     py_x = py_rand.randn(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
     py_y = py_func.tanh(py_x)
     torch_y = torch_func.tanh(torch_x)
-
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
-    assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: tanh"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: tanh"
+    assert_close(py_y, torch_y, "tanh")
 
 def test_expit():
     shape = (100, 100)
+
     py_rand.set_seed()
     py_x = py_rand.randn(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
     py_y = py_func.expit(py_x)
     torch_y = torch_func.expit(torch_x)
-
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
-    assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: expit"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: expit"
+    assert_close(py_y, torch_y, "expit")
 
 def test_reciprocal():
     shape = (100, 100)
+
     py_rand.set_seed()
     py_x = py_rand.rand(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
     py_y = py_func.reciprocal(py_x)
     torch_y = torch_func.reciprocal(torch_x)
-
     assert_close(py_y, torch_y, "reciprocal")
 
 def test_atanh():
