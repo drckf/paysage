@@ -18,7 +18,7 @@ test:
     # tests
     - pytest test/test.py
     - pytest test/test_rbm.py
-    - python3 test/test_backends.py   
+    - pytest test/test_backends.py   
 
     # check that examples run to completion 
     # - python3 examples/example_mnist_grbm.py

@@ -23,7 +23,8 @@ setup(name='paysage',
           'scikit-learn',
           'scipy',
           'seaborn',
-          'tables'
+          'tables',
+          'pytorch'
       ],
       tests_require=[
           'pytest'
