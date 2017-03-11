@@ -528,6 +528,40 @@ def test_tsum():
     torch_tsum = torch_matrix.tsum(torch_mat, axis=1, keepdims=True)
     assert_close(py_tsum, torch_tsum, "tsum (axis-1, keepdims)")
 
+def test_tprod():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    # overall tprod
+    py_tprod = py_matrix.tprod(py_mat)
+    torch_tprod = torch_matrix.tprod(torch_mat)
+
+    assert allclose(py_tprod, torch_tprod), \
+    "python overal tprod != torch overall tprod"
+
+    # tprod over axis 0
+    py_tprod = py_matrix.tprod(py_mat, axis=0)
+    torch_tprod = torch_matrix.tprod(torch_mat, axis=0)
+    assert_close(py_tprod, torch_tprod, "tprod (axis-0)")
+
+    # tprod over axis 1
+    py_tprod = py_matrix.tprod(py_mat, axis=1)
+    torch_tprod = torch_matrix.tprod(torch_mat, axis=1)
+    assert_close(py_tprod, torch_tprod, "tprod (axis-1)")
+
+    # tprod over axis 0, keepdims = True
+    py_tprod = py_matrix.tprod(py_mat, axis=0, keepdims=True)
+    torch_tprod = torch_matrix.tprod(torch_mat, axis=0)
+    assert_close(py_tprod, torch_tprod, "tprod (axis-0, keepdims)")
+
+    # tprod over axis 1, keepdims = True
+    py_tprod = py_matrix.tprod(py_mat, axis=1, keepdims=True)
+    torch_tprod = torch_matrix.tprod(torch_mat, axis=1, keepdims=True)
+    assert_close(py_tprod, torch_tprod, "tprod (axis-1, keepdims)")
+
 
 # ----- Nonlinearities ----- #
 
