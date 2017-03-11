@@ -11,13 +11,13 @@ import pytest
 
 # ---- testing utility functions ----- #
 
-def assert_close(pymat, torchmat, name):
+def assert_close(pymat, torchmat, name, rtol=1e-05, atol=1e-08):
 
     pytorchmat = torch_matrix.to_numpy_array(torchmat)
     torchpymat = torch_matrix.float_tensor(pymat)
 
-    py_vs_torch = py_matrix.allclose(pymat, pytorchmat)
-    torch_vs_py = torch_matrix.allclose(torchmat, torchpymat)
+    py_vs_torch = py_matrix.allclose(pymat, pytorchmat, rtol=rtol, atol=atol)
+    torch_vs_py = torch_matrix.allclose(torchmat, torchpymat, rtol=rtol, atol=atol)
 
     if py_vs_torch and torch_vs_py:
         return
