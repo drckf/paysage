@@ -460,6 +460,40 @@ def test_var():
     torch_var = torch_matrix.var(torch_mat, axis=1, keepdims=True)
     assert_close(py_var, torch_var, "var (axis-1, keepdims)")
 
+def test_std():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    # overall std
+    py_std = py_matrix.std(py_mat)
+    torch_std = torch_matrix.std(torch_mat)
+
+    assert allclose(py_std, torch_std), \
+    "python overal std != torch overall std"
+
+    # std over axis 0
+    py_std = py_matrix.std(py_mat, axis=0)
+    torch_std = torch_matrix.std(torch_mat, axis=0)
+    assert_close(py_std, torch_std, "std (axis-0)")
+
+    # std over axis 1
+    py_std = py_matrix.std(py_mat, axis=1)
+    torch_std = torch_matrix.std(torch_mat, axis=1)
+    assert_close(py_std, torch_std, "std (axis-1)")
+
+    # std over axis 0, keepdims = True
+    py_std = py_matrix.std(py_mat, axis=0, keepdims=True)
+    torch_std = torch_matrix.std(torch_mat, axis=0)
+    assert_close(py_std, torch_std, "std (axis-0, keepdims)")
+
+    # std over axis 1, keepdims = True
+    py_std = py_matrix.std(py_mat, axis=1, keepdims=True)
+    torch_std = torch_matrix.std(torch_mat, axis=1, keepdims=True)
+    assert_close(py_std, torch_std, "std (axis-1, keepdims)")
+
 
 # ----- Nonlinearities ----- #
 
