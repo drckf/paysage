@@ -6,7 +6,34 @@ import paysage.backends.pytorch_backend.matrix as torch_matrix
 import paysage.backends.pytorch_backend.nonlinearity as torch_func
 import paysage.backends.pytorch_backend.rand as torch_rand
 
+from numpy import allclose
 import pytest
+
+# ---- testing utility functions ----- #
+
+def assert_close(pymat, torchmat, name):
+
+    pytorchmat = torch_matrix.to_numpy_array(torchmat)
+    torchpymat = torch_matrix.float_tensor(pymat)
+
+    py_vs_torch = py_matrix.allclose(pymat, pytorchmat)
+    torch_vs_py = torch_matrix.allclose(torchmat, torchpymat)
+
+    if py_vs_torch and torch_vs_py:
+        return
+    if py_vs_torch and not torch_vs_py:
+        assert False,\
+        "{}: failure at torch allclose".format(name)
+    elif not py_vs_torch and torch_vs_py:
+        assert False, \
+        "{}: failure at python allclose".format(name)
+    else:
+        assert False, \
+        "{}: failure at both python and torch allclose".format(name)
+
+
+# ----- Tests ------ #
+
 
 def test_conversion():
 
@@ -271,6 +298,7 @@ def test_flatten():
 def test_reshape():
     shape = (100,100)
     newshape = (5, 2000)
+
     py_rand.set_seed()
     py_mat = py_rand.randn(shape)
     torch_mat = torch_matrix.float_tensor(py_mat)
@@ -292,6 +320,7 @@ def test_mix_inplace():
     torch_w = 0.1
     py_w = py_matrix.float_scalar(torch_w)
 
+    py_rand.set_seed()
     py_x = py_rand.randn(shape)
     py_y = py_rand.randn(shape)
 
@@ -315,6 +344,7 @@ def test_square_mix_inplace():
     torch_w = 0.1
     py_w = py_matrix.float_scalar(torch_w)
 
+    py_rand.set_seed()
     py_x = py_rand.randn(shape)
     py_y = py_rand.randn(shape)
 
@@ -336,6 +366,7 @@ def test_square_mix_inplace():
 def test_sqrt_div():
     shape = (100,100)
 
+    py_rand.set_seed()
     py_x = py_rand.randn(shape)
     py_y = py_rand.randn(shape) ** 2
 
@@ -357,6 +388,7 @@ def test_sqrt_div():
 def test_normalize():
     shape = (100,)
 
+    py_rand.set_seed()
     py_x = py_rand.rand(shape)
 
     torch_x = torch_matrix.float_tensor(py_x)
@@ -376,15 +408,49 @@ def test_normalize():
 def test_norm():
     shape = (100,)
 
+    py_rand.set_seed()
     py_x = py_rand.rand(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
     py_norm = py_matrix.norm(py_x)
     torch_norm = torch_matrix.norm(torch_x)
 
-    from numpy import allclose
     assert allclose(py_norm, torch_norm), \
     "python l2 norm != torch l2 norm"
+
+def test_tmax():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    # overall max
+    py_max = py_matrix.tmax(py_mat)
+    torch_max = torch_matrix.tmax(torch_mat)
+
+    assert allclose(py_max, torch_max), \
+    "python overal max != torch overall max"
+
+    # max over axis 0
+    py_max = py_matrix.tmax(py_mat, axis=0)
+    torch_max = torch_matrix.tmax(torch_mat, axis=0)
+    assert_close(py_max, torch_max, "allclose (axis-0)")
+
+    # max over axis 1
+    py_max = py_matrix.tmax(py_mat, axis=1)
+    torch_max = torch_matrix.tmax(torch_mat, axis=1)
+    assert_close(py_max, torch_max, "allclose (axis-1)")
+
+    # max over axis 0, keepdims = True
+    py_max = py_matrix.tmax(py_mat, axis=0, keepdims=True)
+    torch_max = torch_matrix.tmax(torch_mat, axis=0)
+    assert_close(py_max, torch_max, "allclose (axis-0, keepdims)")
+
+    # max over axis 1, keepdims = True
+    py_max = py_matrix.tmax(py_mat, axis=1, keepdims=True)
+    torch_max = torch_matrix.tmax(torch_mat, axis=1, keepdims=True)
+    assert_close(py_max, torch_max, "allclose (axis-1, keepdims)")
 
 
 # ----- Nonlinearities ----- #
@@ -488,14 +554,7 @@ def test_reciprocal():
     py_y = py_func.reciprocal(py_x)
     torch_y = torch_func.reciprocal(torch_x)
 
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
-    assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: reciprocal"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: reciprocal"
+    assert_close(py_y, torch_y, "reciprocal")
 
 def test_atanh():
     shape = (100, 100)
