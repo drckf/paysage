@@ -354,14 +354,7 @@ def test_square_mix_inplace():
     py_matrix.square_mix_inplace(py_w, py_x, py_y)
     torch_matrix.square_mix_inplace(torch_w, torch_x, torch_y)
 
-    py_torch_x = torch_matrix.to_numpy_array(torch_x)
-    torch_py_x = torch_matrix.float_tensor(py_x)
-
-    assert py_matrix.allclose(py_x, py_torch_x), \
-    "python square_mix_inplace != torch square_mix_inplace"
-
-    assert torch_matrix.allclose(torch_x, torch_py_x), \
-    "torch square_mix_inplace != python square_mix_inplace"
+    assert_close(py_x, torch_x, "square_mix_inplace")
 
 def test_sqrt_div():
     shape = (100,100)
@@ -376,14 +369,7 @@ def test_sqrt_div():
     py_sqrt_div = py_matrix.sqrt_div(py_x, py_y)
     torch_sqrt_div = torch_matrix.sqrt_div(torch_x, torch_y)
 
-    py_torch_sqrt_div = torch_matrix.to_numpy_array(torch_sqrt_div)
-    torch_py_sqrt_div = torch_matrix.float_tensor(py_sqrt_div)
-
-    assert py_matrix.allclose(py_sqrt_div, py_torch_sqrt_div), \
-    "python sqrt_div != torch sqrt_div"
-
-    assert torch_matrix.allclose(torch_sqrt_div, torch_py_sqrt_div), \
-    "torch sqrt_div != python sqrt_div"
+    assert_close(py_sqrt_div, torch_sqrt_div, "sqrt_div")
 
 def test_normalize():
     shape = (100,)
@@ -396,14 +382,7 @@ def test_normalize():
     py_norm = py_matrix.normalize(py_x)
     torch_norm = torch_matrix.normalize(torch_x)
 
-    py_torch_norm = torch_matrix.to_numpy_array(torch_norm)
-    torch_py_norm = torch_matrix.float_tensor(py_norm)
-
-    assert py_matrix.allclose(py_norm, py_torch_norm), \
-    "python normalize != torch normalize"
-
-    assert torch_matrix.allclose(torch_norm, torch_py_norm), \
-    "torch normalize != python normalize"
+    assert_close(py_norm, torch_norm, "normalize")
 
 def test_norm():
     shape = (100,)
