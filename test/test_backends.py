@@ -562,6 +562,23 @@ def test_tprod():
     torch_tprod = torch_matrix.tprod(torch_mat, axis=1, keepdims=True)
     assert_close(py_tprod, torch_tprod, "tprod (axis-1, keepdims)")
 
+def test_equal():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_eq = py_matrix.equal(py_x, py_y)
+    torch_eq = torch_matrix.equal(torch_x, torch_y)
+    py_torch_eq = torch_matrix.to_numpy_array(torch_eq)
+
+    assert py_matrix.allclose(py_eq, py_torch_eq), \
+    "python equal != torch equal"
+
 
 # ----- Nonlinearities ----- #
 
