@@ -1,13 +1,11 @@
 import os, sys, numpy, pandas, time
 
-from paysage import backends as B
 from paysage import batch
 from paysage import metrics as M
 from paysage.layers import BernoulliLayer
 from sklearn.neural_network import BernoulliRBM
 
 import example_util as util
-import plotting
 
 def example_mnist_rbm_sklearn(paysage_path=None, show_plot=False):
     num_hidden_units = 500
@@ -16,7 +14,8 @@ def example_mnist_rbm_sklearn(paysage_path=None, show_plot=False):
     # the step size has been hand-tuned for the sklearn implementation
     learning_rate = 0.01
 
-    (paysage_path, filepath, shuffled_filepath) = default_paths(paysage_path)
+    (paysage_path, filepath, shuffled_filepath) = \
+        util.default_paths(paysage_path)
 
     # set up the reader to get the whole training set
     data = batch.Batch(shuffled_filepath,
@@ -86,7 +85,7 @@ def example_mnist_rbm_sklearn(paysage_path=None, show_plot=False):
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_data[i], v_model[i]] for i in idx])
-    example_plot(grid, show_plot)
+    util.example_plot(grid, show_plot)
 
     print("\nPlot a random sample of fantasy particles")
     random_samples = BernoulliLayer().random(v_data).astype(numpy.float32)
@@ -96,13 +95,13 @@ def example_mnist_rbm_sklearn(paysage_path=None, show_plot=False):
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     grid = numpy.array([[v_model[i]] for i in idx])
-    example_plot(grid, show_plot)
+    util.example_plot(grid, show_plot)
 
     print("\nPlot a random sample of the weights")
     W = rbm.components_.T
     idx = numpy.random.choice(range(W.shape[1]), 5, replace=False)
     grid = numpy.array([[W[:, i]] for i in idx])
-    example_plot(grid, show_plot)
+    util.example_plot(grid, show_plot)
 
     # close the HDF5 store
     data.close()
