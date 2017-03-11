@@ -220,10 +220,7 @@ def test_clip_inplace():
     py_matrix.clip_inplace(py_mat, a_min=0, a_max=1)
     torch_matrix.clip_inplace(torch_mat, a_min=0, a_max=1)
 
-    py_torch_clipped = torch_matrix.to_numpy_array(torch_mat)
-
-    assert py_matrix.allclose(py_mat, py_torch_clipped), \
-    "python clip inplace != torch clip inplace: two sided"
+    assert_close(py_mat, torch_mat, "clip_inplace (two-sided)")
 
     # test lower clip
     py_mat = py_rand.randn(shape)
@@ -232,10 +229,7 @@ def test_clip_inplace():
     py_matrix.clip_inplace(py_mat, a_min=0)
     torch_matrix.clip_inplace(torch_mat, a_min=0)
 
-    py_torch_clipped = torch_matrix.to_numpy_array(torch_mat)
-
-    assert py_matrix.allclose(py_mat, py_torch_clipped), \
-    "python clip inplace != torch clip inplace: lower"
+    assert_close(py_mat, torch_mat, "clip_inplace (lower)")
 
     # test upper clip
     py_mat = py_rand.randn(shape)
@@ -244,10 +238,7 @@ def test_clip_inplace():
     py_matrix.clip_inplace(py_mat, a_max=1)
     torch_matrix.clip_inplace(torch_mat, a_max=1)
 
-    py_torch_clipped = torch_matrix.to_numpy_array(torch_mat)
-
-    assert py_matrix.allclose(py_mat, py_torch_clipped), \
-    "python clip inplace != torch clip inplace: upper"
+    assert_close(py_mat, torch_mat, "clip_inplace (upper)")
 
 def test_tround():
 
@@ -260,11 +251,7 @@ def test_tround():
     py_round = py_matrix.tround(py_mat)
     torch_round = torch_matrix.tround(torch_mat)
 
-    py_torch_round = torch_matrix.to_numpy_array(torch_round)
-    py_py_round = py_matrix.to_numpy_array(py_round)
-
-    assert py_matrix.allclose(py_torch_round, py_py_round), \
-    "python round != torch round"
+    assert_close(py_round, torch_round, "tround")
 
 def test_flatten():
     # flatten a scalar
@@ -286,14 +273,7 @@ def test_flatten():
     py_flatten = py_matrix.flatten(py_mat)
     torch_flatten = torch_matrix.flatten(torch_mat)
 
-    py_torch_flatten = torch_matrix.to_numpy_array(torch_flatten)
-    torch_py_flatten = torch_matrix.float_tensor(py_flatten)
-
-    assert py_matrix.allclose(py_flatten, py_torch_flatten), \
-    "python flatten != torch flatten"
-
-    assert torch_matrix.allclose(torch_flatten, torch_py_flatten), \
-    "torch flatten != python flatten"
+    assert_close(py_flatten, torch_flatten, "flatten")
 
 def test_reshape():
     shape = (100,100)
@@ -306,14 +286,7 @@ def test_reshape():
     py_new = py_matrix.reshape(py_mat, newshape)
     torch_new = torch_matrix.reshape(torch_mat, newshape)
 
-    py_torch_new = torch_matrix.to_numpy_array(torch_new)
-    torch_py_new = torch_matrix.float_tensor(py_new)
-
-    assert py_matrix.allclose(py_new, py_torch_new), \
-    "python reshape != torch reshape"
-
-    assert torch_matrix.allclose(torch_new, torch_py_new), \
-    "torch reshape != python reshape"
+    assert_close(py_new, torch_new, "reshape")
 
 def test_mix_inplace():
     shape = (100,100)
@@ -330,14 +303,7 @@ def test_mix_inplace():
     py_matrix.mix_inplace(py_w, py_x, py_y)
     torch_matrix.mix_inplace(torch_w, torch_x, torch_y)
 
-    py_torch_x = torch_matrix.to_numpy_array(torch_x)
-    torch_py_x = torch_matrix.float_tensor(py_x)
-
-    assert py_matrix.allclose(py_x, py_torch_x), \
-    "python mix_inplace != torch mix_inplace"
-
-    assert torch_matrix.allclose(torch_x, torch_py_x), \
-    "torch mix_inplace != python mix_inplace"
+    assert_close(py_x, torch_x, "mix_inplace")
 
 def test_square_mix_inplace():
     shape = (100,100)
