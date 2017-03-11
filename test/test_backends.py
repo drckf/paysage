@@ -80,39 +80,20 @@ def test_transpose():
     "torch -> python -> torch failure: transpose"
 
 def test_zeros():
-
     shape = (100, 100)
 
     py_zeros = py_matrix.zeros(shape)
     torch_zeros = torch_matrix.zeros(shape)
-
-    torch_py_zeros = torch_matrix.float_tensor(py_zeros)
-    py_torch_zeros = torch_matrix.to_numpy_array(torch_zeros)
-
-    assert py_matrix.allclose(py_zeros, py_torch_zeros), \
-    "python -> torch -> python failure: zeros"
-
-    assert torch_matrix.allclose(torch_zeros, torch_py_zeros), \
-    "torch -> python -> torch failure: zeros"
+    assert_close(py_zeros, torch_zeros, "zeros")
 
 def test_ones():
-
     shape = (100, 100)
 
     py_ones = py_matrix.ones(shape)
     torch_ones = torch_matrix.ones(shape)
-
-    torch_py_ones = torch_matrix.float_tensor(py_ones)
-    py_torch_ones = torch_matrix.to_numpy_array(torch_ones)
-
-    assert py_matrix.allclose(py_ones, py_torch_ones), \
-    "python -> torch -> python failure: ones"
-
-    assert torch_matrix.allclose(torch_ones, torch_py_ones), \
-    "torch -> python -> torch failure: ones"
+    assert_close(py_ones, torch_ones, "ones")
 
 def test_diag():
-
     shape = (100,)
 
     py_rand.set_seed()
@@ -151,10 +132,7 @@ def test_fill_diagonal():
     assert torch_matrix.allclose(torch_mat, torch_mult), \
     "torch fill != python multiplly for diagonal matrix"
 
-    py_torch_mat = torch_matrix.to_numpy_array(torch_mat)
-
-    assert py_matrix.allclose(py_torch_mat, py_mat), \
-    "torch fill != python fill"
+    assert_close(py_mat, torch_mat, "fill_diagonal")
 
 def test_sign():
 
@@ -166,12 +144,7 @@ def test_sign():
 
     py_sign = py_matrix.sign(py_mat)
     torch_sign = torch_matrix.sign(torch_mat)
-
-    py_torch_sign = torch_matrix.to_numpy_array(torch_sign)
-    py_py_sign = py_matrix.to_numpy_array(py_sign)
-
-    assert py_matrix.allclose(py_torch_sign, py_py_sign), \
-    "python sign != torch sign"
+    assert_close(py_sign, torch_sign, "sign")
 
 def test_clip():
 
@@ -184,29 +157,17 @@ def test_clip():
     # test two sided clip
     py_clipped = py_matrix.clip(py_mat, a_min=0, a_max=1)
     torch_clipped = torch_matrix.clip(torch_mat, a_min=0, a_max=1)
-
-    py_torch_clipped = torch_matrix.to_numpy_array(torch_clipped)
-
-    assert py_matrix.allclose(py_clipped, py_torch_clipped), \
-    "python clip != torch clip: two sided"
+    assert_close(py_clipped, torch_clipped, "clip (two-sided)")
 
     # test lower clip
     py_clipped = py_matrix.clip(py_mat, a_min=0)
     torch_clipped = torch_matrix.clip(torch_mat, a_min=0)
-
-    py_torch_clipped = torch_matrix.to_numpy_array(torch_clipped)
-
-    assert py_matrix.allclose(py_clipped, py_torch_clipped), \
-    "python clip != torch clip: lower"
+    assert_close(py_clipped, torch_clipped, "clip (lower)")
 
     # test upper clip
     py_clipped = py_matrix.clip(py_mat, a_max=1)
     torch_clipped = torch_matrix.clip(torch_mat, a_max=1)
-
-    py_torch_clipped = torch_matrix.to_numpy_array(torch_clipped)
-
-    assert py_matrix.allclose(py_clipped, py_torch_clipped), \
-    "python clip != torch clip: upper"
+    assert_close(py_clipped, torch_clipped, "clip (upper)")
 
 def test_clip_inplace():
 
