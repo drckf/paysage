@@ -24,7 +24,7 @@ setup(name='paysage',
           'scipy',
           'seaborn',
           'tables'
-      ],
+          ],
       tests_require=[
           'pytest'
       ],
