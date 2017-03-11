@@ -449,79 +449,52 @@ def test_atanh():
 
 def test_sqrt():
     shape = (100, 100)
+
     py_rand.set_seed()
     py_x = py_rand.rand(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
     py_y = py_func.sqrt(py_x)
     torch_y = torch_func.sqrt(torch_x)
-
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
-    assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: sqrt"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: sqrt"
+    assert_close(py_y, torch_y, "sqrt")
 
 def test_square():
     shape = (100, 100)
+
     py_rand.set_seed()
     py_x = py_rand.randn(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
     py_y = py_func.square(py_x)
     torch_y = torch_func.square(torch_x)
-
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
-    assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: square"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: square"
+    assert_close(py_y, torch_y, "square")
 
 def test_tpow():
     shape = (100, 100)
     power = 3
+
     py_rand.set_seed()
     py_x = py_rand.randn(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
     py_y = py_func.tpow(py_x, power)
     torch_y = torch_func.tpow(torch_x, power)
-
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
-    assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: tpow"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: tpow"
+    assert_close(py_y, torch_y, "tpow")
 
 def test_cosh():
     shape = (100, 100)
+
     py_rand.set_seed()
     py_x = py_rand.randn(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
     py_y = py_func.cosh(py_x)
     torch_y = torch_func.cosh(torch_x)
-
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
-    assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: cosh"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: cosh"
+    assert_close(py_y, torch_y, "cosh")
 
 def test_logaddexp():
     shape = (100, 100)
+
     py_rand.set_seed()
     py_x_1 = py_rand.randn(shape)
     py_x_2 = py_rand.randn(shape)
@@ -531,15 +504,7 @@ def test_logaddexp():
 
     py_y = py_func.logaddexp(py_x_1, py_x_2)
     torch_y = torch_func.logaddexp(torch_x_1, torch_x_2)
-
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
-    assert py_matrix.allclose(py_y, py_torch_y), \
-    "python -> torch -> python failure: cosh"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure: cosh"
+    assert_close(py_y, torch_y, "logaddexp")
 
 def test_logcosh():
     shape = (100, 100)
