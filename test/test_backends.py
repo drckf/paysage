@@ -435,17 +435,9 @@ def test_atanh():
 
     py_y = py_func.atanh(py_x)
     torch_y = torch_func.atanh(torch_x)
-
-    torch_py_y = torch_matrix.float_tensor(py_y)
-    py_torch_y = torch_matrix.to_numpy_array(torch_y)
-
     # the atanh function is a bit less precise than the others
     # so the tolerance is a bit more flexible
-    assert py_matrix.allclose(py_y, py_torch_y, rtol=1e-05, atol=1e-07), \
-    "python -> torch -> python failure: atanh"
-
-    assert torch_matrix.allclose(torch_y, torch_py_y, rtol=1e-05, atol=1e-07), \
-    "torch -> python -> torch failure: atanh"
+    assert_close(py_y, torch_y, "atanh", rtol=1e-05, atol=1e-07)
 
 def test_sqrt():
     shape = (100, 100)
