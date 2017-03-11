@@ -24,7 +24,7 @@ setup(name='paysage',
           'scipy',
           'seaborn',
           'tables',
-          'pytorch'
+          'torch'
       ],
       tests_require=[
           'pytest'
