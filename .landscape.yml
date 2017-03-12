@@ -9,3 +9,6 @@ ignore-paths:
 
 ignore-patterns:
   - (^|)__init__.py$
+
+python-targets:
+  - 3
