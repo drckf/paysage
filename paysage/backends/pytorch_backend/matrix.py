@@ -1,14 +1,5 @@
 import numpy, torch
 
-EPSILON = numpy.finfo(numpy.float32).eps
-
-def to_numpy_array(tensor):
-    """
-    Return tensor as a numpy array.
-
-    """
-    return tensor.numpy()
-
 def float_scalar(scalar):
     """
     Cast scalar to a 32-bit float.
@@ -16,12 +7,21 @@ def float_scalar(scalar):
     """
     return float(scalar)
 
+EPSILON = float_scalar(numpy.finfo(numpy.float32).eps)
+
 def float_tensor(tensor):
     """
     Cast tensor to a float tensor.
 
     """
     return torch.FloatTensor(tensor)
+
+def to_numpy_array(tensor):
+    """
+    Return tensor as a numpy array.
+
+    """
+    return tensor.numpy()
 
 def shape(tensor):
     """
