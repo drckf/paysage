@@ -1,0 +1,11 @@
+output-format: json
+
+strictness: medium
+test-warnings: true
+doc-warnings: false
+
+ignore-paths:
+  - docs
+
+ignore-patterns:
+  - (^|)__init__.py$
