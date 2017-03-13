@@ -26,6 +26,16 @@ def float_tensor(tensor: Tensor) -> torch.FloatTensor:
         # tensor is a torch object
         return tensor.float()
 
+def cast_to_float(x: Union[Scalar, Tensor]) -> FloatingPoint:
+    """
+    Cast a scalar or a tensor to a float.
+
+    """
+    try:
+        return float_scalar(x)
+    except Exception:
+        return float_tensor(x)
+
 def to_numpy_array(tensor: torch.FloatTensor) -> numpy.ndarray:
     """
     Return tensor as a numpy array.
