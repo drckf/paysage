@@ -1,5 +1,5 @@
 import numpy, torch
-from typing import Tuple, Union, overload
+from typing import Iterable, Tuple, Union, overload
 
 Scalar = Union[int, float]
 FloatingPoint = Union[float, torch.FloatTensor]
@@ -540,7 +540,7 @@ def batch_outer(vis: torch.FloatTensor,
     """
     return dot(transpose(vis), hid)
 
-def repeat(tensor, n, axis) -> torch.FloatTensor:
+def repeat(tensor: torch.FloatTensor, n: int, axis: int) -> torch.FloatTensor:
     """
     Repeat tensor n times along specified axis.
 
@@ -548,49 +548,52 @@ def repeat(tensor, n, axis) -> torch.FloatTensor:
     shapes  = tuple(n if i == axis else 1 for i in range(ndim(tensor)))
     return tensor.repeat(*shapes)
 
-def stack(tensors, axis) -> torch.FloatTensor:
+def stack(tensors: Iterable[torch.FloatTensor], axis: int) -> torch.FloatTensor:
     """
     Stack tensors along the specified axis.
 
     """
     return torch.stack(tensors, dim=axis)
 
-def hstack(tensors) -> torch.FloatTensor:
+def hstack(tensors: Iterable[torch.FloatTensor]) -> torch.FloatTensor:
     """
     Concatenate tensors along the first axis.
 
     """
     return torch.stack(tensors, 1)
 
-def vstack(tensors) -> torch.FloatTensor:
+def vstack(tensors: Iterable[torch.FloatTensor]) -> torch.FloatTensor:
     """
     Concatenate tensors along the zeroth axis.
 
     """
     return torch.cat(tensors, 0)
 
-def trange(start, end, step=1) -> torch.FloatTensor:
+def trange(start: int, end: int, step: int = 1) -> torch.FloatTensor:
     """
     Generate a tensor like a python range.
 
     """
     return torch.range(start, end-1, step)
 
-def euclidean_distance(a, b) -> float:
+def euclidean_distance(a: torch.FloatTensor, b: torch.FloatTensor) -> float:
     """
     Compute the euclidean distance between two vectors.
 
     """
     return (a - b).norm()
 
-def squared_euclidean_distance(a, b) -> float:
+def squared_euclidean_distance(a: torch.FloatTensor,
+                               b: torch.FloatTensor) -> float:
     """
     Compute the squared euclidean distance between two vectors.
 
     """
     return euclidean_distance(a, b)**2
 
-def resample(tensor, n, replace=True) -> torch.FloatTensor:
+def resample(tensor: torch.FloatTensor,
+             n: int,
+             replace: bool = True) -> torch.FloatTensor:
     """
     Resample a tensor along the zeroth axis.
 
@@ -600,7 +603,9 @@ def resample(tensor, n, replace=True) -> torch.FloatTensor:
     )
     return tensor.index_select(0, index)
 
-def fast_energy_distance(minibatch, samples, downsample=100) -> float:
+def fast_energy_distance(minibatch: torch.FloatTensor,
+                         samples: torch.FloatTensor,
+                         downsample: int = 100) -> float:
     """
     Compute an approximate energy distance between two tensors.
 
