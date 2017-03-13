@@ -390,8 +390,7 @@ def greater(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
     return torch.gt(x, y)
 
 def greater_equal(x: torch.FloatTensor,
-                  y: torch.FloatTensor
-                  ) -> torch.ByteTensor:
+                  y: torch.FloatTensor) -> torch.ByteTensor:
     """
     Elementwise test if x >= y.
 
@@ -406,29 +405,28 @@ def lesser(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
     return torch.lt(x, y)
 
 def lesser_equal(x: torch.FloatTensor,
-                 y: torch.FloatTensor
-                 ) -> torch.ByteTensor:
+                 y: torch.FloatTensor) -> torch.ByteTensor:
     """
     Elementwise test if x <= y.
 
     """
     return torch.le(x, y)
 
-def maximum(x: torch.FloatTensor, y) -> torch.FloatTensor:
+def maximum(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.FloatTensor:
     """
     Elementwise maximum of two tensors.
 
     """
     return torch.max(x, y)
 
-def minimum(x, y) -> torch.FloatTensor:
+def minimum(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.FloatTensor:
     """
     Elementwise minimum of two tensors.
 
     """
     return torch.min(x, y)
 
-def argmax(x, axis=None) -> torch.LongTensor:
+def argmax(x: torch.FloatTensor, axis: int = None) -> torch.LongTensor:
     """
     Compute the indices of the maximal elements in x along the specified axis.
 
@@ -440,7 +438,7 @@ def argmax(x, axis=None) -> torch.LongTensor:
         index = a.max(dim=1)[1]
         return b[0, index[0,0]]
 
-def argmin(x, axis=None) -> torch.LongTensor:
+def argmin(x: torch.FloatTensor, axis: int = None) -> torch.LongTensor:
     """
     Compute the indices of the minimal elements in x along the specified axis.
 
@@ -452,14 +450,14 @@ def argmin(x, axis=None) -> torch.LongTensor:
         index = a.min(dim=1)[1]
         return b[0, index[0,0]]
 
-def dot(a, b) -> FloatingPoint:
+def dot(a: torch.FloatTensor, b: torch.FloatTensor) -> FloatingPoint:
     """
     Compute the matrix/dot product of tensors a and b.
 
     """
     return a @ b
 
-def outer(x, y) -> torch.FloatTensor:
+def outer(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.FloatTensor:
     """
     Compute the outer product of vectors x and y.
 
@@ -468,7 +466,8 @@ def outer(x, y) -> torch.FloatTensor:
 
 class BroadcastError(ValueError): pass
 
-def broadcast(vec, matrix) -> torch.FloatTensor:
+def broadcast(vec: torch.FloatTensor,
+              matrix: torch.FloatTensor) -> torch.FloatTensor:
     """
     Broadcasts vec into the shape of matrix following numpy rules:
 
@@ -485,7 +484,9 @@ def broadcast(vec, matrix) -> torch.FloatTensor:
         raise BroadcastError('cannot broadcast vector of dimension {} \
 onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
 
-def affine(a,b,W) -> torch.FloatTensor:
+def affine(a: torch.FloatTensor,
+           b: torch.FloatTensor,
+           W: torch.FloatTensor) -> torch.FloatTensor:
     """
     Evaluate the affine transformation a + W b.
 
@@ -494,21 +495,26 @@ def affine(a,b,W) -> torch.FloatTensor:
     tmp += broadcast(a, tmp)
     return tmp
 
-def quadratic(a,b,W) -> torch.FloatTensor:
+def quadratic(a: torch.FloatTensor,
+              b: torch.FloatTensor,
+              W: torch.FloatTensor) -> torch.FloatTensor:
     """
     Evaluate the quadratic form a W b.
 
     """
     return a @ W @ b
 
-def inv(mat) -> torch.FloatTensor:
+def inv(mat: torch.FloatTensor) -> torch.FloatTensor:
     """
     Compute matrix inverse.
 
     """
     return mat.inverse()
 
-def batch_dot(vis, W, hid, axis=1) -> torch.FloatTensor:
+def batch_dot(vis: torch.FloatTensor,
+              W: torch.FloatTensor,
+              hid: torch.FloatTensor,
+              axis: int = 1) -> torch.FloatTensor:
     """
     Let v by a L x N matrix where each row v_i is a visible vector.
     Let h be a L x M matrix where each row h_i is a hidden vector.
@@ -521,7 +527,8 @@ def batch_dot(vis, W, hid, axis=1) -> torch.FloatTensor:
     """
     return tsum(dot(vis, W) * hid, axis)
 
-def batch_outer(vis, hid) -> torch.FloatTensor:
+def batch_outer(vis: torch.FloatTensor,
+                hid: torch.FloatTensor) -> torch.FloatTensor:
     """
     Let v by a L x N matrix where each row v_i is a visible vector.
     Let h be a L x M matrix where each row h_i is a hidden vector.
