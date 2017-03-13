@@ -115,8 +115,7 @@ def sign(tensor: torch.FloatTensor) -> torch.FloatTensor:
 
 def clip(tensor: torch.FloatTensor,
          a_min: Scalar = -numpy.inf,
-         a_max: Scalar = numpy.inf
-         ) -> torch.FloatTensor:
+         a_max: Scalar = numpy.inf) -> torch.FloatTensor:
     """
     Return a tensor with its values clipped between a_min and a_max.
 
@@ -125,8 +124,7 @@ def clip(tensor: torch.FloatTensor,
 
 def clip_inplace(tensor: torch.FloatTensor,
                  a_min: Scalar = -numpy.inf,
-                 a_max: Scalar = numpy.inf
-                 ) -> None:
+                 a_max: Scalar = numpy.inf) -> None:
     """
     Clip the values of a tensor between a_min and a_max.
     In-place function.
@@ -158,8 +156,7 @@ def flatten(tensor):
         return tensor
 
 def reshape(tensor: torch.FloatTensor,
-            newshape: Tuple[int]
-            ) -> torch.FloatTensor:
+            newshape: Tuple[int]) -> torch.FloatTensor:
     """
     Return tensor with a new shape.
 
@@ -175,8 +172,7 @@ def dtype(tensor: torch.FloatTensor) -> type:
 
 def mix_inplace(w: Scalar,
                 x: torch.FloatTensor,
-                y: torch.FloatTensor
-                ) -> None:
+                y: torch.FloatTensor) -> None:
     """
     Compute a weighted average of two matrices (x and y) and store the results in x.
     Useful for keeping track of running averages during training.
@@ -189,8 +185,7 @@ def mix_inplace(w: Scalar,
 
 def square_mix_inplace(w: Scalar,
                        x: torch.FloatTensor,
-                       y: torch.FloatTensor
-                       ) -> None:
+                       y: torch.FloatTensor) -> None:
     """
     Compute a weighted average of two matrices (x and y^2) and store the results in x.
     Useful for keeping track of running averages of squared matrices during training.
