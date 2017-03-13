@@ -2,7 +2,7 @@ import numpy, torch
 from . import matrix
 from . import typedef as T
 
-EPSILON = float(numpy.finfo(numpy.float32).eps)
+#EPSILON = float(numpy.finfo(numpy.float32).eps)
 LOG2 = 0.6931471805599453
 
 def tabs(x: T.FloatTensor) -> T.FloatTensor:
@@ -52,7 +52,7 @@ def atanh(x: T.FloatTensor) -> T.FloatTensor:
     Elementwise inverse hyperbolic tangent of a tensor.
 
     """
-    y = matrix.clip(x, a_min=EPSILON - 1, a_max=1 - EPSILON)
+    y = matrix.clip(x, a_min=matrix.EPSILON - 1, a_max=1 - matrix.EPSILON)
     return (log(1+y) - log(1-y)) / 2
 
 def sqrt(x: T.FloatTensor) -> T.FloatTensor:
@@ -106,7 +106,7 @@ def acosh(x: T.FloatTensor) -> T.FloatTensor:
     Elementwise inverse hyperbolic cosine of a tensor.
 
     """
-    y = matrix.clip(x, a_min=1+EPSILON)
+    y = matrix.clip(x, a_min=1+matrix.EPSILON)
     return log(y + sqrt(y+1) * sqrt(y-1))
 
 def logit(x: T.FloatTensor) -> T.FloatTensor:
@@ -114,7 +114,7 @@ def logit(x: T.FloatTensor) -> T.FloatTensor:
     Elementwise logit function of a tensor. Inverse of the expit function.
 
     """
-    y = matrix.clip(x, a_min=EPSILON, a_max = 1 - EPSILON)
+    y = matrix.clip(x, a_min=matrix.EPSILON, a_max = 1 - matrix.EPSILON)
     return torch.log(y / (1 - y))
 
 def softplus(x: T.FloatTensor) -> T.FloatTensor:
