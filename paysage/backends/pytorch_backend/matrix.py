@@ -19,7 +19,12 @@ def float_tensor(tensor: Tensor) -> torch.FloatTensor:
     Cast tensor to a float tensor.
 
     """
-    return torch.FloatTensor(tensor)
+    try:
+        # tensor is a numpy object
+        return torch.FloatTensor(tensor)
+    except Exception:
+        # tensor is a torch object
+        return tensor.float()
 
 def to_numpy_array(tensor: torch.FloatTensor) -> numpy.ndarray:
     """
