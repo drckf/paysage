@@ -224,8 +224,7 @@ def norm(x: torch.FloatTensor) -> float:
 
 def tmax(x: torch.FloatTensor,
          axis: int = None,
-         keepdims: bool = False,
-         ) -> FloatingPoint:
+         keepdims: bool = False) -> FloatingPoint:
     """
     Return the elementwise maximum of a tensor along the specified axis.
 
@@ -239,7 +238,9 @@ def tmax(x: torch.FloatTensor,
     else:
         return x.max()
 
-def tmin(x, axis=None, keepdims=False) -> FloatingPoint:
+def tmin(x: torch.FloatTensor,
+         axis: int = None,
+         keepdims: bool = False) -> FloatingPoint:
     """
     Return the elementwise minimum of a tensor along the specified axis.
 
@@ -253,7 +254,9 @@ def tmin(x, axis=None, keepdims=False) -> FloatingPoint:
     else:
         return x.min()
 
-def mean(x, axis=None, keepdims=False) -> FloatingPoint:
+def mean(x: torch.FloatTensor,
+         axis: int = None,
+         keepdims: bool = False) -> FloatingPoint:
     """
     Return the mean of the elements of a tensor along the specified axis.
 
@@ -267,7 +270,9 @@ def mean(x, axis=None, keepdims=False) -> FloatingPoint:
     else:
         return x.mean()
 
-def var(x, axis=None, keepdims=False) -> FloatingPoint:
+def var(x: torch.FloatTensor,
+         axis: int = None,
+         keepdims: bool = False) -> FloatingPoint:
     """
     Return the variance of the elements of a tensor along the specified axis.
 
@@ -281,9 +286,12 @@ def var(x, axis=None, keepdims=False) -> FloatingPoint:
     else:
         return x.var()
 
-def std(x, axis=None, keepdims=False) -> FloatingPoint:
+def std(x: torch.FloatTensor,
+         axis: int = None,
+         keepdims: bool = False) -> FloatingPoint:
     """
-    Return the standard deviation of the elements of a tensor along the specified axis.
+    Return the standard deviation of the elements of a tensor along the
+    specified axis.
 
     """
     if axis is not None:
@@ -295,7 +303,9 @@ def std(x, axis=None, keepdims=False) -> FloatingPoint:
     else:
         return x.std()
 
-def tsum(x, axis=None, keepdims=False) -> FloatingPoint:
+def tsum(x: torch.FloatTensor,
+         axis: int = None,
+         keepdims: bool = False) -> FloatingPoint:
     """
     Return the sum of the elements of a tensor along the specified axis.
 
@@ -309,7 +319,9 @@ def tsum(x, axis=None, keepdims=False) -> FloatingPoint:
     else:
         return x.sum()
 
-def tprod(x, axis=None, keepdims=False) -> FloatingPoint:
+def tprod(x: torch.FloatTensor,
+         axis: int = None,
+         keepdims: bool = False) -> FloatingPoint:
     """
     Return the product of the elements of a tensor along the specified axis.
 
@@ -323,7 +335,9 @@ def tprod(x, axis=None, keepdims=False) -> FloatingPoint:
     else:
         return x.prod()
 
-def tany(x, axis=None, keepdims=False) -> torch.ByteTensor:
+def tany(x: torch.FloatTensor,
+         axis: int = None,
+         keepdims: bool = False) -> torch.ByteTensor:
     """
     Return True if any elements of the input tensor are true along the
     specified axis.
@@ -335,7 +349,9 @@ def tany(x, axis=None, keepdims=False) -> torch.ByteTensor:
     else:
         return flatten(tmp)
 
-def tall(x, axis=None, keepdims=False) -> torch.ByteTensor:
+def tall(x: torch.FloatTensor,
+         axis: int = None,
+         keepdims: bool = False) -> torch.ByteTensor:
     """
     Return True if all elements of the input tensor are true along the
     specified axis.
@@ -347,56 +363,63 @@ def tall(x, axis=None, keepdims=False) -> torch.ByteTensor:
     else:
         return flatten(tmp)
 
-def equal(x, y) -> torch.ByteTensor:
+def equal(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
     """
-    Elementwise if two tensors are equal.
+    Elementwise test for if two tensors are equal.
 
     """
     return torch.eq(x, y)
 
-def allclose(x, y, rtol=1e-05, atol=1e-08) -> bool:
+def allclose(x: torch.FloatTensor,
+             y: torch.FloatTensor,
+             rtol: float = 1e-05,
+             atol: float = 1e-08) -> bool:
     """
     Test if all elements in the two tensors are approximately equal.
 
     """
     return tall(torch.abs(x - y).le((atol + rtol * torch.abs(y))))
 
-def not_equal(x, y) -> torch.ByteTensor:
+def not_equal(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
     """
     Elementwise test if two tensors are not equal.
 
     """
     return torch.ne(x, y)
 
-def greater(x, y) -> torch.ByteTensor:
+def greater(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
     """
     Elementwise test if x > y.
 
     """
     return torch.gt(x, y)
 
-def greater_equal(x, y) -> torch.ByteTensor:
+def greater_equal(x: torch.FloatTensor,
+                  y: torch.FloatTensor
+                  ) -> torch.ByteTensor:
     """
     Elementwise test if x >= y.
 
     """
     return torch.ge(x, y)
 
-def lesser(x, y) -> torch.ByteTensor:
+def lesser(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
     """
     Elementwise test if x < y.
 
     """
     return torch.lt(x, y)
 
-def lesser_equal(x, y) -> torch.ByteTensor:
+def lesser_equal(x: torch.FloatTensor,
+                 y: torch.FloatTensor
+                 ) -> torch.ByteTensor:
     """
     Elementwise test if x <= y.
 
     """
     return torch.le(x, y)
 
-def maximum(x, y) -> torch.FloatTensor:
+def maximum(x: torch.FloatTensor, y) -> torch.FloatTensor:
     """
     Elementwise maximum of two tensors.
 
