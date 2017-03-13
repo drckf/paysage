@@ -2,7 +2,6 @@ import numpy, torch
 from . import matrix
 from . import typedef as T
 
-#EPSILON = float(numpy.finfo(numpy.float32).eps)
 LOG2 = 0.6931471805599453
 
 def tabs(x: T.FloatTensor) -> T.FloatTensor:
