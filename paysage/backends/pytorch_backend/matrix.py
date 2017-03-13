@@ -1,8 +1,13 @@
 import numpy, torch
-from typing import Iterable, Tuple, Union, overload
+
+from typing import Iterable, Tuple, Union
 
 Scalar = Union[int, float]
+
 FloatingPoint = Union[float, torch.FloatTensor]
+
+Boolean = Union[bool, torch.ByteTensor]
+
 Tensor = Union[numpy.ndarray,
                torch.IntTensor,
                torch.ShortTensor,
@@ -10,6 +15,7 @@ Tensor = Union[numpy.ndarray,
                torch.ByteTensor,
                torch.FloatTensor,
                torch.DoubleTensor]
+
 Numeric = Union[Scalar, Tensor]
 
 def float_scalar(scalar: Scalar) -> float:
@@ -399,7 +405,8 @@ def tany(x: torch.FloatTensor,
     specified axis.
 
     """
-    tmp = cast_to_float(tmax(x == True, axis=axis))
+    #tmp = tmax(x == True, axis=axis)
+    tmp = tmax(x.ne(0), axis=axis)
     if keepdims:
         return tmp
     else:
@@ -413,7 +420,8 @@ def tall(x: torch.FloatTensor,
     specified axis.
 
     """
-    tmp = cast_to_float(tmin(x == True, axis=axis))
+    #tmp = cast_to_float(tmin(x == True, axis=axis))
+    tmp = tmin(x.ne(0), axis=axis)
     if keepdims:
         return tmp
     else:
