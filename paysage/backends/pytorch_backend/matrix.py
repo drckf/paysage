@@ -346,15 +346,22 @@ def tprod(x: torch.FloatTensor,
     else:
         return x.prod()
 
+def equal(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.FloatTensor:
+    """
+    Elementwise test for if two tensors are equal.
+
+    """
+    return cast_to_float(torch.eq(x, y))
+
 def tany(x: torch.FloatTensor,
          axis: int = None,
-         keepdims: bool = False) -> torch.ByteTensor:
+         keepdims: bool = False) -> FloatingPoint:
     """
     Return True if any elements of the input tensor are true along the
     specified axis.
 
     """
-    tmp = tmax(x == True, axis=axis)
+    tmp = cast_to_float(tmax(x == True, axis=axis))
     if keepdims:
         return tmp
     else:
@@ -362,24 +369,17 @@ def tany(x: torch.FloatTensor,
 
 def tall(x: torch.FloatTensor,
          axis: int = None,
-         keepdims: bool = False) -> torch.ByteTensor:
+         keepdims: bool = False) -> FloatingPoint:
     """
     Return True if all elements of the input tensor are true along the
     specified axis.
 
     """
-    tmp = tmin(x == True, axis=axis)
+    tmp = cast_to_float(tmin(x == True, axis=axis))
     if keepdims:
         return tmp
     else:
         return flatten(tmp)
-
-def equal(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
-    """
-    Elementwise test for if two tensors are equal.
-
-    """
-    return torch.eq(x, y)
 
 def allclose(x: torch.FloatTensor,
              y: torch.FloatTensor,
