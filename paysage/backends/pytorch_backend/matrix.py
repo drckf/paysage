@@ -1,8 +1,9 @@
 import numpy, torch
-from typing import Any, Iterable, Tuple, Union, overload
+from typing import Iterable, Tuple, Union, overload
 
 Scalar = Union[int, float]
 FloatingPoint = Union[float, torch.FloatTensor]
+Tensor = Union[numpy.ndarray, torch.FloatTensor]
 
 def float_scalar(scalar: Scalar) -> float:
     """
@@ -13,7 +14,7 @@ def float_scalar(scalar: Scalar) -> float:
 
 EPSILON = float_scalar(numpy.finfo(numpy.float32).eps)
 
-def float_tensor(tensor: Any) -> torch.FloatTensor:
+def float_tensor(tensor: Tensor) -> torch.FloatTensor:
     """
     Cast tensor to a float tensor.
 
