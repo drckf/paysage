@@ -3,7 +3,14 @@ from typing import Iterable, Tuple, Union, overload
 
 Scalar = Union[int, float]
 FloatingPoint = Union[float, torch.FloatTensor]
-Tensor = Union[numpy.ndarray, torch.FloatTensor]
+Tensor = Union[numpy.ndarray,
+               torch.IntTensor,
+               torch.ShortTensor,
+               torch.LongTensor,
+               torch.ByteTensor,
+               torch.FloatTensor,
+               torch.DoubleTensor]
+Numeric = Union[Scalar, Tensor]
 
 def float_scalar(scalar: Scalar) -> float:
     """
@@ -26,7 +33,7 @@ def float_tensor(tensor: Tensor) -> torch.FloatTensor:
         # tensor is a torch object
         return tensor.float()
 
-def cast_to_float(x: Union[Scalar, Tensor]) -> FloatingPoint:
+def cast_to_float(x: Numeric) -> FloatingPoint:
     """
     Cast a scalar or a tensor to a float.
 
@@ -155,13 +162,7 @@ def tround(tensor: torch.FloatTensor) -> torch.FloatTensor:
     """
     return tensor.round()
 
-@overload
-def flatten(x: Scalar) -> Scalar:
-    ...
-@overload
-def flatten(x: torch.FloatTensor) -> torch.FloatTensor:
-    ...
-def flatten(tensor):
+def flatten(tensor: FloatingPoint) -> FloatingPoint:
     """
     Return a flattened tensor.
 
@@ -346,12 +347,49 @@ def tprod(x: torch.FloatTensor,
     else:
         return x.prod()
 
-def equal(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.FloatTensor:
+def equal(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
     """
     Elementwise test for if two tensors are equal.
 
     """
-    return cast_to_float(torch.eq(x, y))
+    return torch.eq(x, y)
+
+def not_equal(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
+    """
+    Elementwise test if two tensors are not equal.
+
+    """
+    return torch.ne(x, y)
+
+def greater(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
+    """
+    Elementwise test if x > y.
+
+    """
+    return torch.gt(x, y)
+
+def greater_equal(x: torch.FloatTensor,
+                  y: torch.FloatTensor) -> torch.ByteTensor:
+    """
+    Elementwise test if x >= y.
+
+    """
+    return torch.ge(x, y)
+
+def lesser(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
+    """
+    Elementwise test if x < y.
+
+    """
+    return torch.lt(x, y)
+
+def lesser_equal(x: torch.FloatTensor,
+                 y: torch.FloatTensor) -> torch.ByteTensor:
+    """
+    Elementwise test if x <= y.
+
+    """
+    return torch.le(x, y)
 
 def tany(x: torch.FloatTensor,
          axis: int = None,
@@ -390,43 +428,6 @@ def allclose(x: torch.FloatTensor,
 
     """
     return tall(torch.abs(x - y).le((atol + rtol * torch.abs(y))))
-
-def not_equal(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
-    """
-    Elementwise test if two tensors are not equal.
-
-    """
-    return torch.ne(x, y)
-
-def greater(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
-    """
-    Elementwise test if x > y.
-
-    """
-    return torch.gt(x, y)
-
-def greater_equal(x: torch.FloatTensor,
-                  y: torch.FloatTensor) -> torch.ByteTensor:
-    """
-    Elementwise test if x >= y.
-
-    """
-    return torch.ge(x, y)
-
-def lesser(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.ByteTensor:
-    """
-    Elementwise test if x < y.
-
-    """
-    return torch.lt(x, y)
-
-def lesser_equal(x: torch.FloatTensor,
-                 y: torch.FloatTensor) -> torch.ByteTensor:
-    """
-    Elementwise test if x <= y.
-
-    """
-    return torch.le(x, y)
 
 def maximum(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.FloatTensor:
     """
@@ -564,7 +565,8 @@ def repeat(tensor: torch.FloatTensor, n: int, axis: int) -> torch.FloatTensor:
     shapes  = tuple(n if i == axis else 1 for i in range(ndim(tensor)))
     return tensor.repeat(*shapes)
 
-def stack(tensors: Iterable[torch.FloatTensor], axis: int) -> torch.FloatTensor:
+def stack(tensors: Iterable[torch.FloatTensor],
+axis: int) -> torch.FloatTensor:
     """
     Stack tensors along the specified axis.
 
