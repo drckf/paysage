@@ -1,9 +1,10 @@
 import numpy, torch
-from typing import Tuple, Union
+from typing import Tuple, Union, overload
 
-floating = Union[float, torch.FloatTensor]
+Scalar = Union[int, float]
+FloatingPoint = Union[float, torch.FloatTensor]
 
-def float_scalar(scalar) -> float:
+def float_scalar(scalar: Scalar) -> float:
     """
     Cast scalar to a float.
 
@@ -19,84 +20,84 @@ def float_tensor(tensor) -> torch.FloatTensor:
     """
     return torch.FloatTensor(tensor)
 
-def to_numpy_array(tensor) -> numpy.ndarray:
+def to_numpy_array(tensor: torch.FloatTensor) -> numpy.ndarray:
     """
     Return tensor as a numpy array.
 
     """
     return tensor.numpy()
 
-def shape(tensor) -> Tuple[int]:
+def shape(tensor: torch.FloatTensor) -> Tuple[int]:
     """
     Return a tuple with the shape of the tensor.
 
     """
     return tuple(tensor.size())
 
-def ndim(tensor) -> int:
+def ndim(tensor: torch.FloatTensor) -> int:
     """
     Return the number of dimensions of a tensor.
 
     """
     return tensor.ndimension()
 
-def transpose(tensor) -> torch.FloatTensor:
+def transpose(tensor: torch.FloatTensor) -> torch.FloatTensor:
     """
     Return the transpose of a tensor.
 
     """
     return tensor.t()
 
-def zeros(shape) -> torch.FloatTensor:
+def zeros(shape: Tuple[int]) -> torch.FloatTensor:
     """
     Return a tensor of a specified shape filled with zeros.
 
     """
     return torch.zeros(shape)
 
-def zeros_like(tensor) -> torch.FloatTensor:
+def zeros_like(tensor: torch.FloatTensor) -> torch.FloatTensor:
     """
     Return a tensor of zeros with the same shape as the input tensor.
 
     """
     return zeros(shape(tensor))
 
-def ones(shape) -> torch.FloatTensor:
+def ones(shape: Tuple[int]) -> torch.FloatTensor:
     """
     Return a tensor of a specified shape filled with ones.
 
     """
     return torch.ones(shape)
 
-def ones_like(tensor) -> torch.FloatTensor:
+def ones_like(tensor: torch.FloatTensor) -> torch.FloatTensor:
     """
     Return a tensor of ones with the same shape as the input tensor.
 
     """
     return ones(shape(tensor))
 
-def diag(mat) -> torch.FloatTensor:
+def diag(mat: torch.FloatTensor) -> torch.FloatTensor:
     """
     Return the diagonal elements of a matrix.
 
     """
     return mat.diag()
 
-def diagonal_matrix(vec) -> torch.FloatTensor:
+def diagonal_matrix(vec: torch.FloatTensor) -> torch.FloatTensor:
     """
     Return a matrix with vec along the diagonal.
 
     """
     return torch.diag(vec)
 
-def identity(n) -> torch.FloatTensor:
+def identity(n: int) -> torch.FloatTensor:
     """
     Return the n-dimensional identity matrix.
 
     """
     return torch.eye(n)
 
-def fill_diagonal(mat, val) -> None:
+def fill_diagonal(mat: torch.FloatTensor, val: Scalar) -> None:
     """
     Fill the diagonal of the matirx with a specified value.
     In-place function.
@@ -105,21 +106,27 @@ def fill_diagonal(mat, val) -> None:
     for i in range(len(mat)):
         mat[i,i] = val
 
-def sign(tensor) -> torch.FloatTensor:
+def sign(tensor: torch.FloatTensor) -> torch.FloatTensor:
     """
     Return the elementwise sign of a tensor.
 
     """
     return tensor.sign()
 
-def clip(tensor, a_min=-numpy.inf, a_max=numpy.inf) -> torch.FloatTensor:
+def clip(tensor: torch.FloatTensor,
+         a_min: Scalar = -numpy.inf,
+         a_max: Scalar = numpy.inf
+         ) -> torch.FloatTensor:
     """
     Return a tensor with its values clipped between a_min and a_max.
 
     """
     return tensor.clamp(a_min, a_max)
 
-def clip_inplace(tensor, a_min=-numpy.inf, a_max=numpy.inf) -> None:
+def clip_inplace(tensor: torch.FloatTensor,
+                 a_min: Scalar = -numpy.inf,
+                 a_max: Scalar = numpy.inf
+                 ) -> None:
     """
     Clip the values of a tensor between a_min and a_max.
     In-place function.
@@ -127,14 +134,20 @@ def clip_inplace(tensor, a_min=-numpy.inf, a_max=numpy.inf) -> None:
     """
     return torch.clamp(tensor, a_min, a_max, out=tensor)
 
-def tround(tensor) -> torch.FloatTensor:
+def tround(tensor: torch.FloatTensor) -> torch.FloatTensor:
     """
     Return a tensor with rounded elements.
 
     """
     return tensor.round()
 
-def flatten(tensor) -> floating:
+@overload
+def flatten(x: Scalar) -> Scalar:
+    ...
+@overload
+def flatten(x: torch.FloatTensor) -> torch.FloatTensor:
+    ...
+def flatten(tensor):
     """
     Return a flattened tensor.
 
@@ -144,21 +157,26 @@ def flatten(tensor) -> floating:
     except AttributeError:
         return tensor
 
-def reshape(tensor, newshape) -> torch.FloatTensor:
+def reshape(tensor: torch.FloatTensor,
+            newshape: Tuple[int]
+            ) -> torch.FloatTensor:
     """
     Return tensor with a new shape.
 
     """
     return tensor.view(*newshape)
 
-def dtype(tensor) -> type:
+def dtype(tensor: torch.FloatTensor) -> type:
     """
     Return the type of the tensor.
 
     """
     raise tensor.type()
 
-def mix_inplace(w,x,y) -> None:
+def mix_inplace(w: Scalar,
+                x: torch.FloatTensor,
+                y: torch.FloatTensor
+                ) -> None:
     """
     Compute a weighted average of two matrices (x and y) and store the results in x.
     Useful for keeping track of running averages during training.
@@ -169,7 +187,10 @@ def mix_inplace(w,x,y) -> None:
     x.mul_(w)
     x.add_(y.mul(1-w))
 
-def square_mix_inplace(w,x,y) -> None:
+def square_mix_inplace(w: Scalar,
+                       x: torch.FloatTensor,
+                       y: torch.FloatTensor
+                       ) -> None:
     """
     Compute a weighted average of two matrices (x and y^2) and store the results in x.
     Useful for keeping track of running averages of squared matrices during training.
@@ -180,28 +201,31 @@ def square_mix_inplace(w,x,y) -> None:
     x.mul_(w)
     x.add_(y.mul(y).mul(1-w))
 
-def sqrt_div(x,y) -> torch.FloatTensor:
+def sqrt_div(x: torch.FloatTensor, y: torch.FloatTensor) -> torch.FloatTensor:
     """
     Elementwise division of x by sqrt(y).
 
     """
     return x.div(torch.sqrt(EPSILON + y))
 
-def normalize(x) -> torch.FloatTensor:
+def normalize(x: torch.FloatTensor) -> torch.FloatTensor:
     """
     Divide x by it's sum.
 
     """
     return x.div(torch.sum(EPSILON + x))
 
-def norm(x) -> float:
+def norm(x: torch.FloatTensor) -> float:
     """
     Return the L2 norm of a tensor.
 
     """
     return x.norm()
 
-def tmax(x, axis=None, keepdims=False) -> floating:
+def tmax(x: torch.FloatTensor,
+         axis: int = None,
+         keepdims: bool = False,
+         ) -> FloatingPoint:
     """
     Return the elementwise maximum of a tensor along the specified axis.
 
@@ -215,7 +239,7 @@ def tmax(x, axis=None, keepdims=False) -> floating:
     else:
         return x.max()
 
-def tmin(x, axis=None, keepdims=False) -> floating:
+def tmin(x, axis=None, keepdims=False) -> FloatingPoint:
     """
     Return the elementwise minimum of a tensor along the specified axis.
 
@@ -229,7 +253,7 @@ def tmin(x, axis=None, keepdims=False) -> floating:
     else:
         return x.min()
 
-def mean(x, axis=None, keepdims=False) -> floating:
+def mean(x, axis=None, keepdims=False) -> FloatingPoint:
     """
     Return the mean of the elements of a tensor along the specified axis.
 
@@ -243,7 +267,7 @@ def mean(x, axis=None, keepdims=False) -> floating:
     else:
         return x.mean()
 
-def var(x, axis=None, keepdims=False) -> floating:
+def var(x, axis=None, keepdims=False) -> FloatingPoint:
     """
     Return the variance of the elements of a tensor along the specified axis.
 
@@ -257,7 +281,7 @@ def var(x, axis=None, keepdims=False) -> floating:
     else:
         return x.var()
 
-def std(x, axis=None, keepdims=False) -> floating:
+def std(x, axis=None, keepdims=False) -> FloatingPoint:
     """
     Return the standard deviation of the elements of a tensor along the specified axis.
 
@@ -271,7 +295,7 @@ def std(x, axis=None, keepdims=False) -> floating:
     else:
         return x.std()
 
-def tsum(x, axis=None, keepdims=False) -> floating:
+def tsum(x, axis=None, keepdims=False) -> FloatingPoint:
     """
     Return the sum of the elements of a tensor along the specified axis.
 
@@ -285,7 +309,7 @@ def tsum(x, axis=None, keepdims=False) -> floating:
     else:
         return x.sum()
 
-def tprod(x, axis=None, keepdims=False) -> floating:
+def tprod(x, axis=None, keepdims=False) -> FloatingPoint:
     """
     Return the product of the elements of a tensor along the specified axis.
 
@@ -410,7 +434,7 @@ def argmin(x, axis=None) -> torch.LongTensor:
         index = a.min(dim=1)[1]
         return b[0, index[0,0]]
 
-def dot(a, b) -> floating:
+def dot(a, b) -> FloatingPoint:
     """
     Compute the matrix/dot product of tensors a and b.
 
