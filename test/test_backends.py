@@ -1332,7 +1332,6 @@ def test_fast_energy_distance():
     torch_dist = torch_matrix.fast_energy_distance(torch_a,
                                                    torch_b,
                                                    downsample=downsample)
-    print(py_dist, torch_dist)
 
     # python fast_energy_distance is stochastic even after calling
     # py_rand.set_seed() because it uses the numba random number
@@ -1361,8 +1360,6 @@ def test_fast_energy_distance():
     torch_dist = torch_matrix.fast_energy_distance(torch_a,
                                                    torch_b,
                                                    downsample=downsample)
-
-    print(py_dist, torch_dist)
 
     assert py_dist > 10, \
     "python energy distance is too small"
