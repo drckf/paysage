@@ -781,6 +781,21 @@ def test_maximum():
 
     assert_close(py_res, torch_res, "maximum")
 
+def test_minimum():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.minimum(py_x, py_y)
+    torch_res = torch_matrix.minimum(torch_x, torch_y)
+
+    assert_close(py_res, torch_res, "minimum")
+
 
 
 # ----- Nonlinearities ----- #
