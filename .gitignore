@@ -14,3 +14,7 @@ __pycache__
 
 # HDF5 files
 *.h5
+
+# Conda files
+.spyderproject
+
