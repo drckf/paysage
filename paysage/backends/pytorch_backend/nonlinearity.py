@@ -1,4 +1,4 @@
-import numpy, torch
+import torch
 from . import matrix
 from . import typedef as T
 
