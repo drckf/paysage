@@ -1241,6 +1241,30 @@ def test_vstack():
 
     assert_close(py_res, torch_res, "vstack: matrices")
 
+def test_trange():
+    start = 10
+    stop = 100
+    step = 2
+
+    py_mat = py_matrix.trange(start, stop, step=step)
+    torch_mat = torch_matrix.trange(start, stop, step=step)
+    py_torch_mat = torch_matrix.to_numpy_array(torch_mat)
+
+    assert allclose(py_mat, py_torch_mat), \
+    "trange failure: start=10, stop=100, step=2"
+
+    start = 10
+    stop = 100
+    step = 7
+
+    py_mat = py_matrix.trange(start, stop, step=step)
+    torch_mat = torch_matrix.trange(start, stop, step=step)
+    py_torch_mat = torch_matrix.to_numpy_array(torch_mat)
+
+    assert allclose(py_mat, py_torch_mat), \
+    "trange failure: start=10, stop=100, step=7"
+
+
 
 
 # ----- Nonlinearities ----- #
