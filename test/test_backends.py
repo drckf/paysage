@@ -1159,6 +1159,39 @@ def test_repeat():
 
     assert_close(py_res, torch_res, "repeat")
 
+def test_stack():
+    # vector
+    shape = (100,)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.stack([py_mat, py_mat], axis=0)
+    torch_res = torch_matrix.stack([torch_mat, torch_mat], axis=0)
+
+    assert_close(py_res, torch_res, "stack: vectors, axis=0")
+
+    py_res = py_matrix.stack([py_mat, py_mat], axis=1)
+    torch_res = torch_matrix.stack([torch_mat, torch_mat], axis=1)
+
+    assert_close(py_res, torch_res, "stack: vectors, axis=1")
+
+    # matrix
+    shape = (100, 100)
+
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.stack([py_mat, py_mat], axis=0)
+    torch_res = torch_matrix.stack([torch_mat, torch_mat], axis=0)
+
+    assert_close(py_res, torch_res, "stack: matrices, axis=0")
+
+    py_res = py_matrix.stack([py_mat, py_mat], axis=1)
+    torch_res = torch_matrix.stack([torch_mat, torch_mat], axis=1)
+
+    assert_close(py_res, torch_res, "stack: matrices, axis=1")
 
 
 # ----- Nonlinearities ----- #
