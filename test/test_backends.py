@@ -664,6 +664,57 @@ def test_lesser_equal():
     assert py_matrix.allclose(py_res, py_torch_res), \
     "python lesser_equal != torch lesser_equal"
 
+def test_tany():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.lesser_equal(py_x, py_y)
+    torch_res = torch_matrix.lesser_equal(torch_x, torch_y)
+
+    # overall
+    py_any = py_matrix.tany(py_res)
+    torch_any = torch_matrix.tany(torch_res)
+    assert py_any == torch_any, \
+    "python tany != torch tany: overall"
+
+    # axis = 0
+    py_any = py_matrix.tany(py_res, axis=0)
+    torch_any = torch_matrix.tany(torch_res, axis=0)
+    py_torch_any = torch_matrix.to_numpy_array(torch_any)
+
+    assert py_matrix.allclose(py_any, py_torch_any), \
+    "python tany != torch tany: (axis-0)"
+
+    # axis = 1
+    py_any = py_matrix.tany(py_res, axis=1)
+    torch_any = torch_matrix.tany(torch_res, axis=1)
+    py_torch_any = torch_matrix.to_numpy_array(torch_any)
+
+    assert py_matrix.allclose(py_any, py_torch_any), \
+    "python tany != torch tany: (axis-1)"
+
+    # axis = 0, keepdims
+    py_any = py_matrix.tany(py_res, axis=0, keepdims=True)
+    torch_any = torch_matrix.tany(torch_res, axis=0, keepdims=True)
+    py_torch_any = torch_matrix.to_numpy_array(torch_any)
+
+    assert py_matrix.allclose(py_any, py_torch_any), \
+    "python tany != torch tany: (axis-0, keepdims)"
+
+    # axis = 1, keepdims
+    py_any = py_matrix.tany(py_res, axis=1, keepdims=True)
+    torch_any = torch_matrix.tany(torch_res, axis=1, keepdims=True)
+    py_torch_any = torch_matrix.to_numpy_array(torch_any)
+
+    assert py_matrix.allclose(py_any, py_torch_any), \
+    "python tany != torch tany: (axis-1, keepdim)"
+
 
 # ----- Nonlinearities ----- #
 
