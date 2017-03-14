@@ -1278,7 +1278,23 @@ def test_euclidean_distance():
     torch_dist = torch_matrix.euclidean_distance(torch_a, torch_b)
 
     assert allclose(py_dist, torch_dist), \
-    "euclidean distance failure"
+    "euclidean_distance failure"
+
+def test_squared_euclidean_distance():
+    shape = (100,)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(shape)
+    py_b = py_rand.randn(shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dist = py_matrix.squared_euclidean_distance(py_a, py_b)
+    torch_dist = torch_matrix.squared_euclidean_distance(torch_a, torch_b)
+
+    assert allclose(py_dist, torch_dist), \
+    "squared_euclidean_distance failure"
 
 
 
