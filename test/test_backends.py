@@ -647,6 +647,24 @@ def test_lesser():
     assert py_matrix.allclose(py_res, py_torch_res), \
     "python lesser != torch lesser"
 
+def test_lesser_equal():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.lesser_equal(py_x, py_y)
+    torch_res = torch_matrix.lesser_equal(torch_x, torch_y)
+    py_torch_res = torch_matrix.to_numpy_array(torch_res)
+
+    assert py_matrix.allclose(py_res, py_torch_res), \
+    "python lesser_equal != torch lesser_equal"
+
+
 # ----- Nonlinearities ----- #
 
 def test_tabs():
