@@ -1103,7 +1103,7 @@ def test_inv():
     # needs a lower tolerance to pass than other tests
     assert_close(py_res, torch_res, "inv", rtol=1e-4, atol=1e-5)
 
-def test_batchdot():
+def test_batch_dot():
     L = 10
     N = 100
     M = 50
