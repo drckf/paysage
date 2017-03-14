@@ -766,6 +766,22 @@ def test_tall():
     assert py_matrix.allclose(py_all, py_torch_all), \
     "python tall != torch tall: (axis-1, keepdim)"
 
+def test_maximum():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.maximum(py_x, py_y)
+    torch_res = torch_matrix.maximum(torch_x, torch_y)
+
+    assert_close(py_res, torch_res, "maximum")
+
+
 
 # ----- Nonlinearities ----- #
 
