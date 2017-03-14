@@ -999,6 +999,53 @@ def test_broadcast():
     torch_broadcast = torch_matrix.broadcast(torch_a, torch_b)
     assert_close(py_broadcast, torch_broadcast, "broadcast: (N,) x (M, N)")
 
+def test_affine():
+    # vector-vector-matrix
+    N = 100
+    M = 50
+    a_shape = (N,)
+    b_shape = (M,)
+    W_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    py_W = py_rand.randn(W_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+    torch_W = torch_matrix.float_tensor(py_W)
+
+    py_res = py_matrix.affine(py_a, py_b, py_W)
+    torch_res = torch_matrix.affine(torch_a, torch_b, torch_W)
+
+    assert_close(py_res, torch_res, "affine: vector, vector, matrix")
+
+    # matrix-matrix-matrix
+    batch_size = 10
+    N = 100
+    M = 50
+    a_shape = (batch_size, N)
+    b_shape = (batch_size, M)
+    W_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    py_W = py_rand.randn(W_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+    torch_W = torch_matrix.float_tensor(py_W)
+
+    py_res = py_matrix.affine(py_a, py_W, py_b)
+    torch_res = torch_matrix.affine(torch_a, torch_W, torch_b)
+
+    assert_close(py_res, torch_res, "affine: matrix, matrix, matrix")
+
+
+
+
 # ----- Nonlinearities ----- #
 
 def test_tabs():

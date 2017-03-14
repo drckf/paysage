@@ -477,7 +477,10 @@ def affine(a: T.FloatTensor,
 
     """
     tmp = dot(W, b)
-    tmp += broadcast(a, tmp)
+    if ndim(tmp) > ndim(a):
+        tmp += broadcast(a, tmp)
+    else:
+        tmp += a
     return tmp
 
 def quadratic(a: T.FloatTensor,
