@@ -889,6 +889,20 @@ def test_dot():
 
     assert_close(py_dot, torch_dot, "dot: matrix-matrix")
 
+def test_outer():
+    a_shape = (100,)
+    b_shape = (100,)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_res = py_matrix.outer(py_a, py_b)
+    torch_res = torch_matrix.outer(torch_a, torch_b)
+
+    assert_close(py_res, torch_res, "outer")
 
 # ----- Nonlinearities ----- #
 
