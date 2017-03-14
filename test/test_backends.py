@@ -1296,6 +1296,22 @@ def test_squared_euclidean_distance():
     assert allclose(py_dist, torch_dist), \
     "squared_euclidean_distance failure"
 
+def test_resample():
+    shape = (100, 50)
+    n = 10
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_sample = py_matrix.resample(py_mat, n, replace = False)
+    torch_sample = torch_matrix.resample(torch_mat, n, replace = False)
+
+    # python backend and pytorch backend do not share a random number generator
+    # therefore, we can only test that the shapes are the same
+    assert py_matrix.shape(py_sample) == torch_matrix.shape(torch_sample), \
+    "python resample shape != torch resample shape"
+
 
 
 
