@@ -328,19 +328,19 @@ def minimum(x, y):
     """
     return numpy.minimum(x, y)
 
-def argmax(x, axis=-1):
+def argmax(x, axis):
     """
     Compute the indices of the maximal elements in x along the specified axis.
 
     """
-    return numpy.argmax(x, axis=axis, keepdims=False)
+    return numpy.argmax(x, axis=axis)
 
-def argmin(x, axis=-1):
+def argmin(x, axis):
     """
     Compute the indices of the minimal elements in x along the specified axis.
 
     """
-    return numpy.argmin(x, axis=axis, keepdims=False)
+    return numpy.argmin(x, axis=axis)
 
 def dot(a,b):
     """

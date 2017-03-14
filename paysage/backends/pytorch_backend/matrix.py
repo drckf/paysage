@@ -420,29 +420,21 @@ def minimum(x: T.FloatTensor, y: T.FloatTensor) -> T.FloatTensor:
     """
     return torch.min(x, y)
 
-def argmax(x: T.FloatTensor, axis: int = None) -> T.LongTensor:
+def argmax(x: T.FloatTensor, axis: int) -> T.LongTensor:
     """
     Compute the indices of the maximal elements in x along the specified axis.
 
     """
-    if axis is not None:
-        return x.max(dim=axis)[1]
-    else:
-        a,b = x.max(dim=0)
-        index = a.max(dim=1)[1]
-        return b[0, index[0,0]]
+    # needs flatten because numpy argmax always returns a 1-D array
+    return flatten(x.max(dim=axis)[1])
 
 def argmin(x: T.FloatTensor, axis: int = None) -> T.LongTensor:
     """
     Compute the indices of the minimal elements in x along the specified axis.
 
     """
-    if axis is not None:
-        return x.min(dim=axis)[1]
-    else:
-        a,b = x.min(dim=0)
-        index = a.min(dim=1)[1]
-        return b[0, index[0,0]]
+    # needs flatten because numpy argmin always returns a 1-D array
+    return flatten(x.min(dim=axis)[1])
 
 def dot(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatingPoint:
     """
