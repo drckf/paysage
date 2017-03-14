@@ -20,7 +20,7 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
     learning_rate = 0.001
     mc_steps = 1
 
-    (paysage_path, filepath, shuffled_filepath) = \
+    (_, _, shuffled_filepath) = \
         util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
