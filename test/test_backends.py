@@ -1126,6 +1126,26 @@ def test_batch_dot():
 
     assert_close(py_res, torch_res, "batch_dot")
 
+def test_batch_outer():
+    L = 10
+    N = 100
+    M = 50
+
+    v_shape = (L, N)
+    h_shape = (L, M)
+
+    py_rand.set_seed()
+    py_v = py_rand.randn(v_shape)
+    py_h = py_rand.randn(h_shape)
+
+    torch_v = torch_matrix.float_tensor(py_v)
+    torch_h = torch_matrix.float_tensor(py_h)
+
+    py_res = py_matrix.batch_outer(py_v, py_h)
+    torch_res = torch_matrix.batch_outer(torch_v, torch_h)
+
+    assert_close(py_res, torch_res, "batch_outer")
+
 
 
 
