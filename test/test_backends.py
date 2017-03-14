@@ -579,6 +579,23 @@ def test_equal():
     assert py_matrix.allclose(py_eq, py_torch_eq), \
     "python equal != torch equal"
 
+def test_not_equal():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_neq = py_matrix.not_equal(py_x, py_y)
+    torch_neq = torch_matrix.not_equal(torch_x, torch_y)
+    py_torch_neq = torch_matrix.to_numpy_array(torch_neq)
+
+    assert py_matrix.allclose(py_neq, py_torch_neq), \
+    "python not equal != torch not equal"
+
 
 # ----- Nonlinearities ----- #
 
