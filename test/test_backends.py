@@ -904,6 +904,52 @@ def test_outer():
 
     assert_close(py_res, torch_res, "outer")
 
+def test_python_broadcast():
+    N = 100
+    M = 50
+
+    # (N, 1) x (N, M)
+    a_shape = (N, 1)
+    b_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    numpy_product = py_a * py_b
+    broadcast_product = py_matrix.broadcast(py_a, py_b) * py_b
+
+    assert allclose(numpy_product, broadcast_product), \
+    "python broadcast failure: (N, 1) x (N, M)"
+
+    # (1, N) x (M, N)
+    a_shape = (1, N)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    numpy_product = py_a * py_b
+    broadcast_product = py_matrix.broadcast(py_a, py_b) * py_b
+
+    assert allclose(numpy_product, broadcast_product), \
+    "python broadcast failure: (1, N) x (M, N)"
+
+    # (N,) x (M, N)
+    a_shape = (N,)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    numpy_product = py_a * py_b
+    broadcast_product = py_matrix.broadcast(py_a, py_b) * py_b
+
+    assert allclose(numpy_product, broadcast_product), \
+    "python broadcast failure: (N,) x (M, N)"
+
 # ----- Nonlinearities ----- #
 
 def test_tabs():
