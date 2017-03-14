@@ -715,6 +715,57 @@ def test_tany():
     assert py_matrix.allclose(py_any, py_torch_any), \
     "python tany != torch tany: (axis-1, keepdim)"
 
+def test_tall():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.lesser_equal(py_x, py_y)
+    torch_res = torch_matrix.lesser_equal(torch_x, torch_y)
+
+    # overall
+    py_all = py_matrix.tall(py_res)
+    torch_all = torch_matrix.tall(torch_res)
+    assert py_all == torch_all, \
+    "python tall != torch tall: overall"
+
+    # axis = 0
+    py_all = py_matrix.tall(py_res, axis=0)
+    torch_all = torch_matrix.tall(torch_res, axis=0)
+    py_torch_all = torch_matrix.to_numpy_array(torch_all)
+
+    assert py_matrix.allclose(py_all, py_torch_all), \
+    "python tall != torch tall: (axis-0)"
+
+    # axis = 1
+    py_all = py_matrix.tall(py_res, axis=1)
+    torch_all = torch_matrix.tall(torch_res, axis=1)
+    py_torch_all = torch_matrix.to_numpy_array(torch_all)
+
+    assert py_matrix.allclose(py_all, py_torch_all), \
+    "python tall != torch tall: (axis-1)"
+
+    # axis = 0, keepdims
+    py_all = py_matrix.tall(py_res, axis=0, keepdims=True)
+    torch_all = torch_matrix.tall(torch_res, axis=0, keepdims=True)
+    py_torch_all = torch_matrix.to_numpy_array(torch_all)
+
+    assert py_matrix.allclose(py_all, py_torch_all), \
+    "python tall != torch tall: (axis-0, keepdims)"
+
+    # axis = 1, keepdims
+    py_all = py_matrix.tall(py_res, axis=1, keepdims=True)
+    torch_all = torch_matrix.tall(torch_res, axis=1, keepdims=True)
+    py_torch_all = torch_matrix.to_numpy_array(torch_all)
+
+    assert py_matrix.allclose(py_all, py_torch_all), \
+    "python tall != torch tall: (axis-1, keepdim)"
+
 
 # ----- Nonlinearities ----- #
 
