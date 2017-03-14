@@ -1312,7 +1312,59 @@ def test_resample():
     assert py_matrix.shape(py_sample) == torch_matrix.shape(torch_sample), \
     "python resample shape != torch resample shape"
 
+def test_fast_energy_distance():
+    shape = (1000, 50)
+    downsample = 100
+    # close distributions
+    a_mean, a_scale = 0, 1
+    b_mean, b_scale = 0.1, 0.9
 
+    py_rand.set_seed()
+    py_a = a_mean + a_scale * py_rand.randn(shape)
+    py_b = b_mean + b_scale * py_rand.randn(shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dist = py_matrix.fast_energy_distance(py_a,
+                                             py_b,
+                                             downsample=downsample)
+
+    torch_dist = torch_matrix.fast_energy_distance(torch_a,
+                                                   torch_b,
+                                                   downsample=downsample)
+    print(py_dist, torch_dist)
+
+    assert py_dist < 0.15, \
+    "python energy distance is too big"
+
+    assert torch_dist < 0.15, \
+    "torch energy distance is too big"
+
+    # distance distributions
+    a_mean, a_scale = 1, 1
+    b_mean, b_scale = -1, 1
+
+    py_rand.set_seed()
+    py_a = a_mean + a_scale * py_rand.randn(shape)
+    py_b = b_mean + b_scale * py_rand.randn(shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dist = py_matrix.fast_energy_distance(py_a,
+                                             py_b,
+                                             downsample=downsample)
+
+    torch_dist = torch_matrix.fast_energy_distance(torch_a,
+                                                   torch_b,
+                                                   downsample=downsample)
+
+    print(py_dist, torch_dist)
+
+    assert py_dist > 10, \
+    "python energy distance is too small"
+
+    assert torch_dist > 10, \
+    "torch energy distance is too small"
 
 
 
