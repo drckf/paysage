@@ -950,6 +950,55 @@ def test_python_broadcast():
     assert allclose(numpy_product, broadcast_product), \
     "python broadcast failure: (N,) x (M, N)"
 
+def test_broadcast():
+    N = 100
+    M = 50
+
+    # (N, 1) x (N, M)
+    a_shape = (N, 1)
+    b_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_broadcast = py_matrix.broadcast(py_a, py_b)
+    torch_broadcast = torch_matrix.broadcast(torch_a, torch_b)
+    assert_close(py_broadcast, torch_broadcast, "broadcast: (N, 1) x (N, M)")
+
+    # (1, N) x (M, N)
+    a_shape = (1, N)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_broadcast = py_matrix.broadcast(py_a, py_b)
+    torch_broadcast = torch_matrix.broadcast(torch_a, torch_b)
+    assert_close(py_broadcast, torch_broadcast, "broadcast: (1, N) x (M, N)")
+
+    # (N,) x (M, N)
+    a_shape = (N,)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_broadcast = py_matrix.broadcast(py_a, py_b)
+    torch_broadcast = torch_matrix.broadcast(torch_a, torch_b)
+    assert_close(py_broadcast, torch_broadcast, "broadcast: (N,) x (M, N)")
+
 # ----- Nonlinearities ----- #
 
 def test_tabs():
