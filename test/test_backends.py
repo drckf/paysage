@@ -1043,6 +1043,52 @@ def test_affine():
 
     assert_close(py_res, torch_res, "affine: matrix, matrix, matrix")
 
+def test_quadratic():
+    # vector-vector-matrix
+    N = 100
+    M = 50
+    a_shape = (N,)
+    b_shape = (M,)
+    W_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    py_W = py_rand.randn(W_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+    torch_W = torch_matrix.float_tensor(py_W)
+
+    py_res = py_matrix.quadratic(py_a, py_b, py_W)
+    torch_res = torch_matrix.quadratic(torch_a, torch_b, torch_W)
+
+    assert allclose(py_res, torch_res), \
+    "quadratic: vector, vector, matrix: failure"
+
+    # matrix-matrix-matrix
+    batch_size = 10
+    N = 100
+    M = 50
+    a_shape = (batch_size, N)
+    b_shape = (M, batch_size)
+    W_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    py_W = py_rand.randn(W_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+    torch_W = torch_matrix.float_tensor(py_W)
+
+    py_res = py_matrix.quadratic(py_a, py_b, py_W)
+    torch_res = torch_matrix.quadratic(torch_a, torch_b, torch_W)
+
+    # needs a lower tolerance to pass than other tests
+    assert_close(py_res, torch_res, "quadratic: matrix, matrix, matrix",
+                 rtol=1e-4, atol=1e-8)
 
 
 
