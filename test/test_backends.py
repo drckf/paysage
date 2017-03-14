@@ -1103,6 +1103,31 @@ def test_inv():
     # needs a lower tolerance to pass than other tests
     assert_close(py_res, torch_res, "inv", rtol=1e-4, atol=1e-5)
 
+def test_batchdot():
+    L = 10
+    N = 100
+    M = 50
+
+    v_shape = (L, N)
+    W_shape = (N, M)
+    h_shape = (L, M)
+
+    py_rand.set_seed()
+    py_v = py_rand.randn(v_shape)
+    py_W = py_rand.randn(W_shape)
+    py_h = py_rand.randn(h_shape)
+
+    torch_v = torch_matrix.float_tensor(py_v)
+    torch_W = torch_matrix.float_tensor(py_W)
+    torch_h = torch_matrix.float_tensor(py_h)
+
+    py_res = py_matrix.batch_dot(py_v, py_W, py_h)
+    torch_res = torch_matrix.batch_dot(torch_v, torch_W, torch_h)
+
+    assert_close(py_res, torch_res, "batch_dot")
+
+
+
 
 # ----- Nonlinearities ----- #
 
