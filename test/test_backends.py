@@ -819,6 +819,29 @@ def test_argmax():
     assert py_matrix.allclose(py_res, py_torch_res), \
     "python argmax != torch argmax: (axis-1)"
 
+def test_argmin():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    # axis=0
+    py_res = py_matrix.argmin(py_x, axis=0)
+    torch_res = torch_matrix.argmin(torch_x, axis=0)
+    py_torch_res = torch_matrix.to_numpy_array(torch_res)
+
+    assert py_matrix.allclose(py_res, py_torch_res), \
+    "python argmin != torch argmin: (axis-0)"
+
+    # axis=1
+    py_res = py_matrix.argmin(py_x, axis=1)
+    torch_res = torch_matrix.argmin(torch_x, axis=1)
+    py_torch_res = torch_matrix.to_numpy_array(torch_res)
+
+    assert py_matrix.allclose(py_res, py_torch_res), \
+    "python argmin != torch argmin: (axis-1)"
+
 
 # ----- Nonlinearities ----- #
 
