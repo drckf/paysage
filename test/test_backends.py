@@ -1193,6 +1193,32 @@ def test_stack():
 
     assert_close(py_res, torch_res, "stack: matrices, axis=1")
 
+def test_hstack():
+    # vector
+    shape = (100,)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.hstack([py_mat, py_mat])
+    torch_res = torch_matrix.hstack([torch_mat, torch_mat])
+
+    assert_close(py_res, torch_res, "hstack: vectors")
+
+    # matrix
+    shape = (100, 100)
+
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.hstack([py_mat, py_mat])
+    torch_res = torch_matrix.hstack([torch_mat, torch_mat])
+
+    assert_close(py_res, torch_res, "hstack: matrices")
+
+
+
 
 # ----- Nonlinearities ----- #
 

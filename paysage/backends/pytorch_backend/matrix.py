@@ -548,7 +548,10 @@ def hstack(tensors: T.Iterable[T.FloatTensor]) -> T.FloatTensor:
     Concatenate tensors along the first axis.
 
     """
-    return torch.stack(tensors, 1)
+    if ndim(tensors[0]) == 1:
+        return torch.cat(tensors, 0)
+    else:
+        return torch.cat(tensors, 1)
 
 def vstack(tensors: T.Iterable[T.FloatTensor]) -> T.FloatTensor:
     """
