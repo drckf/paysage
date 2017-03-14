@@ -1,3 +1,1 @@
-import numpy
-
 # ----- FUNCTIONS ----- #

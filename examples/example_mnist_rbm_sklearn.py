@@ -14,7 +14,7 @@ def example_mnist_rbm_sklearn(paysage_path=None, show_plot=False):
     # the step size has been hand-tuned for the sklearn implementation
     learning_rate = 0.01
 
-    (paysage_path, filepath, shuffled_filepath) = \
+    (_, _, shuffled_filepath) = \
         util.default_paths(paysage_path)
 
     # set up the reader to get the whole training set
