@@ -1090,6 +1090,18 @@ def test_quadratic():
     assert_close(py_res, torch_res, "quadratic: matrix, matrix, matrix",
                  rtol=1e-4, atol=1e-8)
 
+def test_inv():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.inv(py_mat)
+    torch_res = torch_matrix.inv(torch_mat)
+
+    # needs a lower tolerance to pass than other tests
+    assert_close(py_res, torch_res, "inv", rtol=1e-4, atol=1e-5)
 
 
 # ----- Nonlinearities ----- #
