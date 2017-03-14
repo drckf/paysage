@@ -527,13 +527,14 @@ def batch_outer(vis: T.FloatTensor, hid: T.FloatTensor) -> T.FloatTensor:
     """
     return dot(transpose(vis), hid)
 
-def repeat(tensor: T.FloatTensor, n: int, axis: int) -> T.FloatTensor:
+def repeat(tensor: T.FloatTensor, n: int) -> T.FloatTensor:
     """
     Repeat tensor n times along specified axis.
 
     """
-    shapes  = tuple(n if i == axis else 1 for i in range(ndim(tensor)))
-    return tensor.repeat(*shapes)
+    # current implementation only works for vectors
+    assert ndim(tensor) == 1
+    return flatten(tensor.unsqueeze(1).repeat(1, n))
 
 def stack(tensors: T.Iterable[T.FloatTensor], axis: int) -> T.FloatTensor:
     """

@@ -419,12 +419,14 @@ def batch_outer(vis, hid):
     """
     return numpy.dot(vis.T, hid)
 
-def repeat(tensor, n, axis):
+def repeat(tensor, n):
     """
     Repeat tensor n times along specified axis.
 
     """
-    return numpy.repeat(tensor, n, axis=axis)
+    # current implementation only works for vectors
+    assert ndim(tensor) == 1
+    return numpy.repeat(tensor, n, axis=0)
 
 def stack(tensors, axis):
     """

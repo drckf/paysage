@@ -1146,6 +1146,18 @@ def test_batch_outer():
 
     assert_close(py_res, torch_res, "batch_outer")
 
+def test_repeat():
+    shape = (100,)
+    n_repeats = 5
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_res = py_matrix.repeat(py_x, n_repeats)
+    torch_res = torch_matrix.repeat(torch_x, n_repeats)
+
+    assert_close(py_res, torch_res, "repeat")
 
 
 
