@@ -1217,6 +1217,29 @@ def test_hstack():
 
     assert_close(py_res, torch_res, "hstack: matrices")
 
+def test_vstack():
+    # vector
+    shape = (100,)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.vstack([py_mat, py_mat])
+    torch_res = torch_matrix.vstack([torch_mat, torch_mat])
+
+    assert_close(py_res, torch_res, "vstack: vectors")
+
+    # matrix
+    shape = (100, 100)
+
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.vstack([py_mat, py_mat])
+    torch_res = torch_matrix.vstack([torch_mat, torch_mat])
+
+    assert_close(py_res, torch_res, "vstack: matrices")
 
 
 

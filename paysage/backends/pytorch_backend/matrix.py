@@ -558,7 +558,10 @@ def vstack(tensors: T.Iterable[T.FloatTensor]) -> T.FloatTensor:
     Concatenate tensors along the zeroth axis.
 
     """
-    return torch.cat(tensors, 0)
+    if ndim(tensors[0]) == 1:
+        return torch.stack(tensors, 0)
+    else:
+        return torch.cat(tensors, 0)
 
 def trange(start: int, end: int, step: int = 1) -> T.FloatTensor:
     """
