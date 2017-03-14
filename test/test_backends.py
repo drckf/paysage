@@ -842,6 +842,53 @@ def test_argmin():
     assert py_matrix.allclose(py_res, py_torch_res), \
     "python argmin != torch argmin: (axis-1)"
 
+def test_dot():
+    # vector-vector
+    a_shape = (100,)
+    b_shape = (100,)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dot = py_matrix.dot(py_a, py_b)
+    torch_dot = torch_matrix.dot(torch_a, torch_b)
+
+    assert allclose(py_dot, torch_dot), \
+    "python dot != torch_dot: vector-vector"
+
+    # matrix-vector
+    a_shape = (100,100)
+    b_shape = (100,)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dot = py_matrix.dot(py_a, py_b)
+    torch_dot = torch_matrix.dot(torch_a, torch_b)
+
+    assert_close(py_dot, torch_dot, "dot: matrix-vector")
+
+    # matrix-matrix
+    a_shape = (100,100)
+    b_shape = (100,100)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dot = py_matrix.dot(py_a, py_b)
+    torch_dot = torch_matrix.dot(torch_a, torch_b)
+
+    assert_close(py_dot, torch_dot, "dot: matrix-matrix")
+
 
 # ----- Nonlinearities ----- #
 
