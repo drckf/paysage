@@ -9,7 +9,7 @@ def do_nothing(tensor):
     return tensor
 
 def scale(tensor, denominator):
-    return be.float_tensor(tensor) / denominator
+    return be.float_tensor(tensor/denominator)
 
 def binarize_color(tensor):
     """binarize_color
