@@ -1,5 +1,5 @@
 from . import backends as be
-
+from math import sqrt
 
 # ----- LEARNING RATE SCHEDULERS ----- #
 
@@ -214,4 +214,4 @@ def gradient_magnitude(grad):
     mag = 0
     for key in grad:
         mag += be.norm(grad[key])**2 / len(grad[key])
-    return be.sqrt(mag / len(grad))
+    return sqrt(mag / len(grad))
