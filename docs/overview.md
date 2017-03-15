@@ -18,18 +18,6 @@ and
 2) inference based on sampling from the model distribution using sequential
 Monte Carlo methods.
 
-## Visible Boltzmann machines
-
-A visible neuron describes one dimension of the input, such as the pixels
-in an image or the letters in a word. A visible Boltzmann machine describes
-interactions between visible neurons. The probability distribution P(v) is
-determined from an energy function E(v) by P(v) = exp(-E(v))/Z where
-
-1) E(v) = -sum_i a_i(v_i) - sum_{i<j} W_{ij} v_i v_j
-
-and Z is a normalizing constant. Here, a_i(v_i) is a function and W_{ij} is
-a parameter that determines the interaction between neurons i and j.
-
 ## Boltzmann machines with a single hidden layer
 
 A hidden neuron captures an unobserved latent variable that controls the
@@ -49,8 +37,7 @@ and hidden neuron j.
 
 Boltzmann machines are constructed from
 [layers](layers.md).
-Visible Boltzmann machines have a single layer of visible neurons, whereas
-latent Boltzmann machines have two layers: one of visible neurons and one of
+Latent Boltzmann machines have two layers: one of visible neurons and one of
 hidden neurons. Paysage layers describe the conditional activity of their
 neurons. Using the notation from the previous section, layers are used to
 specify the functions a_i(v_i) and b_j(h_j), and to draw random samples from
@@ -63,15 +50,11 @@ the conditional distributions (i.e., P(v|h)). Currently, the layer types are:
 
 ### Models:
 
-[Models](models.md) can be fully [visible](models.md#visibile) or they can
+[Models](models.md)
 have a single [hidden](models.md#hidden) layer. The model classes in paysage
 contain the layers and the weights (i.e. W_ij) and define the functionality for
 sampling from the Boltzmann machine and computing its derivatives. Currently,
-there is one type of visible model:
-
-- [IsingModel](models.md#visible##IsingModel)
-
-and there are two types of latent models:
+there are two types of latent models:
 
 - [RestrictedBoltzmannMachine](models.md#hidden##RestrictedBoltzmannMachine)
 - [GaussianRestrictedBoltzmannMachine](
