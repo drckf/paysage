@@ -1,6 +1,5 @@
 import example_mnist_grbm as grbm
 import example_mnist_hopfield as hopfield
-import example_mnist_ising as ising
 import example_mnist_rbm as rbm
 import example_mnist_rbm_sklearn as rbm_sklearn
 
@@ -9,8 +8,6 @@ def all_examples():
     grbm.example_mnist_grbm()
     print("hopfield")
     hopfield.example_mnist_hopfield()
-    print("ising")
-    ising.example_mnist_ising()
     print("rbm")
     rbm.example_mnist_rbm()
     print("rbm sklearn")
