@@ -420,29 +420,21 @@ def minimum(x: T.FloatTensor, y: T.FloatTensor) -> T.FloatTensor:
     """
     return torch.min(x, y)
 
-def argmax(x: T.FloatTensor, axis: int = None) -> T.LongTensor:
+def argmax(x: T.FloatTensor, axis: int) -> T.LongTensor:
     """
     Compute the indices of the maximal elements in x along the specified axis.
 
     """
-    if axis is not None:
-        return x.max(dim=axis)[1]
-    else:
-        a,b = x.max(dim=0)
-        index = a.max(dim=1)[1]
-        return b[0, index[0,0]]
+    # needs flatten because numpy argmax always returns a 1-D array
+    return flatten(x.max(dim=axis)[1])
 
 def argmin(x: T.FloatTensor, axis: int = None) -> T.LongTensor:
     """
     Compute the indices of the minimal elements in x along the specified axis.
 
     """
-    if axis is not None:
-        return x.min(dim=axis)[1]
-    else:
-        a,b = x.min(dim=0)
-        index = a.min(dim=1)[1]
-        return b[0, index[0,0]]
+    # needs flatten because numpy argmin always returns a 1-D array
+    return flatten(x.min(dim=axis)[1])
 
 def dot(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatingPoint:
     """
@@ -485,7 +477,10 @@ def affine(a: T.FloatTensor,
 
     """
     tmp = dot(W, b)
-    tmp += broadcast(a, tmp)
+    if ndim(tmp) > ndim(a):
+        tmp += broadcast(a, tmp)
+    else:
+        tmp += a
     return tmp
 
 def quadratic(a: T.FloatTensor,
@@ -532,13 +527,14 @@ def batch_outer(vis: T.FloatTensor, hid: T.FloatTensor) -> T.FloatTensor:
     """
     return dot(transpose(vis), hid)
 
-def repeat(tensor: T.FloatTensor, n: int, axis: int) -> T.FloatTensor:
+def repeat(tensor: T.FloatTensor, n: int) -> T.FloatTensor:
     """
     Repeat tensor n times along specified axis.
 
     """
-    shapes  = tuple(n if i == axis else 1 for i in range(ndim(tensor)))
-    return tensor.repeat(*shapes)
+    # current implementation only works for vectors
+    assert ndim(tensor) == 1
+    return flatten(tensor.unsqueeze(1).repeat(1, n))
 
 def stack(tensors: T.Iterable[T.FloatTensor], axis: int) -> T.FloatTensor:
     """
@@ -552,14 +548,20 @@ def hstack(tensors: T.Iterable[T.FloatTensor]) -> T.FloatTensor:
     Concatenate tensors along the first axis.
 
     """
-    return torch.stack(tensors, 1)
+    if ndim(tensors[0]) == 1:
+        return torch.cat(tensors, 0)
+    else:
+        return torch.cat(tensors, 1)
 
 def vstack(tensors: T.Iterable[T.FloatTensor]) -> T.FloatTensor:
     """
     Concatenate tensors along the zeroth axis.
 
     """
-    return torch.cat(tensors, 0)
+    if ndim(tensors[0]) == 1:
+        return torch.stack(tensors, 0)
+    else:
+        return torch.cat(tensors, 0)
 
 def trange(start: int, end: int, step: int = 1) -> T.FloatTensor:
     """

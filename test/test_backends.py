@@ -579,6 +579,795 @@ def test_equal():
     assert py_matrix.allclose(py_eq, py_torch_eq), \
     "python equal != torch equal"
 
+def test_not_equal():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_neq = py_matrix.not_equal(py_x, py_y)
+    torch_neq = torch_matrix.not_equal(torch_x, torch_y)
+    py_torch_neq = torch_matrix.to_numpy_array(torch_neq)
+
+    assert py_matrix.allclose(py_neq, py_torch_neq), \
+    "python not equal != torch not equal"
+
+def test_greater():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.greater(py_x, py_y)
+    torch_res = torch_matrix.greater(torch_x, torch_y)
+    py_torch_res = torch_matrix.to_numpy_array(torch_res)
+
+    assert py_matrix.allclose(py_res, py_torch_res), \
+    "python greater != torch greater"
+
+def test_greater_equal():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.greater_equal(py_x, py_y)
+    torch_res = torch_matrix.greater_equal(torch_x, torch_y)
+    py_torch_res = torch_matrix.to_numpy_array(torch_res)
+
+    assert py_matrix.allclose(py_res, py_torch_res), \
+    "python greater_equal != torch greater_equal"
+
+def test_lesser():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.lesser(py_x, py_y)
+    torch_res = torch_matrix.lesser(torch_x, torch_y)
+    py_torch_res = torch_matrix.to_numpy_array(torch_res)
+
+    assert py_matrix.allclose(py_res, py_torch_res), \
+    "python lesser != torch lesser"
+
+def test_lesser_equal():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.lesser_equal(py_x, py_y)
+    torch_res = torch_matrix.lesser_equal(torch_x, torch_y)
+    py_torch_res = torch_matrix.to_numpy_array(torch_res)
+
+    assert py_matrix.allclose(py_res, py_torch_res), \
+    "python lesser_equal != torch lesser_equal"
+
+def test_tany():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.lesser_equal(py_x, py_y)
+    torch_res = torch_matrix.lesser_equal(torch_x, torch_y)
+
+    # overall
+    py_any = py_matrix.tany(py_res)
+    torch_any = torch_matrix.tany(torch_res)
+    assert py_any == torch_any, \
+    "python tany != torch tany: overall"
+
+    # axis = 0
+    py_any = py_matrix.tany(py_res, axis=0)
+    torch_any = torch_matrix.tany(torch_res, axis=0)
+    py_torch_any = torch_matrix.to_numpy_array(torch_any)
+
+    assert py_matrix.allclose(py_any, py_torch_any), \
+    "python tany != torch tany: (axis-0)"
+
+    # axis = 1
+    py_any = py_matrix.tany(py_res, axis=1)
+    torch_any = torch_matrix.tany(torch_res, axis=1)
+    py_torch_any = torch_matrix.to_numpy_array(torch_any)
+
+    assert py_matrix.allclose(py_any, py_torch_any), \
+    "python tany != torch tany: (axis-1)"
+
+    # axis = 0, keepdims
+    py_any = py_matrix.tany(py_res, axis=0, keepdims=True)
+    torch_any = torch_matrix.tany(torch_res, axis=0, keepdims=True)
+    py_torch_any = torch_matrix.to_numpy_array(torch_any)
+
+    assert py_matrix.allclose(py_any, py_torch_any), \
+    "python tany != torch tany: (axis-0, keepdims)"
+
+    # axis = 1, keepdims
+    py_any = py_matrix.tany(py_res, axis=1, keepdims=True)
+    torch_any = torch_matrix.tany(torch_res, axis=1, keepdims=True)
+    py_torch_any = torch_matrix.to_numpy_array(torch_any)
+
+    assert py_matrix.allclose(py_any, py_torch_any), \
+    "python tany != torch tany: (axis-1, keepdim)"
+
+def test_tall():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.lesser_equal(py_x, py_y)
+    torch_res = torch_matrix.lesser_equal(torch_x, torch_y)
+
+    # overall
+    py_all = py_matrix.tall(py_res)
+    torch_all = torch_matrix.tall(torch_res)
+    assert py_all == torch_all, \
+    "python tall != torch tall: overall"
+
+    # axis = 0
+    py_all = py_matrix.tall(py_res, axis=0)
+    torch_all = torch_matrix.tall(torch_res, axis=0)
+    py_torch_all = torch_matrix.to_numpy_array(torch_all)
+
+    assert py_matrix.allclose(py_all, py_torch_all), \
+    "python tall != torch tall: (axis-0)"
+
+    # axis = 1
+    py_all = py_matrix.tall(py_res, axis=1)
+    torch_all = torch_matrix.tall(torch_res, axis=1)
+    py_torch_all = torch_matrix.to_numpy_array(torch_all)
+
+    assert py_matrix.allclose(py_all, py_torch_all), \
+    "python tall != torch tall: (axis-1)"
+
+    # axis = 0, keepdims
+    py_all = py_matrix.tall(py_res, axis=0, keepdims=True)
+    torch_all = torch_matrix.tall(torch_res, axis=0, keepdims=True)
+    py_torch_all = torch_matrix.to_numpy_array(torch_all)
+
+    assert py_matrix.allclose(py_all, py_torch_all), \
+    "python tall != torch tall: (axis-0, keepdims)"
+
+    # axis = 1, keepdims
+    py_all = py_matrix.tall(py_res, axis=1, keepdims=True)
+    torch_all = torch_matrix.tall(torch_res, axis=1, keepdims=True)
+    py_torch_all = torch_matrix.to_numpy_array(torch_all)
+
+    assert py_matrix.allclose(py_all, py_torch_all), \
+    "python tall != torch tall: (axis-1, keepdim)"
+
+def test_maximum():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.maximum(py_x, py_y)
+    torch_res = torch_matrix.maximum(torch_x, torch_y)
+
+    assert_close(py_res, torch_res, "maximum")
+
+def test_minimum():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    py_y = py_rand.randn(shape)
+
+    torch_x = torch_matrix.float_tensor(py_x)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_res = py_matrix.minimum(py_x, py_y)
+    torch_res = torch_matrix.minimum(torch_x, torch_y)
+
+    assert_close(py_res, torch_res, "minimum")
+
+def test_argmax():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    # axis=0
+    py_res = py_matrix.argmax(py_x, axis=0)
+    torch_res = torch_matrix.argmax(torch_x, axis=0)
+    py_torch_res = torch_matrix.to_numpy_array(torch_res)
+
+    assert py_matrix.allclose(py_res, py_torch_res), \
+    "python argmax != torch argmax: (axis-0)"
+
+    # axis=1
+    py_res = py_matrix.argmax(py_x, axis=1)
+    torch_res = torch_matrix.argmax(torch_x, axis=1)
+    py_torch_res = torch_matrix.to_numpy_array(torch_res)
+
+    assert py_matrix.allclose(py_res, py_torch_res), \
+    "python argmax != torch argmax: (axis-1)"
+
+def test_argmin():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    # axis=0
+    py_res = py_matrix.argmin(py_x, axis=0)
+    torch_res = torch_matrix.argmin(torch_x, axis=0)
+    py_torch_res = torch_matrix.to_numpy_array(torch_res)
+
+    assert py_matrix.allclose(py_res, py_torch_res), \
+    "python argmin != torch argmin: (axis-0)"
+
+    # axis=1
+    py_res = py_matrix.argmin(py_x, axis=1)
+    torch_res = torch_matrix.argmin(torch_x, axis=1)
+    py_torch_res = torch_matrix.to_numpy_array(torch_res)
+
+    assert py_matrix.allclose(py_res, py_torch_res), \
+    "python argmin != torch argmin: (axis-1)"
+
+def test_dot():
+    # vector-vector
+    a_shape = (100,)
+    b_shape = (100,)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dot = py_matrix.dot(py_a, py_b)
+    torch_dot = torch_matrix.dot(torch_a, torch_b)
+
+    assert allclose(py_dot, torch_dot), \
+    "python dot != torch_dot: vector-vector"
+
+    # matrix-vector
+    a_shape = (100,100)
+    b_shape = (100,)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dot = py_matrix.dot(py_a, py_b)
+    torch_dot = torch_matrix.dot(torch_a, torch_b)
+
+    assert_close(py_dot, torch_dot, "dot: matrix-vector")
+
+    # matrix-matrix
+    a_shape = (100,100)
+    b_shape = (100,100)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dot = py_matrix.dot(py_a, py_b)
+    torch_dot = torch_matrix.dot(torch_a, torch_b)
+
+    assert_close(py_dot, torch_dot, "dot: matrix-matrix")
+
+def test_outer():
+    a_shape = (100,)
+    b_shape = (100,)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_res = py_matrix.outer(py_a, py_b)
+    torch_res = torch_matrix.outer(torch_a, torch_b)
+
+    assert_close(py_res, torch_res, "outer")
+
+def test_python_broadcast():
+    N = 100
+    M = 50
+
+    # (N, 1) x (N, M)
+    a_shape = (N, 1)
+    b_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    numpy_product = py_a * py_b
+    broadcast_product = py_matrix.broadcast(py_a, py_b) * py_b
+
+    assert allclose(numpy_product, broadcast_product), \
+    "python broadcast failure: (N, 1) x (N, M)"
+
+    # (1, N) x (M, N)
+    a_shape = (1, N)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    numpy_product = py_a * py_b
+    broadcast_product = py_matrix.broadcast(py_a, py_b) * py_b
+
+    assert allclose(numpy_product, broadcast_product), \
+    "python broadcast failure: (1, N) x (M, N)"
+
+    # (N,) x (M, N)
+    a_shape = (N,)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    numpy_product = py_a * py_b
+    broadcast_product = py_matrix.broadcast(py_a, py_b) * py_b
+
+    assert allclose(numpy_product, broadcast_product), \
+    "python broadcast failure: (N,) x (M, N)"
+
+def test_broadcast():
+    N = 100
+    M = 50
+
+    # (N, 1) x (N, M)
+    a_shape = (N, 1)
+    b_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_broadcast = py_matrix.broadcast(py_a, py_b)
+    torch_broadcast = torch_matrix.broadcast(torch_a, torch_b)
+    assert_close(py_broadcast, torch_broadcast, "broadcast: (N, 1) x (N, M)")
+
+    # (1, N) x (M, N)
+    a_shape = (1, N)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_broadcast = py_matrix.broadcast(py_a, py_b)
+    torch_broadcast = torch_matrix.broadcast(torch_a, torch_b)
+    assert_close(py_broadcast, torch_broadcast, "broadcast: (1, N) x (M, N)")
+
+    # (N,) x (M, N)
+    a_shape = (N,)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_broadcast = py_matrix.broadcast(py_a, py_b)
+    torch_broadcast = torch_matrix.broadcast(torch_a, torch_b)
+    assert_close(py_broadcast, torch_broadcast, "broadcast: (N,) x (M, N)")
+
+def test_affine():
+    # vector-vector-matrix
+    N = 100
+    M = 50
+    a_shape = (N,)
+    b_shape = (M,)
+    W_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    py_W = py_rand.randn(W_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+    torch_W = torch_matrix.float_tensor(py_W)
+
+    py_res = py_matrix.affine(py_a, py_b, py_W)
+    torch_res = torch_matrix.affine(torch_a, torch_b, torch_W)
+
+    assert_close(py_res, torch_res, "affine: vector, vector, matrix")
+
+    # matrix-matrix-matrix
+    batch_size = 10
+    N = 100
+    M = 50
+    a_shape = (batch_size, N)
+    b_shape = (batch_size, M)
+    W_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    py_W = py_rand.randn(W_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+    torch_W = torch_matrix.float_tensor(py_W)
+
+    py_res = py_matrix.affine(py_a, py_W, py_b)
+    torch_res = torch_matrix.affine(torch_a, torch_W, torch_b)
+
+    assert_close(py_res, torch_res, "affine: matrix, matrix, matrix")
+
+def test_quadratic():
+    # vector-vector-matrix
+    N = 100
+    M = 50
+    a_shape = (N,)
+    b_shape = (M,)
+    W_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    py_W = py_rand.randn(W_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+    torch_W = torch_matrix.float_tensor(py_W)
+
+    py_res = py_matrix.quadratic(py_a, py_b, py_W)
+    torch_res = torch_matrix.quadratic(torch_a, torch_b, torch_W)
+
+    assert allclose(py_res, torch_res), \
+    "quadratic: vector, vector, matrix: failure"
+
+    # matrix-matrix-matrix
+    batch_size = 10
+    N = 100
+    M = 50
+    a_shape = (batch_size, N)
+    b_shape = (M, batch_size)
+    W_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(a_shape)
+    py_b = py_rand.randn(b_shape)
+    py_W = py_rand.randn(W_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+    torch_W = torch_matrix.float_tensor(py_W)
+
+    py_res = py_matrix.quadratic(py_a, py_b, py_W)
+    torch_res = torch_matrix.quadratic(torch_a, torch_b, torch_W)
+
+    # needs a lower tolerance to pass than other tests
+    assert_close(py_res, torch_res, "quadratic: matrix, matrix, matrix",
+                 rtol=1e-4, atol=1e-8)
+
+def test_inv():
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.inv(py_mat)
+    torch_res = torch_matrix.inv(torch_mat)
+
+    # needs a lower tolerance to pass than other tests
+    assert_close(py_res, torch_res, "inv", rtol=1e-4, atol=1e-5)
+
+def test_batch_dot():
+    L = 10
+    N = 100
+    M = 50
+
+    v_shape = (L, N)
+    W_shape = (N, M)
+    h_shape = (L, M)
+
+    py_rand.set_seed()
+    py_v = py_rand.randn(v_shape)
+    py_W = py_rand.randn(W_shape)
+    py_h = py_rand.randn(h_shape)
+
+    torch_v = torch_matrix.float_tensor(py_v)
+    torch_W = torch_matrix.float_tensor(py_W)
+    torch_h = torch_matrix.float_tensor(py_h)
+
+    py_res = py_matrix.batch_dot(py_v, py_W, py_h)
+    torch_res = torch_matrix.batch_dot(torch_v, torch_W, torch_h)
+
+    assert_close(py_res, torch_res, "batch_dot")
+
+def test_batch_outer():
+    L = 10
+    N = 100
+    M = 50
+
+    v_shape = (L, N)
+    h_shape = (L, M)
+
+    py_rand.set_seed()
+    py_v = py_rand.randn(v_shape)
+    py_h = py_rand.randn(h_shape)
+
+    torch_v = torch_matrix.float_tensor(py_v)
+    torch_h = torch_matrix.float_tensor(py_h)
+
+    py_res = py_matrix.batch_outer(py_v, py_h)
+    torch_res = torch_matrix.batch_outer(torch_v, torch_h)
+
+    assert_close(py_res, torch_res, "batch_outer")
+
+def test_repeat():
+    shape = (100,)
+    n_repeats = 5
+
+    py_rand.set_seed()
+    py_x = py_rand.randn(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_res = py_matrix.repeat(py_x, n_repeats)
+    torch_res = torch_matrix.repeat(torch_x, n_repeats)
+
+    assert_close(py_res, torch_res, "repeat")
+
+def test_stack():
+    # vector
+    shape = (100,)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.stack([py_mat, py_mat], axis=0)
+    torch_res = torch_matrix.stack([torch_mat, torch_mat], axis=0)
+
+    assert_close(py_res, torch_res, "stack: vectors, axis=0")
+
+    py_res = py_matrix.stack([py_mat, py_mat], axis=1)
+    torch_res = torch_matrix.stack([torch_mat, torch_mat], axis=1)
+
+    assert_close(py_res, torch_res, "stack: vectors, axis=1")
+
+    # matrix
+    shape = (100, 100)
+
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.stack([py_mat, py_mat], axis=0)
+    torch_res = torch_matrix.stack([torch_mat, torch_mat], axis=0)
+
+    assert_close(py_res, torch_res, "stack: matrices, axis=0")
+
+    py_res = py_matrix.stack([py_mat, py_mat], axis=1)
+    torch_res = torch_matrix.stack([torch_mat, torch_mat], axis=1)
+
+    assert_close(py_res, torch_res, "stack: matrices, axis=1")
+
+def test_hstack():
+    # vector
+    shape = (100,)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.hstack([py_mat, py_mat])
+    torch_res = torch_matrix.hstack([torch_mat, torch_mat])
+
+    assert_close(py_res, torch_res, "hstack: vectors")
+
+    # matrix
+    shape = (100, 100)
+
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.hstack([py_mat, py_mat])
+    torch_res = torch_matrix.hstack([torch_mat, torch_mat])
+
+    assert_close(py_res, torch_res, "hstack: matrices")
+
+def test_vstack():
+    # vector
+    shape = (100,)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.vstack([py_mat, py_mat])
+    torch_res = torch_matrix.vstack([torch_mat, torch_mat])
+
+    assert_close(py_res, torch_res, "vstack: vectors")
+
+    # matrix
+    shape = (100, 100)
+
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.vstack([py_mat, py_mat])
+    torch_res = torch_matrix.vstack([torch_mat, torch_mat])
+
+    assert_close(py_res, torch_res, "vstack: matrices")
+
+def test_trange():
+    start = 10
+    stop = 100
+    step = 2
+
+    py_mat = py_matrix.trange(start, stop, step=step)
+    torch_mat = torch_matrix.trange(start, stop, step=step)
+    py_torch_mat = torch_matrix.to_numpy_array(torch_mat)
+
+    assert allclose(py_mat, py_torch_mat), \
+    "trange failure: start=10, stop=100, step=2"
+
+    start = 10
+    stop = 100
+    step = 7
+
+    py_mat = py_matrix.trange(start, stop, step=step)
+    torch_mat = torch_matrix.trange(start, stop, step=step)
+    py_torch_mat = torch_matrix.to_numpy_array(torch_mat)
+
+    assert allclose(py_mat, py_torch_mat), \
+    "trange failure: start=10, stop=100, step=7"
+
+def test_euclidean_distance():
+    shape = (100,)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(shape)
+    py_b = py_rand.randn(shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dist = py_matrix.euclidean_distance(py_a, py_b)
+    torch_dist = torch_matrix.euclidean_distance(torch_a, torch_b)
+
+    assert allclose(py_dist, torch_dist), \
+    "euclidean_distance failure"
+
+def test_squared_euclidean_distance():
+    shape = (100,)
+
+    py_rand.set_seed()
+    py_a = py_rand.randn(shape)
+    py_b = py_rand.randn(shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dist = py_matrix.squared_euclidean_distance(py_a, py_b)
+    torch_dist = torch_matrix.squared_euclidean_distance(torch_a, torch_b)
+
+    assert allclose(py_dist, torch_dist), \
+    "squared_euclidean_distance failure"
+
+def test_resample():
+    shape = (100, 50)
+    n = 10
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_sample = py_matrix.resample(py_mat, n, replace = False)
+    torch_sample = torch_matrix.resample(torch_mat, n, replace = False)
+
+    # python backend and pytorch backend do not share a random number generator
+    # therefore, we can only test that the shapes are the same
+    assert py_matrix.shape(py_sample) == torch_matrix.shape(torch_sample), \
+    "python resample shape != torch resample shape"
+
+def test_fast_energy_distance():
+    shape = (1000, 50)
+    downsample = 100
+    # close distributions
+    a_mean, a_scale = 0, 1
+    b_mean, b_scale = 0.1, 0.9
+
+    py_rand.set_seed()
+    py_a = a_mean + a_scale * py_rand.randn(shape)
+    py_b = b_mean + b_scale * py_rand.randn(shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dist = py_matrix.fast_energy_distance(py_a,
+                                             py_b,
+                                             downsample=downsample)
+
+    torch_dist = torch_matrix.fast_energy_distance(torch_a,
+                                                   torch_b,
+                                                   downsample=downsample)
+
+    # python fast_energy_distance is stochastic even after calling
+    # py_rand.set_seed() because it uses the numba random number
+    # generator rather than the one in numpy.
+    # this test can fail stochastically
+    assert py_dist < 0.15, \
+    "python energy distance is too big"
+
+    assert torch_dist < 0.15, \
+    "torch energy distance is too big"
+
+    # distance distributions
+    a_mean, a_scale = 1, 1
+    b_mean, b_scale = -1, 1
+
+    py_rand.set_seed()
+    py_a = a_mean + a_scale * py_rand.randn(shape)
+    py_b = b_mean + b_scale * py_rand.randn(shape)
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_dist = py_matrix.fast_energy_distance(py_a,
+                                             py_b,
+                                             downsample=downsample)
+
+    torch_dist = torch_matrix.fast_energy_distance(torch_a,
+                                                   torch_b,
+                                                   downsample=downsample)
+
+    assert py_dist > 10, \
+    "python energy distance is too small"
+
+    assert torch_dist > 10, \
+    "torch energy distance is too small"
+
+
 
 # ----- Nonlinearities ----- #
 
