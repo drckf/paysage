@@ -383,20 +383,14 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         energy = -be.batch_dot(v_scaled, self.params['weights'], hidden)
         if beta is not None:
             energy *= be.flatten(beta)
-        energy -= -0.5 * be.mean((visible - self.params['visible_bias'])**2 / scale, axis=1)
+            diff = (visible - be.broadcast(self.params['visible_bias'], visible))**2
+        diff /= be.broadcast(scale, diff)
+        energy -= -0.5 * be.mean(diff, axis=1)
         energy -= be.dot(hidden, self.params['hidden_bias'])
         return be.mean(energy)
 
     def marginal_free_energy(self, visible, beta=None):
-        scale = be.exp(self.params['visible_scale'])
-        v_scaled = visible / be.broadcast(scale, visible)
-        log_Z_hidden = self.layers['hidden'].log_partition_function(
-            self._hidden_field(v_scaled, beta))
-        diff = (visible - be.broadcast(self.params['visible_bias'], visible))**2
-        diff /= be.broadcast(scale, diff)
-        energy = 0.5 * be.mean(diff, axis=1)
-        energy -= be.tsum(log_Z_hidden, axis=1)
-        return energy
+        raise NotImplementedError
 
 
 # ----- ALIASES ----- #
