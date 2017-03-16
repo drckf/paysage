@@ -25,6 +25,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
                        train_fraction=0.99)
 
     # set up the model and initialize the parameters
+    '''
     rbm = hidden.RestrictedBoltzmannMachine(data.ncols,
                                             num_hidden_units,
                                             vis_type='bernoulli',
@@ -69,6 +70,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     util.show_weights(rbm, show_plot)
 
     # close the HDF5 store
+    '''
     data.close()
     print("Done")
 

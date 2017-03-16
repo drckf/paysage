@@ -23,7 +23,8 @@ def log(x: T.FloatTensor) -> T.FloatTensor:
     Elementwise natural logarithm of a tensor.
 
     """
-    return torch.log(x)
+    y = matrix.clip(x, a_min=matrix.EPSILON)
+    return torch.log(y)
 
 def tanh(x: T.FloatTensor) -> T.FloatTensor:
     """

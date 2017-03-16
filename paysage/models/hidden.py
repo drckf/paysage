@@ -4,8 +4,108 @@ from ..models.initialize import init_hidden as init
 from .. import constraints
 from .. import penalties
 
-#---- MODEL CLASSES ----#
 
+# ---- MODEL CLASSES ---- #
+
+class Model(object):
+
+    def __init__(self, vis_layer, hid_layer):
+        self.layers = {
+        'visible': vis_layer,
+        'hidden': hid_layer
+        }
+        self.weights = 0.01 * be.randn((vis_layer.len, hid_layer.len))
+        self.weight_constraint = None
+        self.weight_decay = None
+
+    def add_weight_constraint(self, constraint):
+        self.weight_constraint = constraint
+
+    def enforce_constraints(self):
+        getattr(constraints, self.weight_constraint)(self.weights)
+
+    def add_weight_decay(self, penalty, method='l2_penalty'):
+        self.weight_decay = getattr(penalties, method)(penalty)
+
+    def initialize(self, data, method='hinton'):
+        try:
+            func = getattr(init, method)
+        except AttributeError:
+            print('{} is not a valid initialization method for latent models'.format(method))
+        func(data, self)
+        self.enforce_constraints()
+
+    def mcstep(self, vis, beta=None):
+        """mcstep(v):
+           v -> h -> v'
+           return v'
+
+        """
+        self.layers['hidden'].update(vis, self.weights, beta)
+        h = self.layers['hidden'].sample_state()
+        self.layers['visible'].update(h, be.transpose(self.weights), beta)
+        return self.layers['visible'].sample_state()
+
+    def markov_chain(self, vis, steps, beta=None):
+        """markov_chain(v, n):
+           v -> h -> v_1 -> h_1 -> ... -> v_n
+           return v_n
+
+        """
+        new_vis = be.float_tensor(vis)
+        for t in range(steps):
+            new_vis = self.mcstep(new_vis, beta)
+        return new_vis
+
+    def mean_field_step(self, vis, beta=None):
+        """mean_field_step(v):
+           v -> h -> v'
+           return v'
+
+        """
+        self.layers['hidden'].update(vis, self.weights, beta)
+        h = self.layers['hidden'].mean()
+        self.layers['visible'].update(h, be.transpose(self.weights), beta)
+        return self.layers['visible'].mean()
+
+    def mean_field_iteration(self, vis, steps, beta=None):
+        """mean_field_iteration(v, n):
+           v -> h -> v_1 -> h_1 -> ... -> v_n
+           return v_n
+
+        """
+        new_vis = be.float_tensor(vis)
+        for t in range(steps):
+            new_vis = self.mean_field_step(new_vis, beta)
+        return new_vis
+
+    def deterministic_step(self, vis, beta=None):
+        """deterministic_step(v):
+           v -> h -> v'
+           return v'
+
+        """
+        self.layers['hidden'].update(vis, self.weights, beta)
+        h = self.layers['hidden'].mode()
+        self.layers['visible'].update(h, be.transpose(self.weights), beta)
+        return self.layers['visible'].mode()
+
+    def deterministic_iteration(self, vis, steps, beta=None):
+        """mean_field_iteration(v, n):
+           v -> h -> v_1 -> h_1 -> ... -> v_n
+           return v_n
+
+        """
+        new_vis = be.float_tensor(vis)
+        for t in range(steps):
+            new_vis = self.deterministic_step(new_vis, beta)
+        return new_vis
+
+    def random(self, visible):
+        return self.layers['visible'].random(visible)
+
+
+'''
 class LatentModel(object):
     """LatentModel
        Abstract class for a 2-layer neural network.
@@ -131,10 +231,7 @@ class RestrictedBoltzmannMachine(LatentModel):
 
         self.layers['visible'] = layers.get(vis_type)(nvis)
         self.layers['hidden'] = layers.get(hid_type)(nhid)
-
         self.params['weights'] = 0.01 * be.randn((nvis, nhid))
-        self.params['visible_bias'] = be.zeros(nvis)
-        self.params['hidden_bias'] = be.zeros(nhid)
 
     def initialize(self, data, method='hinton'):
         try:
@@ -397,3 +494,4 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
 
 BernoulliRBM = RBM = RestrictedBoltzmannMachine
 GRBM = GaussianRBM = GaussianRestrictedBoltzmannMachine
+'''
