@@ -129,8 +129,8 @@ class RestrictedBoltzmannMachine(LatentModel):
         self.nvis = nvis
         self.nhid = nhid
 
-        self.layers['visible'] = layers.get(vis_type)
-        self.layers['hidden'] = layers.get(hid_type)
+        self.layers['visible'] = layers.get(vis_type)(nvis)
+        self.layers['hidden'] = layers.get(hid_type)(nhid)
 
         self.params['weights'] = 0.01 * be.randn((nvis, nhid))
         self.params['visible_bias'] = be.zeros(nvis)
@@ -219,8 +219,8 @@ class HopfieldModel(LatentModel):
         self.nvis = nvis
         self.nhid = nhid
 
-        self.layers['visible'] = layers.get(vis_type)
-        self.layers['hidden'] = layers.get('gaussian')
+        self.layers['visible'] = layers.get(vis_type)(nvis)
+        self.layers['hidden'] = layers.get('gaussian')(nhid)
 
         self.params['weights'] = 0.1 * be.randn((nvis, nhid))
         self.params['visible_bias'] = be.zeros(nvis)
@@ -311,8 +311,8 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
         self.nvis = nvis
         self.nhid = nhid
 
-        self.layers['visible'] = layers.get('gaussian')
-        self.layers['hidden'] = layers.get(hid_type)
+        self.layers['visible'] = layers.get('gaussian')(nvis)
+        self.layers['hidden'] = layers.get(hid_type)(nhid)
 
         self.params['weights'] = 0.01 * be.randn((nvis, nhid))
         self.params['visible_bias'] = be.zeros(nvis)

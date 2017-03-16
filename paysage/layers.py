@@ -4,7 +4,12 @@ from . import backends as be
 
 class GaussianLayer(object):
 
-    def __init__(self):
+    def __init__(self, num_units):
+        self.len = num_units
+        self.params = {
+        'loc': be.zeros(self.len),
+        'log_var': be.zeros(self.len)
+        }
         self.rand = be.randn
 
     def prox(self, vis):
@@ -33,7 +38,11 @@ class GaussianLayer(object):
 
 class IsingLayer(object):
 
-    def __init__(self):
+    def __init__(self, num_units):
+        self.len = num_units
+        self.params = {
+        'loc': be.zeros(self.len)
+        }
         self.rand = be.rand
 
     def prox(self, vis):
@@ -63,7 +72,11 @@ class IsingLayer(object):
 
 class BernoulliLayer(object):
 
-    def __init__(self):
+    def __init__(self, num_units):
+        self.len = num_units
+        self.params = {
+        'loc': be.zeros(self.len)
+        }
         self.rand = be.rand
 
     def prox(self, vis):
@@ -92,7 +105,11 @@ class BernoulliLayer(object):
 
 class ExponentialLayer(object):
 
-    def __init__(self):
+    def __init__(self, num_units):
+        self.len = num_units
+        self.params = {
+        'loc': be.zeros(self.len)
+        }
         self.rand = be.rand
 
     def prox(self, vis):
@@ -123,12 +140,12 @@ class ExponentialLayer(object):
 
 def get(key):
     if 'gauss' in key.lower():
-        return GaussianLayer()
+        return GaussianLayer
     elif 'ising' in key.lower():
-        return IsingLayer()
+        return IsingLayer
     elif 'bern' in key.lower():
-        return BernoulliLayer()
+        return BernoulliLayer
     elif 'expo' in key.lower():
-        return ExponentialLayer()
+        return ExponentialLayer
     else:
         raise ValueError('Unknown layer type')
