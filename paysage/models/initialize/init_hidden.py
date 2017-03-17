@@ -15,11 +15,13 @@ def hinton(batch, model):
         Hinton, Geoffrey. "A practical guide to training restricted Boltzmann machines." Momentum 9.1 (2010): 926.
 
     """
-    nvis, nhid = be.shape(model.weights)
-    model.weights.val = 0.01 * be.randn((nvis, nhid))
+
+    i = 0
+    nvis, nhid = be.shape(model.weights[i])
+    model.weights[i].val = 0.01 * be.randn((nvis, nhid))
     while True:
         try:
             v_data = batch.get(mode='train')
         except StopIteration:
             break
-        model.layers['visible'].online_param_update(v_data)
+        model.layers[i].online_param_update(v_data)

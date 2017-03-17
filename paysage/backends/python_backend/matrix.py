@@ -2,6 +2,16 @@ import numpy, math
 from numba import jit
 import numexpr as ne
 
+def add_dicts_inplace(dict1, dict2):
+    """
+    Entrywise addition of dict2 to dict1.
+    Modifies dict1 in place.
+
+    """
+
+    for key in dict2:
+        dict1[key] += dict2[key]
+
 def float_scalar(scalar):
     """
     Cast scalar to a 32-bit float.

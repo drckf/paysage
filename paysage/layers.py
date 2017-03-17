@@ -1,10 +1,68 @@
 from . import backends as be
 
-#----- LAYER CLASSES -----#
 
-class GaussianLayer(object):
+class Layer(object):
+
+    def __init__(self, *args, **kwargs):
+        self.int_params = {}
+        self.penalties = {}
+        self.constraints = {}
+
+    def add_constraint(self, constraint):
+        self.constraint.update(constraint)
+
+    def enforce_constraints(self):
+        for param_name in self.constraints:
+            self.constraint[param_name](self.int_params[param_name])
+
+    def add_penalty(self, penalty):
+        self.penalties.update(penalty)
+
+    def get_penalties(self):
+        for param_name in self.penalties:
+            self.penalties[param_name].value(self.int_params[param_name])
+
+    def get_penalty_gradients(self):
+        pen = {param_name:
+            self.penalties[param_name].grad(self.int_params[param_name])
+            for param_name in self.penalties}
+        return pen
+
+
+class Weights(Layer):
+
+    def __init__(self, shape):
+        super().__init__()
+
+        self.shape = shape
+
+        # simple weight layers only have a single internal parameter matrix
+        # they have no external parameters because they
+        # do not depend on the state of anything else
+        self.int_params = {
+        'matrix': 0.01 * be.randn(shape)
+        }
+
+        # the val attribute is a reference to weight matrix
+        # it is just for convenience so that we don't have to
+        # type out the whole thing every time
+        self.val = self.int_params['matrix']
+
+    def derivatives(self, first_layer_scaled, second_layer_scaled):
+        n = len(first_layer_scaled)
+        derivs = {
+        'matrix': -be.batch_outer(first_layer_scaled, second_layer_scaled) / n
+        }
+        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
+        return derivs
+
+
+
+class GaussianLayer(Layer):
 
     def __init__(self, num_units):
+        super().__init__()
+
         self.len = num_units
         self.sample_size = 0
         self.rand = be.randn
@@ -78,6 +136,7 @@ class GaussianLayer(object):
                              ) / len(observations)
         derivs['log_var'] = self.rescale(derivs['log_var'])
 
+        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
         return derivs
 
     def rescale(self, observations):
@@ -102,9 +161,11 @@ class GaussianLayer(object):
         return r
 
 
-class IsingLayer(object):
+class IsingLayer(Layer):
 
     def __init__(self, num_units):
+        super().__init__()
+
         self.len = num_units
         self.sample_size = 0
         self.rand = be.rand
@@ -150,6 +211,7 @@ class IsingLayer(object):
         self.update(connected_mean_scaled, weights, beta)
         v_scaled = self.rescale(observations)
         derivs['loc'] = -be.mean(v_scaled, axis=0)
+        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
         return derivs
 
     def rescale(self, observations):
@@ -174,9 +236,11 @@ class IsingLayer(object):
         return 2 * be.float_tensor(r < 0.5) - 1
 
 
-class BernoulliLayer(object):
+class BernoulliLayer(Layer):
 
     def __init__(self, num_units):
+        super().__init__()
+
         self.len = num_units
         self.sample_size = 0
         self.rand = be.rand
@@ -222,6 +286,7 @@ class BernoulliLayer(object):
         self.update(connected_mean_scaled, be.transpose(weights), beta)
         scaled_observations = self.rescale(observations)
         derivs['loc'] = -be.mean(scaled_observations, axis=0)
+        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
         return derivs
 
     def rescale(self, observations):
@@ -245,9 +310,11 @@ class BernoulliLayer(object):
             r = self.rand(array_or_shape)
         return be.float_tensor(r < 0.5)
 
-class ExponentialLayer(object):
+class ExponentialLayer(Layer):
 
     def __init__(self, num_units):
+        super().__init__()
+
         self.len = num_units
         self.sample_size = 0
         self.rand = be.rand
@@ -293,6 +360,7 @@ class ExponentialLayer(object):
         self.update(connected_mean_scaled, weights, beta)
         v_scaled = self.rescale(observations)
         derivs['field'] = -be.mean(v_scaled, axis=0)
+        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
         return derivs
 
     def rescale(self, observations):
