@@ -106,13 +106,19 @@ class Model(object):
     def gradient(self, observed, sampled):
         i = 0
 
+        grad = {
+        'layers': [None for l in self.layers],
+        'weights': [None for w in self.weights]
+        }
+
+
         # POSITIVE PHASE (using observed)
 
         # calling self.layers['visible'].derivatives has two effects:
         # 1) it updates the parameters of the hidden layer using the visible
         # observations.
         # 2) it updates the derivs attribute of the visible layer
-        self.layers[i].derivatives(observed,
+        grad['layers'][i] = self.layers[i].derivatives(observed,
                                            self.layers[i + 1],
                                            self.weights[i].val,
                                            beta=None
@@ -125,18 +131,18 @@ class Model(object):
         # 1) it updates the parameters of the visible layer using the hidden
         # observations (hid).
         # 2) it updates the derivs attribute of the hidden layer
-        self.layers[i + 1].derivatives(hid,
-                                          self.layers[i],
-                                          be.transpose(self.weights[i].val),
-                                          beta=None
-                                          )
+        grad['layers'][i+1] = self.layers[i + 1].derivatives(hid,
+                                                 self.layers[i],
+                                                 be.transpose(
+                                                    self.weights[i].val),
+                                                 beta=None
+                                                 )
         # we need rescaled visible and hidden observations to compute the
         # derivatives of the weights -- this only has an effect for layers
         # that have a scale parameter
         hid = self.layers[i + 1].rescale(hid)
         vis = self.layers[i].rescale(observed)
-        # return the derivative taken with respect to the model weights
-        #self.weights[i].derivs['val'] = -be.batch_outer(vis, hid) / len(sampled)
+        grad['weights'][i] = self.weights[i].derivatives(vis, hid)
 
         # NEGATIVE PHASE (using sampled)
 
@@ -144,11 +150,11 @@ class Model(object):
         # 1) it updates the parameters of the hidden layer using the visible
         # observations.
         # 2) it updates the derivs attribute of the visible layer
-        self.layers[i].derivatives(sampled,
-                                           self.layers[i + 1],
-                                           self.weights[i].val,
-                                           beta=None
-                                           )
+        grad['layers'][i] -= self.layers[i].derivatives(sampled,
+                                            self.layers[i + 1],
+                                            self.weights[i].val,
+                                            beta=None
+                                            )
         # calling self.layers['hidden'].mean after computing the derivatives
         # of the visible layer ensures that the ext_parameters of the hidden
         # layer are already up to date
@@ -157,15 +163,17 @@ class Model(object):
         # 1) it updates the parameters of the visible layer using the hidden
         # observations (hid).
         # 2) it updates the derivs attribute of the hidden layer
-        self.layers[i + 1].derivatives(hid,
-                                          self.layers[i],
-                                          be.transpose(self.weights[i].val),
-                                          beta=None
-                                          )
+        grad['layers'] -= self.layers[i + 1].derivatives(hid,
+                                             self.layers[i],
+                                             be.transpose(
+                                                self.weights[i].val),
+                                             beta=None
+                                             )
         # we need rescaled visible and hidden observations to compute the
         # derivatives of the weights -- this only has an effect for layers
         # that have a scale parameter
         hid = self.layers[i + 1].rescale(hid)
         vis = self.layers[i].rescale(sampled)
-        # return the derivative taken with respect to the model weights
-        #self.weights[i].derivs['val'] = -be.batch_outer(vis, hid) / len(sampled)
+        grad['weights'][i] = self.weights[i].derivatives(vis, hid)
+
+        return grad

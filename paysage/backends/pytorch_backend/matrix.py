@@ -11,6 +11,16 @@ def add_dicts_inplace(dict1, dict2):
     for key in dict2:
         dict1[key] += dict2[key]
 
+def subtract_dicts_inplace(dict1, dict2):
+    """
+    Entrywise subtraction of dict2 from dict1.
+    Modifies dict1 in place.
+
+    """
+
+    for key in dict2:
+        dict1[key] -= dict2[key]
+
 def float_scalar(scalar: T.Scalar) -> float:
     """
     Cast scalar to a float.
