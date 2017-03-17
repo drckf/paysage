@@ -21,6 +21,10 @@ class GradientMemory(object):
         self.mean_square_gradient = None
 
     def update_mean(self, grad):
+        """
+        Update the running average of the model gradients.
+
+        """
 
         if self.mean_gradient is None:
             self.mean_gradient = deepcopy(grad)
@@ -37,8 +41,12 @@ class GradientMemory(object):
                         )
 
     def update_mean_square(self, grad):
+        """
+        Update the running average of the squared model gradients.
 
-        if self.mean_gradient is None:
+        """
+
+        if self.mean_square_gradient is None:
             for key in grad:
                 # grad[key] is a list
                 for i in range(len(grad[key])):
@@ -61,10 +69,29 @@ class GradientMemory(object):
                         )
 
     def update(self, grad):
+        """
+        Update the running average of the model gradients and the running
+        average of the squared model gradients.
+
+        """
         if self.mean_weight:
             self.update_mean(grad)
         if self.mean_square_weight:
             self.update_mean_square(grad)
+
+    def normalize(self, grad):
+        """
+        Divide grad by the square root of the mean square gradient.
+
+        """
+        for key in grad:
+            # grad[key] is a list
+            for i in range(len(grad[key])):
+                # grad[key][i] is a dict
+                for p in grad[key][i]:
+                    # grad[key][i][p] is a tensor
+                    be.sqrt_div(grad[key][i][p],
+                                self.mean_square_gradient[key][i][p])
 
 
 # ----- LEARNING RATE SCHEDULERS ----- #
@@ -164,7 +191,6 @@ class Momentum(Optimizer):
                  tolerance=1e-6):
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
-        self.momentum = momentum
         self.memory = GradientMemory(mean_weight=momentum,
                                      mean_square_weight=0)
 
@@ -197,24 +223,32 @@ class RMSProp(Optimizer):
                  tolerance=1e-6):
         super().__init__(scheduler, tolerance)
         self.stepsize = be.float_scalar(stepsize)
-        self.mean_square_weight = be.float_scalar(mean_square_weight)
-        self.grad = {key: be.zeros_like(model.params[key])
-                        for key in model.params}
-        self.mean_square_grad = {key: be.zeros_like(model.params[key])
-                                    for key in model.params}
-        self.epsilon = be.float_scalar(1e-6)
+
+        self.memory = GradientMemory(mean_weight=0,
+                                     mean_square_weight=mean_square_weight)
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
         lr = self.scheduler.get_lr() * self.stepsize
 
-        self.grad = gradient(model, v_data, v_model)
-        if model.penalty:
-            for key in model.penalty:
-                self.grad[key] += model.penalty[key].grad(model.params[key])
+        grad = model.gradient(v_data, v_model)
+        self.memory.update(grad)
+
+        # this deepcopy is probably not needed
+        self.delta = deepcopy(grad)
+
+        for l in self.delta['layers']:
+
+            be.multiply_dict_inplace(l, lr)
+
+        for l in self.delta['weights']:
+            be.multiply_dict_inplace(l, lr)
+
+        model.parameter_update(self.delta)
+
         for key in self.grad:
             be.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
-            model.params[key] -= lr * be.sqrt_div(self.grad[key], self.epsilon + self.mean_square_grad[key])
+            model.params[key] -= lr * be.sqrt_div(self.grad[key], self.mean_square_grad[key])
 
 
 class ADAM(Optimizer):

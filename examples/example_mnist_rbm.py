@@ -28,14 +28,16 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     # set up the model and initialize the parameters
     vis_layer = layers.BernoulliLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
+
     rbm = hidden.Model(vis_layer, hid_layer)
+    rbm.initialize(data)
 
     # set up the optimizer and the fit method
     opt = optimizers.SGD(rbm,
                           stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
 
-    '''
+
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')
 
@@ -47,9 +49,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
                  mcsteps=mc_steps,
                  skip=200,
                  metrics=['ReconstructionError',
-                          'EnergyDistance',
-                          'EnergyGap',
-                          'EnergyZscore'])
+                          'EnergyDistance'])
 
 
     # fit the model
@@ -59,8 +59,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     # evaluate the model
     # this will be the same as the final epoch results
     # it is repeated here to be consistent with the sklearn rbm example
-    metrics = ['ReconstructionError', 'EnergyDistance',
-               'EnergyGap', 'EnergyZscore']
+    metrics = ['ReconstructionError', 'EnergyDistance']
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
 
     util.show_metrics(rbm, performance)
@@ -69,7 +68,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     util.show_weights(rbm, show_plot)
 
     # close the HDF5 store
-    '''
+
     data.close()
     print("Done")
 
