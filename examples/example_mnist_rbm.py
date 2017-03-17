@@ -1,6 +1,7 @@
 import os, sys, numpy, pandas, time
 
 from paysage import batch
+from paysage import layers
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
@@ -25,13 +26,11 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
                        train_fraction=0.99)
 
     # set up the model and initialize the parameters
-    '''
-    rbm = hidden.RestrictedBoltzmannMachine(data.ncols,
-                                            num_hidden_units,
-                                            vis_type='bernoulli',
-                                            hid_type='bernoulli')
-    rbm.initialize(data, method='hinton')
+    vis_layer = layers.BernoulliLayer(data.ncols)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+    rbm = hidden.Model(vis_layer, hid_layer)
 
+    '''
     # set up the optimizer and the fit method
     opt = optimizers.ADAM(rbm,
                           stepsize=learning_rate,

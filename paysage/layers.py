@@ -219,8 +219,8 @@ class BernoulliLayer(object):
         connected_layer.update(observations, weights, beta)
         connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
         self.update(connected_mean_scaled, be.transpose(weights), beta)
-        v_scaled = self.rescale(observations)
-        self.derivs['loc'] = -be.mean(v_scaled, axis=0)
+        scaled_observations = self.rescale(observations)
+        self.derivs['loc'] = -be.mean(scaled_observations, axis=0)
 
     def rescale(self, observations):
         return observations

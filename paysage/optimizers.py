@@ -206,6 +206,15 @@ adam = ADAM
 
 def gradient(model, minibatch, samples):
     positive_phase = model.derivatives(minibatch)
+    grad = {}
+    grad[model.weights]['val'] = None
+    for layer in model.layers:
+        for key in layer.derivs:
+            grad[layer][key] = layer.derivs[key]
+    grad['visible'][
+
+
+    positive_phase = model.derivatives(minibatch)
     negative_phase = model.derivatives(samples)
     return {key: (positive_phase[key] - negative_phase[key])
                 for key in positive_phase}
