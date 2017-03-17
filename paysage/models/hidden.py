@@ -41,9 +41,9 @@ class Model(object):
 
         """
         i = 0
-        self.layers[i+1].update(vis, self.weights[i].val, beta)
+        self.layers[i+1].update(vis, self.weights[i].W(), beta)
         h = self.layers[i+1].sample_state()
-        self.layers[i].update(h, be.transpose(self.weights[i].val), beta)
+        self.layers[i].update(h, be.transpose(self.weights[i].W()), beta)
         return self.layers[i].sample_state()
 
     def markov_chain(self, vis, steps, beta=None):
@@ -64,9 +64,9 @@ class Model(object):
 
         """
         i = 0
-        self.layers[i+1].update(vis, self.weights[i].val, beta)
+        self.layers[i+1].update(vis, self.weights[i].W(), beta)
         h = self.layers[i+1].mean()
-        self.layers[i].update(h, be.transpose(self.weights[i].val), beta)
+        self.layers[i].update(h, be.transpose(self.weights[i].W()), beta)
         return self.layers[i].mean()
 
     def mean_field_iteration(self, vis, steps, beta=None):
@@ -87,9 +87,9 @@ class Model(object):
 
         """
         i = 0
-        self.layers[i + 1].update(vis, self.weights[i].val, beta)
+        self.layers[i + 1].update(vis, self.weights[i].W(), beta)
         h = self.layers[i + 1].mode()
-        self.layers[i].update(h, be.transpose(self.weights[i].val), beta)
+        self.layers[i].update(h, be.transpose(self.weights[i].W()), beta)
         return self.layers[i].mode()
 
     def deterministic_iteration(self, vis, steps, beta=None):
@@ -111,7 +111,6 @@ class Model(object):
         'weights': [None for w in self.weights]
         }
 
-
         # POSITIVE PHASE (using observed)
 
         # calling self.layers['visible'].derivatives has two effects:
@@ -120,7 +119,7 @@ class Model(object):
         # 2) it updates the derivs attribute of the visible layer
         grad['layers'][i] = self.layers[i].derivatives(observed,
                                            self.layers[i + 1],
-                                           self.weights[i].val,
+                                           self.weights[i].W(),
                                            beta=None
                                            )
         # calling self.layers['hidden'].mean after computing the derivatives
@@ -134,7 +133,7 @@ class Model(object):
         grad['layers'][i+1] = self.layers[i + 1].derivatives(hid,
                                                  self.layers[i],
                                                  be.transpose(
-                                                    self.weights[i].val),
+                                                    self.weights[i].W()),
                                                  beta=None
                                                  )
         # we need rescaled visible and hidden observations to compute the
@@ -153,7 +152,7 @@ class Model(object):
         be.subtract_dicts_inplace(grad['layers'][i],
                                   self.layers[i].derivatives(sampled,
                                                  self.layers[i + 1],
-                                                 self.weights[i].val,
+                                                 self.weights[i].W(),
                                                  beta=None
                                                  )
                                   )
@@ -169,7 +168,7 @@ class Model(object):
                                   self.layers[i + 1].derivatives(hid,
                                                      self.layers[i],
                                                      be.transpose(
-                                                        self.weights[i].val),
+                                                        self.weights[i].W()),
                                                      beta=None
                                                      )
                                   )
@@ -183,3 +182,9 @@ class Model(object):
                                   )
 
         return grad
+
+    def parameter_update(self, deltas):
+        for i in range(len(self.layers)):
+            self.layers[i].parameter_step(deltas['layers'][i])
+        for i in range(len(self.weights)):
+            self.weights[i].parameter_step(deltas['weights'][i])

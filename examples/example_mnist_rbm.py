@@ -30,12 +30,12 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     hid_layer = layers.BernoulliLayer(num_hidden_units)
     rbm = hidden.Model(vis_layer, hid_layer)
 
-    '''
     # set up the optimizer and the fit method
-    opt = optimizers.ADAM(rbm,
+    opt = optimizers.SGD(rbm,
                           stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
 
+    '''
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')
 

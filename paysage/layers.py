@@ -28,6 +28,10 @@ class Layer(object):
             for param_name in self.penalties}
         return pen
 
+    def parameter_step(self, deltas):
+        be.subtract_dicts_inplace(self.int_params, deltas)
+        self.enforce_constraints()
+
 
 class Weights(Layer):
 
@@ -43,10 +47,11 @@ class Weights(Layer):
         'matrix': 0.01 * be.randn(shape)
         }
 
-        # the val attribute is a reference to weight matrix
+    def W(self):
+        # the W method provides a reference to the weight matrix
         # it is just for convenience so that we don't have to
         # type out the whole thing every time
-        self.val = self.int_params['matrix']
+        return self.int_params['matrix']
 
     def derivatives(self, first_layer_scaled, second_layer_scaled):
         n = len(first_layer_scaled)

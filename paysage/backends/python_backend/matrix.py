@@ -22,6 +22,16 @@ def subtract_dicts_inplace(dict1, dict2):
     for key in dict2:
         dict1[key] -= dict2[key]
 
+def multiply_dict_inplace(dict1, scalar) -> None:
+    """
+    Entrywise multiplication of dict1 by scalar.
+    Modifies dict1 in place.
+
+    """
+
+    for key in dict1:
+        dict1[key] *= scalar
+
 def float_scalar(scalar):
     """
     Cast scalar to a 32-bit float.
