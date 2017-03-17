@@ -19,11 +19,6 @@ class GaussianLayer(object):
         'variance': None
         }
 
-        self.derivs = {
-        'loc': be.zeros(self.len),
-        'log_var': be.zeros(self.len)
-        }
-
     def online_param_update(self, data):
         n = len(data)
         new_sample_size = n + self.sample_size
@@ -58,25 +53,32 @@ class GaussianLayer(object):
                                       )
 
     def derivatives(self, observations, connected_layer, weights, beta=None):
+        derivs = {
+        'loc': be.zeros(self.len),
+        'log_var': be.zeros(self.len)
+        }
+
         connected_layer.update(observations, weights, beta)
         connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
 
         self.update(connected_mean_scaled, weights, beta)
         v_scaled = self.rescale(observations)
 
-        self.derivs['loc'] = -be.mean(v_scaled, axis=0)
+        derivs['loc'] = -be.mean(v_scaled, axis=0)
 
         diff = be.square(
         observations - be.broadcast(self.int_params['loc'], observations)
         )
-        self.derivs['log_var'] = -0.5 * be.mean(diff, axis=0)
-        self.derivs['log_var'] += be.batch_dot(
-                                  connected_mean_scaled,
-                                  be.transpose(weights),
-                                  observations,
-                                  axis=0
-                                  ) / len(observations)
-        self.derivs['log_var'] = self.rescale(self.derivs['log_var'])
+        derivs['log_var'] = -0.5 * be.mean(diff, axis=0)
+        derivs['log_var'] += be.batch_dot(
+                             connected_mean_scaled,
+                             be.transpose(weights),
+                             observations,
+                             axis=0
+                             ) / len(observations)
+        derivs['log_var'] = self.rescale(derivs['log_var'])
+
+        return derivs
 
     def rescale(self, observations):
         scale = be.exp(self.int_params['log_var'])
@@ -115,10 +117,6 @@ class IsingLayer(object):
         'field': None
         }
 
-        self.derivs = {
-        'loc': be.zeros(self.len)
-        }
-
     def online_param_update(self, data):
         n = len(data)
         new_sample_size = n + self.sample_size
@@ -144,11 +142,15 @@ class IsingLayer(object):
                                     )
 
     def derivatives(self, observations, connected_layer, weights, beta=None):
+        derivs = {
+        'loc': be.zeros(self.len)
+        }
         connected_layer.update(observations, weights, beta)
         connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
         self.update(connected_mean_scaled, weights, beta)
         v_scaled = self.rescale(observations)
-        self.derivs['loc'] = -be.mean(v_scaled, axis=0)
+        derivs['loc'] = -be.mean(v_scaled, axis=0)
+        return derivs
 
     def rescale(self, observations):
         return observations
@@ -187,10 +189,6 @@ class BernoulliLayer(object):
         'field': None
         }
 
-        self.derivs = {
-        'loc': be.zeros(self.len)
-        }
-
     def online_param_update(self, data):
         n = len(data)
         new_sample_size = n + self.sample_size
@@ -216,11 +214,15 @@ class BernoulliLayer(object):
                                     )
 
     def derivatives(self, observations, connected_layer, weights, beta=None):
+        derivs = {
+        'loc': be.zeros(self.len)
+        }
         connected_layer.update(observations, weights, beta)
         connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
         self.update(connected_mean_scaled, be.transpose(weights), beta)
         scaled_observations = self.rescale(observations)
-        self.derivs['loc'] = -be.mean(scaled_observations, axis=0)
+        derivs['loc'] = -be.mean(scaled_observations, axis=0)
+        return derivs
 
     def rescale(self, observations):
         return observations
@@ -258,10 +260,6 @@ class ExponentialLayer(object):
         'field': None
         }
 
-        self.derivs = {
-        'loc': be.zeros(self.len)
-        }
-
     def online_param_update(self, data):
         n = len(data)
         new_sample_size = n + self.sample_size
@@ -287,11 +285,15 @@ class ExponentialLayer(object):
                                     )
 
     def derivatives(self, observations, connected_layer, weights, beta=None):
+        derivs = {
+        'loc': be.zeros(self.len)
+        }
         connected_layer.update(observations, weights, beta)
         connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
         self.update(connected_mean_scaled, weights, beta)
         v_scaled = self.rescale(observations)
-        self.derivs['field'] = -be.mean(v_scaled, axis=0)
+        derivs['field'] = -be.mean(v_scaled, axis=0)
+        return derivs
 
     def rescale(self, observations):
         return observations
