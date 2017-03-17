@@ -150,11 +150,13 @@ class Model(object):
         # 1) it updates the parameters of the hidden layer using the visible
         # observations.
         # 2) it updates the derivs attribute of the visible layer
-        grad['layers'][i] -= self.layers[i].derivatives(sampled,
-                                            self.layers[i + 1],
-                                            self.weights[i].val,
-                                            beta=None
-                                            )
+        be.subtract_dicts_inplace(grad['layers'][i],
+                                  self.layers[i].derivatives(sampled,
+                                                 self.layers[i + 1],
+                                                 self.weights[i].val,
+                                                 beta=None
+                                                 )
+                                  )
         # calling self.layers['hidden'].mean after computing the derivatives
         # of the visible layer ensures that the ext_parameters of the hidden
         # layer are already up to date
@@ -163,17 +165,21 @@ class Model(object):
         # 1) it updates the parameters of the visible layer using the hidden
         # observations (hid).
         # 2) it updates the derivs attribute of the hidden layer
-        grad['layers'] -= self.layers[i + 1].derivatives(hid,
-                                             self.layers[i],
-                                             be.transpose(
-                                                self.weights[i].val),
-                                             beta=None
-                                             )
+        be.subtract_dicts_inplace(grad['layers'][i+1],
+                                  self.layers[i + 1].derivatives(hid,
+                                                     self.layers[i],
+                                                     be.transpose(
+                                                        self.weights[i].val),
+                                                     beta=None
+                                                     )
+                                  )
         # we need rescaled visible and hidden observations to compute the
         # derivatives of the weights -- this only has an effect for layers
         # that have a scale parameter
         hid = self.layers[i + 1].rescale(hid)
         vis = self.layers[i].rescale(sampled)
-        grad['weights'][i] = self.weights[i].derivatives(vis, hid)
+        be.subtract_dicts_inplace(grad['weights'][i],
+                                  self.weights[i].derivatives(vis, hid)
+                                  )
 
         return grad
