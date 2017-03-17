@@ -47,6 +47,7 @@ class GradientMemory(object):
         """
 
         if self.mean_square_gradient is None:
+            self.mean_square_gradient = deepcopy(grad)
             for key in grad:
                 # grad[key] is a list
                 for i in range(len(grad[key])):
@@ -63,8 +64,8 @@ class GradientMemory(object):
                     # grad[key][i] is a dict
                     for p in grad[key][i]:
                         # grad[key][i][p] is a tensor
-                        be.square_mix_inplace(self.mean_weight,
-                        self.mean_gradient[key][i][p],
+                        be.square_mix_inplace(self.mean_square_weight,
+                        self.mean_square_gradient[key][i][p],
                         grad[key][i][p]
                         )
 
@@ -84,14 +85,16 @@ class GradientMemory(object):
         Divide grad by the square root of the mean square gradient.
 
         """
+        result = deepcopy(grad)
         for key in grad:
             # grad[key] is a list
             for i in range(len(grad[key])):
                 # grad[key][i] is a dict
                 for p in grad[key][i]:
                     # grad[key][i][p] is a tensor
-                    be.sqrt_div(grad[key][i][p],
+                    result[key][i][p] = be.sqrt_div(grad[key][i][p],
                                 self.mean_square_gradient[key][i][p])
+        return result
 
 
 # ----- LEARNING RATE SCHEDULERS ----- #
@@ -233,22 +236,15 @@ class RMSProp(Optimizer):
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
-
-        # this deepcopy is probably not needed
-        self.delta = deepcopy(grad)
+        self.delta = self.memory.normalize(grad)
 
         for l in self.delta['layers']:
-
             be.multiply_dict_inplace(l, lr)
 
         for l in self.delta['weights']:
             be.multiply_dict_inplace(l, lr)
 
         model.parameter_update(self.delta)
-
-        for key in self.grad:
-            be.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
-            model.params[key] -= lr * be.sqrt_div(self.grad[key], self.mean_square_grad[key])
 
 
 class ADAM(Optimizer):

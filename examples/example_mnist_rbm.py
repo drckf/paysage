@@ -33,7 +33,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     rbm.initialize(data)
 
     # set up the optimizer and the fit method
-    opt = optimizers.SGD(rbm,
+    opt = optimizers.RMSProp(rbm,
                           stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
 
