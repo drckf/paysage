@@ -17,17 +17,20 @@ def float_tensor(tensor: T.Tensor) -> T.FloatTensor:
     """
     try:
         # tensor is a numpy object
-        return torch.FloatTensor(tensor)
+        return torch.FloatTensor(tensor.astype(float))
     except Exception:
         # tensor is a torch object
         return tensor.float()
 
-def to_numpy_array(tensor: T.TorchTensor) -> T.NumpyTensor:
+def to_numpy_array(tensor: T.Tensor) -> T.NumpyTensor:
     """
     Return tensor as a numpy array.
 
     """
-    return tensor.numpy()
+    try:
+        return tensor.numpy()
+    except Exception:
+        return numpy.array(tensor)
 
 def shape(tensor: T.TorchTensor) -> T.Tuple[int]:
     """
@@ -164,7 +167,7 @@ def dtype(tensor: T.FloatTensor) -> type:
     Return the type of the tensor.
 
     """
-    raise tensor.type()
+    return tensor.type()
 
 def mix_inplace(w: T.Scalar,
                 x: T.FloatTensor,

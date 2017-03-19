@@ -21,7 +21,7 @@ class GaussianLayer(object):
 
     def sample_state(self, loc, scale):
         r = be.float_tensor(self.rand(be.shape(loc)))
-        return loc + scale * r
+        return loc + be.broadcast(scale, r) * r
 
     def random(self, array_or_shape):
         try:
@@ -80,7 +80,7 @@ class BernoulliLayer(object):
 
     def sample_state(self, loc):
         p = be.expit(loc)
-        r = self.rand(p.shape)
+        r = self.rand(be.shape(p))
         return be.float_tensor(r<p)
 
     def random(self, array_or_shape):

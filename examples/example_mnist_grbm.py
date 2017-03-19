@@ -8,7 +8,6 @@ from paysage import fit
 from paysage import optimizers
 
 import example_util as util
-import plotting
 
 transform = partial(batch.scale, denominator=255)
 
@@ -52,9 +51,7 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
                  mcsteps=mc_steps,
                  skip=200,
                  metrics=['ReconstructionError',
-                          'EnergyDistance',
-                          'EnergyGap',
-                          'EnergyZscore'])
+                          'EnergyDistance'])
 
     # fit the model
     print('training with contrastive divergence')
@@ -63,8 +60,7 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
     # evaluate the model
     # this will be the same as the final epoch results
     # it is repeated here to be consistent with the sklearn rbm example
-    metrics = ['ReconstructionError', 'EnergyDistance',
-               'EnergyGap', 'EnergyZscore']
+    metrics = ['ReconstructionError', 'EnergyDistance']
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
 
     util.show_metrics(rbm, performance)

@@ -329,7 +329,8 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
 
     def _hidden_field(self, visible, beta=None):
         scale = be.exp(self.params['visible_scale'])
-        result = be.dot(visible/scale, self.params['weights'])
+        v_scaled = visible / be.broadcast(scale, visible)
+        result = be.dot(v_scaled, self.params['weights'])
         if beta is not None:
             result *= be.broadcast(beta, result)
         result += be.broadcast(self.params['hidden_bias'], result)
@@ -364,33 +365,32 @@ class GaussianRestrictedBoltzmannMachine(LatentModel):
     def derivatives(self, visible):
         mean_hidden = self.hidden_mean(visible, beta=None)
         scale = be.exp(self.params['visible_scale'])
-        v_scaled = visible / scale
+        v_scaled = visible / be.broadcast(scale, visible)
         derivs = {}
         derivs['visible_bias'] = -be.mean(v_scaled, axis=0)
         derivs['hidden_bias'] = -be.mean(mean_hidden, axis=0)
         derivs['weights'] = -be.batch_outer(v_scaled, mean_hidden) / len(visible)
-        derivs['visible_scale'] = -0.5 * be.mean((visible-self.params['visible_bias'])**2, axis=0)
+
+        diff = (visible - be.broadcast(self.params['visible_bias'], visible))**2
+        derivs['visible_scale'] = -0.5 * be.mean(diff, axis=0)
         derivs['visible_scale'] += be.batch_dot(mean_hidden, be.transpose(self.params['weights']), visible, axis=0) / len(visible)
         derivs['visible_scale'] /= scale
         return derivs
 
     def joint_energy(self, visible, hidden, beta=None):
         scale = be.exp(self.params['visible_scale'])
-        v_scaled = visible / scale
+        v_scaled = visible / be.broadcast(scale, visible)
         energy = -be.batch_dot(v_scaled, self.params['weights'], hidden)
         if beta is not None:
             energy *= be.flatten(beta)
-        energy -= -0.5 * be.mean((visible - self.params['visible_bias'])**2 / scale, axis=1)
+            diff = (visible - be.broadcast(self.params['visible_bias'], visible))**2
+        diff /= be.broadcast(scale, diff)
+        energy -= -0.5 * be.mean(diff, axis=1)
         energy -= be.dot(hidden, self.params['hidden_bias'])
         return be.mean(energy)
 
     def marginal_free_energy(self, visible, beta=None):
-        scale = be.exp(self.params['visible_scale'])
-        v_scaled = visible / scale
-        log_Z_hidden = self.layers['hidden'].log_partition_function(self._hidden_field(v_scaled, beta))
-        energy = 0.5 * be.mean((visible - self.params['visible_bias'])**2 / scale, axis=1)
-        energy -= be.tsum(log_Z_hidden, axis=1)
-        return energy
+        raise NotImplementedError
 
 
 # ----- ALIASES ----- #
