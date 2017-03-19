@@ -3,6 +3,7 @@ import os, sys, numpy, pandas, time
 from functools import partial
 
 from paysage import batch
+from paysage import layers
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
@@ -16,11 +17,11 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
     num_hidden_units = 500
     batch_size = 50
     num_epochs = 10
-    learning_rate = 0.001
+    learning_rate = 0.01
     mc_steps = 1
 
     (_, _, shuffled_filepath) = \
-        util.default_paths(paysage_path)
+            util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
     data = batch.Batch(shuffled_filepath,
@@ -30,13 +31,14 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
                        train_fraction=0.99)
 
     # set up the model and initialize the parameters
-    rbm = hidden.GRBM(data.ncols,
-                      num_hidden_units,
-                      hid_type = 'bernoulli')
-    rbm.initialize(data, method='hinton')
+    vis_layer = layers.GaussianLayer(data.ncols)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+
+    rbm = hidden.Model(vis_layer, hid_layer)
+    rbm.initialize(data)
 
     # set up the optimizer, sampler, and fit method
-    opt = optimizers.ADAM(rbm,
+    opt = optimizers.RMSProp(rbm,
                           stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
 

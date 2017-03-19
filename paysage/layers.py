@@ -124,7 +124,7 @@ class GaussianLayer(Layer):
         connected_layer.update(observations, weights, beta)
         connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
 
-        self.update(connected_mean_scaled, weights, beta)
+        self.update(connected_mean_scaled, be.transpose(weights), beta)
         v_scaled = self.rescale(observations)
 
         derivs['loc'] = -be.mean(v_scaled, axis=0)
@@ -155,8 +155,8 @@ class GaussianLayer(Layer):
         return self.ext_params['mean']
 
     def sample_state(self):
-        r = be.float_tensor(self.rand(be.shape(self.ext_params['loc'])))
-        return self.ext_params['loc'] + be.sqrt(self.ext_params['variance'])*r
+        r = be.float_tensor(self.rand(be.shape(self.ext_params['mean'])))
+        return self.ext_params['mean'] + be.sqrt(self.ext_params['variance'])*r
 
     def random(self, array_or_shape):
         try:
