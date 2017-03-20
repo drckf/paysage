@@ -61,6 +61,11 @@ class Weights(Layer):
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
         return derivs
 
+    def energy(self, first_layer_scaled, second_layer_scaled):
+        return -be.batch_dot(first_layer_scaled,
+                             self.int_params['matrix'],
+                             second_layer_scaled
+                             )
 
 
 class GaussianLayer(Layer):
