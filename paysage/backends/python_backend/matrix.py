@@ -1,6 +1,7 @@
 import numpy, math
 from numba import jit
 import numexpr as ne
+from . import typedef as T
 
 def add_dicts_inplace(dict1, dict2):
     """
