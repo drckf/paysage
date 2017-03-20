@@ -15,7 +15,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     learning_rate = 0.01
     mc_steps = 1
 
-    (paysage_path, filepath, shuffled_filepath) = \
+    (_, _, shuffled_filepath) = \
             util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
@@ -33,10 +33,9 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     rbm.initialize(data)
 
     # set up the optimizer and the fit method
-    opt = optimizers.RMSProp(rbm,
+    opt = optimizers.ADAM(rbm,
                           stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
-
 
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')
@@ -50,7 +49,6 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
                  skip=200,
                  metrics=['ReconstructionError',
                           'EnergyDistance'])
-
 
     # fit the model
     print('training with contrastive divergence')
@@ -68,7 +66,6 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     util.show_weights(rbm, show_plot)
 
     # close the HDF5 store
-
     data.close()
     print("Done")
 
