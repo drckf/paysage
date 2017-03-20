@@ -80,11 +80,27 @@ class GradientMemory(object):
         if self.mean_square_weight:
             self.update_mean_square(grad)
 
-    def normalize(self, grad):
+    def normalize(self, grad, unbiased=False):
         """
         Divide grad by the square root of the mean square gradient.
 
         """
+
+        # a running average is biased due to the autoregressive correlations
+        # between adjacent timepoints
+        # the bias can be corrected by renormalizing the results
+
+        mean_norm = be.float_scalar(1)
+        mean_square_norm = be.float_scalar(1)
+
+
+        if unbiased:
+            mean_norm = be.float_scalar(1 - self.mean_weight)
+            mean_square_norm = be.float_scalar(1 - self.mean_square_weight)
+        else:
+            mean_norm = be.float_scalar(1)
+            mean_square_norm = be.float_scalar(1)
+
         result = deepcopy(grad)
         for key in grad:
             # grad[key] is a list
@@ -92,8 +108,10 @@ class GradientMemory(object):
                 # grad[key][i] is a dict
                 for p in grad[key][i]:
                     # grad[key][i][p] is a tensor
-                    result[key][i][p] = be.sqrt_div(grad[key][i][p],
-                                self.mean_square_gradient[key][i][p])
+                    result[key][i][p] = be.sqrt_div(
+                    grad[key][i][p] / mean_norm,
+                    self.mean_square_gradient[key][i][p] / mean_square_norm
+                    )
         return result
 
 
@@ -236,7 +254,7 @@ class RMSProp(Optimizer):
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
-        self.delta = self.memory.normalize(grad)
+        self.delta = self.memory.normalize(grad, unbiased=True)
 
         for l in self.delta['layers']:
             be.multiply_dict_inplace(l, lr)
@@ -273,7 +291,8 @@ class ADAM(Optimizer):
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
-        self.delta = self.memory.normalize(grad)
+        self.delta = self.memory.normalize(self.memory.mean_gradient,
+                                           unbiased=True)
 
         for l in self.delta['layers']:
             be.multiply_dict_inplace(l, lr)
@@ -295,6 +314,10 @@ adam = ADAM
 # ----- FUNCTIONS ----- #
 
 def gradient_magnitude(grad) -> float:
+    """
+    Compute the magnitude of the gradient.
+
+    """
 
     # for an rbm
     # grad looks someting like like
