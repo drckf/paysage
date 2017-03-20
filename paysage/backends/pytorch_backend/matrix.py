@@ -1,6 +1,36 @@
 import numpy, torch
 from . import typedef as T
 
+def add_dicts_inplace(dict1, dict2) -> None:
+    """
+    Entrywise addition of dict2 to dict1.
+    Modifies dict1 in place.
+
+    """
+
+    for key in dict2:
+        dict1[key] += dict2[key]
+
+def subtract_dicts_inplace(dict1, dict2) -> None:
+    """
+    Entrywise subtraction of dict2 from dict1.
+    Modifies dict1 in place.
+
+    """
+
+    for key in dict2:
+        dict1[key] -= dict2[key]
+
+def multiply_dict_inplace(dict1, scalar: T.Scalar) -> None:
+    """
+    Entrywise multiplication of dict1 by scalar.
+    Modifies dict1 in place.
+
+    """
+
+    for key in dict1:
+        dict1[key] *= scalar
+
 def float_scalar(scalar: T.Scalar) -> float:
     """
     Cast scalar to a float.

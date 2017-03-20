@@ -1,4 +1,4 @@
-from typing import Iterable, Tuple, Union, Dict
+from typing import Iterable, Tuple, Union
 from numpy import ndarray
 from torch import IntTensor, ShortTensor, LongTensor
 from torch import ByteTensor
