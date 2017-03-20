@@ -99,7 +99,7 @@ class Model(object):
 
         """
         new_vis = be.float_tensor(vis)
-        for t in range(steps):
+        for _ in range(steps):
             new_vis = self.deterministic_step(new_vis, beta)
         return new_vis
 
