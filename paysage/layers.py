@@ -196,6 +196,9 @@ class IsingLayer(Layer):
         'field': None
         }
 
+    def energy(self, data):
+        return - be.dot(data, self.int_params['loc']) / self.len
+
     def online_param_update(self, data):
         n = len(data)
         new_sample_size = n + self.sample_size
