@@ -263,30 +263,25 @@ class ADAM(Optimizer):
                  tolerance=1e-6):
         super().__init__(scheduler, tolerance)
         self.stepsize = be.float_scalar(stepsize)
-        self.mean_weight = be.float_scalar(mean_weight)
-        self.mean_square_weight = be.float_scalar(mean_square_weight)
-        self.grad = {key: be.zeros_like(model.params[key])
-                        for key in model.params}
-        self.mean_square_grad = {key: be.zeros_like(model.params[key])
-                                    for key in model.params}
-        self.mean_grad = {key: be.zeros_like(model.params[key])
-                            for key in model.params}
-        self.epsilon = be.float_scalar(1e-6)
+
+        self.memory = GradientMemory(mean_weight=mean_weight,
+                                     mean_square_weight=mean_square_weight)
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
         lr = self.scheduler.get_lr() * self.stepsize
 
-        self.grad = gradient(model, v_data, v_model)
-        if model.penalty:
-            for key in model.penalty:
-                self.grad[key] += model.penalty[key].grad(model.params[key])
-        for key in self.grad:
-            be.square_mix_inplace(self.mean_square_weight, self.mean_square_grad[key], self.grad[key])
-            be.mix_inplace(self.mean_weight, self.mean_grad[key], self.grad[key])
-            model.params[key] -= (lr / (1 - self.mean_weight)) * be.sqrt_div(
-            self.mean_grad[key], self.epsilon + self.mean_square_grad[key]/(1 - self.mean_square_weight)
-            )
+        grad = model.gradient(v_data, v_model)
+        self.memory.update(grad)
+        self.delta = self.memory.normalize(grad)
+
+        for l in self.delta['layers']:
+            be.multiply_dict_inplace(l, lr)
+
+        for l in self.delta['weights']:
+            be.multiply_dict_inplace(l, lr)
+
+        model.parameter_update(self.delta)
 
 
 # ----- ALIASES ----- #
