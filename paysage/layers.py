@@ -82,6 +82,14 @@ class GaussianLayer(Layer):
         'variance': None
         }
 
+    def energy(self, data):
+        # data: tensor ~ (num_samples, num_units)
+        scale = be.exp(self.int_params['log_var'])
+        result = data - be.broadcast(self.int_params['loc'], data)
+        result = be.square(result)
+        result /= be.broadcast(scale, data)
+        return 0.5 * be.mean(result, axis=1)
+
     def online_param_update(self, data):
         n = len(data)
         new_sample_size = n + self.sample_size
