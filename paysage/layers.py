@@ -197,7 +197,7 @@ class IsingLayer(Layer):
         }
 
     def energy(self, data):
-        return - be.dot(data, self.int_params['loc']) / self.len
+        return -be.dot(data, self.int_params['loc']) / self.len
 
     def online_param_update(self, data):
         n = len(data)
@@ -273,6 +273,9 @@ class BernoulliLayer(Layer):
         self.ext_params = {
         'field': None
         }
+
+    def energy(self, data):
+        return -be.dot(data, self.int_params['loc']) / self.len
 
     def online_param_update(self, data):
         n = len(data)
