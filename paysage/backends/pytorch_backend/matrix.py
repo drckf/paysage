@@ -1,30 +1,59 @@
 import numpy, torch
 from . import typedef as T
 
-def add_dicts_inplace(dict1, dict2) -> None:
+def add_dicts_inplace(dict1: T.Dict[str, T.Tensor],
+                      dict2: T.Dict[str, T.Tensor]) -> None:
     """
     Entrywise addition of dict2 to dict1.
-    Modifies dict1 in place.
+
+    Note:
+        Modifies dict1 in place.
+
+    Args:
+        dict1: A dictionary of tensors.
+        dict2: A dictionary of tensors.
+
+    Returns:
+        None
 
     """
 
     for key in dict2:
         dict1[key] += dict2[key]
 
-def subtract_dicts_inplace(dict1, dict2) -> None:
+def subtract_dicts_inplace(dict1: T.Dict[str, T.Tensor],
+                           dict2: T.Dict[str, T.Tensor]) -> None:
     """
     Entrywise subtraction of dict2 from dict1.
-    Modifies dict1 in place.
+
+    Note:
+        Modifies dict1 in place.
+
+    Args:
+        dict1: A dictionary of tensors.
+        dict2: A dictionary of tensors.
+
+    Returns:
+        None
 
     """
 
     for key in dict2:
         dict1[key] -= dict2[key]
 
-def multiply_dict_inplace(dict1, scalar: T.Scalar) -> None:
+def multiply_dict_inplace(dict1: T.Dict[str, T.Tensor], scalar: T.Scalar) -> None:
     """
     Entrywise multiplication of dict1 by scalar.
-    Modifies dict1 in place.
+
+    Note:
+        Modifies dict1 in place.
+
+    Args:
+        dict1: A dictionary of tensors.
+        scalar: A scalar.
+
+    Returns:
+        None
 
     """
 
@@ -35,6 +64,12 @@ def float_scalar(scalar: T.Scalar) -> float:
     """
     Cast scalar to a float.
 
+    Args:
+        scalar: A scalar quantity:
+
+    Returns:
+        float: Scalar converted to floating point.
+
     """
     return float(scalar)
 
@@ -43,6 +78,12 @@ EPSILON = float_scalar(numpy.finfo(numpy.float32).eps)
 def float_tensor(tensor: T.Tensor) -> T.FloatTensor:
     """
     Cast tensor to a float tensor.
+
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: Tensor converted to floating point.
 
     """
     try:
@@ -56,6 +97,12 @@ def to_numpy_array(tensor: T.Tensor) -> T.NumpyTensor:
     """
     Return tensor as a numpy array.
 
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: Tensor converted to a numpy array.
+
     """
     try:
         return tensor.numpy()
@@ -66,12 +113,24 @@ def shape(tensor: T.TorchTensor) -> T.Tuple[int]:
     """
     Return a tuple with the shape of the tensor.
 
+    Args:
+        tensor: A tensor:
+
+    Returns:
+        tuple: A tuple of integers describing the shape of the tensor.
+
     """
     return tuple(tensor.size())
 
 def ndim(tensor: T.TorchTensor) -> int:
     """
     Return the number of dimensions of a tensor.
+
+    Args:
+        tensor: A tensor:
+
+    Returns:
+        int: The number of dimensions of the tensor.
 
     """
     return tensor.ndimension()
@@ -80,12 +139,24 @@ def transpose(tensor: T.TorchTensor) -> T.FloatTensor:
     """
     Return the transpose of a tensor.
 
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: The transpose (exchange of rows and columns) of the tensor.
+
     """
     return tensor.t()
 
 def zeros(shape: T.Tuple[int]) -> T.FloatTensor:
     """
     Return a tensor of a specified shape filled with zeros.
+
+    Args:
+        shape: The shape of the desired tensor.
+
+    Returns:
+        tensor: A tensor of zeros with the desired shape.
 
     """
     return torch.zeros(shape)
@@ -94,12 +165,24 @@ def zeros_like(tensor: T.TorchTensor) -> T.FloatTensor:
     """
     Return a tensor of zeros with the same shape as the input tensor.
 
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: A tensor of zeros with the same shape.
+
     """
     return zeros(shape(tensor))
 
 def ones(shape: T.Tuple[int]) -> T.FloatTensor:
     """
     Return a tensor of a specified shape filled with ones.
+
+    Args:
+        shape: The shape of the desired tensor.
+
+    Returns:
+        tensor: A tensor of ones with the desired shape.
 
     """
     return torch.ones(shape)
@@ -108,22 +191,42 @@ def ones_like(tensor: T.TorchTensor) -> T.FloatTensor:
     """
     Return a tensor of ones with the same shape as the input tensor.
 
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: A tensor with the same shape.
+
     """
     return ones(shape(tensor))
-
-def diag(mat: T.TorchTensor) -> T.TorchTensor:
-    """
-    Return the diagonal elements of a matrix.
-
-    """
-    return mat.diag()
 
 def diagonal_matrix(vec: T.TorchTensor) -> T.TorchTensor:
     """
     Return a matrix with vec along the diagonal.
 
+    Args:
+        vec: A vector (i.e., 1D tensor).
+
+    Returns:
+        tensor: A matrix with the elements of vec along the diagonal,
+                and zeros elsewhere.
+
     """
     return torch.diag(vec)
+
+def diag(mat: T.TorchTensor) -> T.TorchTensor:
+    """
+    Return the diagonal elements of a matrix.
+
+    Args:
+        mat: A tensor.
+
+    Returns:
+        tensor: A vector (i.e., 1D tensor) containing the diagonal
+                elements of mat.
+
+    """
+    return mat.diag()
 
 def identity(n: int) -> T.FloatTensor:
     """

@@ -12,8 +12,8 @@ def add_dicts_inplace(dict1: T.Dict[str, T.Tensor],
         Modifies dict1 in place.
 
     Args:
-        dict1: A dictionary of tensors:
-        dict2: A dictionary of tensors:
+        dict1: A dictionary of tensors.
+        dict2: A dictionary of tensors.
 
     Returns:
         None
@@ -32,8 +32,8 @@ def subtract_dicts_inplace(dict1: T.Dict[str, T.Tensor],
         Modifies dict1 in place.
 
     Args:
-        dict1: A dictionary of tensors:
-        dict2: A dictionary of tensors:
+        dict1: A dictionary of tensors.
+        dict2: A dictionary of tensors.
 
     Returns:
         None
@@ -51,8 +51,8 @@ def multiply_dict_inplace(dict1: T.Dict[str, T.Tensor], scalar: T.Scalar) -> Non
         Modifies dict1 in place.
 
     Args:
-        dict1: A dictionary of tensors:
-        scalar: A scalar:
+        dict1: A dictionary of tensors.
+        scalar: A scalar.
 
     Returns:
         None
@@ -194,9 +194,9 @@ def ones_like(tensor: T.Tensor) -> T.Tensor:
     """
     return ones(shape(tensor))
 
-def diag(vec: T.Tensor) -> T.Tensor:
+def diagonal_matrix(vec: T.Tensor) -> T.Tensor:
     """
-    Return the diagonal elements of a matrix.
+    Return a matrix with vec along the diagonal.
 
     Args:
         vec: A vector (i.e., 1D tensor).
@@ -208,15 +208,15 @@ def diag(vec: T.Tensor) -> T.Tensor:
     """
     return numpy.diag(vec)
 
-def diagonal_matrix(mat: T.Tensor) -> T.Tensor:
+def diag(mat: T.Tensor) -> T.Tensor:
     """
-    Return a matrix with vec along the diagonal.
+    Return the diagonal elements of a matrix.
 
     Args:
         mat: A tensor.
 
     Returns:
-        tensor: A vector (i.e., 1D tensor)containing the diagonal
+        tensor: A vector (i.e., 1D tensor) containing the diagonal
                 elements of mat.
 
     """
