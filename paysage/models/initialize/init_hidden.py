@@ -17,7 +17,7 @@ def hinton(batch, model):
     """
 
     i = 0
-    nvis, nhid = be.shape(model.weights[i])
+    nvis, nhid = model.weights[i].shape
     model.weights[i].val = 0.01 * be.randn((nvis, nhid))
     while True:
         try:
