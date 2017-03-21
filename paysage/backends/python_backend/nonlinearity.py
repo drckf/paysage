@@ -123,7 +123,7 @@ def square(x: T.Tensor) -> T.Tensor:
     """
     return ne.evaluate('x**2')
 
-def tpow(x: T.Tensor, a: T.Scalar) -> T.Tensor:
+def tpow(x: T.Tensor, a: float) -> T.Tensor:
     """
     Elementwise power of a tensor x to power a.
 
