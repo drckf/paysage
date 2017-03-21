@@ -891,12 +891,32 @@ def quadratic(a: T.Tensor, b: T.Tensor, W: T.Tensor) -> T.Tensor:
     """
     Evaluate the quadratic form a W b.
 
+    a ~ vector, b ~ vector, W ~ matrix:
+    \sum_ij a_i W_ij b_j
+
+    a ~ matrix, b ~ matrix, W ~ matrix:
+    \sum_kl a_ik W_kl b_lj
+
+    Args:
+        a: A tensor:
+        b: A tensor:
+        W: A tensor:
+
+    Returns:
+        tensor: Quadratic function a W b.
+
     """
     return numpy.dot(a, numpy.dot(W, b))
 
 def inv(mat: T.Tensor) -> T.Tensor:
     """
     Compute matrix inverse.
+
+    Args:
+        mat: A square matrix.
+
+    Returns:
+        tensor: The matrix inverse.
 
     """
     return numpy.linalg.inv(mat)
@@ -907,9 +927,17 @@ def batch_dot(vis: T.Tensor, W: T.Tensor, hid: T.Tensor, axis: int=1) -> T.Tenso
     Let h be a L x M matrix where each row h_i is a hidden vector.
     And, let W be a N x M matrix of weights.
     Then, batch_dot(v,W,h) = \sum_i v_i^T W h_i
-    Returns a vector.
 
     The actual computation is performed with a vectorized expression.
+
+    Args:
+        vis: A tensor.
+        W: A tensor.
+        hid: A tensor.
+        axis (optional): Axis of interest
+
+    Returns:
+        tensor: A vector.
 
     """
     return (numpy.dot(vis, W) * hid).sum(axis).astype(numpy.float32)
