@@ -610,12 +610,33 @@ def tall(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.Boolean:
     Return True if all elements of the input tensor are true along the
     specified axis.
 
+    Args:
+        x: A float or tensor.
+        axis (optional): The axis of interest.
+        keepdims (optional): If this is set to true, the dimension of the tensor
+                             is unchanged. Otherwise, the reduced axis is removed
+                             and the dimension of the array is 1 less.
+
+    Returns:
+        if axis is None:
+            bool: 'all' applied to all elements in the tensor
+        else:
+            tensor (of bools): 'all' applied to the elements in the tensor
+                                along axis
+
     """
     return numpy.all(x, axis=axis, keepdims=keepdims)
 
 def equal(x: T.Tensor, y: T.Tensor) -> T.Boolean:
     """
     Elementwise if two tensors are equal.
+
+    Args:
+        x: A tensor.
+        y: A tensor.
+
+    Returns:
+        tensor (of bools): Elementwise test of equality between x and y.
 
     """
     return numpy.equal(x, y)
@@ -625,12 +646,30 @@ def allclose(x: T.Tensor, y: T.Tensor,
     """
     Test if all elements in the two tensors are approximately equal.
 
+    absolute(x - y) <= (atol + rtol * absolute(y))
+
+    Args:
+        x: A tensor.
+        y: A tensor.
+        rtol (optional): Relative tolerance.
+        atol (optional): Absolute tolerance.
+
+    returns:
+        bool: Check if all of the elements in the tensors are approximately equal.
+
     """
     return numpy.allclose(x, y, rtol=rtol, atol=atol)
 
 def not_equal(x: T.Tensor, y: T.Tensor) -> T.Boolean:
     """
     Elementwise test if two tensors are not equal.
+
+    Args:
+        x: A tensor.
+        y: A tensor.
+
+    Returns:
+        tensor (of bools): Elementwise test of non-equality between x and y.
 
     """
     return numpy.not_equal(x, y)
@@ -639,12 +678,26 @@ def greater(x: T.Tensor, y: T.Tensor) -> T.Boolean:
     """
     Elementwise test if x > y.
 
+    Args:
+        x: A tensor.
+        y: A tensor.
+
+    Returns:
+        tensor (of bools): Elementwise test of x > y.
+
     """
     return numpy.greater(x, y)
 
 def greater_equal(x: T.Tensor, y: T.Tensor) -> T.Boolean:
     """
     Elementwise test if x >= y.
+
+    Args:
+        x: A tensor.
+        y: A tensor.
+
+    Returns:
+        tensor (of bools): Elementwise test of x >= y.
 
     """
     return numpy.greater_equal(x, y)
@@ -653,12 +706,26 @@ def lesser(x: T.Tensor, y: T.Tensor) -> T.Boolean:
     """
     Elementwise test if x < y.
 
+    Args:
+        x: A tensor.
+        y: A tensor.
+
+    Returns:
+        tensor (of bools): Elementwise test of x < y.
+
     """
     return numpy.less(x, y)
 
 def lesser_equal(x: T.Tensor, y: T.Tensor) -> T.Boolean:
     """
     Elementwise test if x <= y.
+
+    Args:
+        x: A tensor.
+        y: A tensor.
+
+    Returns:
+        tensor (of bools): Elementwise test of x <= y.
 
     """
     return numpy.less_equal(x, y)
@@ -667,12 +734,26 @@ def maximum(x: T.Tensor, y: T.Tensor) -> T.Tensor:
     """
     Elementwise maximum of two tensors.
 
+    Args:
+        x: A tensor.
+        y: A tensor.
+
+    Returns:
+        tensor: Elementwise maximum of x and y.
+
     """
     return numpy.maximum(x, y)
 
 def minimum(x: T.Tensor, y: T.Tensor) -> T.Tensor:
     """
     Elementwise minimum of two tensors.
+
+    Args:
+        x: A tensor.
+        y: A tensor.
+
+    Returns:
+        tensor: Elementwise minimum of x and y.
 
     """
     return numpy.minimum(x, y)
