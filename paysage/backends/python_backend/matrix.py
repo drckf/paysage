@@ -762,12 +762,28 @@ def argmax(x: T.Tensor, axis: int) -> T.Tensor:
     """
     Compute the indices of the maximal elements in x along the specified axis.
 
+    Args:
+        x: A tensor:
+        axis: The axis of interest.
+
+    Returns:
+        tensor (of ints): Indices of the maximal elements in x along the
+                          specified axis.
+
     """
     return numpy.argmax(x, axis=axis)
 
 def argmin(x: T.Tensor, axis: int) -> T.Tensor:
     """
     Compute the indices of the minimal elements in x along the specified axis.
+
+    Args:
+        x: A tensor:
+        axis: The axis of interest.
+
+    Returns:
+        tensor (of ints): Indices of the minimum elements in x along the
+                          specified axis.
 
     """
     return numpy.argmin(x, axis=axis)
@@ -776,12 +792,40 @@ def dot(a: T.Tensor, b: T.Tensor) -> T.FloatingPoint:
     """
     Compute the matrix/dot product of tensors a and b.
 
+    Vector-Vector:
+        \sum_i a_i b_i
+
+    Matrix-Vector:
+        \sum_j a_ij b_j
+
+    Matrix-Matrix:
+        \sum_j a_ij b_jk
+
+    Args:
+        a: A tensor.
+        b: A tensor:
+
+    Returns:
+        if a and b are 1-dimensions:
+            float: the dot product of vectors a and b
+        else:
+            tensor: the matrix product of tensors a and b
+
     """
     return numpy.dot(a, b)
 
 def outer(x: T.Tensor, y: T.Tensor) -> T.Tensor:
     """
     Compute the outer product of vectors x and y.
+
+    mat_{ij} = x_i * y_j
+
+    Args:
+        x: A vector (i.e., a 1D tensor).
+        y: A vector (i.e., a 1D tensor).
+
+    Returns:
+        tensor: Outer product of vectors x and y.
 
     """
     return numpy.outer(x,y)
