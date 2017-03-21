@@ -495,6 +495,8 @@ def broadcast(vec: T.FloatTensor, matrix: T.FloatTensor) -> T.FloatTensor:
     """
     try:
         if ndim(vec) == 1:
+            if ndim(matrix) == 1:
+                return vec
             return vec.unsqueeze(0).expand(matrix.size(0), matrix.size(1))
         else:
             return vec.expand(matrix.size(0), matrix.size(1))
