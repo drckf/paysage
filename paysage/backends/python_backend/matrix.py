@@ -447,12 +447,38 @@ def tmax(x: T.Tensor, axis: int=None, keepdims: bool=False)-> T.FloatingPoint:
     """
     Return the elementwise maximum of a tensor along the specified axis.
 
+    Args:
+        x: A float or tensor.
+        axis (optional): The axis for taking the maximum.
+        keepdims (optional): If this is set to true, the dimension of the tensor
+                             is unchanged. Otherwise, the reduced axis is removed
+                             and the dimension of the array is 1 less.
+
+    Returns:
+        if axis is None:
+            float: The overall maximum of the elements in the tensor
+        else:
+            tensor: The maximum of the tensor along the specified axis.
+
     """
     return numpy.max(x, axis=axis, keepdims=keepdims)
 
 def tmin(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
     Return the elementwise minimum of a tensor along the specified axis.
+
+    Args:
+        x: A float or tensor.
+        axis (optional): The axis for taking the minimum.
+        keepdims (optional): If this is set to true, the dimension of the tensor
+                             is unchanged. Otherwise, the reduced axis is removed
+                             and the dimension of the array is 1 less.
+
+    Returns:
+        if axis is None:
+            float: The overall minimum of the elements in the tensor
+        else:
+            tensor: The minimum of the tensor along the specified axis.
 
     """
     return numpy.min(x, axis=axis, keepdims=keepdims)
@@ -461,12 +487,38 @@ def mean(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
     Return the mean of the elements of a tensor along the specified axis.
 
+    Args:
+        x: A float or tensor.
+        axis (optional): The axis for taking the mean.
+        keepdims (optional): If this is set to true, the dimension of the tensor
+                             is unchanged. Otherwise, the reduced axis is removed
+                             and the dimension of the array is 1 less.
+
+    Returns:
+        if axis is None:
+            float: The overall mean of the elements in the tensor
+        else:
+            tensor: The mean of the tensor along the specified axis.
+
     """
     return numpy.mean(x, axis=axis, keepdims=keepdims)
 
 def var(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
     Return the variance of the elements of a tensor along the specified axis.
+
+    Args:
+        x: A float or tensor.
+        axis (optional): The axis for taking the variance.
+        keepdims (optional): If this is set to true, the dimension of the tensor
+                             is unchanged. Otherwise, the reduced axis is removed
+                             and the dimension of the array is 1 less.
+
+    Returns:
+        if axis is None:
+            float: The overall variance of the elements in the tensor
+        else:
+            tensor: The variance of the tensor along the specified axis.
 
     """
     return numpy.var(x, axis=axis, keepdims=keepdims, ddof=1)
@@ -475,12 +527,38 @@ def std(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
     Return the standard deviation of the elements of a tensor along the specified axis.
 
+    Args:
+        x: A float or tensor.
+        axis (optional): The axis for taking the standard deviation.
+        keepdims (optional): If this is set to true, the dimension of the tensor
+                             is unchanged. Otherwise, the reduced axis is removed
+                             and the dimension of the array is 1 less.
+
+    Returns:
+        if axis is None:
+            float: The overall standard deviation of the elements in the tensor
+        else:
+            tensor: The standard deviation of the tensor along the specified axis.
+
     """
     return numpy.std(x, axis=axis, keepdims=keepdims, ddof=1)
 
 def tsum(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
     Return the sum of the elements of a tensor along the specified axis.
+
+    Args:
+        x: A float or tensor.
+        axis (optional): The axis for taking the sum.
+        keepdims (optional): If this is set to true, the dimension of the tensor
+                             is unchanged. Otherwise, the reduced axis is removed
+                             and the dimension of the array is 1 less.
+
+    Returns:
+        if axis is None:
+            float: The overall sum of the elements in the tensor
+        else:
+            tensor: The sum of the tensor along the specified axis.
 
     """
     return numpy.sum(x, axis=axis, keepdims=keepdims)
@@ -489,6 +567,19 @@ def tprod(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
     Return the product of the elements of a tensor along the specified axis.
 
+    Args:
+        x: A float or tensor.
+        axis (optional): The axis for taking the product.
+        keepdims (optional): If this is set to true, the dimension of the tensor
+                             is unchanged. Otherwise, the reduced axis is removed
+                             and the dimension of the array is 1 less.
+
+    Returns:
+        if axis is None:
+            float: The overall product of the elements in the tensor
+        else:
+            tensor: The product of the tensor along the specified axis.
+
     """
     return numpy.prod(x, axis=axis, keepdims=keepdims)
 
@@ -496,6 +587,20 @@ def tany(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.Boolean:
     """
     Return True if any elements of the input tensor are true along the
     specified axis.
+
+    Args:
+        x: A float or tensor.
+        axis (optional): The axis of interest.
+        keepdims (optional): If this is set to true, the dimension of the tensor
+                             is unchanged. Otherwise, the reduced axis is removed
+                             and the dimension of the array is 1 less.
+
+    Returns:
+        if axis is None:
+            bool: 'any' applied to all elements in the tensor
+        else:
+            tensor (of bools): 'any' applied to the elements in the tensor
+                                along axis
 
     """
     return numpy.any(x, axis=axis, keepdims=keepdims)
