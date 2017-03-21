@@ -257,6 +257,12 @@ def sign(tensor: T.Tensor) -> T.Tensor:
     """
     Return the elementwise sign of a tensor.
 
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: The sign of the elements in the tensor.
+
     """
     return numpy.sign(tensor)
 
@@ -265,6 +271,14 @@ def clip(tensor: T.Tensor, a_min: T.Scalar=None,
     """
     Return a tensor with its values clipped between a_min and a_max.
 
+    Args:
+        tensor: A tensor.
+        a_min (optional): The desired lower bound on the elements of the tensor.
+        a_max (optional): The desired upper bound on the elements of the tensor.
+
+    Returns:
+        tensor: A new tensor with its values clipped between a_min and a_max.
+
     """
     return tensor.clip(a_min, a_max)
 
@@ -272,7 +286,17 @@ def clip_inplace(tensor: T.Tensor, a_min: T.Scalar=None,
                  a_max: T.Scalar=None) -> None:
     """
     Clip the values of a tensor between a_min and a_max.
-    In-place function.
+
+    Note:
+        Modifies tensor in place.
+
+    Args:
+        tensor: A tensor.
+        a_min (optional): The desired lower bound on the elements of the tensor.
+        a_max (optional): The desired upper bound on the elements of the tensor.
+
+    Returns:
+        None
 
     """
     tensor.clip(a_min, a_max, out=tensor)
@@ -281,12 +305,25 @@ def tround(tensor: T.Tensor) -> T.Tensor:
     """
     Return a tensor with rounded elements.
 
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: A tensor rounded to the nearest integer (still floating point).
+
     """
     return numpy.round(tensor)
 
 def flatten(tensor: T.FloatingPoint) -> T.FloatingPoint:
     """
     Return a flattened tensor.
+
+    Args:
+        tensor: A tensor or scalar.
+
+    Returns:
+        result: If arg is a tensor, return a flattened 1D tensor.
+                If arg is a scalar, return the scalar.
 
     """
     try:
@@ -298,12 +335,25 @@ def reshape(tensor: T.Tensor, newshape: T.Tuple[int]) -> T.Tensor:
     """
     Return tensor with a new shape.
 
+    Args:
+        tensor: A tensor.
+        newshape: The desired shape.
+
+    Returns:
+        tensor: A tensor with the desired shape.
+
     """
     return numpy.reshape(tensor, newshape)
 
 def dtype(tensor: T.Tensor) -> type:
     """
     Return the type of the tensor.
+
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        type: The type of the elements in the tensor.
 
     """
     return tensor.dtype
@@ -315,6 +365,17 @@ def mix_inplace(w: T.Scalar, x: T.Tensor, y: T.Tensor) -> None:
 
     x <- w * x + (1-w) * y
 
+    Note:
+        Modifies x in place.
+
+    Args:
+        w: The mixing coefficient between 0 and 1 .
+        x: A tensor.
+        y: A tensor:
+
+    Returns:
+        None
+
     """
     ne.evaluate('w*x + (1-w)*y', out=x)
 
@@ -325,12 +386,30 @@ def square_mix_inplace(w: T.Scalar, x: T.Tensor, y: T.Tensor) -> None:
 
     x < w x + (1-w) * y**2
 
+    Note:
+        Modifies x in place.
+
+    Args:
+        w: The mixing coefficient between 0 and 1 .
+        x: A tensor.
+        y: A tensor:
+
+    Returns:
+        None
+
     """
     ne.evaluate('w*x + (1-w)*y*y', out=x)
 
 def sqrt_div(x: T.Tensor, y: T.Tensor) -> T.Tensor:
     """
     Elementwise division of x by sqrt(y).
+
+    Args:
+        x: A tensor:
+        y: A non-negative tensor.
+
+    Returns:
+        tensor: Elementwise division of x by sqrt(y).
 
     """
     z = EPSILON + y
@@ -340,6 +419,12 @@ def normalize(x: T.Tensor) -> T.Tensor:
     """
     Divide x by it's sum.
 
+    Args:
+        x: A non-negative tensor.
+
+    Returns:
+        tensor: A tensor normalized by it's sum.
+
     """
     y = EPSILON + x
     return x/numpy.sum(y)
@@ -347,6 +432,13 @@ def normalize(x: T.Tensor) -> T.Tensor:
 def norm(x: T.Tensor) -> float:
     """
     Return the L2 norm of a tensor.
+
+    Args:
+        x: A tensor.
+
+    Returns:
+        float: The L2 norm of the tensor
+               (i.e., the sqrt of the sum of the squared elements).
 
     """
     return numpy.linalg.norm(x)
