@@ -57,7 +57,8 @@ def compute_reconstructions(rbm, v_data, fit):
     v_model = rbm.deterministic_step(sampler.state)
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
-    return numpy.array([[v_data[i], v_model[i]] for i in idx])
+    return numpy.array([[be.to_numpy_array(v_data[i]),
+                         be.to_numpy_array(v_model[i])] for i in idx])
 
 def show_reconstructions(rbm, v_data, fit, show_plot):
     print("\nPlot a random sample of reconstructions")
@@ -72,7 +73,7 @@ def compute_fantasy_particles(rbm, v_data, fit):
     v_model = rbm.deterministic_step(sampler.state)
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
-    return numpy.array([[v_model[i]] for i in idx])
+    return numpy.array([[be.to_numpy_array(v_model[i])] for i in idx])
 
 def show_fantasy_particles(rbm, v_data, fit, show_plot):
     print("\nPlot a random sample of fantasy particles")
@@ -83,7 +84,7 @@ def compute_weights(rbm):
     idx = numpy.random.choice(
           range(rbm.weights[0].shape[1]),
           5, replace=False)
-    return numpy.array([[rbm.weights[0].W()[:, i]] for i in idx])
+    return numpy.array([[be.to_numpy_array(rbm.weights[0].W()[:, i])] for i in idx])
 
 def show_weights(rbm, show_plot):
     print("\nPlot a random sample of the weights")
