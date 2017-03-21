@@ -831,7 +831,15 @@ def outer(x: T.Tensor, y: T.Tensor) -> T.Tensor:
     return numpy.outer(x,y)
 
 
-class BroadcastError(ValueError): pass
+class BroadcastError(ValueError):
+    """
+    BroadcastError exception:
+
+    Args: None
+
+    """
+
+    pass
 
 def broadcast(vec: T.Tensor, matrix: T.Tensor) -> T.Tensor:
     """
@@ -839,6 +847,17 @@ def broadcast(vec: T.Tensor, matrix: T.Tensor) -> T.Tensor:
 
     vec ~ (N, 1) broadcasts to matrix ~ (N, M)
     vec ~ (1, N) and (N,) broadcast to matrix ~ (M, N)
+
+    Args:
+        vec: A vector (either flat, row, or column).
+        matrix: A matrix (i.e., a 2D tensor).
+
+    Returns:
+        tensor: A tensor of the same size as matrix containing the elements
+                of the vector.
+
+    Raises:
+        BroadcastError
 
     """
     try:
@@ -850,6 +869,20 @@ onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
 def affine(a: T.Tensor, b: T.Tensor, W: T.Tensor) -> T.Tensor:
     """
     Evaluate the affine transformation a + W b.
+
+    a ~ vector, b ~ vector, W ~ matrix:
+    a_i + \sum_j W_ij b_j
+
+    a ~ matrix, b ~ matrix, W ~ matrix:
+    a_ij + \sum_k W_ik b_kj
+
+    Args:
+        a: A tensor (1 or 2 dimensional).
+        b: A tensor (1 or 2 dimensional).
+        W: A tensor (2 dimensional).
+
+    Returns:
+        tensor: Affine transformation a + W b.
 
     """
     return a + numpy.dot(W,b)
