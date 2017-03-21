@@ -7,7 +7,16 @@ def add_dicts_inplace(dict1: T.Dict[str, T.Tensor],
                       dict2: T.Dict[str, T.Tensor]) ->  T.Dict[str, T.Tensor]:
     """
     Entrywise addition of dict2 to dict1.
-    Modifies dict1 in place.
+
+    Note:
+        Modifies dict1 in place.
+
+    Args:
+        dict1: A dictionary of tensors:
+        dict2: A dictionary of tensors:
+
+    Returns:
+        None
 
     """
 
@@ -18,7 +27,16 @@ def subtract_dicts_inplace(dict1: T.Dict[str, T.Tensor],
                            dict2: T.Dict[str, T.Tensor]) -> T.Dict[str, T.Tensor]:
     """
     Entrywise subtraction of dict2 from dict1.
-    Modifies dict1 in place.
+
+    Note:
+        Modifies dict1 in place.
+
+    Args:
+        dict1: A dictionary of tensors:
+        dict2: A dictionary of tensors:
+
+    Returns:
+        None
 
     """
 
@@ -28,7 +46,16 @@ def subtract_dicts_inplace(dict1: T.Dict[str, T.Tensor],
 def multiply_dict_inplace(dict1: T.Dict[str, T.Tensor], scalar: T.Scalar) -> None:
     """
     Entrywise multiplication of dict1 by scalar.
-    Modifies dict1 in place.
+
+    Note:
+        Modifies dict1 in place.
+
+    Args:
+        dict1: A dictionary of tensors:
+        scalar: A scalar:
+
+    Returns:
+        None
 
     """
 
@@ -39,6 +66,12 @@ def float_scalar(scalar: T.Scalar) -> float:
     """
     Cast scalar to a 32-bit float.
 
+    Args:
+        scalar: A scalar quantity:
+
+    Returns:
+        numpy.float32: Scalar converted to floating point.
+
     """
     return numpy.float32(scalar)
 
@@ -48,12 +81,24 @@ def float_tensor(tensor: T.Tensor) -> T.Tensor:
     """
     Cast tensor to a float tensor.
 
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: Tensor converted to floating point.
+
     """
     return numpy.array(tensor, dtype=numpy.float32)
 
 def to_numpy_array(tensor: T.Tensor) -> T.Tensor:
     """
     Return tensor as a numpy array.
+
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: Tensor converted to a numpy array.
 
     """
     return tensor
@@ -62,12 +107,24 @@ def shape(tensor: T.Tensor) -> T.Tuple[int]:
     """
     Return a tuple with the shape of the tensor.
 
+    Args:
+        tensor: A tensor:
+
+    Returns:
+        tuple: A tuple of integers describing the shape of the tensor.
+
     """
     return tensor.shape
 
 def ndim(tensor: T.Tensor) -> int:
     """
     Return the number of dimensions of a tensor.
+
+    Args:
+        tensor: A tensor:
+
+    Returns:
+        int: The number of dimensions of the tensor.
 
     """
     return tensor.ndim
@@ -76,12 +133,24 @@ def transpose(tensor: T.Tensor) -> T.Tensor:
     """
     Return the transpose of a tensor.
 
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: The transpose (exchange of rows and columns) of the tensor.
+
     """
     return numpy.transpose(tensor)
 
 def zeros(shape: T.Tuple[int]) -> T.Tensor:
     """
     Return a tensor of a specified shape filled with zeros.
+
+    Args:
+        shape: The shape of the desired tensor.
+
+    Returns:
+        tensor: A tensor of zeros with the desired shape.
 
     """
     return numpy.zeros(shape, dtype=numpy.float32)
@@ -90,12 +159,24 @@ def zeros_like(tensor: T.Tensor) -> T.Tensor:
     """
     Return a tensor of zeros with the same shape as the input tensor.
 
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: A tensor of zeros with the same shape.
+
     """
     return zeros(shape(tensor))
 
 def ones(shape: T.Tuple[int]) -> T.Tensor:
     """
     Return a tensor of a specified shape filled with ones.
+
+    Args:
+        shape: The shape of the desired tensor.
+
+    Returns:
+        tensor: A tensor of ones with the desired shape.
 
     """
     return numpy.ones(shape, dtype=numpy.float32)
@@ -104,12 +185,25 @@ def ones_like(tensor: T.Tensor) -> T.Tensor:
     """
     Return a tensor of ones with the same shape as the input tensor.
 
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: A tensor with the same shape.
+
     """
     return ones(shape(tensor))
 
 def diag(vec: T.Tensor) -> T.Tensor:
     """
     Return the diagonal elements of a matrix.
+
+    Args:
+        vec: A vector (i.e., 1D tensor).
+
+    Returns:
+        tensor: A matrix with the elements of vec along the diagonal,
+                and zeros elsewhere.
 
     """
     return numpy.diag(vec)
@@ -118,6 +212,13 @@ def diagonal_matrix(mat: T.Tensor) -> T.Tensor:
     """
     Return a matrix with vec along the diagonal.
 
+    Args:
+        mat: A tensor.
+
+    Returns:
+        tensor: A vector (i.e., 1D tensor)containing the diagonal
+                elements of mat.
+
     """
     return numpy.diag(mat)
 
@@ -125,13 +226,29 @@ def identity(n: int) -> T.Tensor:
     """
     Return the n-dimensional identity matrix.
 
+    Args:
+        n: The desired size of the tensor.
+
+    Returns:
+        tensor: The n x n identity matrix with ones along the diagonal
+                and zeros elsewhere.
+
     """
     return numpy.identity(n, dtype=numpy.float32)
 
 def fill_diagonal(mat: T.Tensor, val: T.Scalar) -> T.Tensor:
     """
     Fill the diagonal of the matirx with a specified value.
-    In-place function.
+
+    Note:
+        Modifies mat in place.
+
+    Args:
+        mat: A tensor.
+        val: The value to put along the diagonal.
+
+    Returns:
+        None
 
     """
     numpy.fill_diagonal(mat, val)
