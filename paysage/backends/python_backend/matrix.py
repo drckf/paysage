@@ -951,12 +951,26 @@ def batch_outer(vis: T.Tensor, hid: T.Tensor) -> T.Tensor:
 
     The actual computation is performed with a vectorized expression.
 
+    Args:
+        vis: A tensor.
+        hid: A tensor:
+
+    Returns:
+        tensor: A matrix.
+
     """
     return numpy.dot(vis.T, hid)
 
 def repeat(tensor: T.Tensor, n: int) -> T.Tensor:
     """
-    Repeat tensor n times along specified axis.
+    Repeat tensor n times along the first axis.
+
+    Args:
+        tensor: A vector (i.e., 1D tensor).
+        n: The number of repeats.
+
+    Returns:
+        tensor: A vector created from many repeats of the input tensor.
 
     """
     # current implementation only works for vectors
@@ -967,12 +981,25 @@ def stack(tensors: T.Iterable[T.Tensor], axis: int) -> T.Tensor:
     """
     Stack tensors along the specified axis.
 
+    Args:
+        tensors: A list of tensors.
+        axis: The axis the tensors will be stacked along.
+
+    Returns:
+        tensor: Stacked tensors from the input list.
+
     """
     return numpy.stack(tensors, axis=axis)
 
 def hstack(tensors: T.Iterable[T.Tensor]) -> T.Tensor:
     """
     Concatenate tensors along the first axis.
+
+    Args:
+        tensors: A list of tensors.
+
+    Returns:
+        tensor: Tensors stacked along axis=1.
 
     """
     return numpy.hstack(tensors)
@@ -981,12 +1008,27 @@ def vstack(tensors:  T.Iterable[T.Tensor]) -> T.Tensor:
     """
     Concatenate tensors along the zeroth axis.
 
+    Args:
+        tensors: A list of tensors.
+
+    Returns:
+        tensor: Tensors stacked along axis=0.
+
     """
     return numpy.vstack(tensors)
 
 def trange(start: int, end: int, step: int=1) -> T.Tensor:
     """
     Generate a tensor like a python range.
+
+    Args:
+        start: The start of the range.
+        end: The end of the range.
+        step: The step of the range.
+
+    Returns:
+        tensor: A vector ranging from start to end in increments
+                of step. Cast to float rather than int.
 
     """
     return numpy.arange(start, end, step, dtype=numpy.float32)
@@ -995,6 +1037,13 @@ def trange(start: int, end: int, step: int=1) -> T.Tensor:
 def squared_euclidean_distance(a, b):
     """
     Compute the squared euclidean distance between two vectors.
+
+    Args:
+        a: A vector (i.e., 1D tensor).
+        b: A vector (i.e., 1D tensor).
+
+    Returns:
+        float: Squared euclidean distance between a and b.
 
     """
     result = numpy.float32(0.0)
@@ -1007,6 +1056,13 @@ def euclidean_distance(a, b):
     """
     Compute the euclidean distance between two vectors.
 
+    Args:
+        a: A vector (i.e., 1D tensor).
+        b: A vector (i.e., 1D tensor).
+
+    Returns:
+        float: Euclidean distance between a and b.
+
     """
     return math.sqrt(squared_euclidean_distance(a, b))
 
@@ -1014,6 +1070,14 @@ def euclidean_distance(a, b):
 def resample(x, n, replace=True):
     """
     Resample a tensor along the zeroth axis.
+
+    Args:
+        x: A tensor.
+        n: Number of samples to take.
+        replace (optional): Sample with replacement if True.
+
+    Returns:
+        tensor: Sample of size n from x along axis=0.
 
     """
     index = numpy.random.choice(numpy.arange(len(x)),size=n,replace=replace)
@@ -1023,6 +1087,17 @@ def resample(x, n, replace=True):
 def fast_energy_distance(minibatch, samples, downsample=100):
     """
     Compute an approximate energy distance between two tensors.
+
+    Args:
+        minibatch: A 2D tensor.
+        samples: A 2D tensor.
+
+    Returns:
+        float: Approximate energy distance.
+
+    Szekely, G.J. (2002)
+    E-statistics: The Energy of Statistical Samples.
+    Technical Report BGSU No 02-16.
 
     """
     d1 = numpy.float32(0)
