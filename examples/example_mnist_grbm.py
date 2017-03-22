@@ -34,7 +34,7 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
     vis_layer = layers.GaussianLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = hidden.Model(vis_layer, hid_layer)
+    rbm = hidden.Model([vis_layer, hid_layer])
     rbm.initialize(data)
 
     # set up the optimizer, sampler, and fit method

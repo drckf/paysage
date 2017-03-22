@@ -27,7 +27,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     vis_layer = layers.BernoulliLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = hidden.Model(vis_layer, hid_layer)
+    rbm = hidden.Model([vis_layer, hid_layer])
     rbm.initialize(data)
 
     # set up the optimizer and the fit method

@@ -5,14 +5,11 @@ from ..models.initialize import init_hidden as init
 
 class Model(object):
 
-    def __init__(self, vis_layer, hid_layer):
+    def __init__(self, layer_list):
 
         # the layers are stored in a list with the visible units
         # as the zeroth element
-        self.layers = [
-        vis_layer,
-        hid_layer
-        ]
+        self.layers = layer_list
 
         # adjacent layers are connected by weights
         # therefore, if there are len(layers) = n then len(weights) = n - 1
