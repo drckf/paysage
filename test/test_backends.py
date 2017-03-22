@@ -11,7 +11,7 @@ import pytest
 
 # ---- testing utility functions ----- #
 
-def assert_close(pymat, torchmat, name, rtol=1e-05, atol=1e-08):
+def assert_close(pymat, torchmat, name, rtol=1e-05, atol=1e-06):
 
     pytorchmat = torch_matrix.to_numpy_array(torchmat)
     torchpymat = torch_matrix.float_tensor(pymat)
