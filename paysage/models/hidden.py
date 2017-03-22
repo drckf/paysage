@@ -114,6 +114,24 @@ class Model(object):
 
         # POSITIVE PHASE (using observed)
 
+        # update hidden layer external parameters
+        # compute scaled mean of hidden layer
+        # update visible layer external parameters
+        # compute visible layer gradient
+
+        # store hidden layer external parameters
+
+        # update visible layer external parameters (again!!!)
+        # compute scaled mean of visible layer
+        # update hidden layer external parameters (again!!!)
+        # compute hidden layer gradient
+
+        # store the scaled mean of the hidden layer
+        # store the scaled visible observations
+
+        # compute the gradient of the weights
+
+
         # calling self.layers['visible'].derivatives has two effects:
         # 1) it updates the parameters of the hidden layer using the visible
         # observations.

@@ -313,15 +313,19 @@ class BernoulliLayer(Layer):
                                     )
 
     def derivatives(self, observations, connected_layer, weights, beta=None):
-        derivs = {
-        'loc': be.zeros(self.len)
-        }
+
         connected_layer.update(observations, weights, beta)
         connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
         self.update(connected_mean_scaled, be.transpose(weights), beta)
+
+        derivs = {
+        'loc': be.zeros(self.len)
+        }
+
         scaled_observations = self.rescale(observations)
         derivs['loc'] = -be.mean(scaled_observations, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
+
         return derivs
 
     def rescale(self, observations):
@@ -393,15 +397,19 @@ class ExponentialLayer(Layer):
                                     )
 
     def derivatives(self, observations, connected_layer, weights, beta=None):
-        derivs = {
-        'loc': be.zeros(self.len)
-        }
+
         connected_layer.update(observations, weights, beta)
         connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
         self.update(connected_mean_scaled, weights, beta)
+
+        derivs = {
+        'loc': be.zeros(self.len)
+        }
+
         v_scaled = self.rescale(observations)
         derivs['field'] = -be.mean(v_scaled, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
+
         return derivs
 
     def rescale(self, observations):
