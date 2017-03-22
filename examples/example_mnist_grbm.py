@@ -53,7 +53,9 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
                  mcsteps=mc_steps,
                  skip=200,
                  metrics=['ReconstructionError',
-                          'EnergyDistance'])
+                          'EnergyDistance',
+                          'EnergyGap',
+                          'EnergyZscore'])
 
     # fit the model
     print('training with contrastive divergence')
@@ -62,7 +64,7 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
     # evaluate the model
     # this will be the same as the final epoch results
     # it is repeated here to be consistent with the sklearn rbm example
-    metrics = ['ReconstructionError', 'EnergyDistance']
+    metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore']
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
 
     util.show_metrics(rbm, performance)
@@ -75,4 +77,4 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
     print("Done")
 
 if __name__ == "__main__":
-    example_mnist_grbm(show_plot = False)
+    example_mnist_grbm(show_plot = True)

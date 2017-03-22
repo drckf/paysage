@@ -11,7 +11,7 @@ import example_util as util
 def example_mnist_rbm(paysage_path=None, show_plot = False):
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 10
+    num_epochs = 1
     learning_rate = 0.01
     mc_steps = 1
 
@@ -48,7 +48,9 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
                  mcsteps=mc_steps,
                  skip=200,
                  metrics=['ReconstructionError',
-                          'EnergyDistance'])
+                          'EnergyDistance',
+                          'EnergyGap',
+                          'EnergyZscore'])
 
     # fit the model
     print('training with contrastive divergence')
@@ -57,7 +59,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     # evaluate the model
     # this will be the same as the final epoch results
     # it is repeated here to be consistent with the sklearn rbm example
-    metrics = ['ReconstructionError', 'EnergyDistance']
+    metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore']
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
 
     util.show_metrics(rbm, performance)
@@ -70,4 +72,4 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     print("Done")
 
 if __name__ == "__main__":
-    example_mnist_rbm(show_plot = False)
+    example_mnist_rbm(show_plot = True)
