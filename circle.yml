@@ -3,12 +3,20 @@ machine:
     version: 3.6.0
   environment:
     LLVM_CONFIG: /usr/lib/llvm-3.8/bin/llvm-config
+    LD_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/
+
 
 dependencies:
   pre:
-    - sudo apt-get install libhdf5-dev;
-    - sudo apt-get install llvm-3.8;
+    - sudo apt-get install libhdf5-dev
+    - sudo apt-get install llvm-3.8
+    # CI image includes only 3.4 shared library; 
+    - sudo ln -s /usr/lib/x86_64-linux-gnu/libpython3.4m.so.1.0 /usr/lib/x86_64-linux-gnu/libpython3.6m.so.1.0
+    - export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:LD_LIBRARY_PATH
+
   post:
+    - pip install https://s3.amazonaws.com/pytorch/whl/cu75/torch-0.1.10.post2-cp36-cp36m-linux_x86_64.whl
+    - pip install torchvision
     - pip install -e .
 
 test:
@@ -16,7 +24,10 @@ test:
     - python mnist/download_mnist.py
   override:
     # tests
+    - which python
+    - echo $LD_LIBRARY_PATH
     - pytest test/test.py
+    - pytest test/test_backends.py
     - pytest test/test_rbm.py
     # pytorch currently not on pypi (only conda)
     # - pytest test/test_backends.py
