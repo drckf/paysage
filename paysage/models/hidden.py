@@ -17,7 +17,8 @@ class Model(object):
         # adjacent layers are connected by weights
         # therefore, if there are len(layers) = n then len(weights) = n - 1
         self.weights = [
-        layers.Weights((vis_layer.len, hid_layer.len))
+        layers.Weights((self.layers[i].len, self.layers[i+1].len))
+        for i in range(len(self.layers) - 1)
         ]
 
     def initialize(self, data, method='hinton'):

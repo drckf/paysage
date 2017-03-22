@@ -1,5 +1,3 @@
-import os, sys, numpy, pandas, time
-
 from paysage import batch
 from paysage import layers
 from paysage.models import hidden
@@ -11,7 +9,7 @@ import example_util as util
 def example_mnist_rbm(paysage_path=None, show_plot = False):
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 1
+    num_epochs = 10
     learning_rate = 0.01
     mc_steps = 1
 
@@ -33,7 +31,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     rbm.initialize(data)
 
     # set up the optimizer and the fit method
-    opt = optimizers.ADAM(rbm,
+    opt = optimizers.SGD(rbm,
                           stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
 
@@ -72,4 +70,4 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     print("Done")
 
 if __name__ == "__main__":
-    example_mnist_rbm(show_plot = True)
+    example_mnist_rbm(show_plot = False)

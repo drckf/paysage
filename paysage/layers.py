@@ -137,13 +137,12 @@ class GaussianLayer(Layer):
         'log_var': be.zeros(self.len)
         }
 
+        v_scaled = self.rescale(observations)
+        derivs['loc'] = -be.mean(v_scaled, axis=0)
+
         connected_layer.update(observations, weights, beta)
         connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
-
         self.update(connected_mean_scaled, be.transpose(weights), beta)
-        v_scaled = self.rescale(observations)
-
-        derivs['loc'] = -be.mean(v_scaled, axis=0)
 
         diff = be.square(
         observations - be.broadcast(self.int_params['loc'], observations)
@@ -230,12 +229,15 @@ class IsingLayer(Layer):
                                     )
 
     def derivatives(self, observations, connected_layer, weights, beta=None):
-        derivs = {
-        'loc': be.zeros(self.len)
-        }
+
         connected_layer.update(observations, weights, beta)
         connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
         self.update(connected_mean_scaled, weights, beta)
+
+        derivs = {
+        'loc': be.zeros(self.len)
+        }
+
         v_scaled = self.rescale(observations)
         derivs['loc'] = -be.mean(v_scaled, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
