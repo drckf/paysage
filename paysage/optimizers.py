@@ -97,9 +97,6 @@ class GradientMemory(object):
         if unbiased:
             mean_norm = be.float_scalar(1 - self.mean_weight)
             mean_square_norm = be.float_scalar(1 - self.mean_square_weight)
-        else:
-            mean_norm = be.float_scalar(1)
-            mean_square_norm = be.float_scalar(1)
 
         result = deepcopy(grad)
         for key in grad:
