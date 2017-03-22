@@ -48,7 +48,7 @@ def test_rbm(paysage_path=None):
     vis_layer = layers.BernoulliLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = hidden.Model(vis_layer, hid_layer)
+    rbm = hidden.Model([vis_layer, hid_layer])
     rbm.initialize(data)
 
     # obtain initial estimate of the reconstruction error
