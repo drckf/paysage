@@ -384,7 +384,7 @@ def square_mix_inplace(w: T.Scalar, x: T.Tensor, y: T.Tensor) -> None:
     Compute a weighted average of two matrices (x and y^2) and store the results in x.
     Useful for keeping track of running averages of squared matrices during training.
 
-    x < w x + (1-w) * y**2
+    x <- w x + (1-w) * y**2
 
     Note:
         Modifies x in place.
