@@ -95,6 +95,9 @@ class GaussianLayer(Layer):
         result /= be.broadcast(scale, data)
         return 0.5 * be.mean(result, axis=1)
 
+    def log_partition_function(self):
+        return -self.ext_params['mean']
+
     def online_param_update(self, data):
         n = len(data)
         new_sample_size = n + self.sample_size
@@ -199,6 +202,9 @@ class IsingLayer(Layer):
     def energy(self, data):
         return -be.dot(data, self.int_params['loc']) / self.len
 
+    def log_partition_function(self):
+        return be.logcosh(self.ext_params['field'])
+
     def online_param_update(self, data):
         n = len(data)
         new_sample_size = n + self.sample_size
@@ -277,6 +283,9 @@ class BernoulliLayer(Layer):
     def energy(self, data):
         return -be.dot(data, self.int_params['loc']) / self.len
 
+    def log_partition_function(self):
+        return be.softplus(self.ext_params['field'])
+
     def online_param_update(self, data):
         n = len(data)
         new_sample_size = n + self.sample_size
@@ -353,6 +362,9 @@ class ExponentialLayer(Layer):
 
     def energy(self, data):
         return be.dot(data, self.int_params['loc']) / self.len
+
+    def log_partition_function(self):
+        return -be.log(self.ext_params['field'])
 
     def online_param_update(self, data):
         n = len(data)

@@ -188,3 +188,19 @@ class Model(object):
             self.layers[i].parameter_step(deltas['layers'][i])
         for i in range(len(self.weights)):
             self.weights[i].parameter_step(deltas['weights'][i])
+
+    def joint_energy(self, visible, hidden):
+        energy = 0
+        i = 0
+        energy += self.layers[i].energy(visible)
+        energy += self.weights[i].energy(visible, hidden)
+        energy += self.layers[i+1].energy(hidden)
+        energy += self.weights[i+1].energy(hidden, visible)
+        return energy
+
+    def marginal_free_energy(self, visible):
+        i = 0
+        log_Z_hidden = self.layers[i+1].log_partition_function()
+        energy = - be.tsum(log_Z_hidden, axis=1)
+        energy -= be.dot(visible, self.layers[i].int_params['loc'])
+        return energy
