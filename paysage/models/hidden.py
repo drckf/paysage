@@ -115,74 +115,59 @@ class Model(object):
         # POSITIVE PHASE (using observed)
 
         # update hidden layer external parameters
-        # compute scaled mean of hidden layer
-        # update visible layer external parameters
+        self.layers[i+1].update(observed, self.weights[0].W(), beta=None)
+
+        # (gaussian only) compute scaled mean of hidden layer
         # compute visible layer gradient
-
-        # store hidden layer external parameters
-
-        # update visible layer external parameters (again!!!)
-        # compute scaled mean of visible layer
-        # update hidden layer external parameters (again!!!)
-        # compute hidden layer gradient
-
-        # store the scaled mean of the hidden layer
-        # store the scaled visible observations
-
-        # compute the gradient of the weights
-
-
-        # calling self.layers['visible'].derivatives has two effects:
-        # 1) it updates the parameters of the hidden layer using the visible
-        # observations.
-        # 2) it updates the derivs attribute of the visible layer
         grad['layers'][i] = self.layers[i].derivatives(observed,
                                            self.layers[i + 1],
                                            self.weights[i].W(),
                                            beta=None
                                            )
-        # calling self.layers['hidden'].mean after computing the derivatives
-        # of the visible layer ensures that the ext_parameters of the hidden
-        # layer are already up to date
+
+        # store hidden layer mean
         hid = self.layers[i + 1].mean()
-        # calling self.layers['hidden'].derivatives has two effects:
-        # 1) it updates the parameters of the visible layer using the hidden
-        # observations (hid).
-        # 2) it updates the derivs attribute of the hidden layer
+
+        # update visible layer external parameters
+        self.layers[i].update(hid, be.transpose(self.weights[0].W()), beta=None)
+
+        # (gaussian only) compute scaled mean of visible layer
+        # compute hidden layer gradient
         grad['layers'][i+1] = self.layers[i + 1].derivatives(hid,
                                                  self.layers[i],
                                                  be.transpose(
                                                     self.weights[i].W()),
                                                  beta=None
                                                  )
-        # we need rescaled visible and hidden observations to compute the
-        # derivatives of the weights -- this only has an effect for layers
-        # that have a scale parameter
+
+        # store the scaled mean of the hidden layer
+        # store the scaled visible observations
         hid = self.layers[i + 1].rescale(hid)
         vis = self.layers[i].rescale(observed)
+
+        # compute the gradient of the weights
         grad['weights'][i] = self.weights[i].derivatives(vis, hid)
 
         # NEGATIVE PHASE (using sampled)
 
-        # calling self.layers['visible'].derivatives has two effects:
-        # 1) it updates the parameters of the hidden layer using the visible
-        # observations.
-        # 2) it updates the derivs attribute of the visible layer
+        # update hidden layer external parameters
+        self.layers[i+1].update(sampled, self.weights[0].W(), beta=None)
+
+        # (gaussian only) compute scaled mean of hidden layer
+        # compute visible layer gradient
         be.subtract_dicts_inplace(grad['layers'][i],
                                   self.layers[i].derivatives(sampled,
                                                  self.layers[i + 1],
                                                  self.weights[i].W(),
                                                  beta=None
                                                  )
+
                                   )
-        # calling self.layers['hidden'].mean after computing the derivatives
-        # of the visible layer ensures that the ext_parameters of the hidden
-        # layer are already up to date
+        # store hidden layer mean
         hid = self.layers[i + 1].mean()
-        # calling self.layers['hidden'].derivatives has two effects:
-        # 1) it updates the parameters of the visible layer using the hidden
-        # observations (hid).
-        # 2) it updates the derivs attribute of the hidden layer
+
+        # (gaussian only) compute scaled mean of visible layer
+        # compute hidden layer gradient
         be.subtract_dicts_inplace(grad['layers'][i+1],
                                   self.layers[i + 1].derivatives(hid,
                                                      self.layers[i],
@@ -191,11 +176,12 @@ class Model(object):
                                                      beta=None
                                                      )
                                   )
-        # we need rescaled visible and hidden observations to compute the
-        # derivatives of the weights -- this only has an effect for layers
-        # that have a scale parameter
+        # store the scaled mean of the hidden layer
+        # store the scaled visible observations
         hid = self.layers[i + 1].rescale(hid)
         vis = self.layers[i].rescale(sampled)
+
+        # compute the gradient of the weights
         be.subtract_dicts_inplace(grad['weights'][i],
                                   self.weights[i].derivatives(vis, hid)
                                   )

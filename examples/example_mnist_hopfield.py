@@ -73,4 +73,4 @@ def example_mnist_hopfield(paysage_path = None, show_plot = False):
     print("Done")
 
 if __name__ == "__main__":
-    example_mnist_hopfield(show_plot = True)
+    example_mnist_hopfield(show_plot = False)
