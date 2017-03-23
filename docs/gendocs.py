@@ -1,4 +1,5 @@
 import os, sys, pydoc, paysage
+from collections import OrderedDict
 
 module_header = "# {} documentation\n"
 class_header = "## class {}"
@@ -6,27 +7,36 @@ function_header = "### {}"
 
 
 def walk_through_package(package):
-    output = list()
-    for mod in pydoc.inspect.getmembers(package, pydoc.inspect.ismodule):
-        output.append(getmarkdown(mod[1]))
+    output = OrderedDict()
+
+    modules = pydoc.inspect.getmembers(package, pydoc.inspect.ismodule)
+
+    for mod in modules:
+        module_name, reference = mod
+        output[module_name] = getmodule(module_name, reference)
+
     return output
 
-def getmarkdown(module):
-    output = [ module_header.format(module.__name__) ]
 
-    if module.__doc__:
-        output.append(module.__doc__)
+def getmodule(module_name, reference):
+    output = [module_name]
 
-    output.extend(getclasses(module))
-    funcs = getfunctions(module)
+    if reference.__doc__:
+        output.append(reference.__doc__)
+
+    output.extend(getclasses(reference))
+    funcs = getfunctions(reference)
     if funcs:
         output.extend(["## functions\n"])
         output.extend(funcs)
 
     return "\n".join((str(x) for x in output))
 
+
 def getclasses(item):
     output = list()
+    # we use some class aliases and don't want to be redundant
+    # keep a list of unique classes (by reference, not name)
     base_references = list()
 
     # get all of the classes in the module and sort them so that
@@ -68,7 +78,7 @@ def getmethods(item):
 
         func_name, reference = func
 
-        if func[0].startswith('_') and func[0] != '__init__':
+        if func_name.startswith('_') and func_name != '__init__':
             continue
 
         output.append(function_header.format(func_name.replace('_', '\\_')))
@@ -88,6 +98,7 @@ def getmethods(item):
             output.append(pydoc.inspect.getdoc(reference))
 
         output.append('\n')
+
     return output
 
 
@@ -117,16 +128,3 @@ def getfunctions(item):
 
         output.append('\n')
     return output
-
-def generatedocs(module):
-    try:
-        sys.path.append(os.getcwd())
-        # Attempt import
-        mod = pydoc.safeimport(module)
-        if mod is None:
-           print("Module not found")
-
-        # Module imported correctly, let's create the docs
-        return getmarkdown(mod)
-    except pydoc.ErrorDuringImport as e:
-        print("Error while trying to import " + module)
