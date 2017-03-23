@@ -1,6 +1,6 @@
-metrics
+# Documentation for Metrics (metrics.py)
+
 ## class ReconstructionError
-None
 ### \_\_init\_\_
 ```py
 
@@ -43,7 +43,6 @@ def value(self)
 
 
 ## class EnergyDistance
-None
 ### \_\_init\_\_
 ```py
 
@@ -86,7 +85,6 @@ def value(self)
 
 
 ## class EnergyZscore
-None
 ### \_\_init\_\_
 ```py
 
@@ -129,7 +127,6 @@ def value(self)
 
 
 ## class EnergyGap
-None
 ### \_\_init\_\_
 ```py
 

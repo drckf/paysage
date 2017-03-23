@@ -1,11 +1,7 @@
-hidden
-## class GaussianRestrictedBoltzmannMachine
-GaussianRestrictedBoltzmanMachine
-RBM with Gaussian visible units.
+# Documentation for Hidden (hidden.py)
 
-Hinton, Geoffrey.
-"A practical guide to training restricted Boltzmann machines."
-Momentum 9.1 (2010): 926.
+## class GaussianRestrictedBoltzmannMachine
+GaussianRestrictedBoltzmanMachine<br />RBM with Gaussian visible units.<br /><br />Hinton, Geoffrey.<br />"A practical guide to training restricted Boltzmann machines."<br />Momentum 9.1 (2010): 926.
 ### \_\_init\_\_
 ```py
 
@@ -51,9 +47,7 @@ def deterministic_iteration(self, vis, steps, beta=None)
 
 
 
-mean_field_iteration(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### deterministic\_step
@@ -65,9 +59,7 @@ def deterministic_step(self, vis, beta=None)
 
 
 
-deterministic_step(v):
-v -> h -> v'
-return v'
+deterministic_step(v):<br />v -> h -> v'<br />return v'
 
 
 ### enforce\_constraints
@@ -133,9 +125,7 @@ def markov_chain(self, vis, steps, beta=None)
 
 
 
-markov_chain(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+markov_chain(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### mcstep
@@ -147,9 +137,7 @@ def mcstep(self, vis, beta=None)
 
 
 
-mcstep(v):
-v -> h -> v'
-return v'
+mcstep(v):<br />v -> h -> v'<br />return v'
 
 
 ### mean\_field\_iteration
@@ -161,9 +149,7 @@ def mean_field_iteration(self, vis, steps, beta=None)
 
 
 
-mean_field_iteration(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### mean\_field\_step
@@ -175,15 +161,7 @@ def mean_field_step(self, vis, beta=None)
 
 
 
-mean_field_step(v):
-v -> h -> v'
-return v'
-
-It may be worth looking into extended approaches:
-Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.
-"Training Restricted Boltzmann Machine via the￼
-Thouless-Anderson-Palmer free energy."
-Advances in Neural Information Processing Systems. 2015.
+mean_field_step(v):<br />v -> h -> v'<br />return v'<br /><br />It may be worth looking into extended approaches:<br />Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.<br />"Training Restricted Boltzmann Machine via the￼<br />Thouless-Anderson-Palmer free energy."<br />Advances in Neural Information Processing Systems. 2015.
 
 
 ### random
@@ -234,11 +212,7 @@ def visible_mode(self, hidden, beta=None)
 
 
 ## class RestrictedBoltzmannMachine
-RestrictedBoltzmanMachine
-
-Hinton, Geoffrey.
-"A practical guide to training restricted Boltzmann machines."
-Momentum 9.1 (2010): 926.
+RestrictedBoltzmanMachine<br /><br />Hinton, Geoffrey.<br />"A practical guide to training restricted Boltzmann machines."<br />Momentum 9.1 (2010): 926.
 ### \_\_init\_\_
 ```py
 
@@ -284,9 +258,7 @@ def deterministic_iteration(self, vis, steps, beta=None)
 
 
 
-mean_field_iteration(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### deterministic\_step
@@ -298,9 +270,7 @@ def deterministic_step(self, vis, beta=None)
 
 
 
-deterministic_step(v):
-v -> h -> v'
-return v'
+deterministic_step(v):<br />v -> h -> v'<br />return v'
 
 
 ### enforce\_constraints
@@ -366,9 +336,7 @@ def markov_chain(self, vis, steps, beta=None)
 
 
 
-markov_chain(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+markov_chain(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### mcstep
@@ -380,9 +348,7 @@ def mcstep(self, vis, beta=None)
 
 
 
-mcstep(v):
-v -> h -> v'
-return v'
+mcstep(v):<br />v -> h -> v'<br />return v'
 
 
 ### mean\_field\_iteration
@@ -394,9 +360,7 @@ def mean_field_iteration(self, vis, steps, beta=None)
 
 
 
-mean_field_iteration(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### mean\_field\_step
@@ -408,15 +372,7 @@ def mean_field_step(self, vis, beta=None)
 
 
 
-mean_field_step(v):
-v -> h -> v'
-return v'
-
-It may be worth looking into extended approaches:
-Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.
-"Training Restricted Boltzmann Machine via the￼
-Thouless-Anderson-Palmer free energy."
-Advances in Neural Information Processing Systems. 2015.
+mean_field_step(v):<br />v -> h -> v'<br />return v'<br /><br />It may be worth looking into extended approaches:<br />Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.<br />"Training Restricted Boltzmann Machine via the￼<br />Thouless-Anderson-Palmer free energy."<br />Advances in Neural Information Processing Systems. 2015.
 
 
 ### random
@@ -467,14 +423,7 @@ def visible_mode(self, hidden, beta=None)
 
 
 ## class HopfieldModel
-HopfieldModel
-A model of associative memory with binary visible units and
-Gaussian hidden units.
-
-Hopfield, John J.
-"Neural networks and physical systems with emergent collective
-computational abilities."
-Proceedings of the national academy of sciences 79.8 (1982): 2554-2558.
+HopfieldModel<br />A model of associative memory with binary visible units and<br />Gaussian hidden units.<br /><br />Hopfield, John J.<br />"Neural networks and physical systems with emergent collective<br />computational abilities."<br />Proceedings of the national academy of sciences 79.8 (1982): 2554-2558.
 ### \_\_init\_\_
 ```py
 
@@ -520,9 +469,7 @@ def deterministic_iteration(self, vis, steps, beta=None)
 
 
 
-mean_field_iteration(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### deterministic\_step
@@ -534,9 +481,7 @@ def deterministic_step(self, vis, beta=None)
 
 
 
-deterministic_step(v):
-v -> h -> v'
-return v'
+deterministic_step(v):<br />v -> h -> v'<br />return v'
 
 
 ### enforce\_constraints
@@ -602,9 +547,7 @@ def markov_chain(self, vis, steps, beta=None)
 
 
 
-markov_chain(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+markov_chain(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### mcstep
@@ -616,9 +559,7 @@ def mcstep(self, vis, beta=None)
 
 
 
-mcstep(v):
-v -> h -> v'
-return v'
+mcstep(v):<br />v -> h -> v'<br />return v'
 
 
 ### mean\_field\_iteration
@@ -630,9 +571,7 @@ def mean_field_iteration(self, vis, steps, beta=None)
 
 
 
-mean_field_iteration(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### mean\_field\_step
@@ -644,15 +583,7 @@ def mean_field_step(self, vis, beta=None)
 
 
 
-mean_field_step(v):
-v -> h -> v'
-return v'
-
-It may be worth looking into extended approaches:
-Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.
-"Training Restricted Boltzmann Machine via the￼
-Thouless-Anderson-Palmer free energy."
-Advances in Neural Information Processing Systems. 2015.
+mean_field_step(v):<br />v -> h -> v'<br />return v'<br /><br />It may be worth looking into extended approaches:<br />Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.<br />"Training Restricted Boltzmann Machine via the￼<br />Thouless-Anderson-Palmer free energy."<br />Advances in Neural Information Processing Systems. 2015.
 
 
 ### random
@@ -703,8 +634,7 @@ def visible_mode(self, hidden, beta=None)
 
 
 ## class LatentModel
-LatentModel
-Abstract class for a 2-layer neural network.
+LatentModel<br />Abstract class for a 2-layer neural network.
 ### \_\_init\_\_
 ```py
 
@@ -741,9 +671,7 @@ def deterministic_iteration(self, vis, steps, beta=None)
 
 
 
-mean_field_iteration(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### deterministic\_step
@@ -755,9 +683,7 @@ def deterministic_step(self, vis, beta=None)
 
 
 
-deterministic_step(v):
-v -> h -> v'
-return v'
+deterministic_step(v):<br />v -> h -> v'<br />return v'
 
 
 ### enforce\_constraints
@@ -787,9 +713,7 @@ def markov_chain(self, vis, steps, beta=None)
 
 
 
-markov_chain(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+markov_chain(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### mcstep
@@ -801,9 +725,7 @@ def mcstep(self, vis, beta=None)
 
 
 
-mcstep(v):
-v -> h -> v'
-return v'
+mcstep(v):<br />v -> h -> v'<br />return v'
 
 
 ### mean\_field\_iteration
@@ -815,9 +737,7 @@ def mean_field_iteration(self, vis, steps, beta=None)
 
 
 
-mean_field_iteration(v, n):
-v -> h -> v_1 -> h_1 -> ... -> v_n
-return v_n
+mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
 
 
 ### mean\_field\_step
@@ -829,15 +749,7 @@ def mean_field_step(self, vis, beta=None)
 
 
 
-mean_field_step(v):
-v -> h -> v'
-return v'
-
-It may be worth looking into extended approaches:
-Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.
-"Training Restricted Boltzmann Machine via the￼
-Thouless-Anderson-Palmer free energy."
-Advances in Neural Information Processing Systems. 2015.
+mean_field_step(v):<br />v -> h -> v'<br />return v'<br /><br />It may be worth looking into extended approaches:<br />Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.<br />"Training Restricted Boltzmann Machine via the￼<br />Thouless-Anderson-Palmer free energy."<br />Advances in Neural Information Processing Systems. 2015.
 
 
 ### random

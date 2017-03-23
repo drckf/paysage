@@ -1,13 +1,7 @@
-fit
-## class PersistentContrastiveDivergence
-PersistentContrastiveDivergence
-PCD-k algorithm for approximate maximum likelihood inference.
+# Documentation for Fit (fit.py)
 
-Tieleman, Tijmen.
-"Training restricted Boltzmann machines using approximations to the
-likelihood gradient."
-Proceedings of the 25th international conference on Machine learning.
-ACM, 2008.
+## class PersistentContrastiveDivergence
+PersistentContrastiveDivergence<br />PCD-k algorithm for approximate maximum likelihood inference.<br /><br />Tieleman, Tijmen.<br />"Training restricted Boltzmann machines using approximations to the<br />likelihood gradient."<br />Proceedings of the 25th international conference on Machine learning.<br />ACM, 2008.
 ### \_\_init\_\_
 ```py
 
@@ -32,16 +26,7 @@ def train(self)
 
 
 ## class ContrastiveDivergence
-ContrastiveDivergence
-CD-k algorithm for approximate maximum likelihood inference.
-
-Hinton, Geoffrey E.
-"Training products of experts by minimizing contrastive divergence."
-Neural computation 14.8 (2002): 1771-1800.
-
-Carreira-Perpinan, Miguel A., and Geoffrey Hinton.
-"On Contrastive Divergence Learning."
-AISTATS. Vol. 10. 2005.
+ContrastiveDivergence<br />CD-k algorithm for approximate maximum likelihood inference.<br /><br />Hinton, Geoffrey E.<br />"Training products of experts by minimizing contrastive divergence."<br />Neural computation 14.8 (2002): 1771-1800.<br /><br />Carreira-Perpinan, Miguel A., and Geoffrey Hinton.<br />"On Contrastive Divergence Learning."<br />AISTATS. Vol. 10. 2005.
 ### \_\_init\_\_
 ```py
 
@@ -97,8 +82,7 @@ def randomize_state(self, shape)
 
 
 
-Set up the inital states for each of the Markov Chains.
-The initial state is randomly initalized.
+Set up the inital states for each of the Markov Chains.<br />The initial state is randomly initalized.
 
 
 ### set\_state
@@ -122,9 +106,7 @@ def update_beta(self)
 
 
 
-update beta with an AR(1) process
-
-        
+update beta with an AR(1) process<br /><br /> ~  ~ 
 
 
 ### update\_state
@@ -139,7 +121,6 @@ def update_state(self, steps)
 
 
 ## class ProgressMonitor
-None
 ### \_\_init\_\_
 ```py
 
@@ -164,7 +145,6 @@ def check_progress(self, model, t, store=False, show=False)
 
 
 ## class TrainingMethod
-None
 ### \_\_init\_\_
 ```py
 
@@ -180,8 +160,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 
 
 ## class SequentialMC
-SequentialMC
-Simple class for a sequential Monte Carlo sampler.
+SequentialMC<br />Simple class for a sequential Monte Carlo sampler.
 ### \_\_init\_\_
 ```py
 
@@ -212,8 +191,7 @@ def randomize_state(self, shape)
 
 
 
-Set up the inital states for each of the Markov Chains.
-The initial state is randomly initalized.
+Set up the inital states for each of the Markov Chains.<br />The initial state is randomly initalized.
 
 
 ### set\_state
@@ -262,8 +240,7 @@ def randomize_state(self, shape)
 
 
 
-Set up the inital states for each of the Markov Chains.
-The initial state is randomly initalized.
+Set up the inital states for each of the Markov Chains.<br />The initial state is randomly initalized.
 
 
 ### set\_state

@@ -1,19 +1,20 @@
 site_name: Paysage Documentation
 pages:
     - Home: index.md
-    - Backends: backends.md
+    - Overview: overview.md
     - Batch: batch.md
-    - Constraints: constraints.md
-    - Model Fitting: fit.md
     - Layers: layers.md
-    - Metrics: metrics.md
+    - Hidden: hidden.md
+    - Initialize Hidden: init_hidden.md
+    - Model Fitting: fit.md
     - Optimizers: optimizers.md
+    - Metrics: metrics.md
+    - Constraints: constraints.md
     - Penalties: penalties.md
     - Deep: deep.md
-    - Hidden: hidden.md
     - Initialize Deep: init_deep.md
-    - Initialize Hidden: init_hidden.md
-    - Initialize Recurrent: init_recurrent.md
     - Recurrent: recurrent.md
+    - Initialize Recurrent: init_recurrent.md
+    - Backends: backends.md
 theme: readthedocs
 

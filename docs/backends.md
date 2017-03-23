@@ -1,8 +1,7 @@
-backends
-## class BroadcastError
-BroadcastError exception:
+# Documentation for Backends (backends.py)
 
-Args: None
+## class BroadcastError
+BroadcastError exception:<br /><br />Args: None
 
 
 ## functions
@@ -16,13 +15,7 @@ def acosh(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise inverse hyperbolic cosine of a tensor.
-
-Args:
-    x (greater than 1): A tensor.
-
-Returns:
-    tensor: Elementwise inverse hyperbolic cosine.
+Elementwise inverse hyperbolic cosine of a tensor.<br /><br />Args:<br /> ~ x (greater than 1): A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise inverse hyperbolic cosine.
 
 
 ### add\_dicts\_inplace
@@ -34,17 +27,7 @@ def add_dicts_inplace(dict1: Dict[str, numpy.ndarray], dict2: Dict[str, numpy.nd
 
 
 
-Entrywise addition of dict2 to dict1.
-
-Note:
-    Modifies dict1 in place.
-
-Args:
-    dict1: A dictionary of tensors.
-    dict2: A dictionary of tensors.
-
-Returns:
-    None
+Entrywise addition of dict2 to dict1.<br /><br />Note:<br /> ~ Modifies dict1 in place.<br /><br />Args:<br /> ~ dict1: A dictionary of tensors.<br /> ~ dict2: A dictionary of tensors.<br /><br />Returns:<br /> ~ None
 
 
 ### affine
@@ -56,21 +39,7 @@ def affine(a: numpy.ndarray, b: numpy.ndarray, W: numpy.ndarray) -> numpy.ndarra
 
 
 
-Evaluate the affine transformation a + W b.
-
-a ~ vector, b ~ vector, W ~ matrix:
-a_i + \sum_j W_ij b_j
-
-a ~ matrix, b ~ matrix, W ~ matrix:
-a_ij + \sum_k W_ik b_kj
-
-Args:
-    a: A tensor (1 or 2 dimensional).
-    b: A tensor (1 or 2 dimensional).
-    W: A tensor (2 dimensional).
-
-Returns:
-    tensor: Affine transformation a + W b.
+Evaluate the affine transformation a + W b.<br /><br />a ~ vector, b ~ vector, W ~ matrix:<br />a_i + \sum_j W_ij b_j<br /><br />a ~ matrix, b ~ matrix, W ~ matrix:<br />a_ij + \sum_k W_ik b_kj<br /><br />Args:<br /> ~ a: A tensor (1 or 2 dimensional).<br /> ~ b: A tensor (1 or 2 dimensional).<br /> ~ W: A tensor (2 dimensional).<br /><br />Returns:<br /> ~ tensor: Affine transformation a + W b.
 
 
 ### allclose
@@ -82,18 +51,7 @@ def allclose(x: numpy.ndarray, y: numpy.ndarray, rtol: float=1e-05, atol: float=
 
 
 
-Test if all elements in the two tensors are approximately equal.
-
-absolute(x - y) <= (atol + rtol * absolute(y))
-
-Args:
-    x: A tensor.
-    y: A tensor.
-    rtol (optional): Relative tolerance.
-    atol (optional): Absolute tolerance.
-
-returns:
-    bool: Check if all of the elements in the tensors are approximately equal.
+Test if all elements in the two tensors are approximately equal.<br /><br />absolute(x - y) <= (atol + rtol * absolute(y))<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A tensor.<br /> ~ rtol (optional): Relative tolerance.<br /> ~ atol (optional): Absolute tolerance.<br /><br />returns:<br /> ~ bool: Check if all of the elements in the tensors are approximately equal.
 
 
 ### argmax
@@ -105,15 +63,7 @@ def argmax(x: numpy.ndarray, axis: int) -> numpy.ndarray
 
 
 
-Compute the indices of the maximal elements in x along the specified axis.
-
-Args:
-    x: A tensor:
-    axis: The axis of interest.
-
-Returns:
-    tensor (of ints): Indices of the maximal elements in x along the
-                      specified axis.
+Compute the indices of the maximal elements in x along the specified axis.<br /><br />Args:<br /> ~ x: A tensor:<br /> ~ axis: The axis of interest.<br /><br />Returns:<br /> ~ tensor (of ints): Indices of the maximal elements in x along the<br /> ~ specified axis.
 
 
 ### argmin
@@ -125,15 +75,7 @@ def argmin(x: numpy.ndarray, axis: int) -> numpy.ndarray
 
 
 
-Compute the indices of the minimal elements in x along the specified axis.
-
-Args:
-    x: A tensor:
-    axis: The axis of interest.
-
-Returns:
-    tensor (of ints): Indices of the minimum elements in x along the
-                      specified axis.
+Compute the indices of the minimal elements in x along the specified axis.<br /><br />Args:<br /> ~ x: A tensor:<br /> ~ axis: The axis of interest.<br /><br />Returns:<br /> ~ tensor (of ints): Indices of the minimum elements in x along the<br /> ~ specified axis.
 
 
 ### atanh
@@ -145,13 +87,7 @@ def atanh(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise inverse hyperbolic tangent of a tensor.
-
-Args:
-    x (between -1 and +1): A tensor.
-
-Returns:
-    tensor: Elementwise inverse hyperbolic tangent
+Elementwise inverse hyperbolic tangent of a tensor.<br /><br />Args:<br /> ~ x (between -1 and +1): A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise inverse hyperbolic tangent
 
 
 ### batch\_dot
@@ -163,21 +99,7 @@ def batch_dot(vis: numpy.ndarray, W: numpy.ndarray, hid: numpy.ndarray, axis: in
 
 
 
-Let v by a L x N matrix where each row v_i is a visible vector.
-Let h be a L x M matrix where each row h_i is a hidden vector.
-And, let W be a N x M matrix of weights.
-Then, batch_dot(v,W,h) = \sum_i v_i^T W h_i
-
-The actual computation is performed with a vectorized expression.
-
-Args:
-    vis: A tensor.
-    W: A tensor.
-    hid: A tensor.
-    axis (optional): Axis of interest
-
-Returns:
-    tensor: A vector.
+Let v by a L x N matrix where each row v_i is a visible vector.<br />Let h be a L x M matrix where each row h_i is a hidden vector.<br />And, let W be a N x M matrix of weights.<br />Then, batch_dot(v,W,h) = \sum_i v_i^T W h_i<br /><br />The actual computation is performed with a vectorized expression.<br /><br />Args:<br /> ~ vis: A tensor.<br /> ~ W: A tensor.<br /> ~ hid: A tensor.<br /> ~ axis (optional): Axis of interest<br /><br />Returns:<br /> ~ tensor: A vector.
 
 
 ### batch\_outer
@@ -189,19 +111,7 @@ def batch_outer(vis: numpy.ndarray, hid: numpy.ndarray) -> numpy.ndarray
 
 
 
-Let v by a L x N matrix where each row v_i is a visible vector.
-Let h be a L x M matrix where each row h_i is a hidden vector.
-Then, batch_outer(v, h) = \sum_i v_i h_i^T
-Returns an N x M matrix.
-
-The actual computation is performed with a vectorized expression.
-
-Args:
-    vis: A tensor.
-    hid: A tensor:
-
-Returns:
-    tensor: A matrix.
+Let v by a L x N matrix where each row v_i is a visible vector.<br />Let h be a L x M matrix where each row h_i is a hidden vector.<br />Then, batch_outer(v, h) = \sum_i v_i h_i^T<br />Returns an N x M matrix.<br /><br />The actual computation is performed with a vectorized expression.<br /><br />Args:<br /> ~ vis: A tensor.<br /> ~ hid: A tensor:<br /><br />Returns:<br /> ~ tensor: A matrix.
 
 
 ### broadcast
@@ -213,21 +123,7 @@ def broadcast(vec: numpy.ndarray, matrix: numpy.ndarray) -> numpy.ndarray
 
 
 
-Broadcasts vec into the shape of matrix following numpy rules:
-
-vec ~ (N, 1) broadcasts to matrix ~ (N, M)
-vec ~ (1, N) and (N,) broadcast to matrix ~ (M, N)
-
-Args:
-    vec: A vector (either flat, row, or column).
-    matrix: A matrix (i.e., a 2D tensor).
-
-Returns:
-    tensor: A tensor of the same size as matrix containing the elements
-            of the vector.
-
-Raises:
-    BroadcastError
+Broadcasts vec into the shape of matrix following numpy rules:<br /><br />vec ~ (N, 1) broadcasts to matrix ~ (N, M)<br />vec ~ (1, N) and (N,) broadcast to matrix ~ (M, N)<br /><br />Args:<br /> ~ vec: A vector (either flat, row, or column).<br /> ~ matrix: A matrix (i.e., a 2D tensor).<br /><br />Returns:<br /> ~ tensor: A tensor of the same size as matrix containing the elements<br /> ~  ~  ~ of the vector.<br /><br />Raises:<br /> ~ BroadcastError
 
 
 ### clip
@@ -239,15 +135,7 @@ def clip(tensor: numpy.ndarray, a_min: Union[int, float]=None, a_max: Union[int,
 
 
 
-Return a tensor with its values clipped between a_min and a_max.
-
-Args:
-    tensor: A tensor.
-    a_min (optional): The desired lower bound on the elements of the tensor.
-    a_max (optional): The desired upper bound on the elements of the tensor.
-
-Returns:
-    tensor: A new tensor with its values clipped between a_min and a_max.
+Return a tensor with its values clipped between a_min and a_max.<br /><br />Args:<br /> ~ tensor: A tensor.<br /> ~ a_min (optional): The desired lower bound on the elements of the tensor.<br /> ~ a_max (optional): The desired upper bound on the elements of the tensor.<br /><br />Returns:<br /> ~ tensor: A new tensor with its values clipped between a_min and a_max.
 
 
 ### clip\_inplace
@@ -259,18 +147,7 @@ def clip_inplace(tensor: numpy.ndarray, a_min: Union[int, float]=None, a_max: Un
 
 
 
-Clip the values of a tensor between a_min and a_max.
-
-Note:
-    Modifies tensor in place.
-
-Args:
-    tensor: A tensor.
-    a_min (optional): The desired lower bound on the elements of the tensor.
-    a_max (optional): The desired upper bound on the elements of the tensor.
-
-Returns:
-    None
+Clip the values of a tensor between a_min and a_max.<br /><br />Note:<br /> ~ Modifies tensor in place.<br /><br />Args:<br /> ~ tensor: A tensor.<br /> ~ a_min (optional): The desired lower bound on the elements of the tensor.<br /> ~ a_max (optional): The desired upper bound on the elements of the tensor.<br /><br />Returns:<br /> ~ None
 
 
 ### cos
@@ -282,13 +159,7 @@ def cos(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise cosine of a tensor.
-
-Args:
-    x: A tensor.
-
-Returns:
-    tensor: Elementwise cosine.
+Elementwise cosine of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise cosine.
 
 
 ### cosh
@@ -300,13 +171,7 @@ def cosh(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise hyperbolic cosine of a tensor.
-
-Args:
-    x: A tensor.
-
-Returns:
-    tensor: Elementwise hyperbolic cosine.
+Elementwise hyperbolic cosine of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise hyperbolic cosine.
 
 
 ### diag
@@ -318,14 +183,7 @@ def diag(mat: numpy.ndarray) -> numpy.ndarray
 
 
 
-Return the diagonal elements of a matrix.
-
-Args:
-    mat: A tensor.
-
-Returns:
-    tensor: A vector (i.e., 1D tensor) containing the diagonal
-            elements of mat.
+Return the diagonal elements of a matrix.<br /><br />Args:<br /> ~ mat: A tensor.<br /><br />Returns:<br /> ~ tensor: A vector (i.e., 1D tensor) containing the diagonal<br /> ~  ~  ~ elements of mat.
 
 
 ### diagonal\_matrix
@@ -337,14 +195,7 @@ def diagonal_matrix(vec: numpy.ndarray) -> numpy.ndarray
 
 
 
-Return a matrix with vec along the diagonal.
-
-Args:
-    vec: A vector (i.e., 1D tensor).
-
-Returns:
-    tensor: A matrix with the elements of vec along the diagonal,
-            and zeros elsewhere.
+Return a matrix with vec along the diagonal.<br /><br />Args:<br /> ~ vec: A vector (i.e., 1D tensor).<br /><br />Returns:<br /> ~ tensor: A matrix with the elements of vec along the diagonal,<br /> ~  ~  ~ and zeros elsewhere.
 
 
 ### dot
@@ -356,26 +207,7 @@ def dot(a: numpy.ndarray, b: numpy.ndarray) -> Union[numpy.float32, numpy.ndarra
 
 
 
-Compute the matrix/dot product of tensors a and b.
-
-Vector-Vector:
-    \sum_i a_i b_i
-
-Matrix-Vector:
-    \sum_j a_ij b_j
-
-Matrix-Matrix:
-    \sum_j a_ij b_jk
-
-Args:
-    a: A tensor.
-    b: A tensor:
-
-Returns:
-    if a and b are 1-dimensions:
-        float: the dot product of vectors a and b
-    else:
-        tensor: the matrix product of tensors a and b
+Compute the matrix/dot product of tensors a and b.<br /><br />Vector-Vector:<br /> ~ \sum_i a_i b_i<br /><br />Matrix-Vector:<br /> ~ \sum_j a_ij b_j<br /><br />Matrix-Matrix:<br /> ~ \sum_j a_ij b_jk<br /><br />Args:<br /> ~ a: A tensor.<br /> ~ b: A tensor:<br /><br />Returns:<br /> ~ if a and b are 1-dimensions:<br /> ~  ~ float: the dot product of vectors a and b<br /> ~ else:<br /> ~  ~ tensor: the matrix product of tensors a and b
 
 
 ### dtype
@@ -387,13 +219,7 @@ def dtype(tensor: numpy.ndarray) -> type
 
 
 
-Return the type of the tensor.
-
-Args:
-    tensor: A tensor.
-
-Returns:
-    type: The type of the elements in the tensor.
+Return the type of the tensor.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><br />Returns:<br /> ~ type: The type of the elements in the tensor.
 
 
 ### equal
@@ -405,14 +231,7 @@ def equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
 
 
 
-Elementwise if two tensors are equal.
-
-Args:
-    x: A tensor.
-    y: A tensor.
-
-Returns:
-    tensor (of bools): Elementwise test of equality between x and y.
+Elementwise if two tensors are equal.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A tensor.<br /><br />Returns:<br /> ~ tensor (of bools): Elementwise test of equality between x and y.
 
 
 ### exp
@@ -424,13 +243,7 @@ def exp(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise exponential function of a tensor.
-
-Args:
-    x: A tensor.
-
-Returns:
-    tensor (non-negative): Elementwise exponential.
+Elementwise exponential function of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor (non-negative): Elementwise exponential.
 
 
 ### expit
@@ -442,13 +255,7 @@ def expit(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise expit (a.k.a. logistic) function of a tensor.
-
-Args:
-    x: A tensor.
-
-Returns:
-    tensor: Elementwise expit (a.k.a. logistic).
+Elementwise expit (a.k.a. logistic) function of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise expit (a.k.a. logistic).
 
 
 ### fill\_diagonal
@@ -460,17 +267,7 @@ def fill_diagonal(mat: numpy.ndarray, val: Union[int, float]) -> numpy.ndarray
 
 
 
-Fill the diagonal of the matirx with a specified value.
-
-Note:
-    Modifies mat in place.
-
-Args:
-    mat: A tensor.
-    val: The value to put along the diagonal.
-
-Returns:
-    None
+Fill the diagonal of the matirx with a specified value.<br /><br />Note:<br /> ~ Modifies mat in place.<br /><br />Args:<br /> ~ mat: A tensor.<br /> ~ val: The value to put along the diagonal.<br /><br />Returns:<br /> ~ None
 
 
 ### flatten
@@ -482,14 +279,7 @@ def flatten(tensor: Union[numpy.float32, numpy.ndarray]) -> Union[numpy.float32,
 
 
 
-Return a flattened tensor.
-
-Args:
-    tensor: A tensor or scalar.
-
-Returns:
-    result: If arg is a tensor, return a flattened 1D tensor.
-            If arg is a scalar, return the scalar.
+Return a flattened tensor.<br /><br />Args:<br /> ~ tensor: A tensor or scalar.<br /><br />Returns:<br /> ~ result: If arg is a tensor, return a flattened 1D tensor.<br /> ~  ~  ~ If arg is a scalar, return the scalar.
 
 
 ### float\_scalar
@@ -501,13 +291,7 @@ def float_scalar(scalar: Union[int, float]) -> float
 
 
 
-Cast scalar to a 32-bit float.
-
-Args:
-    scalar: A scalar quantity:
-
-Returns:
-    numpy.float32: Scalar converted to floating point.
+Cast scalar to a 32-bit float.<br /><br />Args:<br /> ~ scalar: A scalar quantity:<br /><br />Returns:<br /> ~ numpy.float32: Scalar converted to floating point.
 
 
 ### float\_tensor
@@ -519,13 +303,7 @@ def float_tensor(tensor: numpy.ndarray) -> numpy.ndarray
 
 
 
-Cast tensor to a float tensor.
-
-Args:
-    tensor: A tensor.
-
-Returns:
-    tensor: Tensor converted to floating point.
+Cast tensor to a float tensor.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><br />Returns:<br /> ~ tensor: Tensor converted to floating point.
 
 
 ### greater
@@ -537,14 +315,7 @@ def greater(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
 
 
 
-Elementwise test if x > y.
-
-Args:
-    x: A tensor.
-    y: A tensor.
-
-Returns:
-    tensor (of bools): Elementwise test of x > y.
+Elementwise test if x > y.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A tensor.<br /><br />Returns:<br /> ~ tensor (of bools): Elementwise test of x > y.
 
 
 ### greater\_equal
@@ -556,14 +327,7 @@ def greater_equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarr
 
 
 
-Elementwise test if x >= y.
-
-Args:
-    x: A tensor.
-    y: A tensor.
-
-Returns:
-    tensor (of bools): Elementwise test of x >= y.
+Elementwise test if x >= y.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A tensor.<br /><br />Returns:<br /> ~ tensor (of bools): Elementwise test of x >= y.
 
 
 ### hstack
@@ -575,13 +339,7 @@ def hstack(tensors: Iterable[numpy.ndarray]) -> numpy.ndarray
 
 
 
-Concatenate tensors along the first axis.
-
-Args:
-    tensors: A list of tensors.
-
-Returns:
-    tensor: Tensors stacked along axis=1.
+Concatenate tensors along the first axis.<br /><br />Args:<br /> ~ tensors: A list of tensors.<br /><br />Returns:<br /> ~ tensor: Tensors stacked along axis=1.
 
 
 ### identity
@@ -593,14 +351,7 @@ def identity(n: int) -> numpy.ndarray
 
 
 
-Return the n-dimensional identity matrix.
-
-Args:
-    n: The desired size of the tensor.
-
-Returns:
-    tensor: The n x n identity matrix with ones along the diagonal
-            and zeros elsewhere.
+Return the n-dimensional identity matrix.<br /><br />Args:<br /> ~ n: The desired size of the tensor.<br /><br />Returns:<br /> ~ tensor: The n x n identity matrix with ones along the diagonal<br /> ~  ~  ~ and zeros elsewhere.
 
 
 ### inv
@@ -612,13 +363,7 @@ def inv(mat: numpy.ndarray) -> numpy.ndarray
 
 
 
-Compute matrix inverse.
-
-Args:
-    mat: A square matrix.
-
-Returns:
-    tensor: The matrix inverse.
+Compute matrix inverse.<br /><br />Args:<br /> ~ mat: A square matrix.<br /><br />Returns:<br /> ~ tensor: The matrix inverse.
 
 
 ### jit
@@ -630,87 +375,7 @@ def jit(signature_or_function=None, locals={}, target='cpu', cache=False, **opti
 
 
 
-This decorator is used to compile a Python function into native code.
-
-Args
------
-signature:
-    The (optional) signature or list of signatures to be compiled.
-    If not passed, required signatures will be compiled when the
-    decorated function is called, depending on the argument values.
-    As a convenience, you can directly pass the function to be compiled
-    instead.
-
-locals: dict
-    Mapping of local variable names to Numba types. Used to override the
-    types deduced by Numba's type inference engine.
-
-target: str
-    Specifies the target platform to compile for. Valid targets are cpu,
-    gpu, npyufunc, and cuda. Defaults to cpu.
-
-targetoptions:
-    For a cpu target, valid options are:
-        nopython: bool
-            Set to True to disable the use of PyObjects and Python API
-            calls. The default behavior is to allow the use of PyObjects
-            and Python API. Default value is False.
-
-        forceobj: bool
-            Set to True to force the use of PyObjects for every value.
-            Default value is False.
-
-        looplift: bool
-            Set to True to enable jitting loops in nopython mode while
-            leaving surrounding code in object mode. This allows functions
-            to allocate NumPy arrays and use Python objects, while the
-            tight loops in the function can still be compiled in nopython
-            mode. Any arrays that the tight loop uses should be created
-            before the loop is entered. Default value is True.
-
-Returns
---------
-A callable usable as a compiled function.  Actual compiling will be
-done lazily if no explicit signatures are passed.
-
-Examples
---------
-The function can be used in the following ways:
-
-1) jit(signatures, target='cpu', **targetoptions) -> jit(function)
-
-    Equivalent to:
-
-        d = dispatcher(function, targetoptions)
-        for signature in signatures:
-            d.compile(signature)
-
-    Create a dispatcher object for a python function.  Then, compile
-    the function with the given signature(s).
-
-    Example:
-
-        @jit("int32(int32, int32)")
-        def foo(x, y):
-            return x + y
-
-        @jit(["int32(int32, int32)", "float32(float32, float32)"])
-        def bar(x, y):
-            return x + y
-
-2) jit(function, target='cpu', **targetoptions) -> dispatcher
-
-    Create a dispatcher function object that specializes at call site.
-
-    Examples:
-
-        @jit
-        def foo(x, y):
-            return x + y
-
-        @jit(target='cpu', nopython=True)
-        def bar(x, y):
-            return x + y
+This decorator is used to compile a Python function into native code.<br /><br />Args<br />-----<br />signature:<br /> ~ The (optional) signature or list of signatures to be compiled.<br /> ~ If not passed, required signatures will be compiled when the<br /> ~ decorated function is called, depending on the argument values.<br /> ~ As a convenience, you can directly pass the function to be compiled<br /> ~ instead.<br /><br />locals: dict<br /> ~ Mapping of local variable names to Numba types. Used to override the<br /> ~ types deduced by Numba's type inference engine.<br /><br />target: str<br /> ~ Specifies the target platform to compile for. Valid targets are cpu,<br /> ~ gpu, npyufunc, and cuda. Defaults to cpu.<br /><br />targetoptions:<br /> ~ For a cpu target, valid options are:<br /> ~  ~ nopython: bool<br /> ~  ~  ~ Set to True to disable the use of PyObjects and Python API<br /> ~  ~  ~ calls. The default behavior is to allow the use of PyObjects<br /> ~  ~  ~ and Python API. Default value is False.<br /><br /> ~  ~ forceobj: bool<br /> ~  ~  ~ Set to True to force the use of PyObjects for every value.<br /> ~  ~  ~ Default value is False.<br /><br /> ~  ~ looplift: bool<br /> ~  ~  ~ Set to True to enable jitting loops in nopython mode while<br /> ~  ~  ~ leaving surrounding code in object mode. This allows functions<br /> ~  ~  ~ to allocate NumPy arrays and use Python objects, while the<br /> ~  ~  ~ tight loops in the function can still be compiled in nopython<br /> ~  ~  ~ mode. Any arrays that the tight loop uses should be created<br /> ~  ~  ~ before the loop is entered. Default value is True.<br /><br />Returns<br />--------<br />A callable usable as a compiled function.  Actual compiling will be<br />done lazily if no explicit signatures are passed.<br /><br />Examples<br />--------<br />The function can be used in the following ways:<br /><br />1) jit(signatures, target='cpu', **targetoptions) -> jit(function)<br /><br /> ~ Equivalent to:<br /><br /> ~  ~ d = dispatcher(function, targetoptions)<br /> ~  ~ for signature in signatures:<br /> ~  ~  ~ d.compile(signature)<br /><br /> ~ Create a dispatcher object for a python function.  Then, compile<br /> ~ the function with the given signature(s).<br /><br /> ~ Example:<br /><br /> ~  ~ @jit("int32(int32, int32)")<br /> ~  ~ def foo(x, y):<br /> ~  ~  ~ return x + y<br /><br /> ~  ~ @jit(["int32(int32, int32)", "float32(float32, float32)"])<br /> ~  ~ def bar(x, y):<br /> ~  ~  ~ return x + y<br /><br />2) jit(function, target='cpu', **targetoptions) -> dispatcher<br /><br /> ~ Create a dispatcher function object that specializes at call site.<br /><br /> ~ Examples:<br /><br /> ~  ~ @jit<br /> ~  ~ def foo(x, y):<br /> ~  ~  ~ return x + y<br /><br /> ~  ~ @jit(target='cpu', nopython=True)<br /> ~  ~ def bar(x, y):<br /> ~  ~  ~ return x + y
 
 
 ### lesser
@@ -722,14 +387,7 @@ def lesser(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
 
 
 
-Elementwise test if x < y.
-
-Args:
-    x: A tensor.
-    y: A tensor.
-
-Returns:
-    tensor (of bools): Elementwise test of x < y.
+Elementwise test if x < y.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A tensor.<br /><br />Returns:<br /> ~ tensor (of bools): Elementwise test of x < y.
 
 
 ### lesser\_equal
@@ -741,14 +399,7 @@ def lesser_equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarra
 
 
 
-Elementwise test if x <= y.
-
-Args:
-    x: A tensor.
-    y: A tensor.
-
-Returns:
-    tensor (of bools): Elementwise test of x <= y.
+Elementwise test if x <= y.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A tensor.<br /><br />Returns:<br /> ~ tensor (of bools): Elementwise test of x <= y.
 
 
 ### log
@@ -760,13 +411,7 @@ def log(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise natural logarithm of a tensor.
-
-Args:
-    x (non-negative): A tensor.
-
-Returns:
-    tensor: Elementwise natural logarithm.
+Elementwise natural logarithm of a tensor.<br /><br />Args:<br /> ~ x (non-negative): A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise natural logarithm.
 
 
 ### logaddexp
@@ -778,14 +423,7 @@ def logaddexp(x1: numpy.ndarray, x2: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise logaddexp function: log(exp(x1) + exp(x2))
-
-Args:
-    x1: A tensor.
-    x2: A tensor.
-
-Returns:
-    tensor: Elementwise logaddexp.
+Elementwise logaddexp function: log(exp(x1) + exp(x2))<br /><br />Args:<br /> ~ x1: A tensor.<br /> ~ x2: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise logaddexp.
 
 
 ### logcosh
@@ -797,13 +435,7 @@ def logcosh(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise logarithm of the hyperbolic cosine of a tensor.
-
-Args:
-    x: A tensor.
-
-Returns:
-    tensor: Elementwise logarithm of the hyperbolic cosine.
+Elementwise logarithm of the hyperbolic cosine of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise logarithm of the hyperbolic cosine.
 
 
 ### logit
@@ -815,13 +447,7 @@ def logit(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise logit function of a tensor. Inverse of the expit function.
-
-Args:
-    x (between 0 and 1): A tensor.
-
-Returns:
-    tensor: Elementwise logit function
+Elementwise logit function of a tensor. Inverse of the expit function.<br /><br />Args:<br /> ~ x (between 0 and 1): A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise logit function
 
 
 ### maximum
@@ -833,14 +459,7 @@ def maximum(x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise maximum of two tensors.
-
-Args:
-    x: A tensor.
-    y: A tensor.
-
-Returns:
-    tensor: Elementwise maximum of x and y.
+Elementwise maximum of two tensors.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise maximum of x and y.
 
 
 ### mean
@@ -852,20 +471,7 @@ def mean(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.
 
 
 
-Return the mean of the elements of a tensor along the specified axis.
-
-Args:
-    x: A float or tensor.
-    axis (optional): The axis for taking the mean.
-    keepdims (optional): If this is set to true, the dimension of the tensor
-                         is unchanged. Otherwise, the reduced axis is removed
-                         and the dimension of the array is 1 less.
-
-Returns:
-    if axis is None:
-        float: The overall mean of the elements in the tensor
-    else:
-        tensor: The mean of the tensor along the specified axis.
+Return the mean of the elements of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis for taking the mean.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall mean of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The mean of the tensor along the specified axis.
 
 
 ### minimum
@@ -877,14 +483,7 @@ def minimum(x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise minimum of two tensors.
-
-Args:
-    x: A tensor.
-    y: A tensor.
-
-Returns:
-    tensor: Elementwise minimum of x and y.
+Elementwise minimum of two tensors.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise minimum of x and y.
 
 
 ### mix\_inplace
@@ -896,21 +495,7 @@ def mix_inplace(w: Union[int, float], x: numpy.ndarray, y: numpy.ndarray) -> Non
 
 
 
-Compute a weighted average of two matrices (x and y) and store the results in x.
-Useful for keeping track of running averages during training.
-
-x <- w * x + (1-w) * y
-
-Note:
-    Modifies x in place.
-
-Args:
-    w: The mixing coefficient between 0 and 1 .
-    x: A tensor.
-    y: A tensor:
-
-Returns:
-    None
+Compute a weighted average of two matrices (x and y) and store the results in x.<br />Useful for keeping track of running averages during training.<br /><br />x <- w * x + (1-w) * y<br /><br />Note:<br /> ~ Modifies x in place.<br /><br />Args:<br /> ~ w: The mixing coefficient between 0 and 1 .<br /> ~ x: A tensor.<br /> ~ y: A tensor:<br /><br />Returns:<br /> ~ None
 
 
 ### multiply\_dict\_inplace
@@ -922,17 +507,7 @@ def multiply_dict_inplace(dict1: Dict[str, numpy.ndarray], scalar: Union[int, fl
 
 
 
-Entrywise multiplication of dict1 by scalar.
-
-Note:
-    Modifies dict1 in place.
-
-Args:
-    dict1: A dictionary of tensors.
-    scalar: A scalar.
-
-Returns:
-    None
+Entrywise multiplication of dict1 by scalar.<br /><br />Note:<br /> ~ Modifies dict1 in place.<br /><br />Args:<br /> ~ dict1: A dictionary of tensors.<br /> ~ scalar: A scalar.<br /><br />Returns:<br /> ~ None
 
 
 ### ndim
@@ -944,13 +519,7 @@ def ndim(tensor: numpy.ndarray) -> int
 
 
 
-Return the number of dimensions of a tensor.
-
-Args:
-    tensor: A tensor:
-
-Returns:
-    int: The number of dimensions of the tensor.
+Return the number of dimensions of a tensor.<br /><br />Args:<br /> ~ tensor: A tensor:<br /><br />Returns:<br /> ~ int: The number of dimensions of the tensor.
 
 
 ### norm
@@ -962,14 +531,7 @@ def norm(x: numpy.ndarray) -> float
 
 
 
-Return the L2 norm of a tensor.
-
-Args:
-    x: A tensor.
-
-Returns:
-    float: The L2 norm of the tensor
-           (i.e., the sqrt of the sum of the squared elements).
+Return the L2 norm of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ float: The L2 norm of the tensor<br /> ~  ~    (i.e., the sqrt of the sum of the squared elements).
 
 
 ### normalize
@@ -981,13 +543,7 @@ def normalize(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Divide x by it's sum.
-
-Args:
-    x: A non-negative tensor.
-
-Returns:
-    tensor: A tensor normalized by it's sum.
+Divide x by it's sum.<br /><br />Args:<br /> ~ x: A non-negative tensor.<br /><br />Returns:<br /> ~ tensor: A tensor normalized by it's sum.
 
 
 ### not\_equal
@@ -999,14 +555,7 @@ def not_equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
 
 
 
-Elementwise test if two tensors are not equal.
-
-Args:
-    x: A tensor.
-    y: A tensor.
-
-Returns:
-    tensor (of bools): Elementwise test of non-equality between x and y.
+Elementwise test if two tensors are not equal.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A tensor.<br /><br />Returns:<br /> ~ tensor (of bools): Elementwise test of non-equality between x and y.
 
 
 ### ones
@@ -1018,13 +567,7 @@ def ones(shape: Tuple[int]) -> numpy.ndarray
 
 
 
-Return a tensor of a specified shape filled with ones.
-
-Args:
-    shape: The shape of the desired tensor.
-
-Returns:
-    tensor: A tensor of ones with the desired shape.
+Return a tensor of a specified shape filled with ones.<br /><br />Args:<br /> ~ shape: The shape of the desired tensor.<br /><br />Returns:<br /> ~ tensor: A tensor of ones with the desired shape.
 
 
 ### ones\_like
@@ -1036,13 +579,7 @@ def ones_like(tensor: numpy.ndarray) -> numpy.ndarray
 
 
 
-Return a tensor of ones with the same shape as the input tensor.
-
-Args:
-    tensor: A tensor.
-
-Returns:
-    tensor: A tensor with the same shape.
+Return a tensor of ones with the same shape as the input tensor.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><br />Returns:<br /> ~ tensor: A tensor with the same shape.
 
 
 ### outer
@@ -1054,16 +591,7 @@ def outer(x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray
 
 
 
-Compute the outer product of vectors x and y.
-
-mat_{ij} = x_i * y_j
-
-Args:
-    x: A vector (i.e., a 1D tensor).
-    y: A vector (i.e., a 1D tensor).
-
-Returns:
-    tensor: Outer product of vectors x and y.
+Compute the outer product of vectors x and y.<br /><br />mat_{ij} = x_i * y_j<br /><br />Args:<br /> ~ x: A vector (i.e., a 1D tensor).<br /> ~ y: A vector (i.e., a 1D tensor).<br /><br />Returns:<br /> ~ tensor: Outer product of vectors x and y.
 
 
 ### quadratic
@@ -1075,21 +603,7 @@ def quadratic(a: numpy.ndarray, b: numpy.ndarray, W: numpy.ndarray) -> numpy.nda
 
 
 
-Evaluate the quadratic form a W b.
-
-a ~ vector, b ~ vector, W ~ matrix:
-\sum_ij a_i W_ij b_j
-
-a ~ matrix, b ~ matrix, W ~ matrix:
-\sum_kl a_ik W_kl b_lj
-
-Args:
-    a: A tensor:
-    b: A tensor:
-    W: A tensor:
-
-Returns:
-    tensor: Quadratic function a W b.
+Evaluate the quadratic form a W b.<br /><br />a ~ vector, b ~ vector, W ~ matrix:<br />\sum_ij a_i W_ij b_j<br /><br />a ~ matrix, b ~ matrix, W ~ matrix:<br />\sum_kl a_ik W_kl b_lj<br /><br />Args:<br /> ~ a: A tensor:<br /> ~ b: A tensor:<br /> ~ W: A tensor:<br /><br />Returns:<br /> ~ tensor: Quadratic function a W b.
 
 
 ### rand
@@ -1101,14 +615,7 @@ def rand(shape: Tuple[int]) -> numpy.ndarray
 
 
 
-Generate a tensor of the specified shape filled with uniform random numbers
-between 0 and 1.
-
-Args:
-    shape: Desired shape of the random tensor.
-
-Returns:
-    tensor: Random numbers between 0 and 1.
+Generate a tensor of the specified shape filled with uniform random numbers<br />between 0 and 1.<br /><br />Args:<br /> ~ shape: Desired shape of the random tensor.<br /><br />Returns:<br /> ~ tensor: Random numbers between 0 and 1.
 
 
 ### randn
@@ -1120,14 +627,7 @@ def randn(shape: Tuple[int]) -> numpy.ndarray
 
 
 
-Generate a tensor of the specified shape filled with random numbers
-drawn from a standard normal distribution (mean = 0, variance = 1).
-
-Args:
-    shape: Desired shape of the random tensor.
-
-Returns:
-    tensor: Random numbers between from a standard normal distribution.
+Generate a tensor of the specified shape filled with random numbers<br />drawn from a standard normal distribution (mean = 0, variance = 1).<br /><br />Args:<br /> ~ shape: Desired shape of the random tensor.<br /><br />Returns:<br /> ~ tensor: Random numbers between from a standard normal distribution.
 
 
 ### reciprocal
@@ -1139,13 +639,7 @@ def reciprocal(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise inverse of a tensor.
-
-Args:
-    x (non-zero): A tensor:
-
-Returns:
-    tensor: Elementwise inverse.
+Elementwise inverse of a tensor.<br /><br />Args:<br /> ~ x (non-zero): A tensor:<br /><br />Returns:<br /> ~ tensor: Elementwise inverse.
 
 
 ### repeat
@@ -1157,14 +651,7 @@ def repeat(tensor: numpy.ndarray, n: int) -> numpy.ndarray
 
 
 
-Repeat tensor n times along the first axis.
-
-Args:
-    tensor: A vector (i.e., 1D tensor).
-    n: The number of repeats.
-
-Returns:
-    tensor: A vector created from many repeats of the input tensor.
+Repeat tensor n times along the first axis.<br /><br />Args:<br /> ~ tensor: A vector (i.e., 1D tensor).<br /> ~ n: The number of repeats.<br /><br />Returns:<br /> ~ tensor: A vector created from many repeats of the input tensor.
 
 
 ### reshape
@@ -1176,14 +663,7 @@ def reshape(tensor: numpy.ndarray, newshape: Tuple[int]) -> numpy.ndarray
 
 
 
-Return tensor with a new shape.
-
-Args:
-    tensor: A tensor.
-    newshape: The desired shape.
-
-Returns:
-    tensor: A tensor with the desired shape.
+Return tensor with a new shape.<br /><br />Args:<br /> ~ tensor: A tensor.<br /> ~ newshape: The desired shape.<br /><br />Returns:<br /> ~ tensor: A tensor with the desired shape.
 
 
 ### set\_seed
@@ -1195,16 +675,7 @@ def set_seed(n: int=137) -> None
 
 
 
-Set the seed of the random number generator.
-
-Notes:
-    Default seed is 137.
-
-Args:
-    n: Random seed.
-
-Returns:
-    None
+Set the seed of the random number generator.<br /><br />Notes:<br /> ~ Default seed is 137.<br /><br />Args:<br /> ~ n: Random seed.<br /><br />Returns:<br /> ~ None
 
 
 ### shape
@@ -1216,13 +687,7 @@ def shape(tensor: numpy.ndarray) -> Tuple[int]
 
 
 
-Return a tuple with the shape of the tensor.
-
-Args:
-    tensor: A tensor:
-
-Returns:
-    tuple: A tuple of integers describing the shape of the tensor.
+Return a tuple with the shape of the tensor.<br /><br />Args:<br /> ~ tensor: A tensor:<br /><br />Returns:<br /> ~ tuple: A tuple of integers describing the shape of the tensor.
 
 
 ### sign
@@ -1234,13 +699,7 @@ def sign(tensor: numpy.ndarray) -> numpy.ndarray
 
 
 
-Return the elementwise sign of a tensor.
-
-Args:
-    tensor: A tensor.
-
-Returns:
-    tensor: The sign of the elements in the tensor.
+Return the elementwise sign of a tensor.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><br />Returns:<br /> ~ tensor: The sign of the elements in the tensor.
 
 
 ### sin
@@ -1252,13 +711,7 @@ def sin(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise sine of a tensor.
-
-Args:
-    x: A tensor.
-
-Returns:
-    tensor: Elementwise sine.
+Elementwise sine of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise sine.
 
 
 ### softplus
@@ -1270,13 +723,7 @@ def softplus(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise softplus function of a tensor.
-
-Args:
-    x: A tensor.
-
-Returns:
-    tensor: Elementwise softplus.
+Elementwise softplus function of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise softplus.
 
 
 ### sqrt
@@ -1288,13 +735,7 @@ def sqrt(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise square root of a tensor.
-
-Args:
-    x (non-negative): A tensor.
-
-Returns:
-    tensor(non-negative): Elementwise square root.
+Elementwise square root of a tensor.<br /><br />Args:<br /> ~ x (non-negative): A tensor.<br /><br />Returns:<br /> ~ tensor(non-negative): Elementwise square root.
 
 
 ### sqrt\_div
@@ -1306,14 +747,7 @@ def sqrt_div(x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise division of x by sqrt(y).
-
-Args:
-    x: A tensor:
-    y: A non-negative tensor.
-
-Returns:
-    tensor: Elementwise division of x by sqrt(y).
+Elementwise division of x by sqrt(y).<br /><br />Args:<br /> ~ x: A tensor:<br /> ~ y: A non-negative tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise division of x by sqrt(y).
 
 
 ### square
@@ -1325,13 +759,7 @@ def square(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise square of a tensor.
-
-Args:
-    x: A tensor.
-
-Returns:
-    tensor (non-negative): Elementwise square.
+Elementwise square of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor (non-negative): Elementwise square.
 
 
 ### square\_mix\_inplace
@@ -1343,21 +771,7 @@ def square_mix_inplace(w: Union[int, float], x: numpy.ndarray, y: numpy.ndarray)
 
 
 
-Compute a weighted average of two matrices (x and y^2) and store the results in x.
-Useful for keeping track of running averages of squared matrices during training.
-
-x <- w x + (1-w) * y**2
-
-Note:
-    Modifies x in place.
-
-Args:
-    w: The mixing coefficient between 0 and 1 .
-    x: A tensor.
-    y: A tensor:
-
-Returns:
-    None
+Compute a weighted average of two matrices (x and y^2) and store the results in x.<br />Useful for keeping track of running averages of squared matrices during training.<br /><br />x <- w x + (1-w) * y**2<br /><br />Note:<br /> ~ Modifies x in place.<br /><br />Args:<br /> ~ w: The mixing coefficient between 0 and 1 .<br /> ~ x: A tensor.<br /> ~ y: A tensor:<br /><br />Returns:<br /> ~ None
 
 
 ### stack
@@ -1369,14 +783,7 @@ def stack(tensors: Iterable[numpy.ndarray], axis: int) -> numpy.ndarray
 
 
 
-Stack tensors along the specified axis.
-
-Args:
-    tensors: A list of tensors.
-    axis: The axis the tensors will be stacked along.
-
-Returns:
-    tensor: Stacked tensors from the input list.
+Stack tensors along the specified axis.<br /><br />Args:<br /> ~ tensors: A list of tensors.<br /> ~ axis: The axis the tensors will be stacked along.<br /><br />Returns:<br /> ~ tensor: Stacked tensors from the input list.
 
 
 ### std
@@ -1388,20 +795,7 @@ def std(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.f
 
 
 
-Return the standard deviation of the elements of a tensor along the specified axis.
-
-Args:
-    x: A float or tensor.
-    axis (optional): The axis for taking the standard deviation.
-    keepdims (optional): If this is set to true, the dimension of the tensor
-                         is unchanged. Otherwise, the reduced axis is removed
-                         and the dimension of the array is 1 less.
-
-Returns:
-    if axis is None:
-        float: The overall standard deviation of the elements in the tensor
-    else:
-        tensor: The standard deviation of the tensor along the specified axis.
+Return the standard deviation of the elements of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis for taking the standard deviation.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall standard deviation of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The standard deviation of the tensor along the specified axis.
 
 
 ### subtract\_dicts\_inplace
@@ -1413,17 +807,7 @@ def subtract_dicts_inplace(dict1: Dict[str, numpy.ndarray], dict2: Dict[str, num
 
 
 
-Entrywise subtraction of dict2 from dict1.
-
-Note:
-    Modifies dict1 in place.
-
-Args:
-    dict1: A dictionary of tensors.
-    dict2: A dictionary of tensors.
-
-Returns:
-    None
+Entrywise subtraction of dict2 from dict1.<br /><br />Note:<br /> ~ Modifies dict1 in place.<br /><br />Args:<br /> ~ dict1: A dictionary of tensors.<br /> ~ dict2: A dictionary of tensors.<br /><br />Returns:<br /> ~ None
 
 
 ### tabs
@@ -1435,13 +819,7 @@ def tabs(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise absolute value of a tensor.
-
-Args:
-    x: A tensor.
-
-Returns:
-    tensor (non-negative): Absolute value of x.
+Elementwise absolute value of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor (non-negative): Absolute value of x.
 
 
 ### tall
@@ -1453,22 +831,7 @@ def tall(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[bool, 
 
 
 
-Return True if all elements of the input tensor are true along the
-specified axis.
-
-Args:
-    x: A float or tensor.
-    axis (optional): The axis of interest.
-    keepdims (optional): If this is set to true, the dimension of the tensor
-                         is unchanged. Otherwise, the reduced axis is removed
-                         and the dimension of the array is 1 less.
-
-Returns:
-    if axis is None:
-        bool: 'all' applied to all elements in the tensor
-    else:
-        tensor (of bools): 'all' applied to the elements in the tensor
-                            along axis
+Return True if all elements of the input tensor are true along the<br />specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis of interest.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ bool: 'all' applied to all elements in the tensor<br /> ~ else:<br /> ~  ~ tensor (of bools): 'all' applied to the elements in the tensor<br /> ~  ~  ~  ~  ~  ~  ~ along axis
 
 
 ### tanh
@@ -1480,13 +843,7 @@ def tanh(x: numpy.ndarray) -> numpy.ndarray
 
 
 
-Elementwise hyperbolic tangent of a tensor.
-
-Args:
-    x: A tensor.
-
-Returns:
-    tensor: Elementwise hyperbolic tangent.
+Elementwise hyperbolic tangent of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise hyperbolic tangent.
 
 
 ### tany
@@ -1498,22 +855,7 @@ def tany(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[bool, 
 
 
 
-Return True if any elements of the input tensor are true along the
-specified axis.
-
-Args:
-    x: A float or tensor.
-    axis (optional): The axis of interest.
-    keepdims (optional): If this is set to true, the dimension of the tensor
-                         is unchanged. Otherwise, the reduced axis is removed
-                         and the dimension of the array is 1 less.
-
-Returns:
-    if axis is None:
-        bool: 'any' applied to all elements in the tensor
-    else:
-        tensor (of bools): 'any' applied to the elements in the tensor
-                            along axis
+Return True if any elements of the input tensor are true along the<br />specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis of interest.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ bool: 'any' applied to all elements in the tensor<br /> ~ else:<br /> ~  ~ tensor (of bools): 'any' applied to the elements in the tensor<br /> ~  ~  ~  ~  ~  ~  ~ along axis
 
 
 ### tmax
@@ -1525,20 +867,7 @@ def tmax(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.
 
 
 
-Return the elementwise maximum of a tensor along the specified axis.
-
-Args:
-    x: A float or tensor.
-    axis (optional): The axis for taking the maximum.
-    keepdims (optional): If this is set to true, the dimension of the tensor
-                         is unchanged. Otherwise, the reduced axis is removed
-                         and the dimension of the array is 1 less.
-
-Returns:
-    if axis is None:
-        float: The overall maximum of the elements in the tensor
-    else:
-        tensor: The maximum of the tensor along the specified axis.
+Return the elementwise maximum of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis for taking the maximum.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall maximum of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The maximum of the tensor along the specified axis.
 
 
 ### tmin
@@ -1550,20 +879,7 @@ def tmin(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.
 
 
 
-Return the elementwise minimum of a tensor along the specified axis.
-
-Args:
-    x: A float or tensor.
-    axis (optional): The axis for taking the minimum.
-    keepdims (optional): If this is set to true, the dimension of the tensor
-                         is unchanged. Otherwise, the reduced axis is removed
-                         and the dimension of the array is 1 less.
-
-Returns:
-    if axis is None:
-        float: The overall minimum of the elements in the tensor
-    else:
-        tensor: The minimum of the tensor along the specified axis.
+Return the elementwise minimum of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis for taking the minimum.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall minimum of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The minimum of the tensor along the specified axis.
 
 
 ### to\_numpy\_array
@@ -1575,13 +891,7 @@ def to_numpy_array(tensor: numpy.ndarray) -> numpy.ndarray
 
 
 
-Return tensor as a numpy array.
-
-Args:
-    tensor: A tensor.
-
-Returns:
-    tensor: Tensor converted to a numpy array.
+Return tensor as a numpy array.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><br />Returns:<br /> ~ tensor: Tensor converted to a numpy array.
 
 
 ### tpow
@@ -1593,14 +903,7 @@ def tpow(x: numpy.ndarray, a: float) -> numpy.ndarray
 
 
 
-Elementwise power of a tensor x to power a.
-
-Args:
-    x: A tensor.
-    a: Power.
-
-Returns:
-    tensor: Elementwise x to the power of a.
+Elementwise power of a tensor x to power a.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ a: Power.<br /><br />Returns:<br /> ~ tensor: Elementwise x to the power of a.
 
 
 ### tprod
@@ -1612,20 +915,7 @@ def tprod(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy
 
 
 
-Return the product of the elements of a tensor along the specified axis.
-
-Args:
-    x: A float or tensor.
-    axis (optional): The axis for taking the product.
-    keepdims (optional): If this is set to true, the dimension of the tensor
-                         is unchanged. Otherwise, the reduced axis is removed
-                         and the dimension of the array is 1 less.
-
-Returns:
-    if axis is None:
-        float: The overall product of the elements in the tensor
-    else:
-        tensor: The product of the tensor along the specified axis.
+Return the product of the elements of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis for taking the product.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall product of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The product of the tensor along the specified axis.
 
 
 ### trange
@@ -1637,16 +927,7 @@ def trange(start: int, end: int, step: int=1) -> numpy.ndarray
 
 
 
-Generate a tensor like a python range.
-
-Args:
-    start: The start of the range.
-    end: The end of the range.
-    step: The step of the range.
-
-Returns:
-    tensor: A vector ranging from start to end in increments
-            of step. Cast to float rather than int.
+Generate a tensor like a python range.<br /><br />Args:<br /> ~ start: The start of the range.<br /> ~ end: The end of the range.<br /> ~ step: The step of the range.<br /><br />Returns:<br /> ~ tensor: A vector ranging from start to end in increments<br /> ~  ~  ~ of step. Cast to float rather than int.
 
 
 ### transpose
@@ -1658,13 +939,7 @@ def transpose(tensor: numpy.ndarray) -> numpy.ndarray
 
 
 
-Return the transpose of a tensor.
-
-Args:
-    tensor: A tensor.
-
-Returns:
-    tensor: The transpose (exchange of rows and columns) of the tensor.
+Return the transpose of a tensor.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><br />Returns:<br /> ~ tensor: The transpose (exchange of rows and columns) of the tensor.
 
 
 ### tround
@@ -1676,13 +951,7 @@ def tround(tensor: numpy.ndarray) -> numpy.ndarray
 
 
 
-Return a tensor with rounded elements.
-
-Args:
-    tensor: A tensor.
-
-Returns:
-    tensor: A tensor rounded to the nearest integer (still floating point).
+Return a tensor with rounded elements.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><br />Returns:<br /> ~ tensor: A tensor rounded to the nearest integer (still floating point).
 
 
 ### tsum
@@ -1694,20 +963,7 @@ def tsum(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.
 
 
 
-Return the sum of the elements of a tensor along the specified axis.
-
-Args:
-    x: A float or tensor.
-    axis (optional): The axis for taking the sum.
-    keepdims (optional): If this is set to true, the dimension of the tensor
-                         is unchanged. Otherwise, the reduced axis is removed
-                         and the dimension of the array is 1 less.
-
-Returns:
-    if axis is None:
-        float: The overall sum of the elements in the tensor
-    else:
-        tensor: The sum of the tensor along the specified axis.
+Return the sum of the elements of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis for taking the sum.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall sum of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The sum of the tensor along the specified axis.
 
 
 ### var
@@ -1719,20 +975,7 @@ def var(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.f
 
 
 
-Return the variance of the elements of a tensor along the specified axis.
-
-Args:
-    x: A float or tensor.
-    axis (optional): The axis for taking the variance.
-    keepdims (optional): If this is set to true, the dimension of the tensor
-                         is unchanged. Otherwise, the reduced axis is removed
-                         and the dimension of the array is 1 less.
-
-Returns:
-    if axis is None:
-        float: The overall variance of the elements in the tensor
-    else:
-        tensor: The variance of the tensor along the specified axis.
+Return the variance of the elements of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis for taking the variance.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall variance of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The variance of the tensor along the specified axis.
 
 
 ### vstack
@@ -1744,13 +987,7 @@ def vstack(tensors: Iterable[numpy.ndarray]) -> numpy.ndarray
 
 
 
-Concatenate tensors along the zeroth axis.
-
-Args:
-    tensors: A list of tensors.
-
-Returns:
-    tensor: Tensors stacked along axis=0.
+Concatenate tensors along the zeroth axis.<br /><br />Args:<br /> ~ tensors: A list of tensors.<br /><br />Returns:<br /> ~ tensor: Tensors stacked along axis=0.
 
 
 ### zeros
@@ -1762,13 +999,7 @@ def zeros(shape: Tuple[int]) -> numpy.ndarray
 
 
 
-Return a tensor of a specified shape filled with zeros.
-
-Args:
-    shape: The shape of the desired tensor.
-
-Returns:
-    tensor: A tensor of zeros with the desired shape.
+Return a tensor of a specified shape filled with zeros.<br /><br />Args:<br /> ~ shape: The shape of the desired tensor.<br /><br />Returns:<br /> ~ tensor: A tensor of zeros with the desired shape.
 
 
 ### zeros\_like
@@ -1780,11 +1011,5 @@ def zeros_like(tensor: numpy.ndarray) -> numpy.ndarray
 
 
 
-Return a tensor of zeros with the same shape as the input tensor.
-
-Args:
-    tensor: A tensor.
-
-Returns:
-    tensor: A tensor of zeros with the same shape.
+Return a tensor of zeros with the same shape as the input tensor.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><br />Returns:<br /> ~ tensor: A tensor of zeros with the same shape.
 

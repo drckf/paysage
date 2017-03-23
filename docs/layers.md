@@ -1,6 +1,6 @@
-layers
+# Documentation for Layers (layers.py)
+
 ## class ExponentialLayer
-None
 ### \_\_init\_\_
 ```py
 
@@ -70,7 +70,6 @@ def sample_state(self, loc)
 
 
 ## class BernoulliLayer
-None
 ### \_\_init\_\_
 ```py
 
@@ -140,7 +139,6 @@ def sample_state(self, loc)
 
 
 ## class GaussianLayer
-None
 ### \_\_init\_\_
 ```py
 
@@ -210,7 +208,6 @@ def sample_state(self, loc, scale)
 
 
 ## class IsingLayer
-None
 ### \_\_init\_\_
 ```py
 
