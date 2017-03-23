@@ -5,6 +5,10 @@ module_header = "# {} documentation\n"
 class_header = "## class {}"
 function_header = "### {}"
 
+def savedocs(docs):
+    for key in docs:
+        with open(key + '.md', 'w') as output:
+            output.write(docs[key])
 
 def walk_through_package(package):
     output = OrderedDict()
@@ -61,7 +65,7 @@ def getclasses(item):
             # Get the docstring
             output.append(pydoc.inspect.getdoc(reference))
             # Get the methods
-            output.extend(getmethods(reference))
+            output.extend(getfunctions(reference))
             # Recurse into any methods
             output.extend(getclasses(reference))
             output.append('\n')
@@ -69,7 +73,7 @@ def getclasses(item):
     return output
 
 
-def getmethods(item):
+def getfunctions(item):
     output = list()
 
     methods = pydoc.inspect.getmembers(item, pydoc.inspect.isfunction)
@@ -99,32 +103,4 @@ def getmethods(item):
 
         output.append('\n')
 
-    return output
-
-
-def getfunctions(item):
-    output = list()
-    #print item
-    for func in pydoc.inspect.getmembers(item, pydoc.inspect.isfunction):
-
-        if func[0].startswith('_') and func[0] != '__init__':
-            continue
-
-        output.append(function_header.format(func[0].replace('_', '\\_')))
-
-        # Get the signature
-        output.append ('```py\n')
-        output.append('def %s%s\n' % (
-            func[0],
-            pydoc.inspect.formatargspec(
-                *pydoc.inspect.getfullargspec(func[1])
-            )))
-        output.append ('```\n')
-
-        # get the docstring
-        if pydoc.inspect.getdoc(func[1]):
-            output.append('\n')
-            output.append(pydoc.inspect.getdoc(func[1]))
-
-        output.append('\n')
     return output
