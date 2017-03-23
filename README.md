@@ -16,9 +16,19 @@ Soon, we will be adding support for:
 
 
 ## Installation:
+With Anaconda3:
 1. Clone this git repo
 2. Move into the directory with setup.py
 3. Run “pip install -e .”
+
+On MaxOSX with PyEnv:
+1. Install pyenv, install python 3.6.0 and set python3 to the python 3.6.0 installation
+2. Install llvm 3.9 manually with homebrew
+3. Set the LLVM_CONFIG environment variable to the llvm-config file in the llvm 3.9 configuration
+4. Clone this git repo
+5. Move into the directory with setup.py
+6. Run "pip3 install -e ."
+7. Make a new file ~/.matplotlib/matplotlibrc with the text "backend: TkAgg"
 
 Running the examples requires a file mnist.h5 containing the MNIST dataset of handwritten images. The script download_mnist.py in the mnist/ folder will fetch the file from the web.
 
