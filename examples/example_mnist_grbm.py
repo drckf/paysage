@@ -7,6 +7,9 @@ from paysage import layers
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
+from paysage import backends as be
+
+be.set_seed(137) # for determinism
 
 import example_util as util
 
