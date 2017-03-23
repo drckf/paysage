@@ -16,7 +16,7 @@ Soon, we will be adding support for:
 
 
 ## Installation:
-On Ubuntu 16.4 with Anaconda3:
+With Anaconda3:
 1. Clone this git repo
 2. Move into the directory with setup.py
 3. Run “pip install -e .”
