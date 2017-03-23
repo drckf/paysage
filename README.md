@@ -28,7 +28,7 @@ On MaxOSX with PyEnv:
 4. Clone this git repo
 5. Move into the directory with setup.py
 6. Run "pip3 install -e ."
-7. Make a new file ~/.matplotlib/matplotlibrc with the text "backend: TkAgg"
+7. Make a new file ~/.matplotlib/matplotlibrc with the text "backend: TkAgg". This fixes an issue with importing matplotlib in a virtual enviroment. Check out this [post](http://stackoverflow.com/questions/21784641/installation-issue-with-matplotlib-python) for more information.
 
 Running the examples requires a file mnist.h5 containing the MNIST dataset of handwritten images. The script download_mnist.py in the mnist/ folder will fetch the file from the web.
 
