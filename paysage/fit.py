@@ -1,4 +1,5 @@
 import time, math
+from collections import OrderedDict
 from . import backends as be
 from . import metrics as M
 
@@ -297,7 +298,7 @@ class ProgressMonitor(object):
                     m.update(**argdict)
 
             # compute metric dictionary
-            metdict = {m.name: m.value() for m in self.metrics}
+            metdict = OrderedDict([(m.name, m.value()) for m in self.metrics])
             if show:
                 for m in metdict:
                     print("-{0}: {1:.6f}".format(m, metdict[m]))
