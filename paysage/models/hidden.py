@@ -202,7 +202,8 @@ class Model(object):
 
     def marginal_free_energy(self, visible):
         i = 0
-        log_Z_hidden = self.layers[i+1].log_partition_function()
+        phi = be.dot(visible, self.weights[i].W())
+        log_Z_hidden = self.layers[i+1].log_partition_function(phi)
         energy = 0
         energy += self.layers[i].energy(visible)
         energy -= be.tsum(log_Z_hidden, axis=1)

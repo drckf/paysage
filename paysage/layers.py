@@ -95,20 +95,24 @@ class GaussianLayer(Layer):
         result /= be.broadcast(scale, data)
         return 0.5 * be.mean(result, axis=1)
 
-    def log_partition_function(self):
+    def log_partition_function(self, phi):
         """
         Let u_i and s_i be the intrinsic loc and scale parameters of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
-        Z_i = \int d x_i exp( -(x_i - u_i)/ (2 s_i^2) + \phi_i x_i)
+        Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + \phi_i x_i)
         = exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i
 
-        log(Z_i) = log(s_i) + b_i u_i + b_i^2 s_i^2 / 2 + log(2 pi) / 2
+        log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2
 
         """
+        scale = be.exp(self.int_params['log_var'])
 
+        logZ = be.broadcast(self.int_params['loc'], phi) * phi
+        logZ += be.broadcast(scale, phi) * be.square(phi)
+        logZ += be.log(scale)
 
-        return -self.ext_params['mean']
+        return logZ
 
     def online_param_update(self, data):
         n = len(data)
@@ -211,7 +215,7 @@ class IsingLayer(Layer):
     def energy(self, data):
         return -be.dot(data, self.int_params['loc']) / self.len
 
-    def log_partition_function(self):
+    def log_partition_function(self, phi):
         """
         Let a_i be the intrinsic loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
@@ -219,10 +223,11 @@ class IsingLayer(Layer):
         Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)
         = 2 cosh(a_i + phi_i)
 
-        log(Z_i) = logcosh(a_i + phi_i) + Log(2)
+        log(Z_i) = logcosh(a_i + phi_i)
 
         """
-        return be.logcosh(self.ext_params['field'])
+        logZ = be.broadcast(self.int_params['loc'], phi) + phi
+        return be.logcosh(logZ)
 
     def online_param_update(self, data):
         n = len(data)
@@ -301,7 +306,7 @@ class BernoulliLayer(Layer):
     def energy(self, data):
         return -be.dot(data, self.int_params['loc']) / self.len
 
-    def log_partition_function(self):
+    def log_partition_function(self, phi):
         """
         Let a_i be the intrinsic loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
@@ -312,7 +317,8 @@ class BernoulliLayer(Layer):
         log(Z_i) = softplus(a_i + phi_i)
 
         """
-        return be.softplus(self.ext_params['field'])
+        logZ = be.broadcast(self.int_params['loc'], phi) + phi
+        return be.softplus(logZ)
 
     def online_param_update(self, data):
         n = len(data)
@@ -391,7 +397,7 @@ class ExponentialLayer(Layer):
     def energy(self, data):
         return be.dot(data, self.int_params['loc']) / self.len
 
-    def log_partition_function(self):
+    def log_partition_function(self, phi):
         """
         Let a_i be the intrinsic loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
@@ -402,7 +408,8 @@ class ExponentialLayer(Layer):
         log(Z_i) = -log(a_i - phi_i)
 
         """
-        return -be.log(self.ext_params['field'])
+        logZ = be.broadcast(self.int_params['loc'], phi) - phi
+        return -be.log(logZ)
 
     def online_param_update(self, data):
         n = len(data)
