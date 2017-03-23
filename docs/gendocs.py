@@ -1,7 +1,3 @@
-# This script generates mkdocs friendly Markdown documentation from a python package.
-# It is based on the the following blog post by Christian Medina
-# https://medium.com/python-pandemonium/python-introspection-with-the-inspect-module-2c85d5aa5a48#.twcmlyack
-
 import os, sys, pydoc, paysage
 
 module_header = "# {} documentation\n"
@@ -22,50 +18,78 @@ def getmarkdown(module):
         output.append(module.__doc__)
 
     output.extend(getclasses(module))
-    output.extend(getfunctions(module))
+    funcs = getfunctions(module)
+    if funcs:
+        output.extend(["## functions\n"])
+        output.extend(funcs)
 
     return "\n".join((str(x) for x in output))
 
 def getclasses(item):
     output = list()
-    for cl in pydoc.inspect.getmembers(item, pydoc.inspect.isclass):
+    base_references = list()
 
-        if cl[0] != "__class__" and not cl[0].startswith("_"):
+    # get all of the classes in the module and sort them so that
+    # classes with longer names are on the top of the list
+    classes = pydoc.inspect.getmembers(item, pydoc.inspect.isclass)
+    classes.sort(key=lambda x: len(x[0]), reverse=True)
+
+    for cl in classes:
+
+        class_name, reference = cl
+
+        # only keep non-redundant classes
+        if reference in base_references:
+            continue
+        else:
+            base_references.append(reference)
+
+        if  not class_name.startswith("_"):
             # Consider anything that starts with _ private
             # and don't document it
-            output.append( class_header.format(cl[0]))
+            output.append( class_header.format(class_name))
             # Get the docstring
-            output.append(pydoc.inspect.getdoc(cl[1]))
-            # Get the functions
-            output.extend(getmethods(cl[1]))
-            # Recurse into any subclasses
-            output.extend(getclasses(cl[1]))
+            output.append(pydoc.inspect.getdoc(reference))
+            # Get the methods
+            output.extend(getmethods(reference))
+            # Recurse into any methods
+            output.extend(getclasses(reference))
             output.append('\n')
+
     return output
 
 
 def getmethods(item):
     output = list()
-    #print item
-    for func in pydoc.inspect.getmembers(item, pydoc.inspect.ismethod):
+
+    methods = pydoc.inspect.getmembers(item, pydoc.inspect.isfunction)
+
+    for func in methods:
+
+        func_name, reference = func
 
         if func[0].startswith('_') and func[0] != '__init__':
             continue
 
-        output.append(function_header.format(func[0].replace('_', '\\_')))
+        output.append(function_header.format(func_name.replace('_', '\\_')))
 
         # Get the signature
         output.append ('```py\n')
-        output.append('def %s%s\n' % (func[0], pydoc.inspect.formatargspec(*pydoc.inspect.getargspec(func[1]))))
+        output.append('def %s%s\n' % (
+            func[0],
+            pydoc.inspect.formatargspec(
+                *pydoc.inspect.getfullargspec(reference)
+            )))
         output.append ('```\n')
 
         # get the docstring
         if pydoc.inspect.getdoc(func[1]):
             output.append('\n')
-            output.append(pydoc.inspect.getdoc(func[1]))
+            output.append(pydoc.inspect.getdoc(reference))
 
         output.append('\n')
     return output
+
 
 def getfunctions(item):
     output = list()
