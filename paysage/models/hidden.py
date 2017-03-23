@@ -201,9 +201,9 @@ class Model(object):
         return energy
 
     def marginal_free_energy(self, visible):
-        energy = 0
         i = 0
-        energy += self.layers[i].energy(visible)
         log_Z_hidden = self.layers[i+1].log_partition_function()
-        energy = -be.tsum(log_Z_hidden, axis=1)
+        energy = 0
+        energy += self.layers[i].energy(visible)
+        energy -= be.tsum(log_Z_hidden, axis=1)
         return energy

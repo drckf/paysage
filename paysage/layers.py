@@ -96,6 +96,18 @@ class GaussianLayer(Layer):
         return 0.5 * be.mean(result, axis=1)
 
     def log_partition_function(self):
+        """
+        Let u_i and s_i be the intrinsic loc and scale parameters of unit i.
+        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
+
+        Z_i = \int d x_i exp( -(x_i - u_i)/ (2 s_i^2) + \phi_i x_i)
+        = exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i
+
+        log(Z_i) = log(s_i) + b_i u_i + b_i^2 s_i^2 / 2 + log(2 pi) / 2
+
+        """
+
+
         return -self.ext_params['mean']
 
     def online_param_update(self, data):
@@ -200,6 +212,16 @@ class IsingLayer(Layer):
         return -be.dot(data, self.int_params['loc']) / self.len
 
     def log_partition_function(self):
+        """
+        Let a_i be the intrinsic loc parameter of unit i.
+        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
+
+        Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)
+        = 2 cosh(a_i + phi_i)
+
+        log(Z_i) = logcosh(a_i + phi_i) + Log(2)
+
+        """
         return be.logcosh(self.ext_params['field'])
 
     def online_param_update(self, data):
@@ -280,6 +302,16 @@ class BernoulliLayer(Layer):
         return -be.dot(data, self.int_params['loc']) / self.len
 
     def log_partition_function(self):
+        """
+        Let a_i be the intrinsic loc parameter of unit i.
+        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
+
+        Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)
+        = 1 + exp(a_i + phi_i)
+
+        log(Z_i) = softplus(a_i + phi_i)
+
+        """
         return be.softplus(self.ext_params['field'])
 
     def online_param_update(self, data):
@@ -338,6 +370,7 @@ class BernoulliLayer(Layer):
             r = self.rand(array_or_shape)
         return be.float_tensor(r < 0.5)
 
+
 class ExponentialLayer(Layer):
 
     def __init__(self, num_units):
@@ -359,6 +392,16 @@ class ExponentialLayer(Layer):
         return be.dot(data, self.int_params['loc']) / self.len
 
     def log_partition_function(self):
+        """
+        Let a_i be the intrinsic loc parameter of unit i.
+        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
+
+        Z_i = Tr_{x_i} exp( -a_i x_i + phi_i x_i)
+        = 1 / (a_i - phi_i)
+
+        log(Z_i) = -log(a_i - phi_i)
+
+        """
         return -be.log(self.ext_params['field'])
 
     def online_param_update(self, data):
