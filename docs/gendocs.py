@@ -1,4 +1,4 @@
-import os, sys, pydoc, paysage
+import pydoc
 from collections import OrderedDict
 
 module_header = "# {} documentation\n"
@@ -106,3 +106,7 @@ def getfunctions(item):
         output.append('\n')
 
     return output
+
+if __name__ == "__main__":
+    import paysage
+    savedocs(walk_through_package(paysage))
