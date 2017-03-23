@@ -5,10 +5,12 @@ module_header = "# {} documentation\n"
 class_header = "## class {}"
 function_header = "### {}"
 
+
 def savedocs(docs):
     for key in docs:
         with open(key + '.md', 'w') as output:
             output.write(docs[key])
+
 
 def walk_through_package(package):
     output = OrderedDict()
