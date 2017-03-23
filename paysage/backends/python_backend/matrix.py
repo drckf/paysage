@@ -768,7 +768,7 @@ def argmax(x: T.Tensor, axis: int) -> T.Tensor:
 
     Returns:
         tensor (of ints): Indices of the maximal elements in x along the
-                          specified axis.
+        specified axis.
 
     """
     return numpy.argmax(x, axis=axis)
@@ -783,7 +783,7 @@ def argmin(x: T.Tensor, axis: int) -> T.Tensor:
 
     Returns:
         tensor (of ints): Indices of the minimum elements in x along the
-                          specified axis.
+        specified axis.
 
     """
     return numpy.argmin(x, axis=axis)
