@@ -113,9 +113,11 @@ class Model(object):
 
         """
         i = 0
-        self.layers[i+1].update(vis, self.weights[i].W(), beta)
-        h = self.layers[i+1].mean()
-        self.layers[i].update(h, be.transpose(self.weights[i].W()), beta)
+        self.layers[i+1].update(self.layers[i].rescale(vis),
+                                self.weights[i].W(), beta)
+        hid = self.layers[i+1].mean()
+        self.layers[i].update(self.layers[i+1].rescale(hid),
+                              be.transpose(self.weights[i].W()), beta)
         return self.layers[i].mean()
 
     def mean_field_iteration(self, vis, n, beta=None):
@@ -151,9 +153,11 @@ class Model(object):
 
         """
         i = 0
-        self.layers[i + 1].update(vis, self.weights[i].W(), beta)
-        h = self.layers[i + 1].mode()
-        self.layers[i].update(h, be.transpose(self.weights[i].W()), beta)
+        self.layers[i+1].update(self.layers[i].rescale(vis),
+                                  self.weights[i].W(), beta)
+        hid = self.layers[i+1].mode()
+        self.layers[i].update(self.layers[i+1].rescale(hid),
+                              be.transpose(self.weights[i].W()), beta)
         return self.layers[i].mode()
 
     def deterministic_iteration(self, vis, n, beta=None):
@@ -176,6 +180,17 @@ class Model(object):
         return new_vis
 
     def gradient(self, observed, sampled):
+        """
+        Compute the gradient of the model parameters.
+
+        Args:
+            observed: The observed visible units.
+            sampled: The sampled visible units.
+
+        Returns:
+            dict: Gradients of the model parameters.
+
+        """
         i = 0
 
         grad = {
@@ -263,25 +278,63 @@ class Model(object):
         return grad
 
     def parameter_update(self, deltas):
+        """
+        Update the model parameters.
+
+        Notes:
+            Modifies the model parameters in place.
+
+        Args:
+            deltas: A dictionary of parameter updates.
+
+        Returns:
+            None
+
+        """
         for i in range(len(self.layers)):
             self.layers[i].parameter_step(deltas['layers'][i])
         for i in range(len(self.weights)):
             self.weights[i].parameter_step(deltas['weights'][i])
 
-    def joint_energy(self, visible, hidden):
+    def joint_energy(self, vis, hid):
+        """
+        Compute the joint energy of the model.
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            hid (batch_size, num_hidden): Sampled hidden units:
+
+        Returns:
+            tensor (batch_size, ): Joint energies.
+
+        """
         energy = 0
         i = 0
-        energy += self.layers[i].energy(visible)
-        energy += self.weights[i].energy(visible, hidden)
-        energy += self.layers[i+1].energy(hidden)
-        energy += self.weights[i+1].energy(hidden, visible)
+        energy += self.layers[i].energy(vis)
+        energy += self.layers[i+1].energy(vis)
+        energy += self.weights[i].energy(vis, hid)
         return energy
 
-    def marginal_free_energy(self, visible):
+    def marginal_free_energy(self, vis):
+        """
+        Compute the marginal free energy of the model.
+
+        If the energy is:
+        E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j
+        Then the marginal free energy is:
+        F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+
+        Returns:
+            tensor (batch_size, ): Marginal free energies.
+
+        """
         i = 0
-        phi = be.dot(visible, self.weights[i].W())
+        phi = be.dot(vis, self.weights[i].W())
         log_Z_hidden = self.layers[i+1].log_partition_function(phi)
         energy = 0
-        energy += self.layers[i].energy(visible)
+        energy += self.layers[i].energy(vis)
         energy -= be.tsum(log_Z_hidden, axis=1)
         return energy
