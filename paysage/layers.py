@@ -107,7 +107,7 @@ class GaussianLayer(Layer):
 
         logZ = be.broadcast(self.int_params['loc'], phi) * phi
         logZ += be.broadcast(scale, phi) * be.square(phi)
-        logZ += be.log(scale)
+        logZ += be.log(be.broadcast(scale, phi))
 
         return logZ
 

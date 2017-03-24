@@ -1,5 +1,3 @@
-import os, sys, numpy, pandas, time
-
 from paysage import batch
 from paysage import layers
 from paysage.models import hidden
