@@ -33,9 +33,16 @@ class Model(object):
         return self.layers[0].random(visible)
 
     def mcstep(self, vis, beta=None):
-        """mcstep(v):
-           v -> h -> v'
-           return v'
+        """
+        Perform a single Gibbs sampling update.
+        v -> update h distribution ~ h -> update v distribution ~ v'
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
 
         """
         i = 0
