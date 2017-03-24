@@ -30,10 +30,8 @@ def hinton(batch, model):
         None
 
     """
-
     i = 0
-    nvis, nhid = model.weights[i].shape
-    model.weights[i].val = 0.01 * be.randn((nvis, nhid))
+    model.weights[i].val = 0.01 * be.randn(model.weights[i].shape)
     while True:
         try:
             v_data = batch.get(mode='train')
