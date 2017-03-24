@@ -69,7 +69,7 @@ class Model(object):
 
     def random(self, vis):
         """
-        Generate a random sample in the same shape,
+        Generate a random sample with the same shape,
         and of the same type, as the visible units.
 
         Args:
@@ -201,13 +201,37 @@ class Model(object):
             new_vis = self.deterministic_step(new_vis, beta)
         return new_vis
 
-    def gradient(self, observed, sampled):
+    def gradient(self, vdata, vmodel):
         """
         Compute the gradient of the model parameters.
 
+        For vis \in {vdata, vmodel}, we:
+
+        1. Scale the visible data.
+        vis_scaled = self.layers[i].rescale(vis)
+
+        2. Update the hidden layer.
+        self.layers[i+1].update(vis_scaled, self.weights[i].W())
+
+        3. Compute the mean of the hidden layer.
+        hid = self.layers[i].mean()
+
+        4. Scale the mean of the hidden layer.
+        hid_scaled = self.layers[i+1].rescale(hid)
+
+        5. Compute the derivatives.
+        vis_derivs = self.layers[i].derivatives(vis, hid_scaled,
+                                                self.weights[i].W())
+        hid_derivs = self.layers[i+1].derivatives(hid, vis_scaled,
+                                      be.transpose(self.weights[i+1].W())
+        weight_derivs = self.weights[i].derivatives(vis_scaled, hid_scaled)
+
+        The gradient is obtained by subtracting the vmodel contribution
+        from the vdata contribution.
+
         Args:
-            observed: The observed visible units.
-            sampled: The sampled visible units.
+            vdata: The observed visible units.
+            vmodel: The sampled visible units.
 
         Returns:
             dict: Gradients of the model parameters.
@@ -220,83 +244,61 @@ class Model(object):
         'weights': [None for w in self.weights]
         }
 
+        W_transpose = be.transpose(self.weights[0].W())
+
         # POSITIVE PHASE (using observed)
 
-        # update hidden layer external parameters
-        self.layers[i+1].update(observed, self.weights[0].W(), beta=None)
+        # 1. Scale vdata
+        vdata_scaled = self.layers[i].rescale(vdata)
 
-        # (gaussian only) compute scaled mean of hidden layer
-        # compute visible layer gradient
-        grad['layers'][i] = self.layers[i].derivatives(observed,
-                                           self.layers[i + 1],
-                                           self.weights[i].W(),
-                                           beta=None
-                                           )
+        # 2. Update the hidden layer
+        self.layers[i+1].update(vdata_scaled, self.weights[0].W())
 
-        # store hidden layer mean
-        hid = self.layers[i + 1].mean()
+        # 3. Compute the mean of the hidden layer
+        hid = self.layers[i+1].mean()
 
-        # update visible layer external parameters
-        self.layers[i].update(hid, be.transpose(self.weights[0].W()), beta=None)
+        # 4. Scale hid
+        hid_scaled = self.layers[i+1].rescale(hid)
 
-        # (gaussian only) compute scaled mean of visible layer
-        # compute hidden layer gradient
-        grad['layers'][i+1] = self.layers[i + 1].derivatives(hid,
-                                                 self.layers[i],
-                                                 be.transpose(
-                                                    self.weights[i].W()),
-                                                 beta=None
-                                                 )
+        # 5. Compute the gradients
+        grad['layers'][i] = self.layers[i].derivatives(vdata, hid_scaled,
+                                               self.weights[0].W())
+        grad['layers'][i+1] = self.layers[i+1].derivatives(hid, vdata_scaled,
+                                                           W_transpose)
 
-        # store the scaled mean of the hidden layer
-        # store the scaled visible observations
-        hid = self.layers[i + 1].rescale(hid)
-        vis = self.layers[i].rescale(observed)
-
-        # compute the gradient of the weights
-        grad['weights'][i] = self.weights[i].derivatives(vis, hid)
+        grad['weights'][i] = self.weights[i].derivatives(vdata_scaled,
+                                                         hid_scaled)
 
         # NEGATIVE PHASE (using sampled)
 
-        # update hidden layer external parameters
-        self.layers[i+1].update(sampled, self.weights[0].W(), beta=None)
+        # 1. Scale vdata
+        vmodel_scaled = self.layers[i].rescale(vmodel)
 
-        # (gaussian only) compute scaled mean of hidden layer
-        # compute visible layer gradient
+        # 2. Update the hidden layer
+        self.layers[i+1].update(vmodel_scaled, self.weights[0].W())
+
+        # 3. Compute the mean of the hidden layer
+        hid = self.layers[i+1].mean()
+
+        # 4. Scale hid
+        hid_scaled = self.layers[i+1].rescale(hid)
+
+        # 5. Compute the gradients
         be.subtract_dicts_inplace(grad['layers'][i],
-                                  self.layers[i].derivatives(sampled,
-                                                 self.layers[i + 1],
-                                                 self.weights[i].W(),
-                                                 beta=None
-                                                 )
-
-                                  )
-        # store hidden layer mean
-        hid = self.layers[i + 1].mean()
-
-        # update visible layer external parameters
-        self.layers[i].update(hid, be.transpose(self.weights[0].W()), beta=None)
-
-        # (gaussian only) compute scaled mean of visible layer
-        # compute hidden layer gradient
+                                  self.layers[i].derivatives(
+                                                 vmodel,
+                                                 hid_scaled,
+                                                 self.weights[0].W()))
         be.subtract_dicts_inplace(grad['layers'][i+1],
-                                  self.layers[i + 1].derivatives(hid,
-                                                     self.layers[i],
-                                                     be.transpose(
-                                                        self.weights[i].W()),
-                                                     beta=None
-                                                     )
-                                  )
-        # store the scaled mean of the hidden layer
-        # store the scaled visible observations
-        hid = self.layers[i + 1].rescale(hid)
-        vis = self.layers[i].rescale(sampled)
+                                  self.layers[i+1].derivatives(
+                                                   hid,
+                                                   vmodel_scaled,
+                                                   W_transpose))
 
-        # compute the gradient of the weights
         be.subtract_dicts_inplace(grad['weights'][i],
-                                  self.weights[i].derivatives(vis, hid)
-                                  )
-
+                                  self.weights[i].derivatives(
+                                                  vmodel_scaled,
+                                                  hid_scaled))
         return grad
 
     def parameter_update(self, deltas):

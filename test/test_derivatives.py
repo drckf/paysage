@@ -432,10 +432,11 @@ def test_gaussian_derivatives():
 
     # compute the derivatives using the layer functions
     rbm.layers[1].update(vdata_scaled, rbm.weights[0].W())
+    rbm.layers[0].update(hid_mean_scaled, be.transpose(rbm.weights[0].W()))
+
     vis_derivs = rbm.layers[0].derivatives(vdata, hid_mean_scaled,
                                             rbm.weights[0].W())
 
-    rbm.layers[0].update(hid_mean_scaled, be.transpose(rbm.weights[0].W()))
     hid_derivs = rbm.layers[1].derivatives(hid_mean, vdata_scaled,
                                            be.transpose(rbm.weights[0].W()))
 
