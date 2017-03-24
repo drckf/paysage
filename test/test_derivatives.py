@@ -47,7 +47,6 @@ def test_bernoulli_update():
     assert be.allclose(visible_field, rbm.layers[0].ext_params['field']), \
     "visible field wrong in bernoulli-bernoulli rbm"
 
-#TODO:
 def test_bernoulli_derivatives():
     num_visible_units = 100
     num_hidden_units = 50
@@ -100,7 +99,6 @@ def test_bernoulli_derivatives():
     assert be.allclose(d_W, weight_derivs['matrix']), \
     "derivative of weights wrong in bernoulli-bernoulli rbm"
 
-
 def test_ising_update():
     num_visible_units = 100
     num_hidden_units = 50
@@ -143,6 +141,58 @@ def test_ising_update():
 
     assert be.allclose(visible_field, rbm.layers[0].ext_params['field']), \
     "visible field wrong in ising-ising rbm"
+
+def test_ising_derivatives():
+    num_visible_units = 100
+    num_hidden_units = 50
+    batch_size = 25
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.IsingLayer(num_visible_units)
+    hid_layer = layers.IsingLayer(num_hidden_units)
+    rbm = hidden.Model([vis_layer, hid_layer])
+
+    # randomly set the intrinsic model parameters
+    a = be.randn((num_visible_units,))
+    b = be.randn((num_hidden_units,))
+    W = be.randn((num_visible_units, num_hidden_units))
+
+    rbm.layers[0].int_params['loc'] = a
+    rbm.layers[1].int_params['loc'] = b
+    rbm.weights[0].int_params['matrix'] = W
+
+    # generate a random batch of data
+    vdata = rbm.layers[0].random((batch_size, num_visible_units))
+    hdata = rbm.layers[1].random((batch_size, num_hidden_units))
+
+    # compute the derivatives
+    d_visible_loc = -be.mean(vdata, axis=0)
+    d_hidden_loc = -be.mean(hdata, axis=0)
+    d_W = -be.batch_outer(vdata, hdata) / len(vdata)
+
+    # compute the derivatives using the layer functions
+    vis_derivs = rbm.layers[0].derivatives(vdata,
+                                            rbm.layers[1],
+                                            rbm.weights[0].W())
+
+    hid_derivs = rbm.layers[1].derivatives(hdata,
+                                           rbm.layers[0],
+                                           be.transpose(
+                                               rbm.weights[0].W()))
+
+    weight_derivs = rbm.weights[0].derivatives(vdata, hdata)
+
+    assert be.allclose(d_visible_loc, vis_derivs['loc']), \
+    "derivative of visible loc wrong in ising-ising rbm"
+
+    assert be.allclose(d_hidden_loc, hid_derivs['loc']), \
+    "derivative of hidden loc wrong in ising-ising rbm"
+
+    assert be.allclose(d_W, weight_derivs['matrix']), \
+    "derivative of weights wrong in ising-ising rbm"
 
 def test_exponential_update():
     num_visible_units = 100
