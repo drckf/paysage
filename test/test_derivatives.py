@@ -134,6 +134,62 @@ def test_exponential_update():
     assert be.allclose(visible_rate, rbm.layers[0].ext_params['rate']), \
     "visible rate wrong in exponential-exponential rbm"
 
+def test_gaussian_update():
+    num_visible_units = 100
+    num_hidden_units = 50
+    batch_size = 25
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.GaussianLayer(num_visible_units)
+    hid_layer = layers.GaussianLayer(num_hidden_units)
+    rbm = hidden.Model([vis_layer, hid_layer])
+
+    # randomly set the intrinsic model parameters
+    a = be.randn((num_visible_units,))
+    b = be.randn((num_hidden_units,))
+    W = be.randn((num_visible_units, num_hidden_units))
+
+    rbm.layers[0].int_params['loc'] = a
+    rbm.layers[1].int_params['loc'] = b
+    rbm.weights[0].int_params['matrix'] = W
+
+    # generate a random batch of data
+    vdata = rbm.layers[0].random((batch_size, num_visible_units))
+    hdata = rbm.layers[1].random((batch_size, num_hidden_units))
+
+    # compute the variance
+    visible_var = be.exp(rbm.layers[0].int_params['log_var'])
+    hidden_var = be.exp(rbm.layers[1].int_params['log_var'])
+
+    # rescale the data
+    vdata_scaled = vdata / be.broadcast(visible_var, vdata)
+    hdata_scaled = hdata / be.broadcast(hidden_var, hdata)
+
+    # compute the mean
+    hidden_mean = be.dot(vdata_scaled, W) # (batch_size, num_hidden_units)
+    hidden_mean += be.broadcast(b, hidden_mean)
+
+    visible_mean = be.dot(hdata_scaled, be.transpose(W)) # (batch_size, num_hidden_units)
+    visible_mean += be.broadcast(a, visible_mean)
+
+    # update the extrinsic parameter using the layer functions
+    rbm.layers[1].update(vdata, rbm.weights[0].W())
+    rbm.layers[0].update(hdata, be.transpose(rbm.weights[0].W()))
+
+    assert be.allclose(visible_var, rbm.layers[0].ext_params['variance']),\
+    "visible variance wrong in gaussian-gaussian rbm"
+
+    assert be.allclose(hidden_var, rbm.layers[1].ext_params['variance']),\
+    "hidden variance wrong in gaussian-gaussian rbm"
+
+    assert be.allclose(visible_mean, rbm.layers[0].ext_params['mean']),\
+    "visible mean wrong in gaussian-gaussian rbm"
+
+    assert be.allclose(hidden_mean, rbm.layers[1].ext_params['mean']),\
+    "hidden mean wrong in gaussian-gaussian rbm"
 
 
 if __name__ == "__main__":
