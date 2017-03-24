@@ -168,7 +168,7 @@ class GaussianLayer(Layer):
                              observations,
                              axis=0
                              ) / len(observations)
-        derivs['log_var'] = self.rescale(derivs['log_var'])
+        #derivs['log_var'] = self.rescale(derivs['log_var'])
 
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
         return derivs
