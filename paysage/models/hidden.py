@@ -163,6 +163,9 @@ class Model(object):
         # store hidden layer mean
         hid = self.layers[i + 1].mean()
 
+        # update visible layer external parameters
+        self.layers[i].update(hid, be.transpose(self.weights[0].W()), beta=None)
+
         # (gaussian only) compute scaled mean of visible layer
         # compute hidden layer gradient
         be.subtract_dicts_inplace(grad['layers'][i+1],

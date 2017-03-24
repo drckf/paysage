@@ -131,8 +131,8 @@ class GaussianLayer(Layer):
         # update the sample size
         self.sample_size = new_sample_size
 
-    def update(self, units, weights, beta=None):
-        self.ext_params['mean'] = be.dot(units, weights)
+    def update(self, scaled_units, weights, beta=None):
+        self.ext_params['mean'] = be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['mean'] *= be.broadcast(
                                        beta,
@@ -241,8 +241,8 @@ class IsingLayer(Layer):
         # update the sample size
         self.sample_size = new_sample_size
 
-    def update(self, units, weights, beta=None):
-        self.ext_params['field'] = be.dot(units, weights)
+    def update(self, scaled_units, weights, beta=None):
+        self.ext_params['field'] = be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['field'] *= be.broadcast(
                                         beta,
@@ -331,8 +331,8 @@ class BernoulliLayer(Layer):
         # update the sample size
         self.sample_size = new_sample_size
 
-    def update(self, units, weights, beta=None):
-        self.ext_params['field'] = be.dot(units, weights)
+    def update(self, scaled_units, weights, beta=None):
+        self.ext_params['field'] = be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['field'] *= be.broadcast(
                                         beta,
@@ -421,8 +421,8 @@ class ExponentialLayer(Layer):
         # update the sample size
         self.sample_size = new_sample_size
 
-    def update(self, units, weights, beta=None):
-        self.ext_params['rate'] = -be.dot(units, weights)
+    def update(self, scaled_units, weights, beta=None):
+        self.ext_params['rate'] = -be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['rate'] *= be.broadcast(
                                         beta,
