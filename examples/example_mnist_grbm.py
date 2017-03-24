@@ -1,5 +1,3 @@
-import os, sys, numpy, pandas, time
-
 from functools import partial
 
 from paysage import batch
