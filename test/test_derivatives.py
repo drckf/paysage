@@ -238,6 +238,59 @@ def test_exponential_update():
     assert be.allclose(visible_rate, rbm.layers[0].ext_params['rate']), \
     "visible rate wrong in exponential-exponential rbm"
 
+def test_exponential_derivatives():
+    num_visible_units = 100
+    num_hidden_units = 50
+    batch_size = 25
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.ExponentialLayer(num_visible_units)
+    hid_layer = layers.ExponentialLayer(num_hidden_units)
+    rbm = hidden.Model([vis_layer, hid_layer])
+
+    # randomly set the intrinsic model parameters
+    # for the exponential layers, we need a > 0, b > 0, and W < 0
+    a = be.rand((num_visible_units,))
+    b = be.rand((num_hidden_units,))
+    W = -be.rand((num_visible_units, num_hidden_units))
+
+    rbm.layers[0].int_params['loc'] = a
+    rbm.layers[1].int_params['loc'] = b
+    rbm.weights[0].int_params['matrix'] = W
+
+    # generate a random batch of data
+    vdata = rbm.layers[0].random((batch_size, num_visible_units))
+    hdata = rbm.layers[1].random((batch_size, num_hidden_units))
+
+    # compute the derivatives
+    d_visible_loc = be.mean(vdata, axis=0)
+    d_hidden_loc = be.mean(hdata, axis=0)
+    d_W = -be.batch_outer(vdata, hdata) / len(vdata)
+
+    # compute the derivatives using the layer functions
+    vis_derivs = rbm.layers[0].derivatives(vdata,
+                                            rbm.layers[1],
+                                            rbm.weights[0].W())
+
+    hid_derivs = rbm.layers[1].derivatives(hdata,
+                                           rbm.layers[0],
+                                           be.transpose(
+                                               rbm.weights[0].W()))
+
+    weight_derivs = rbm.weights[0].derivatives(vdata, hdata)
+
+    assert be.allclose(d_visible_loc, vis_derivs['loc']), \
+    "derivative of visible loc wrong in exponential-exponential rbm"
+
+    assert be.allclose(d_hidden_loc, hid_derivs['loc']), \
+    "derivative of hidden loc wrong in exponential-exponential rbm"
+
+    assert be.allclose(d_W, weight_derivs['matrix']), \
+    "derivative of weights wrong in exponential-exponential rbm"
+
 def test_gaussian_update():
     num_visible_units = 100
     num_hidden_units = 50

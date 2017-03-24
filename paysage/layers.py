@@ -438,7 +438,7 @@ class ExponentialLayer(Layer):
         'loc': be.zeros(self.len)
         }
 
-        derivs['rate'] = be.mean(observations, axis=0)
+        derivs['loc'] = be.mean(observations, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
 
         return derivs
