@@ -4,17 +4,6 @@ from paysage.models import hidden
 
 import pytest
 
-"""
-Let \< \> denote averaging over samples and
-E[] denote averaging over the model.
-
-Recall that we need to average over hidden units as follows:
-
-\< h_j \> = \< E[h_j | v] \>
-\< v_i h_j \> = \< v_i E[ h_j | v] \>
-
-"""
-
 def test_bernoulli_update():
     num_visible_units = 100
     num_hidden_units = 50
