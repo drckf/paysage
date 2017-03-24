@@ -9,12 +9,34 @@ class Model(object):
     Currently only supports models with 2 layers,
     (i.e., Restricted Boltzmann Machines).
 
+    Example usage:
+    '''
+    vis = BernoulliLayer(nvis)
+    hid = BernoulliLayer(nhid)
+    rbm = Model([vis, hid])
+    '''
+
     """
     def __init__(self, layer_list):
+        """
+        Create a model.
 
+        Notes:
+            Only 2-layer models currently supported.
+
+        Args:
+            layer_list: A list of layers objects.
+
+        Returns:
+            model: A model.
+
+        """
         # the layers are stored in a list with the visible units
         # as the zeroth element
         self.layers = layer_list
+
+        assert len(self.layers) == 2,
+        "Only models with 2 layers are currently supported"
 
         # adjacent layers are connected by weights
         # therefore, if there are len(layers) = n then len(weights) = n - 1
