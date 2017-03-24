@@ -258,8 +258,7 @@ class IsingLayer(Layer):
         'loc': be.zeros(self.len)
         }
 
-        v_scaled = self.rescale(observations)
-        derivs['loc'] = -be.mean(v_scaled, axis=0)
+        derivs['loc'] = -be.mean(observations, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
 
         return derivs
@@ -349,8 +348,7 @@ class BernoulliLayer(Layer):
         'loc': be.zeros(self.len)
         }
 
-        scaled_observations = self.rescale(observations)
-        derivs['loc'] = -be.mean(scaled_observations, axis=0)
+        derivs['loc'] = -be.mean(observations, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
 
         return derivs
@@ -391,7 +389,7 @@ class ExponentialLayer(Layer):
         }
 
         self.ext_params = {
-        'field': None
+        'rate': None
         }
 
     def energy(self, data):
@@ -424,15 +422,15 @@ class ExponentialLayer(Layer):
         self.sample_size = new_sample_size
 
     def update(self, units, weights, beta=None):
-        self.ext_params['field'] = be.dot(units, weights)
+        self.ext_params['rate'] = -be.dot(units, weights)
         if beta is not None:
-            self.ext_params['field'] *= be.broadcast(
+            self.ext_params['rate'] *= be.broadcast(
                                         beta,
-                                        self.ext_params['field']
+                                        self.ext_params['rate']
                                         )
-        self.ext_params['field'] += be.broadcast(
+        self.ext_params['rate'] += be.broadcast(
                                     self.int_params['loc'],
-                                    self.ext_params['field']
+                                    self.ext_params['rate']
                                     )
 
     def derivatives(self, observations, connected_layer, weights, beta=None):
@@ -440,8 +438,7 @@ class ExponentialLayer(Layer):
         'loc': be.zeros(self.len)
         }
 
-        v_scaled = self.rescale(observations)
-        derivs['field'] = -be.mean(v_scaled, axis=0)
+        derivs['rate'] = be.mean(observations, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
 
         return derivs
@@ -453,11 +450,11 @@ class ExponentialLayer(Layer):
         raise NotImplementedError("Exponential distribution has no mode.")
 
     def mean(self):
-        return be.repicrocal(self.ext_params['field'])
+        return be.repicrocal(self.ext_params['rate'])
 
     def sample_state(self):
-        r = self.rand(be.shape(self.ext_params['field']))
-        return -be.log(r) / self.ext_params['field']
+        r = self.rand(be.shape(self.ext_params['rate']))
+        return -be.log(r) / self.ext_params['rate']
 
     def random(self, array_or_shape):
         try:
