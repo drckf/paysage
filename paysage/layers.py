@@ -248,12 +248,12 @@ class IsingLayer(Layer):
                                     self.ext_params['field']
                                     )
 
-    def derivatives(self, observations, connected_layer, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None):
         derivs = {
         'loc': be.zeros(self.len)
         }
 
-        derivs['loc'] = -be.mean(observations, axis=0)
+        derivs['loc'] = -be.mean(vis, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
 
         return derivs
@@ -338,12 +338,12 @@ class BernoulliLayer(Layer):
                                     self.ext_params['field']
                                     )
 
-    def derivatives(self, observations, connected_layer, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None):
         derivs = {
         'loc': be.zeros(self.len)
         }
 
-        derivs['loc'] = -be.mean(observations, axis=0)
+        derivs['loc'] = -be.mean(vis, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
 
         return derivs
@@ -428,12 +428,12 @@ class ExponentialLayer(Layer):
                                     self.ext_params['rate']
                                     )
 
-    def derivatives(self, observations, connected_layer, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None):
         derivs = {
         'loc': be.zeros(self.len)
         }
 
-        derivs['loc'] = be.mean(observations, axis=0)
+        derivs['loc'] = be.mean(vis, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
 
         return derivs
