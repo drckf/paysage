@@ -53,19 +53,16 @@ class Weights(Layer):
         # type out the whole thing every time
         return self.int_params['matrix']
 
-    def derivatives(self, first_layer_scaled, second_layer_scaled):
-        n = len(first_layer_scaled)
+    def derivatives(self, vis, hid):
+        n = len(vis)
         derivs = {
-        'matrix': -be.batch_outer(first_layer_scaled, second_layer_scaled) / n
+        'matrix': -be.batch_outer(vis, hid) / n
         }
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
         return derivs
 
-    def energy(self, first_layer_scaled, second_layer_scaled):
-        return -be.batch_dot(first_layer_scaled,
-                             self.int_params['matrix'],
-                             second_layer_scaled
-                             )
+    def energy(self, vis, hid):
+        return -be.batch_dot(vis, self.int_params['matrix'], hid)
 
 
 class GaussianLayer(Layer):
