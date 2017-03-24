@@ -17,7 +17,7 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
 
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 5
+    num_epochs = 10
     learning_rate = 0.001 # gaussian rbm usually requires smaller learnign rate
     mc_steps = 1
 
