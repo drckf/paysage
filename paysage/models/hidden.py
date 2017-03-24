@@ -4,7 +4,12 @@ from ..models.initialize import init_hidden as init
 
 
 class Model(object):
+    """
+    General model class.
+    Currently only supports models with 2 layers,
+    (i.e., Restricted Boltzmann Machines).
 
+    """
     def __init__(self, layer_list):
 
         # the layers are stored in a list with the visible units
@@ -19,6 +24,17 @@ class Model(object):
         ]
 
     def initialize(self, data, method='hinton'):
+        """
+        Inialize the parameters of the model.
+
+        Args:
+            data: A batch object.
+            method (optional): The initalization method.
+
+        Returns:
+            None
+
+        """
         try:
             func = getattr(init, method)
         except AttributeError:
@@ -29,8 +45,19 @@ class Model(object):
         for w in self.weights:
             w.enforce_constraints()
 
-    def random(self, visible):
-        return self.layers[0].random(visible)
+    def random(self, vis):
+        """
+        Generate a random sample in the same shape,
+        and of the same type, as the visible units.
+
+        Args:
+            vis: The visible units.
+
+        Returns:
+            tensor: Random sample with same shape as vis.
+
+        """
+        return self.layers[0].random(vis)
 
     def mcstep(self, vis, beta=None):
         """
@@ -46,26 +73,43 @@ class Model(object):
 
         """
         i = 0
-        self.layers[i+1].update(vis, self.weights[i].W(), beta)
-        h = self.layers[i+1].sample_state()
-        self.layers[i].update(h, be.transpose(self.weights[i].W()), beta)
+        self.layers[i+1].update(self.layers[i].rescale(vis),
+                                self.weights[i].W(), beta)
+        hid = self.layers[i+1].sample_state()
+        self.layers[i].update(self.layers[i+1].rescale(hid),
+                              be.transpose(self.weights[i].W()), beta)
         return self.layers[i].sample_state()
 
-    def markov_chain(self, vis, steps, beta=None):
-        """markov_chain(v, n):
-           v -> h -> v_1 -> h_1 -> ... -> v_n
-           return v_n
+    def markov_chain(self, vis, n, beta=None):
+        """
+        Perform multiple Gibbs sampling steps.
+        v ~ h ~ v_1 ~ h_1 ~ ... ~ v_n
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            n: Number of steps.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
 
         """
         new_vis = be.float_tensor(vis)
-        for t in range(steps):
+        for t in range(n):
             new_vis = self.mcstep(new_vis, beta)
         return new_vis
 
     def mean_field_step(self, vis, beta=None):
-        """mean_field_step(v):
-           v -> h -> v'
-           return v'
+        """
+        Perform a single mean-field update.
+        v -> update h distribution -> h -> update v distribution -> v'
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
 
         """
         i = 0
@@ -74,21 +118,36 @@ class Model(object):
         self.layers[i].update(h, be.transpose(self.weights[i].W()), beta)
         return self.layers[i].mean()
 
-    def mean_field_iteration(self, vis, steps, beta=None):
-        """mean_field_iteration(v, n):
-           v -> h -> v_1 -> h_1 -> ... -> v_n
-           return v_n
+    def mean_field_iteration(self, vis, n, beta=None):
+        """
+        Perform multiple mean-field updates.
+        v -> h -> v_1 -> h_1 -> ... -> v_n
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            n: Number of steps.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
 
         """
         new_vis = be.float_tensor(vis)
-        for t in range(steps):
+        for t in range(n):
             new_vis = self.mean_field_step(new_vis, beta)
         return new_vis
 
     def deterministic_step(self, vis, beta=None):
-        """deterministic_step(v):
-           v -> h -> v'
-           return v'
+        """
+        Perform a single deterministic (maximum probability) update.
+        v -> update h distribution -> h -> update v distribution -> v'
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
 
         """
         i = 0
@@ -97,14 +156,22 @@ class Model(object):
         self.layers[i].update(h, be.transpose(self.weights[i].W()), beta)
         return self.layers[i].mode()
 
-    def deterministic_iteration(self, vis, steps, beta=None):
-        """mean_field_iteration(v, n):
-           v -> h -> v_1 -> h_1 -> ... -> v_n
-           return v_n
+    def deterministic_iteration(self, vis, n, beta=None):
+        """
+        Perform multiple deterministic (maximum probability) updates.
+        v -> h -> v_1 -> h_1 -> ... -> v_n
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            n: Number of steps.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
 
         """
         new_vis = be.float_tensor(vis)
-        for _ in range(steps):
+        for _ in range(n):
             new_vis = self.deterministic_step(new_vis, beta)
         return new_vis
 
