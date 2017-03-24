@@ -128,6 +128,11 @@ class GaussianLayer(Layer):
         # update the sample size
         self.sample_size = new_sample_size
 
+    def shrink_parameters(self, shrinkage=0.1):
+        var = be.exp(self.int_params['log_var'])
+        be.mix_inplace(be.float_scalar(1-shrinkage), var, be.ones_like(var))
+        self.int_params['log_var'] = be.log(var)
+
     def update(self, scaled_units, weights, beta=None):
         self.ext_params['mean'] = be.dot(scaled_units, weights)
         if beta is not None:
@@ -236,6 +241,9 @@ class IsingLayer(Layer):
         # update the sample size
         self.sample_size = new_sample_size
 
+    def shrink_parameters(self, shrinkage=1):
+        pass
+
     def update(self, scaled_units, weights, beta=None):
         self.ext_params['field'] = be.dot(scaled_units, weights)
         if beta is not None:
@@ -326,6 +334,9 @@ class BernoulliLayer(Layer):
         # update the sample size
         self.sample_size = new_sample_size
 
+    def shrink_parameters(self, shrinkage=1):
+        pass
+
     def update(self, scaled_units, weights, beta=None):
         self.ext_params['field'] = be.dot(scaled_units, weights)
         if beta is not None:
@@ -415,6 +426,9 @@ class ExponentialLayer(Layer):
         self.int_params['loc'] = be.reciprocal(x)
         # update the sample size
         self.sample_size = new_sample_size
+
+    def shrink_parameters(self, shrinkage=1):
+        pass
 
     def update(self, scaled_units, weights, beta=None):
         self.ext_params['rate'] = -be.dot(scaled_units, weights)

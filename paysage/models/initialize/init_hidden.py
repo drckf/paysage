@@ -25,3 +25,4 @@ def hinton(batch, model):
         except StopIteration:
             break
         model.layers[i].online_param_update(v_data)
+    model.layers[i].shrink_parameters(shrinkage=0.01)

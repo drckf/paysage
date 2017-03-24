@@ -257,7 +257,7 @@ class Model(object):
         # 3. Compute the mean of the hidden layer
         hid = self.layers[i+1].mean()
 
-        # 4. Scale hid
+        # 4. Scale the hidden mean
         hid_scaled = self.layers[i+1].rescale(hid)
 
         # 5. Compute the gradients
@@ -280,7 +280,7 @@ class Model(object):
         # 3. Compute the mean of the hidden layer
         hid = self.layers[i+1].mean()
 
-        # 4. Scale hid
+        # 4. Scale hidden mean
         hid_scaled = self.layers[i+1].rescale(hid)
 
         # 5. Compute the gradients
