@@ -6,13 +6,28 @@ from ... import backends as be
 
 def hinton(batch, model):
     """
-        Hinton says to initalize the weights from N(0, 0.01)
-        hidden_bias = 0
-        visible_bias = inverse_mean( \< v_i \> )
-        if visible_scale:
-            visible_scale = \< v_i^2 \> - \< v_i \>^2
+    Initialize the parameters of an RBM.
 
-        Hinton, Geoffrey. "A practical guide to training restricted Boltzmann machines." Momentum 9.1 (2010): 926.
+    Based on the method described in:
+
+    Hinton, Geoffrey.
+    "A practical guide to training restricted Boltzmann machines."
+    Momentum 9.1 (2010): 926.
+
+    Initalize the weights from N(0, 0.01)
+    Set hidden_bias = 0
+    Set visible_bias = inverse_mean( \< v_i \> )
+    If visible_scale: set visible_scale = \< v_i^2 \> - \< v_i \>^2
+
+    Notes:
+        Modifies the model parameters in place.
+
+    Args:
+        batch: A batch object that provides minibatches of data.
+        model: A model to inialize.
+
+    Returns:
+        None
 
     """
 
