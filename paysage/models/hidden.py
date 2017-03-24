@@ -35,7 +35,7 @@ class Model(object):
         # as the zeroth element
         self.layers = layer_list
 
-        assert len(self.layers) == 2,
+        assert len(self.layers) == 2,\
         "Only models with 2 layers are currently supported"
 
         # adjacent layers are connected by weights
