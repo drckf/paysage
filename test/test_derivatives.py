@@ -410,49 +410,39 @@ def test_gaussian_derivatives():
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
-
-    # compute the mean of the hidden layer
-    rbm.layers[1].update(vdata, rbm.weights[0].W())
-    hid_mean = rbm.layers[1].mean()
-    hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
-
-    # compute the variance
     visible_var = be.exp(log_var_a)
-    hidden_var = be.exp(log_var_b)
-
-    # rescale the visible data
     vdata_scaled = vdata / be.broadcast(visible_var, vdata)
 
-    # update the parameters of the hidden layer
+    # compute the mean of the hidden layer
     rbm.layers[1].update(vdata_scaled, rbm.weights[0].W())
+    hidden_var = be.exp(log_var_b)
+    hid_mean = rbm.layers[1].mean()
+    hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
 
     # compute the derivatives
     d_vis_loc = -be.mean(vdata_scaled, axis=0)
     d_vis_logvar = -0.5 * be.mean(be.square(vdata - be.broadcast(a, vdata)), axis=0)
     d_vis_logvar += be.batch_dot(hid_mean_scaled, be.transpose(W), vdata,
                                  axis=0) / len(vdata)
-#    d_vis_logvar /= visible_var
+    d_vis_logvar /= visible_var
 
     d_hid_loc = -be.mean(hid_mean_scaled, axis=0)
 
-    d_hid_logvar = -0.5 * be.mean(be.square(hid_mean_scaled - be.broadcast(b, hid_mean_scaled)), axis=0)
-    d_hid_logvar += be.batch_dot(vdata_scaled, W, hid_mean_scaled,
-                                 axis=0) / len(hid_mean_scaled)
-#    d_hid_logvar /= hidden_var
+    d_hid_logvar = -0.5 * be.mean(be.square(hid_mean - be.broadcast(b, hid_mean)), axis=0)
+    d_hid_logvar += be.batch_dot(vdata_scaled, W, hid_mean,
+                                 axis=0) / len(hid_mean)
+    d_hid_logvar /= hidden_var
 
     d_W = -be.batch_outer(vdata_scaled, hid_mean_scaled) / len(vdata_scaled)
 
     # compute the derivatives using the layer functions
     rbm.layers[1].update(vdata_scaled, rbm.weights[0].W())
-    vis_derivs = rbm.layers[0].derivatives(vdata,
-                                            rbm.layers[1],
+    vis_derivs = rbm.layers[0].derivatives(vdata, hid_mean_scaled,
                                             rbm.weights[0].W())
 
     rbm.layers[0].update(hid_mean_scaled, be.transpose(rbm.weights[0].W()))
-    hid_derivs = rbm.layers[1].derivatives(hid_mean,
-                                           rbm.layers[0],
-                                           be.transpose(
-                                               rbm.weights[0].W()))
+    hid_derivs = rbm.layers[1].derivatives(hid_mean, vdata_scaled,
+                                           be.transpose(rbm.weights[0].W()))
 
     weight_derivs = rbm.weights[0].derivatives(vdata_scaled, hid_mean_scaled)
 
@@ -462,15 +452,14 @@ def test_gaussian_derivatives():
     assert be.allclose(d_hid_loc, hid_derivs['loc']), \
     "derivative of hidden loc wrong in gaussian-gaussian rbm"
 
-#
-#    assert be.allclose(d_vis_logvar, vis_derivs['log_var']), \
-#    "derivative of visible log_var wrong in gaussian-gaussian rbm"
-#
-#    assert be.allclose(d_hid_logvar, hid_derivs['log_var']), \
-#    "derivative of hidden log_var wrong in gaussian-gaussian rbm"
-#
-#    assert be.allclose(d_W, weight_derivs['matrix']), \
-#    "derivative of weights wrong in gaussian-gaussian rbm"
+    assert be.allclose(d_vis_logvar, vis_derivs['log_var']), \
+    "derivative of visible log_var wrong in gaussian-gaussian rbm"
+
+    assert be.allclose(d_hid_logvar, hid_derivs['log_var']), \
+    "derivative of hidden log_var wrong in gaussian-gaussian rbm"
+
+    assert be.allclose(d_W, weight_derivs['matrix']), \
+    "derivative of weights wrong in gaussian-gaussian rbm"
 
 
 

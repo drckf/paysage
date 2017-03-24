@@ -147,28 +147,26 @@ class GaussianLayer(Layer):
                                       self.ext_params['mean']
                                       )
 
-    def derivatives(self, observations, connected_layer, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None):
         derivs = {
         'loc': be.zeros(self.len),
         'log_var': be.zeros(self.len)
         }
 
-        v_scaled = self.rescale(observations)
+        v_scaled = self.rescale(vis)
         derivs['loc'] = -be.mean(v_scaled, axis=0)
 
-        connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
-
         diff = be.square(
-        observations - be.broadcast(self.int_params['loc'], observations)
+        vis - be.broadcast(self.int_params['loc'], vis)
         )
         derivs['log_var'] = -0.5 * be.mean(diff, axis=0)
         derivs['log_var'] += be.batch_dot(
-                             connected_mean_scaled,
+                             hid,
                              be.transpose(weights),
-                             observations,
+                             vis,
                              axis=0
-                             ) / len(observations)
-        #derivs['log_var'] = self.rescale(derivs['log_var'])
+                             ) / len(vis)
+        derivs['log_var'] = self.rescale(derivs['log_var'])
 
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
         return derivs
