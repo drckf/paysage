@@ -450,7 +450,7 @@ class ExponentialLayer(Layer):
         raise NotImplementedError("Exponential distribution has no mode.")
 
     def mean(self):
-        return be.repicrocal(self.ext_params['rate'])
+        return be.reciprocal(self.ext_params['rate'])
 
     def sample_state(self):
         r = self.rand(be.shape(self.ext_params['rate']))
