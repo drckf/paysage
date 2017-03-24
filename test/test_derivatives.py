@@ -82,6 +82,7 @@ def test_bernoulli_derivatives():
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
+    vdata_scaled = rbm.layers[0].rescale(vdata)
 
     # compute the mean of the hidden layer
     rbm.layers[1].update(vdata, rbm.weights[0].W())
@@ -94,14 +95,11 @@ def test_bernoulli_derivatives():
     d_W = -be.batch_outer(vdata, hid_mean_scaled) / len(vdata)
 
     # compute the derivatives using the layer functions
-    vis_derivs = rbm.layers[0].derivatives(vdata,
-                                            rbm.layers[1],
+    vis_derivs = rbm.layers[0].derivatives(vdata, hid_mean_scaled,
                                             rbm.weights[0].W())
 
-    hid_derivs = rbm.layers[1].derivatives(hid_mean,
-                                           rbm.layers[0],
-                                           be.transpose(
-                                               rbm.weights[0].W()))
+    hid_derivs = rbm.layers[1].derivatives(hid_mean, vdata_scaled,
+                                           be.transpose(rbm.weights[0].W()))
 
     weight_derivs = rbm.weights[0].derivatives(vdata, hid_mean_scaled)
 
@@ -181,6 +179,7 @@ def test_ising_derivatives():
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
+    vdata_scaled = rbm.layers[0].rescale(vdata)
 
     # compute the mean of the hidden layer
     rbm.layers[1].update(vdata, rbm.weights[0].W())
@@ -193,14 +192,11 @@ def test_ising_derivatives():
     d_W = -be.batch_outer(vdata, hid_mean_scaled) / len(vdata)
 
     # compute the derivatives using the layer functions
-    vis_derivs = rbm.layers[0].derivatives(vdata,
-                                            rbm.layers[1],
+    vis_derivs = rbm.layers[0].derivatives(vdata, hid_mean_scaled,
                                             rbm.weights[0].W())
 
-    hid_derivs = rbm.layers[1].derivatives(hid_mean,
-                                           rbm.layers[0],
-                                           be.transpose(
-                                               rbm.weights[0].W()))
+    hid_derivs = rbm.layers[1].derivatives(hid_mean, vdata_scaled,
+                                           be.transpose(rbm.weights[0].W()))
 
     weight_derivs = rbm.weights[0].derivatives(vdata, hid_mean_scaled)
 
@@ -282,6 +278,7 @@ def test_exponential_derivatives():
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
+    vdata_scaled = rbm.layers[0].rescale(vdata)
 
     # compute the mean of the hidden layer
     rbm.layers[1].update(vdata, rbm.weights[0].W())
@@ -294,12 +291,10 @@ def test_exponential_derivatives():
     d_W = -be.batch_outer(vdata, hid_mean_scaled) / len(vdata)
 
     # compute the derivatives using the layer functions
-    vis_derivs = rbm.layers[0].derivatives(vdata,
-                                            rbm.layers[1],
+    vis_derivs = rbm.layers[0].derivatives(vdata, hid_mean_scaled,
                                             rbm.weights[0].W())
 
-    hid_derivs = rbm.layers[1].derivatives(hid_mean,
-                                           rbm.layers[0],
+    hid_derivs = rbm.layers[1].derivatives(hid_mean, vdata_scaled,
                                            be.transpose(
                                                rbm.weights[0].W()))
 
