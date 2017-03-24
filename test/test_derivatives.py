@@ -4,6 +4,17 @@ from paysage.models import hidden
 
 import pytest
 
+"""
+Let \< \> denote averaging over samples and
+E[] denote averaging over the model.
+
+Recall that we need to average over hidden units as follows:
+
+\< h_j \> = \< E[h_j | v] \>
+\< v_i h_j \> = \< v_i E[ h_j | v] \>
+
+"""
+
 def test_bernoulli_update():
     num_visible_units = 100
     num_hidden_units = 50
@@ -38,8 +49,8 @@ def test_bernoulli_update():
     visible_field += be.broadcast(a, visible_field)
 
     # update the extrinsic parameter using the layer functions
-    rbm.layers[1].update(vdata, rbm.weights[0].W())
     rbm.layers[0].update(hdata, be.transpose(rbm.weights[0].W()))
+    rbm.layers[1].update(vdata, rbm.weights[0].W())
 
     assert be.allclose(hidden_field, rbm.layers[1].ext_params['field']), \
     "hidden field wrong in bernoulli-bernoulli rbm"
@@ -71,24 +82,28 @@ def test_bernoulli_derivatives():
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
-    hdata = rbm.layers[1].random((batch_size, num_hidden_units))
+
+    # compute the mean of the hidden layer
+    rbm.layers[1].update(vdata, rbm.weights[0].W())
+    hid_mean = rbm.layers[1].mean()
+    hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
 
     # compute the derivatives
     d_visible_loc = -be.mean(vdata, axis=0)
-    d_hidden_loc = -be.mean(hdata, axis=0)
-    d_W = -be.batch_outer(vdata, hdata) / len(vdata)
+    d_hidden_loc = -be.mean(hid_mean_scaled, axis=0)
+    d_W = -be.batch_outer(vdata, hid_mean_scaled) / len(vdata)
 
     # compute the derivatives using the layer functions
     vis_derivs = rbm.layers[0].derivatives(vdata,
                                             rbm.layers[1],
                                             rbm.weights[0].W())
 
-    hid_derivs = rbm.layers[1].derivatives(hdata,
+    hid_derivs = rbm.layers[1].derivatives(hid_mean_scaled,
                                            rbm.layers[0],
                                            be.transpose(
                                                rbm.weights[0].W()))
 
-    weight_derivs = rbm.weights[0].derivatives(vdata, hdata)
+    weight_derivs = rbm.weights[0].derivatives(vdata, hid_mean_scaled)
 
     assert be.allclose(d_visible_loc, vis_derivs['loc']), \
     "derivative of visible loc wrong in bernoulli-bernoulli rbm"
