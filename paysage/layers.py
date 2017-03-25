@@ -123,8 +123,18 @@ class Layer(object):
 
 
 class Weights(Layer):
-
+    """Layer class for weights"""
     def __init__(self, shape):
+        """
+        Create a weight layer.
+
+        Args:
+            shape (tuple): shape of the weight tensor (int, int)
+
+        Returns:
+            weights layer
+
+        """
         super().__init__()
 
         self.shape = shape
@@ -137,12 +147,52 @@ class Weights(Layer):
         }
 
     def W(self):
+        """
+        Get the weight matrix.
+
+        A convenience method for accessing layer.int_params['matrix']
+        with a shorter syntax.
+
+        Args:
+            None
+
+        Returns:
+            tensor: weight matrix
+
+        """
+        return self.int_params['matrix']
+
+    def W_T(self):
+        """
+        Get the transpose of the weight matrix.
+
+        A convenience method for accessing the transpose of
+        layer.int_params['matrix'] with a shorter syntax.
+
+        Args:
+            None
+
+        Returns:
+            tensor: transpose of weight matrix
+
+        """
         # the W method provides a reference to the weight matrix
         # it is just for convenience so that we don't have to
         # type out the whole thing every time
-        return self.int_params['matrix']
+        return be.transpose(self.int_params['matrix'])
 
     def derivatives(self, vis, hid):
+        """
+        Compute the derivative of the weights layer.
+
+        Args:
+            vis (tensor (num_samples, num_visible)): Rescaled visible units.
+            hid (tensor (num_samples, num_visible)): Rescaled hidden units.
+
+        Returns:
+            derivs (dict): {'matrix': tensor (contains gradient)}
+
+        """
         n = len(vis)
         derivs = {
         'matrix': -be.batch_outer(vis, hid) / n
@@ -151,6 +201,17 @@ class Weights(Layer):
         return derivs
 
     def energy(self, vis, hid):
+        """
+        Compute the contribution of the weight layer to the model energy.
+
+        Args:
+            vis (tensor (num_samples, num_visible)): Rescaled visible units.
+            hid (tensor (num_samples, num_visible)): Rescaled hidden units.
+
+        Returns:
+            tensor (num_samples, ): energy per sample
+
+        """
         return -be.batch_dot(vis, self.int_params['matrix'], hid)
 
 
