@@ -1,399 +1,364 @@
 from .. import layers
 from .. import backends as be
 from ..models.initialize import init_hidden as init
-from .. import constraints
-from .. import penalties
 
-#---- MODEL CLASSES ----#
 
-class LatentModel(object):
-    """LatentModel
-       Abstract class for a 2-layer neural network.
+class Model(object):
+    """
+    General model class.
+    Currently only supports models with 2 layers,
+    (i.e., Restricted Boltzmann Machines).
+
+    Example usage:
+    '''
+    vis = BernoulliLayer(nvis)
+    hid = BernoulliLayer(nhid)
+    rbm = Model([vis, hid])
+    '''
 
     """
-    def __init__(self):
-        self.layers = {}
-        self.params = {}
-        self.constraints = {}
-        self.penalty = {}
+    def __init__(self, layer_list):
+        """
+        Create a model.
 
-    # placeholder function -- defined in each model
-    def sample_hidden(self, visible, beta=None):
-        pass
+        Notes:
+            Only 2-layer models currently supported.
 
-    # placeholder function -- defined in each model
-    def sample_visible(self, hidden, beta=None):
-        pass
+        Args:
+            layer_list: A list of layers objects.
 
-    # placeholder function -- defined in each model
-    def marginal_free_energy(self, visible, beta=None):
-        pass
-
-    def add_constraints(self, cons):
-        for key in cons:
-            assert key in self.params
-            self.constraints[key] = cons[key]
-
-    def enforce_constraints(self):
-        for key in self.constraints:
-            getattr(constraints, self.constraints[key])(self.params[key])
-
-    def add_weight_decay(self, penalty, method='l2_penalty'):
-        self.penalty.update({'weights': getattr(penalties, method)(penalty)})
-
-    def mcstep(self, vis, beta=None):
-        """mcstep(v):
-           v -> h -> v'
-           return v'
+        Returns:
+            model: A model.
 
         """
-        hid = self.sample_hidden(vis, beta)
-        return self.sample_visible(hid, beta)
+        # the layers are stored in a list with the visible units
+        # as the zeroth element
+        self.layers = layer_list
 
-    def markov_chain(self, vis, steps, beta=None):
-        """markov_chain(v, n):
-           v -> h -> v_1 -> h_1 -> ... -> v_n
-           return v_n
+        assert len(self.layers) == 2,\
+        "Only models with 2 layers are currently supported"
+
+        # adjacent layers are connected by weights
+        # therefore, if there are len(layers) = n then len(weights) = n - 1
+        self.weights = [
+        layers.Weights((self.layers[i].len, self.layers[i+1].len))
+        for i in range(len(self.layers) - 1)
+        ]
+
+    def initialize(self, data, method='hinton'):
+        """
+        Inialize the parameters of the model.
+
+        Args:
+            data: A batch object.
+            method (optional): The initalization method.
+
+        Returns:
+            None
+
+        """
+        try:
+            func = getattr(init, method)
+        except AttributeError:
+            print(method + ' is not a valid initialization method for latent models')
+        func(data, self)
+        for l in self.layers:
+            l.enforce_constraints()
+        for w in self.weights:
+            w.enforce_constraints()
+
+    def random(self, vis):
+        """
+        Generate a random sample with the same shape,
+        and of the same type, as the visible units.
+
+        Args:
+            vis: The visible units.
+
+        Returns:
+            tensor: Random sample with same shape as vis.
+
+        """
+        return self.layers[0].random(vis)
+
+    def mcstep(self, vis, beta=None):
+        """
+        Perform a single Gibbs sampling update.
+        v -> update h distribution ~ h -> update v distribution ~ v'
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
+
+        """
+        i = 0
+        self.layers[i+1].update(self.layers[i].rescale(vis),
+                                self.weights[i].W(), beta)
+        hid = self.layers[i+1].sample_state()
+        self.layers[i].update(self.layers[i+1].rescale(hid),
+                              be.transpose(self.weights[i].W()), beta)
+        return self.layers[i].sample_state()
+
+    def markov_chain(self, vis, n, beta=None):
+        """
+        Perform multiple Gibbs sampling steps.
+        v ~ h ~ v_1 ~ h_1 ~ ... ~ v_n
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            n: Number of steps.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
 
         """
         new_vis = be.float_tensor(vis)
-        for t in range(steps):
+        for t in range(n):
             new_vis = self.mcstep(new_vis, beta)
         return new_vis
 
     def mean_field_step(self, vis, beta=None):
-        """mean_field_step(v):
-           v -> h -> v'
-           return v'
+        """
+        Perform a single mean-field update.
+        v -> update h distribution -> h -> update v distribution -> v'
 
-           It may be worth looking into extended approaches:
-           Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.
-           "Training Restricted Boltzmann Machine via the￼
-           Thouless-Anderson-Palmer free energy."
-           Advances in Neural Information Processing Systems. 2015.
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
 
         """
-        hid = self.hidden_mean(vis, beta)
-        return self.visible_mean(hid, beta)
+        i = 0
+        self.layers[i+1].update(self.layers[i].rescale(vis),
+                                self.weights[i].W(), beta)
+        hid = self.layers[i+1].mean()
+        self.layers[i].update(self.layers[i+1].rescale(hid),
+                              be.transpose(self.weights[i].W()), beta)
+        return self.layers[i].mean()
 
-    def mean_field_iteration(self, vis, steps, beta=None):
-        """mean_field_iteration(v, n):
-           v -> h -> v_1 -> h_1 -> ... -> v_n
-           return v_n
+    def mean_field_iteration(self, vis, n, beta=None):
+        """
+        Perform multiple mean-field updates.
+        v -> h -> v_1 -> h_1 -> ... -> v_n
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            n: Number of steps.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
 
         """
         new_vis = be.float_tensor(vis)
-        for t in range(steps):
+        for t in range(n):
             new_vis = self.mean_field_step(new_vis, beta)
         return new_vis
 
     def deterministic_step(self, vis, beta=None):
-        """deterministic_step(v):
-           v -> h -> v'
-           return v'
+        """
+        Perform a single deterministic (maximum probability) update.
+        v -> update h distribution -> h -> update v distribution -> v'
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
 
         """
-        hid = self.hidden_mode(vis, beta)
-        return self.visible_mode(hid, beta)
+        i = 0
+        self.layers[i+1].update(self.layers[i].rescale(vis),
+                                  self.weights[i].W(), beta)
+        hid = self.layers[i+1].mode()
+        self.layers[i].update(self.layers[i+1].rescale(hid),
+                              be.transpose(self.weights[i].W()), beta)
+        return self.layers[i].mode()
 
-    def deterministic_iteration(self, vis, steps, beta=None):
-        """mean_field_iteration(v, n):
-           v -> h -> v_1 -> h_1 -> ... -> v_n
-           return v_n
+    def deterministic_iteration(self, vis, n, beta=None):
+        """
+        Perform multiple deterministic (maximum probability) updates.
+        v -> h -> v_1 -> h_1 -> ... -> v_n
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            n: Number of steps.
+            beta (optional, (batch_size, 1)): Inverse temperatures.
+
+        Returns:
+            tensor: New visible units (v').
 
         """
         new_vis = be.float_tensor(vis)
-        for t in range(steps):
+        for _ in range(n):
             new_vis = self.deterministic_step(new_vis, beta)
         return new_vis
 
-    def random(self, visible):
-        return self.layers['visible'].random(visible)
+    def gradient(self, vdata, vmodel):
+        """
+        Compute the gradient of the model parameters.
 
+        For vis \in {vdata, vmodel}, we:
 
+        1. Scale the visible data.
+        vis_scaled = self.layers[i].rescale(vis)
 
-class RestrictedBoltzmannMachine(LatentModel):
-    """RestrictedBoltzmanMachine
+        2. Update the hidden layer.
+        self.layers[i+1].update(vis_scaled, self.weights[i].W())
 
-       Hinton, Geoffrey.
-       "A practical guide to training restricted Boltzmann machines."
-       Momentum 9.1 (2010): 926.
+        3. Compute the mean of the hidden layer.
+        hid = self.layers[i].mean()
 
-    """
-    def __init__(self, nvis, nhid, vis_type='ising', hid_type='bernoulli'):
-        assert vis_type in ['ising', 'bernoulli']
-        assert hid_type in ['ising', 'bernoulli']
+        4. Scale the mean of the hidden layer.
+        hid_scaled = self.layers[i+1].rescale(hid)
 
-        super().__init__()
+        5. Compute the derivatives.
+        vis_derivs = self.layers[i].derivatives(vis, hid_scaled,
+                                                self.weights[i].W())
+        hid_derivs = self.layers[i+1].derivatives(hid, vis_scaled,
+                                      be.transpose(self.weights[i+1].W())
+        weight_derivs = self.weights[i].derivatives(vis_scaled, hid_scaled)
 
-        self.nvis = nvis
-        self.nhid = nhid
+        The gradient is obtained by subtracting the vmodel contribution
+        from the vdata contribution.
 
-        self.layers['visible'] = layers.get(vis_type)
-        self.layers['hidden'] = layers.get(hid_type)
+        Args:
+            vdata: The observed visible units.
+            vmodel: The sampled visible units.
 
-        self.params['weights'] = 0.01 * be.randn((nvis, nhid))
-        self.params['visible_bias'] = be.zeros(nvis)
-        self.params['hidden_bias'] = be.zeros(nhid)
+        Returns:
+            dict: Gradients of the model parameters.
 
-    def initialize(self, data, method='hinton'):
-        try:
-            func = getattr(init, method)
-        except AttributeError:
-            print('{} is not a valid initialization method for latent models'.format(method))
-        func(data, self)
-        self.enforce_constraints()
+        """
+        i = 0
 
-    def _hidden_field(self, visible, beta=None):
-        result = be.dot(visible, self.params['weights'])
-        if beta is not None:
-            result *= be.broadcast(beta, result)
-        result += be.broadcast(self.params['hidden_bias'], result)
-        return result
+        grad = {
+        'layers': [None for l in self.layers],
+        'weights': [None for w in self.weights]
+        }
 
-    def _visible_field(self, hidden, beta=None):
-        result = be.dot(hidden, be.transpose(self.params['weights']))
-        if beta is not None:
-            result *= be.broadcast(beta, result)
-        result += be.broadcast(self.params['visible_bias'], result)
-        return result
+        W_transpose = be.transpose(self.weights[0].W())
 
-    def sample_hidden(self, visible, beta=None):
-        return self.layers['hidden'].sample_state(self._hidden_field(visible, beta))
+        # POSITIVE PHASE (using observed)
 
-    def hidden_mean(self, visible, beta=None):
-        return self.layers['hidden'].mean(self._hidden_field(visible, beta))
+        # 1. Scale vdata
+        vdata_scaled = self.layers[i].rescale(vdata)
 
-    def hidden_mode(self, visible, beta=None):
-        return self.layers['hidden'].prox(self._hidden_field(visible, beta))
+        # 2. Update the hidden layer
+        self.layers[i+1].update(vdata_scaled, self.weights[0].W())
 
-    def sample_visible(self, hidden, beta=None):
-        return self.layers['visible'].sample_state(self._visible_field(hidden, beta))
+        # 3. Compute the mean of the hidden layer
+        hid = self.layers[i+1].mean()
 
-    def visible_mean(self, hidden, beta=None):
-        return self.layers['visible'].mean(self._visible_field(hidden, beta))
+        # 4. Scale the hidden mean
+        hid_scaled = self.layers[i+1].rescale(hid)
 
-    def visible_mode(self, hidden, beta=None):
-        return self.layers['visible'].prox(self._visible_field(hidden, beta))
+        # 5. Compute the gradients
+        grad['layers'][i] = self.layers[i].derivatives(vdata, hid_scaled,
+                                               self.weights[0].W())
+        grad['layers'][i+1] = self.layers[i+1].derivatives(hid, vdata_scaled,
+                                                           W_transpose)
 
-    def derivatives(self, visible):
-        mean_hidden = self.hidden_mean(visible, beta=None)
-        derivs = {}
-        derivs['visible_bias'] = -be.mean(visible, axis=0)
-        derivs['hidden_bias'] = -be.mean(mean_hidden, axis=0)
-        derivs['weights'] = -be.batch_outer(visible, mean_hidden) / len(visible)
-        return derivs
+        grad['weights'][i] = self.weights[i].derivatives(vdata_scaled,
+                                                         hid_scaled)
 
-    def joint_energy(self, visible, hidden, beta=None):
-        energy = -be.batch_dot(visible, self.params['weights'], hidden)
-        if beta is not None:
-            energy *= be.flatten(beta)
-        energy -= be.dot(visible, self.params['visible_bias'])
-        energy -= be.dot(hidden, self.params['hidden_bias'])
-        return be.mean(energy)
+        # NEGATIVE PHASE (using sampled)
 
-    def marginal_free_energy(self, visible, beta=None):
-        log_Z_hidden = (self.layers['hidden']
-             .log_partition_function(self._hidden_field(visible, beta=beta)))
-        energy = - be.tsum(log_Z_hidden, axis=1)
-        energy -= be.dot(visible, self.params['visible_bias'])
+        # 1. Scale vdata
+        vmodel_scaled = self.layers[i].rescale(vmodel)
+
+        # 2. Update the hidden layer
+        self.layers[i+1].update(vmodel_scaled, self.weights[0].W())
+
+        # 3. Compute the mean of the hidden layer
+        hid = self.layers[i+1].mean()
+
+        # 4. Scale hidden mean
+        hid_scaled = self.layers[i+1].rescale(hid)
+
+        # 5. Compute the gradients
+        be.subtract_dicts_inplace(grad['layers'][i],
+                                  self.layers[i].derivatives(
+                                                 vmodel,
+                                                 hid_scaled,
+                                                 self.weights[0].W()))
+        be.subtract_dicts_inplace(grad['layers'][i+1],
+                                  self.layers[i+1].derivatives(
+                                                   hid,
+                                                   vmodel_scaled,
+                                                   W_transpose))
+
+        be.subtract_dicts_inplace(grad['weights'][i],
+                                  self.weights[i].derivatives(
+                                                  vmodel_scaled,
+                                                  hid_scaled))
+        return grad
+
+    def parameter_update(self, deltas):
+        """
+        Update the model parameters.
+
+        Notes:
+            Modifies the model parameters in place.
+
+        Args:
+            deltas: A dictionary of parameter updates.
+
+        Returns:
+            None
+
+        """
+        for i in range(len(self.layers)):
+            self.layers[i].parameter_step(deltas['layers'][i])
+        for i in range(len(self.weights)):
+            self.weights[i].parameter_step(deltas['weights'][i])
+
+    def joint_energy(self, vis, hid):
+        """
+        Compute the joint energy of the model.
+
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
+            hid (batch_size, num_hidden): Sampled hidden units:
+
+        Returns:
+            tensor (batch_size, ): Joint energies.
+
+        """
+        energy = 0
+        i = 0
+        energy += self.layers[i].energy(vis)
+        energy += self.layers[i+1].energy(vis)
+        energy += self.weights[i].energy(vis, hid)
         return energy
 
+    def marginal_free_energy(self, vis):
+        """
+        Compute the marginal free energy of the model.
 
-class HopfieldModel(LatentModel):
-    """HopfieldModel
-       A model of associative memory with binary visible units and
-       Gaussian hidden units.
+        If the energy is:
+        E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j
+        Then the marginal free energy is:
+        F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)
 
-       Hopfield, John J.
-       "Neural networks and physical systems with emergent collective
-       computational abilities."
-       Proceedings of the national academy of sciences 79.8 (1982): 2554-2558.
+        Args:
+            vis (batch_size, num_visible): Observed visible units.
 
-    """
-    def __init__(self, nvis, nhid, vis_type='ising'):
-        assert vis_type in ['ising', 'bernoulli']
+        Returns:
+            tensor (batch_size, ): Marginal free energies.
 
-        super().__init__()
-
-        self.nvis = nvis
-        self.nhid = nhid
-
-        self.layers['visible'] = layers.get(vis_type)
-        self.layers['hidden'] = layers.get('gaussian')
-
-        self.params['weights'] = 0.1 * be.randn((nvis, nhid))
-        self.params['visible_bias'] = be.zeros(nvis)
-
-        # the parameters of the hidden layer are not trainable
-        self.hidden_bias = be.zeros(nhid)
-        self.hidden_scale = be.ones(nhid)
-
-    def initialize(self, data, method='hinton'):
-        try:
-            func = getattr(init, method)
-        except AttributeError:
-            print('{} is not a valid initialization method for latent models'.format(method))
-        func(data, self)
-        self.enforce_constraints()
-
-    def _hidden_loc(self, visible, beta=None):
-        result = be.dot(visible, self.params['weights'])
-        if beta is not None:
-            result *= be.broadcast(beta, result)
-        result += be.broadcast(self.hidden_bias, result)
-        return result
-
-    def _visible_field(self, hidden, beta=None):
-        result = be.dot(hidden, be.transpose(self.params['weights']))
-        if beta is not None:
-            result *= be.broadcast(beta, result)
-        result += be.broadcast(self.params['visible_bias'], result)
-        return result
-
-    def sample_hidden(self, visible, beta=None):
-        return self.layers['hidden'].sample_state(self._hidden_loc(visible, beta), self.hidden_scale)
-
-    def hidden_mean(self, visible, beta=None):
-        return self.layers['hidden'].mean(self._hidden_loc(visible, beta))
-
-    def hidden_mode(self, visible, beta=None):
-        return self.layers['hidden'].prox(self._hidden_loc(visible, beta))
-
-    def sample_visible(self, hidden, beta=None):
-        return self.layers['visible'].sample_state(self._visible_field(hidden, beta))
-
-    def visible_mean(self, hidden, beta=None):
-        return self.layers['visible'].mean(self._visible_field(hidden, beta))
-
-    def visible_mode(self, hidden, beta=None):
-        return self.layers['visible'].prox(self._visible_field(hidden,beta))
-
-    def derivatives(self, visible):
-        mean_hidden = self.hidden_mean(visible, beta=None)
-        derivs = {}
-        derivs['visible_bias'] = -be.mean(visible, axis=0)
-        derivs['weights'] = -be.batch_outer(visible, mean_hidden) / len(visible)
-        return derivs
-
-    def joint_energy(self, visible, hidden, beta=None):
-        energy = -be.batch_dot(visible, self.params['weights'], hidden)
-        if beta is not None:
-            energy *= be.flatten(beta)
-        energy -= be.dot(visible, self.params['visible_bias'])
-        energy -= be.tsum(hidden**2, axis=1)
-        return be.mean(energy)
-
-    def marginal_free_energy(self, visible, beta=None):
-        J = be.dot(self.params['weights'], be.transpose(self.params['weights']))
-        energy = -be.batch_dot(visible, J, visible)
-        if beta is not None:
-            energy *= be.flatten(beta)**2
-        energy -= be.dot(visible, self.params['visible_bias'])
+        """
+        i = 0
+        phi = be.dot(vis, self.weights[i].W())
+        log_Z_hidden = self.layers[i+1].log_partition_function(phi)
+        energy = 0
+        energy += self.layers[i].energy(vis)
+        energy -= be.tsum(log_Z_hidden, axis=1)
         return energy
-
-
-
-class GaussianRestrictedBoltzmannMachine(LatentModel):
-    """GaussianRestrictedBoltzmanMachine
-       RBM with Gaussian visible units.
-
-       Hinton, Geoffrey.
-       "A practical guide to training restricted Boltzmann machines."
-       Momentum 9.1 (2010): 926.
-
-    """
-    def __init__(self, nvis, nhid, hid_type='bernoulli'):
-        assert hid_type in ['ising', 'bernoulli']
-
-        super().__init__()
-
-        self.nvis = nvis
-        self.nhid = nhid
-
-        self.layers['visible'] = layers.get('gaussian')
-        self.layers['hidden'] = layers.get(hid_type)
-
-        self.params['weights'] = 0.01 * be.randn((nvis, nhid))
-        self.params['visible_bias'] = be.zeros(nvis)
-        self.params['visible_scale'] = be.zeros(nvis)
-        self.params['hidden_bias'] = be.zeros(nhid)
-
-    def initialize(self, data, method='hinton'):
-        try:
-            func = getattr(init, method)
-        except AttributeError:
-            print('{} is not a valid initialization method for latent models'.format(method))
-        func(data, self)
-        self.enforce_constraints()
-
-    def _hidden_field(self, visible, beta=None):
-        scale = be.exp(self.params['visible_scale'])
-        v_scaled = visible / be.broadcast(scale, visible)
-        result = be.dot(v_scaled, self.params['weights'])
-        if beta is not None:
-            result *= be.broadcast(beta, result)
-        result += be.broadcast(self.params['hidden_bias'], result)
-        return result
-
-    def _visible_loc(self, hidden, beta=None):
-        result = be.dot(hidden, be.transpose(self.params['weights']))
-        if beta is not None:
-            result *= be.broadcast(beta, result)
-        result += be.broadcast(self.params['visible_bias'], result)
-        return result
-
-    def sample_hidden(self, visible, beta=None):
-        return self.layers['hidden'].sample_state(self._hidden_field(visible, beta))
-
-    def hidden_mean(self, visible, beta=None):
-        return self.layers['hidden'].mean(self._hidden_field(visible, beta))
-
-    def hidden_mode(self, visible, beta=None):
-        return self.layers['hidden'].prox(self._hidden_field(visible, beta))
-
-    def sample_visible(self, hidden, beta=None):
-        scale = be.exp(0.5 * self.params['visible_scale'])
-        return self.layers['visible'].sample_state(self._visible_loc(hidden, beta), scale)
-
-    def visible_mean(self, hidden, beta=None):
-        return self.layers['visible'].mean(self._visible_loc(hidden, beta))
-
-    def visible_mode(self, hidden, beta=None):
-        return self.layers['visible'].prox(self._visible_loc(hidden,beta))
-
-    def derivatives(self, visible):
-        mean_hidden = self.hidden_mean(visible, beta=None)
-        scale = be.exp(self.params['visible_scale'])
-        v_scaled = visible / be.broadcast(scale, visible)
-        derivs = {}
-        derivs['visible_bias'] = -be.mean(v_scaled, axis=0)
-        derivs['hidden_bias'] = -be.mean(mean_hidden, axis=0)
-        derivs['weights'] = -be.batch_outer(v_scaled, mean_hidden) / len(visible)
-
-        diff = (visible - be.broadcast(self.params['visible_bias'], visible))**2
-        derivs['visible_scale'] = -0.5 * be.mean(diff, axis=0)
-        derivs['visible_scale'] += be.batch_dot(mean_hidden, be.transpose(self.params['weights']), visible, axis=0) / len(visible)
-        derivs['visible_scale'] /= scale
-        return derivs
-
-    def joint_energy(self, visible, hidden, beta=None):
-        scale = be.exp(self.params['visible_scale'])
-        v_scaled = visible / be.broadcast(scale, visible)
-        energy = -be.batch_dot(v_scaled, self.params['weights'], hidden)
-        if beta is not None:
-            energy *= be.flatten(beta)
-            diff = (visible - be.broadcast(self.params['visible_bias'], visible))**2
-        diff /= be.broadcast(scale, diff)
-        energy -= -0.5 * be.mean(diff, axis=1)
-        energy -= be.dot(hidden, self.params['hidden_bias'])
-        return be.mean(energy)
-
-    def marginal_free_energy(self, visible, beta=None):
-        raise NotImplementedError
-
-
-# ----- ALIASES ----- #
-
-BernoulliRBM = RBM = RestrictedBoltzmannMachine
-GRBM = GaussianRBM = GaussianRestrictedBoltzmannMachine

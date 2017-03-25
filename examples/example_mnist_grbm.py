@@ -1,11 +1,13 @@
-import os, sys, numpy, pandas, time
-
 from functools import partial
 
 from paysage import batch
+from paysage import layers
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
+from paysage import backends as be
+
+be.set_seed(137) # for determinism
 
 import example_util as util
 
@@ -16,11 +18,11 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
     num_hidden_units = 500
     batch_size = 50
     num_epochs = 10
-    learning_rate = 0.001
+    learning_rate = 0.001 # gaussian rbm usually requires smaller learnign rate
     mc_steps = 1
 
     (_, _, shuffled_filepath) = \
-        util.default_paths(paysage_path)
+            util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
     data = batch.Batch(shuffled_filepath,
@@ -30,10 +32,11 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
                        train_fraction=0.99)
 
     # set up the model and initialize the parameters
-    rbm = hidden.GRBM(data.ncols,
-                      num_hidden_units,
-                      hid_type = 'bernoulli')
-    rbm.initialize(data, method='hinton')
+    vis_layer = layers.GaussianLayer(data.ncols)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+
+    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm.initialize(data)
 
     # set up the optimizer, sampler, and fit method
     opt = optimizers.ADAM(rbm,
@@ -51,7 +54,9 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
                  mcsteps=mc_steps,
                  skip=200,
                  metrics=['ReconstructionError',
-                          'EnergyDistance'])
+                          'EnergyDistance',
+                          'EnergyGap',
+                          'EnergyZscore'])
 
     # fit the model
     print('training with contrastive divergence')
@@ -60,7 +65,7 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
     # evaluate the model
     # this will be the same as the final epoch results
     # it is repeated here to be consistent with the sklearn rbm example
-    metrics = ['ReconstructionError', 'EnergyDistance']
+    metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore']
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
 
     util.show_metrics(rbm, performance)

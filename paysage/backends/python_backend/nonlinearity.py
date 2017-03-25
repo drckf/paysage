@@ -42,7 +42,8 @@ def log(x: T.Tensor) -> T.Tensor:
         tensor: Elementwise natural logarithm.
 
     """
-    return ne.evaluate('log(x)')
+    z = numpy.clip(x, a_min=EPSILON, a_max=numpy.inf)
+    return ne.evaluate('log(z)')
 
 def tanh(x: T.Tensor) -> T.Tensor:
     """

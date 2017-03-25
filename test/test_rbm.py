@@ -1,6 +1,8 @@
-import os, sys, numpy, pandas, time
+import os
 
+from paysage import backends as be
 from paysage import batch
+from paysage import layers
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
@@ -12,7 +14,7 @@ def test_rbm(paysage_path=None):
     need to figure how to deal with consistent random seeding throughout the
     codebase to obtain deterministic checkable results.
     """
-    num_hidden_units = 500
+    num_hidden_units = 50
     batch_size = 50
     num_epochs = 1
     learning_rate = 0.01
@@ -32,6 +34,9 @@ def test_rbm(paysage_path=None):
         shuffler = batch.DataShuffler(filepath, shuffled_filepath, complevel=0)
         shuffler.shuffle()
 
+    # set a seed for the random number generator
+    be.set_seed()
+
     # set up the reader to get minibatches
     data = batch.Batch(shuffled_filepath,
                        'train/images',
@@ -40,16 +45,25 @@ def test_rbm(paysage_path=None):
                        train_fraction=0.99)
 
     # set up the model and initialize the parameters
-    rbm = hidden.RestrictedBoltzmannMachine(data.ncols,
-                                            num_hidden_units,
-                                            vis_type='bernoulli',
-                                            hid_type='bernoulli')
-    rbm.initialize(data, method='hinton')
+    vis_layer = layers.BernoulliLayer(data.ncols)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+
+    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm.initialize(data)
+
+    # obtain initial estimate of the reconstruction error
+    perf  = fit.ProgressMonitor(0,
+                                data,
+                                metrics=[
+                                'ReconstructionError'])
+    untrained_performance = perf.check_progress(rbm, 0)
+
 
     # set up the optimizer and the fit method
-    opt = optimizers.ADAM(rbm,
+    opt = optimizers.RMSProp(rbm,
                           stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
+
 
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')
@@ -61,38 +75,22 @@ def test_rbm(paysage_path=None):
                  num_epochs,
                  mcsteps=mc_steps,
                  skip=200,
-                 metrics=['ReconstructionError',
-                          'EnergyDistance',
-                          'EnergyGap',
-                          'EnergyZscore'])
+                 metrics=['ReconstructionError'])
 
 
     # fit the model
     print('training with contrastive divergence')
     cd.train()
 
-    # evaluate the model
-    # this will be the same as the final epoch results
-    # it is repeated here to be consistent with the sklearn rbm example
-    performance = fit.ProgressMonitor(0,
-                                      data,
-                                      metrics=['ReconstructionError',
-                                               'EnergyDistance',
-                                               'EnergyGap',
-                                               'EnergyZscore'])
-    print('Final performance metrics:')
-    performance.check_progress(rbm, 0, show=True)
+    # obtain an estimate of the reconstruction error after 1 epoch
+    trained_performance = perf.check_progress(rbm, 0)
 
-    metdict = {m.name: m.value() for m in performance.metrics}
-
-    assert metdict['ReconstructionError'] < 9, \
-        "Reconstruction error too high after 1 epoch"
-
-    assert metdict['EnergyDistance'] < 4, \
-        "Energy distance too high after 1 epoch"
+    assert (trained_performance['ReconstructionError'] <
+            untrained_performance['ReconstructionError']), \
+    "Reconstruction error did not decrease"
 
     # close the HDF5 store
     data.close()
 
 if __name__ == "__main__":
-    test_rbm()
+    pytest.main([__file__])

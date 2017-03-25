@@ -1,9 +1,11 @@
-import os, sys, numpy, pandas, time
-
 from paysage import batch
+from paysage import layers
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
+from paysage import backends as be
+
+be.set_seed(137) # for determinism
 
 import example_util as util
 
@@ -14,7 +16,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     learning_rate = 0.01
     mc_steps = 1
 
-    (paysage_path, filepath, shuffled_filepath) = \
+    (_, _, shuffled_filepath) = \
             util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
@@ -25,11 +27,11 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
                        train_fraction=0.99)
 
     # set up the model and initialize the parameters
-    rbm = hidden.RestrictedBoltzmannMachine(data.ncols,
-                                            num_hidden_units,
-                                            vis_type='bernoulli',
-                                            hid_type='bernoulli')
-    rbm.initialize(data, method='hinton')
+    vis_layer = layers.BernoulliLayer(data.ncols)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+
+    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm.initialize(data)
 
     # set up the optimizer and the fit method
     opt = optimizers.ADAM(rbm,
@@ -51,7 +53,6 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
                           'EnergyGap',
                           'EnergyZscore'])
 
-
     # fit the model
     print('training with contrastive divergence')
     cd.train()
@@ -59,8 +60,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     # evaluate the model
     # this will be the same as the final epoch results
     # it is repeated here to be consistent with the sklearn rbm example
-    metrics = ['ReconstructionError', 'EnergyDistance',
-               'EnergyGap', 'EnergyZscore']
+    metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore']
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
 
     util.show_metrics(rbm, performance)
