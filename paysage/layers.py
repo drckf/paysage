@@ -2,33 +2,122 @@ from . import backends as be
 
 
 class Layer(object):
-
+    """A general layer class with common functionality."""
     def __init__(self, *args, **kwargs):
+        """
+        Basic layer initalization method.
+
+        Args:
+            *args: any arguments
+            **kwargs: any keyword arguments
+
+        Returns:
+            layer
+
+        """
         self.int_params = {}
         self.penalties = {}
         self.constraints = {}
 
     def add_constraint(self, constraint):
+        """
+        Add a parameter constraint to the layer.
+
+        Notes:
+            Modifies the layer.contraints attribute in place.
+
+        Args:
+            constraint (dict): {param_name: constraint (paysage.constraints)}
+
+        Returns:
+            None
+
+        """
         self.constraint.update(constraint)
 
     def enforce_constraints(self):
+        """
+        Apply the contraints to the layer parameters.
+
+        Note:
+            Modifies the intrinsic parameters of the layer in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
         for param_name in self.constraints:
             self.constraint[param_name](self.int_params[param_name])
 
     def add_penalty(self, penalty):
+        """
+        Add a penalty to the layer.
+
+        Note:
+            Modfies the layer.penalties attribute in place.
+
+        Args:
+            penalty (dict): {param_name: penalty (paysage.penalties)}
+
+        Returns:
+            None
+
+        """
         self.penalties.update(penalty)
 
     def get_penalties(self):
+        """
+        Get the value of the penalties:
+
+        E.g., L2 penalty = (1/2) * penalty * \sum_i parameter_i ** 2
+
+        Args:
+            None
+
+        Returns:
+            float: the value of the penalty function
+
+        """
         for param_name in self.penalties:
             self.penalties[param_name].value(self.int_params[param_name])
 
     def get_penalty_gradients(self):
+        """
+        Get the gradients of the penalties.
+
+        E.g., L2 penalty = penalty * parameter_i
+
+        Args:
+            None
+
+        Returns:
+            pen (dict): {param_name: tensor (containing gradient)}
+
+        """
         pen = {param_name:
             self.penalties[param_name].grad(self.int_params[param_name])
             for param_name in self.penalties}
         return pen
 
     def parameter_step(self, deltas):
+        """
+        Update the values of the intrinsic parameters:
+
+        layer.int_params['name'] -= deltas['name']
+
+        Notes:
+            Modifies the layer.int_params attribute in place.
+
+        Args:
+            deltas (dict): {param_name: tensor (update)}
+
+        Returns:
+            None
+
+        """
         be.subtract_dicts_inplace(self.int_params, deltas)
         self.enforce_constraints()
 
