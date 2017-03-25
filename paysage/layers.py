@@ -53,19 +53,16 @@ class Weights(Layer):
         # type out the whole thing every time
         return self.int_params['matrix']
 
-    def derivatives(self, first_layer_scaled, second_layer_scaled):
-        n = len(first_layer_scaled)
+    def derivatives(self, vis, hid):
+        n = len(vis)
         derivs = {
-        'matrix': -be.batch_outer(first_layer_scaled, second_layer_scaled) / n
+        'matrix': -be.batch_outer(vis, hid) / n
         }
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
         return derivs
 
-    def energy(self, first_layer_scaled, second_layer_scaled):
-        return -be.batch_dot(first_layer_scaled,
-                             self.int_params['matrix'],
-                             second_layer_scaled
-                             )
+    def energy(self, vis, hid):
+        return -be.batch_dot(vis, self.int_params['matrix'], hid)
 
 
 class GaussianLayer(Layer):
@@ -110,7 +107,7 @@ class GaussianLayer(Layer):
 
         logZ = be.broadcast(self.int_params['loc'], phi) * phi
         logZ += be.broadcast(scale, phi) * be.square(phi)
-        logZ += be.log(scale)
+        logZ += be.log(be.broadcast(scale, phi))
 
         return logZ
 
@@ -131,8 +128,13 @@ class GaussianLayer(Layer):
         # update the sample size
         self.sample_size = new_sample_size
 
-    def update(self, units, weights, beta=None):
-        self.ext_params['mean'] = be.dot(units, weights)
+    def shrink_parameters(self, shrinkage=0.1):
+        var = be.exp(self.int_params['log_var'])
+        be.mix_inplace(be.float_scalar(1-shrinkage), var, be.ones_like(var))
+        self.int_params['log_var'] = be.log(var)
+
+    def update(self, scaled_units, weights, beta=None):
+        self.ext_params['mean'] = be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['mean'] *= be.broadcast(
                                        beta,
@@ -147,27 +149,25 @@ class GaussianLayer(Layer):
                                       self.ext_params['mean']
                                       )
 
-    def derivatives(self, observations, connected_layer, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None):
         derivs = {
         'loc': be.zeros(self.len),
         'log_var': be.zeros(self.len)
         }
 
-        v_scaled = self.rescale(observations)
+        v_scaled = self.rescale(vis)
         derivs['loc'] = -be.mean(v_scaled, axis=0)
 
-        connected_mean_scaled = connected_layer.rescale(connected_layer.mean())
-
         diff = be.square(
-        observations - be.broadcast(self.int_params['loc'], observations)
+        vis - be.broadcast(self.int_params['loc'], vis)
         )
         derivs['log_var'] = -0.5 * be.mean(diff, axis=0)
         derivs['log_var'] += be.batch_dot(
-                             connected_mean_scaled,
+                             hid,
                              be.transpose(weights),
-                             observations,
+                             vis,
                              axis=0
-                             ) / len(observations)
+                             ) / len(vis)
         derivs['log_var'] = self.rescale(derivs['log_var'])
 
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
@@ -241,8 +241,11 @@ class IsingLayer(Layer):
         # update the sample size
         self.sample_size = new_sample_size
 
-    def update(self, units, weights, beta=None):
-        self.ext_params['field'] = be.dot(units, weights)
+    def shrink_parameters(self, shrinkage=1):
+        pass
+
+    def update(self, scaled_units, weights, beta=None):
+        self.ext_params['field'] = be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['field'] *= be.broadcast(
                                         beta,
@@ -253,13 +256,12 @@ class IsingLayer(Layer):
                                     self.ext_params['field']
                                     )
 
-    def derivatives(self, observations, connected_layer, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None):
         derivs = {
         'loc': be.zeros(self.len)
         }
 
-        v_scaled = self.rescale(observations)
-        derivs['loc'] = -be.mean(v_scaled, axis=0)
+        derivs['loc'] = -be.mean(vis, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
 
         return derivs
@@ -332,8 +334,11 @@ class BernoulliLayer(Layer):
         # update the sample size
         self.sample_size = new_sample_size
 
-    def update(self, units, weights, beta=None):
-        self.ext_params['field'] = be.dot(units, weights)
+    def shrink_parameters(self, shrinkage=1):
+        pass
+
+    def update(self, scaled_units, weights, beta=None):
+        self.ext_params['field'] = be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['field'] *= be.broadcast(
                                         beta,
@@ -344,13 +349,12 @@ class BernoulliLayer(Layer):
                                     self.ext_params['field']
                                     )
 
-    def derivatives(self, observations, connected_layer, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None):
         derivs = {
         'loc': be.zeros(self.len)
         }
 
-        scaled_observations = self.rescale(observations)
-        derivs['loc'] = -be.mean(scaled_observations, axis=0)
+        derivs['loc'] = -be.mean(vis, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
 
         return derivs
@@ -391,7 +395,7 @@ class ExponentialLayer(Layer):
         }
 
         self.ext_params = {
-        'field': None
+        'rate': None
         }
 
     def energy(self, data):
@@ -423,25 +427,27 @@ class ExponentialLayer(Layer):
         # update the sample size
         self.sample_size = new_sample_size
 
-    def update(self, units, weights, beta=None):
-        self.ext_params['field'] = be.dot(units, weights)
+    def shrink_parameters(self, shrinkage=1):
+        pass
+
+    def update(self, scaled_units, weights, beta=None):
+        self.ext_params['rate'] = -be.dot(scaled_units, weights)
         if beta is not None:
-            self.ext_params['field'] *= be.broadcast(
+            self.ext_params['rate'] *= be.broadcast(
                                         beta,
-                                        self.ext_params['field']
+                                        self.ext_params['rate']
                                         )
-        self.ext_params['field'] += be.broadcast(
+        self.ext_params['rate'] += be.broadcast(
                                     self.int_params['loc'],
-                                    self.ext_params['field']
+                                    self.ext_params['rate']
                                     )
 
-    def derivatives(self, observations, connected_layer, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None):
         derivs = {
         'loc': be.zeros(self.len)
         }
 
-        v_scaled = self.rescale(observations)
-        derivs['field'] = -be.mean(v_scaled, axis=0)
+        derivs['loc'] = be.mean(vis, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
 
         return derivs
@@ -453,11 +459,11 @@ class ExponentialLayer(Layer):
         raise NotImplementedError("Exponential distribution has no mode.")
 
     def mean(self):
-        return be.repicrocal(self.ext_params['field'])
+        return be.reciprocal(self.ext_params['rate'])
 
     def sample_state(self):
-        r = self.rand(be.shape(self.ext_params['field']))
-        return -be.log(r) / self.ext_params['field']
+        r = self.rand(be.shape(self.ext_params['rate']))
+        return -be.log(r) / self.ext_params['rate']
 
     def random(self, array_or_shape):
         try:
