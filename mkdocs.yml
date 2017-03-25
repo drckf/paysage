@@ -17,4 +17,3 @@ pages:
     - Initialize Recurrent: init_recurrent.md
     - Backends: backends.md
 theme: readthedocs
-

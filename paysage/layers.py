@@ -78,11 +78,13 @@ class Layer(object):
             None
 
         Returns:
-            float: the value of the penalty function
+            float: the value of the penalty functions
 
         """
-        for param_name in self.penalties:
+        pen = {param_name:
             self.penalties[param_name].value(self.int_params[param_name])
+            for param_name in self.penalties}
+        return pen
 
     def get_penalty_gradients(self):
         """
@@ -128,6 +130,11 @@ class Weights(Layer):
         """
         Create a weight layer.
 
+        Notes:
+            Simple weight layers only have a single internal parameter matrix.
+            They have no external parameters because they do not depend
+            on the state of anything else.
+
         Args:
             shape (tuple): shape of the weight tensor (int, int)
 
@@ -139,9 +146,6 @@ class Weights(Layer):
 
         self.shape = shape
 
-        # simple weight layers only have a single internal parameter matrix
-        # they have no external parameters because they
-        # do not depend on the state of anything else
         self.int_params = {
         'matrix': 0.01 * be.randn(shape)
         }
@@ -525,7 +529,7 @@ class IsingLayer(Layer):
         }
 
     def energy(self, data):
-        return -be.dot(data, self.int_params['loc']) / self.len
+        return -be.dot(data, self.int_params['loc'])
 
     def log_partition_function(self, phi):
         """
@@ -618,7 +622,7 @@ class BernoulliLayer(Layer):
         }
 
     def energy(self, data):
-        return -be.dot(data, self.int_params['loc']) / self.len
+        return -be.dot(data, self.int_params['loc'])
 
     def log_partition_function(self, phi):
         """
@@ -711,7 +715,7 @@ class ExponentialLayer(Layer):
         }
 
     def energy(self, data):
-        return be.dot(data, self.int_params['loc']) / self.len
+        return be.dot(data, self.int_params['loc'])
 
     def log_partition_function(self, phi):
         """
