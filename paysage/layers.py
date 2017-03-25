@@ -380,6 +380,23 @@ class GaussianLayer(Layer):
                                       )
 
     def derivatives(self, vis, hid, weights, beta=None):
+        """
+        Compute the derivatives of the intrinsic layer parameters.
+
+        Args:
+            vis (tensor (num_samples, num_units)):
+                The values of the visible units.
+            hid (tensor (num_samples, num_connected_units)):
+                The rescaled values of the hidden units.
+            weights (tensor, (num_units, num_connected_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            grad (dict): {param_name: tensor (contains gradient)}
+
+        """
         derivs = {
         'loc': be.zeros(self.len),
         'log_var': be.zeros(self.len)
@@ -404,20 +421,85 @@ class GaussianLayer(Layer):
         return derivs
 
     def rescale(self, observations):
+        """
+        Scale the observations by the variance of the layer.
+
+        v'_i = v_i / var_i
+
+        Args:
+            observations (tensor (num_samples, num_units)):
+                Values of the observed units.
+
+        Returns:
+            tensor: Rescaled observations
+
+        """
         scale = be.exp(self.int_params['log_var'])
         return observations / be.broadcast(scale, observations)
 
     def mode(self):
+        """
+        Compute the mode of the distribution.
+        For a Gaussian layer, the mode equals the mean.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_units,): The mode of the distribution
+
+        """
         return self.ext_params['mean']
 
     def mean(self):
+        """
+        Compute the mean of the distribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_units,): The mean of the distribution.
+
+        """
         return self.ext_params['mean']
 
     def sample_state(self):
+        """
+        Draw a random sample from the disribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): Sampled units.
+
+        """
         r = be.float_tensor(self.rand(be.shape(self.ext_params['mean'])))
         return self.ext_params['mean'] + be.sqrt(self.ext_params['variance'])*r
 
     def random(self, array_or_shape):
+        """
+        Generate a random sample with the same type as the layer.
+        For a Gaussian layer, draws from the standard normal distribution N(0,1).
+
+        Used for generating initial configurations for Monte Carlo runs.
+
+        Args:
+            array_or_shape (array or shape tuple):
+                If tuple, then this is taken to be the shape.
+                If array, then it's shape is used.
+
+        Returns:
+            tensor: Random sample with desired shape.
+
+        """
         try:
             r = be.float_tensor(self.rand(be.shape(array_or_shape)))
         except AttributeError:
