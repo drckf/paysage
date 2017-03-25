@@ -176,14 +176,13 @@ class Weights(Layer):
             tensor: transpose of weight matrix
 
         """
-        # the W method provides a reference to the weight matrix
-        # it is just for convenience so that we don't have to
-        # type out the whole thing every time
         return be.transpose(self.int_params['matrix'])
 
     def derivatives(self, vis, hid):
         """
         Compute the derivative of the weights layer.
+
+        dW_{ij} = - \frac{1}{num_samples} * \sum_{k} v_{ki} h_{kj}
 
         Args:
             vis (tensor (num_samples, num_visible)): Rescaled visible units.
@@ -204,20 +203,33 @@ class Weights(Layer):
         """
         Compute the contribution of the weight layer to the model energy.
 
+        For sample k:
+        E_k = -\sum_{ij} W_{ij} v_{ki} h_{kj}
+
         Args:
             vis (tensor (num_samples, num_visible)): Rescaled visible units.
             hid (tensor (num_samples, num_visible)): Rescaled hidden units.
 
         Returns:
-            tensor (num_samples, ): energy per sample
+            tensor (num_samples,): energy per sample
 
         """
         return -be.batch_dot(vis, self.int_params['matrix'], hid)
 
 
 class GaussianLayer(Layer):
-
+    """Layer with Gaussian units"""
     def __init__(self, num_units):
+        """
+        Create a layer with Gaussian units.
+
+        Args:
+            num_units (int): the size of the layer
+
+        Returns:
+            gaussian layer
+
+        """
         super().__init__()
 
         self.len = num_units
@@ -234,16 +246,31 @@ class GaussianLayer(Layer):
         'variance': None
         }
 
-    def energy(self, data):
-        # data: tensor ~ (num_samples, num_units)
+    def energy(self, vis):
+        """
+        Compute the energy of the Gaussian layer.
+
+        For sample k,
+        E_k = \frac{1}{2} \sum_i \frac{(v_i - loc_i)**2}{var_i}
+
+        Args:
+            vis (tensor (num_samples, num_units)): values of units
+
+        Returns:
+            tensor (num_samples,): energy per sample
+
+        """
         scale = be.exp(self.int_params['log_var'])
-        result = data - be.broadcast(self.int_params['loc'], data)
+        result = vis - be.broadcast(self.int_params['loc'], vis)
         result = be.square(result)
-        result /= be.broadcast(scale, data)
+        result /= be.broadcast(scale, vis)
         return 0.5 * be.mean(result, axis=1)
 
     def log_partition_function(self, phi):
         """
+        Compute the logarithm of the partition function of the layer
+        with external field phi.
+
         Let u_i and s_i be the intrinsic loc and scale parameters of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
@@ -251,6 +278,12 @@ class GaussianLayer(Layer):
         = exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i
 
         log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2
+
+        Args:
+            phi (tensor (num_samples, num_units)): external field
+
+        Returns:
+            logZ (tensor, num_samples, num_units)): log partition function
 
         """
         scale = be.exp(self.int_params['log_var'])
@@ -262,6 +295,20 @@ class GaussianLayer(Layer):
         return logZ
 
     def online_param_update(self, data):
+        """
+        Update the intrinsic parameters using an observed batch of data.
+        Used for initializing the layer parameters.
+
+        Notes:
+            Modifies layer.sample_size and layer.int_params in place.
+
+        Args:
+            data (tensor (num_samples, num_units)): observed values for units
+
+        Returns:
+            None
+
+        """
         n = len(data)
         new_sample_size = n + self.sample_size
         # compute the current value of the second moment
@@ -279,11 +326,44 @@ class GaussianLayer(Layer):
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=0.1):
+        """
+        Apply shrinkage to the variance parameters of the layer.
+
+        new_variance = (1-shrinkage) * old_variance + shrinkage * 1
+
+        Notes:
+            Modifies layer.int_params['loc_var'] in place.
+
+        Args:
+            shrinkage (float \in [0,1]): the amount of shrinkage to apply
+
+        Returns:
+            None
+
+        """
         var = be.exp(self.int_params['log_var'])
         be.mix_inplace(be.float_scalar(1-shrinkage), var, be.ones_like(var))
         self.int_params['log_var'] = be.log(var)
 
     def update(self, scaled_units, weights, beta=None):
+        """
+        Update the extrinsic parameters of the layer.
+
+        Notes:
+            Modfies layer.ext_params in place.
+
+        Args:
+            scaled_units (tensor (num_samples, num_connected_units)):
+                The rescaled values of the connected units.
+            weights (tensor, (num_connected_units, num_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            None
+
+        """
         self.ext_params['mean'] = be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['mean'] *= be.broadcast(
