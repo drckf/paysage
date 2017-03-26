@@ -556,6 +556,9 @@ class IsingLayer(Layer):
 
     def log_partition_function(self, phi):
         """
+        Compute the logarithm of the partition function of the layer
+        with external field phi.
+
         Let a_i be the intrinsic loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
@@ -563,6 +566,12 @@ class IsingLayer(Layer):
         = 2 cosh(a_i + phi_i)
 
         log(Z_i) = logcosh(a_i + phi_i)
+
+        Args:
+            phi (tensor (num_samples, num_units)): external field
+
+        Returns:
+            logZ (tensor, num_samples, num_units)): log partition function
 
         """
         logZ = be.broadcast(self.int_params['loc'], phi) + phi
@@ -672,6 +681,9 @@ class BernoulliLayer(Layer):
 
     def log_partition_function(self, phi):
         """
+        Compute the logarithm of the partition function of the layer
+        with external field phi.
+
         Let a_i be the intrinsic loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
@@ -679,6 +691,12 @@ class BernoulliLayer(Layer):
         = 1 + exp(a_i + phi_i)
 
         log(Z_i) = softplus(a_i + phi_i)
+
+        Args:
+            phi (tensor (num_samples, num_units)): external field
+
+        Returns:
+            logZ (tensor, num_samples, num_units)): log partition function
 
         """
         logZ = be.broadcast(self.int_params['loc'], phi) + phi
@@ -788,6 +806,9 @@ class ExponentialLayer(Layer):
 
     def log_partition_function(self, phi):
         """
+        Compute the logarithm of the partition function of the layer
+        with external field phi.
+
         Let a_i be the intrinsic loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
@@ -795,6 +816,12 @@ class ExponentialLayer(Layer):
         = 1 / (a_i - phi_i)
 
         log(Z_i) = -log(a_i - phi_i)
+
+        Args:
+            phi (tensor (num_samples, num_units)): external field
+
+        Returns:
+            logZ (tensor, num_samples, num_units)): log partition function
 
         """
         logZ = be.broadcast(self.int_params['loc'], phi) - phi
