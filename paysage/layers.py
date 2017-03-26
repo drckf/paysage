@@ -578,6 +578,20 @@ class IsingLayer(Layer):
         return be.logcosh(logZ)
 
     def online_param_update(self, data):
+            """
+        Update the intrinsic parameters using an observed batch of data.
+        Used for initializing the layer parameters.
+
+        Notes:
+            Modifies layer.sample_size and layer.int_params in place.
+
+        Args:
+            data (tensor (num_samples, num_units)): observed values for units
+
+        Returns:
+            None
+
+        """
         n = len(data)
         new_sample_size = n + self.sample_size
         # update the first moment
@@ -703,6 +717,20 @@ class BernoulliLayer(Layer):
         return be.softplus(logZ)
 
     def online_param_update(self, data):
+        """
+        Update the intrinsic parameters using an observed batch of data.
+        Used for initializing the layer parameters.
+
+        Notes:
+            Modifies layer.sample_size and layer.int_params in place.
+
+        Args:
+            data (tensor (num_samples, num_units)): observed values for units
+
+        Returns:
+            None
+
+        """
         n = len(data)
         new_sample_size = n + self.sample_size
         # update the first moment
@@ -828,6 +856,20 @@ class ExponentialLayer(Layer):
         return -be.log(logZ)
 
     def online_param_update(self, data):
+        """
+        Update the intrinsic parameters using an observed batch of data.
+        Used for initializing the layer parameters.
+
+        Notes:
+            Modifies layer.sample_size and layer.int_params in place.
+
+        Args:
+            data (tensor (num_samples, num_units)): observed values for units
+
+        Returns:
+            None
+
+        """
         n = len(data)
         new_sample_size = n + self.sample_size
         # update the first moment
