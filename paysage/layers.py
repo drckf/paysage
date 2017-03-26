@@ -512,8 +512,18 @@ class GaussianLayer(Layer):
 
 
 class IsingLayer(Layer):
-
+    """Layer with Ising units (i.e., -1 or +1)."""
     def __init__(self, num_units):
+        """
+        Create a layer with Ising units.
+
+        Args:
+            num_units (int): the size of the layer
+
+        Returns:
+            ising layer
+
+        """
         super().__init__()
 
         self.len = num_units
@@ -605,8 +615,18 @@ class IsingLayer(Layer):
 
 
 class BernoulliLayer(Layer):
-
+    """Layer with Bernoulli units (i.e., 0 or +1)."""
     def __init__(self, num_units):
+        """
+        Create a layer with Bernoulli units.
+
+        Args:
+            num_units (int): the size of the layer
+
+        Returns:
+            bernoulli layer
+
+        """
         super().__init__()
 
         self.len = num_units
@@ -698,8 +718,18 @@ class BernoulliLayer(Layer):
 
 
 class ExponentialLayer(Layer):
-
+    """Layer with Exponential units (non-negative)."""
     def __init__(self, num_units):
+        """
+        Create a layer with Exponential units.
+
+        Args:
+            num_units (int): the size of the layer
+
+        Returns:
+            exponential layer
+
+        """
         super().__init__()
 
         self.len = num_units
