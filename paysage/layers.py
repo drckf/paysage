@@ -678,6 +678,17 @@ class IsingLayer(Layer):
         return derivs
 
     def rescale(self, observations):
+        """
+        Rescale is equivalent to the identity function for the Ising layer.
+
+        Args:
+            observations (tensor (num_samples, num_units)):
+                Values of the observed units.
+
+        Returns:
+            tensor: observations
+
+        """
         return observations
 
     def mode(self):
@@ -866,6 +877,17 @@ class BernoulliLayer(Layer):
         return derivs
 
     def rescale(self, observations):
+        """
+        Rescale is equivalent to the identity function for the Bernoulli layer.
+
+        Args:
+            observations (tensor (num_samples, num_units)):
+                Values of the observed units.
+
+        Returns:
+            tensor: observations
+
+        """
         return observations
 
     def mode(self):
@@ -1054,6 +1076,17 @@ class ExponentialLayer(Layer):
         return derivs
 
     def rescale(self, observations):
+        """
+        Rescale is equivalent to the identity function for the Exponential layer.
+
+        Args:
+            observations (tensor (num_samples, num_units)):
+                Values of the observed units.
+
+        Returns:
+            tensor: observations
+
+        """
         return observations
 
     def mode(self):
