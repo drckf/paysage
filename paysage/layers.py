@@ -707,6 +707,18 @@ class IsingLayer(Layer):
         return 2 * be.float_tensor(self.ext_params['field'] > 0) - 1
 
     def mean(self):
+        """
+        Compute the mean of the distribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): The mean of the distribution.
+
+        """
         return be.tanh(self.ext_params['field'])
 
     def sample_state(self):
@@ -918,6 +930,18 @@ class BernoulliLayer(Layer):
         return be.float_tensor(self.ext_params['field'] > 0.0)
 
     def mean(self):
+        """
+        Compute the mean of the distribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): The mean of the distribution.
+
+        """
         return be.expit(self.ext_params['field'])
 
     def sample_state(self):
@@ -1127,6 +1151,18 @@ class ExponentialLayer(Layer):
         raise NotImplementedError("Exponential distribution has no mode.")
 
     def mean(self):
+        """
+        Compute the mean of the distribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): The mean of the distribution.
+
+        """
         return be.reciprocal(self.ext_params['rate'])
 
     def sample_state(self):
