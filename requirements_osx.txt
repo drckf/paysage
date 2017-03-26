@@ -11,10 +11,12 @@ mccabe==0.6.1
 numba==0.31.0
 numexpr==2.6.2
 numpy==1.12.1
+olefile==0.44
 packaging==16.8
 pandas==0.19.2
 -e git+git@github.com:avctrh/paysage.git@61371d7dbf3058f2938e645da32fed6ef7e23297#egg=paysage
 pep8-naming==0.4.1
+Pillow==4.0.0
 prospector==0.12.4
 py==1.4.33
 pycodestyle==2.0.0
@@ -38,4 +40,6 @@ seaborn==0.7.1
 setoptconf==0.2.0
 six==1.10.0
 tables==3.3.0
+torch==0.1.10.post1
+torchvision==0.1.7
 wrapt==1.10.10
