@@ -452,7 +452,7 @@ class GaussianLayer(Layer):
             None
 
         Returns:
-            tensor (num_units,): The mode of the distribution
+            tensor (num_samples, num_units): The mode of the distribution
 
         """
         return self.ext_params['mean']
@@ -467,7 +467,7 @@ class GaussianLayer(Layer):
             None
 
         Returns:
-            tensor (num_units,): The mean of the distribution.
+            tensor (num_samples, num_units): The mean of the distribution.
 
         """
         return self.ext_params['mean']
@@ -701,7 +701,7 @@ class IsingLayer(Layer):
             None
 
         Returns:
-            tensor (num_units,): The mode of the distribution
+            tensor (num_samples, num_units): The mode of the distribution
 
         """
         return 2 * be.float_tensor(self.ext_params['field'] > 0) - 1
@@ -912,7 +912,7 @@ class BernoulliLayer(Layer):
             None
 
         Returns:
-            tensor (num_units,): The mode of the distribution
+            tensor (num_samples, num_units): The mode of the distribution
 
         """
         return be.float_tensor(self.ext_params['field'] > 0.0)
