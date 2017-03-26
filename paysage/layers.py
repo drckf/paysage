@@ -692,6 +692,18 @@ class IsingLayer(Layer):
         return observations
 
     def mode(self):
+        """
+        Compute the mode of the distribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_units,): The mode of the distribution
+
+        """
         return 2 * be.float_tensor(self.ext_params['field'] > 0) - 1
 
     def mean(self):
@@ -891,6 +903,18 @@ class BernoulliLayer(Layer):
         return observations
 
     def mode(self):
+        """
+        Compute the mode of the distribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_units,): The mode of the distribution
+
+        """
         return be.float_tensor(self.ext_params['field'] > 0.0)
 
     def mean(self):
@@ -1090,6 +1114,16 @@ class ExponentialLayer(Layer):
         return observations
 
     def mode(self):
+        """
+        The mode of the Exponential distribution is undefined.
+
+        Args:
+            None
+
+        Raises:
+            NotImplementedError
+
+        """
         raise NotImplementedError("Exponential distribution has no mode.")
 
     def mean(self):
