@@ -5,7 +5,7 @@ dodgy==0.1.9
 h5py==2.7.0
 isort==4.2.5
 lazy-object-proxy==1.2.2
-llvmlite==0.16.0
+llvmlite==0.15.0
 matplotlib==2.0.0
 mccabe==0.6.1
 numba==0.31.0
@@ -13,7 +13,6 @@ numexpr==2.6.2
 numpy==1.12.1
 packaging==16.8
 pandas==0.19.2
--e git+git@github.com:avctrh/paysage.git@61371d7dbf3058f2938e645da32fed6ef7e23297#egg=paysage
 pep8-naming==0.4.1
 prospector==0.12.4
 py==1.4.33
