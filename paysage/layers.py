@@ -739,6 +739,21 @@ class IsingLayer(Layer):
         return 2 * be.float_tensor(r < p) - 1
 
     def random(self, array_or_shape):
+        """
+        Generate a random sample with the same type as the layer.
+        For an Ising layer, draws -1 or +1 with equal probablity.
+
+        Used for generating initial configurations for Monte Carlo runs.
+
+        Args:
+            array_or_shape (array or shape tuple):
+                If tuple, then this is taken to be the shape.
+                If array, then it's shape is used.
+
+        Returns:
+            tensor: Random sample with desired shape.
+
+        """
         try:
             r = self.rand(be.shape(array_or_shape))
         except AttributeError:
@@ -974,6 +989,21 @@ class BernoulliLayer(Layer):
         return be.float_tensor(r < p)
 
     def random(self, array_or_shape):
+        """
+        Generate a random sample with the same type as the layer.
+        For a Bernoulli layer, draws 0 or 1 with equal probability.
+
+        Used for generating initial configurations for Monte Carlo runs.
+
+        Args:
+            array_or_shape (array or shape tuple):
+                If tuple, then this is taken to be the shape.
+                If array, then it's shape is used.
+
+        Returns:
+            tensor: Random sample with desired shape.
+
+        """
         try:
             r = self.rand(be.shape(array_or_shape))
         except AttributeError:
@@ -1206,6 +1236,22 @@ class ExponentialLayer(Layer):
         return -be.log(r) / self.ext_params['rate']
 
     def random(self, array_or_shape):
+        """
+        Generate a random sample with the same type as the layer.
+        For an Exponential layer, draws from the exponential distribution
+        with mean 1 (i.e., Expo(1)).
+
+        Used for generating initial configurations for Monte Carlo runs.
+
+        Args:
+            array_or_shape (array or shape tuple):
+                If tuple, then this is taken to be the shape.
+                If array, then it's shape is used.
+
+        Returns:
+            tensor: Random sample with desired shape.
+
+        """
         try:
             r = self.rand(be.shape(array_or_shape))
         except AttributeError:
