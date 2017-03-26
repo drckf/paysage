@@ -578,7 +578,7 @@ class IsingLayer(Layer):
         return be.logcosh(logZ)
 
     def online_param_update(self, data):
-            """
+        """
         Update the intrinsic parameters using an observed batch of data.
         Used for initializing the layer parameters.
 
@@ -604,6 +604,20 @@ class IsingLayer(Layer):
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
+        """
+        Apply shrinkage to the intrinsic parameters of the layer.
+        Does nothing for the Ising layer.
+
+        Notes:
+            Modifies layer.int_params['loc_var'] in place.
+
+        Args:
+            shrinkage (float \in [0,1]): the amount of shrinkage to apply
+
+        Returns:
+            None
+
+        """
         pass
 
     def update(self, scaled_units, weights, beta=None):
@@ -743,6 +757,20 @@ class BernoulliLayer(Layer):
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
+        """
+        Apply shrinkage to the intrinsic parameters of the layer.
+        Does nothing for the Bernoulli layer.
+
+        Notes:
+            Modifies layer.int_params['loc_var'] in place.
+
+        Args:
+            shrinkage (float \in [0,1]): the amount of shrinkage to apply
+
+        Returns:
+            None
+
+        """
         pass
 
     def update(self, scaled_units, weights, beta=None):
@@ -882,6 +910,20 @@ class ExponentialLayer(Layer):
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
+        """
+        Apply shrinkage to the intrinsic parameters of the layer.
+        Does nothing for the Exponential layer.
+
+        Notes:
+            Modifies layer.int_params['loc_var'] in place.
+
+        Args:
+            shrinkage (float \in [0,1]): the amount of shrinkage to apply
+
+        Returns:
+            None
+
+        """
         pass
 
     def update(self, scaled_units, weights, beta=None):
