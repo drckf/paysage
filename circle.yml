@@ -9,7 +9,7 @@ machine:
 dependencies:
   pre:
     - sudo apt-get install libhdf5-dev
-    - sudo apt-get install llvm-3.8
+    - sudo apt-get install llvm-3.9
     # CI image includes only 3.4 shared library;
     - sudo ln -s /usr/lib/x86_64-linux-gnu/libpython3.4m.so.1.0 /usr/lib/x86_64-linux-gnu/libpython3.6m.so.1.0
     - export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:LD_LIBRARY_PATH
