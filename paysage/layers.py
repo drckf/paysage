@@ -621,6 +621,24 @@ class IsingLayer(Layer):
         pass
 
     def update(self, scaled_units, weights, beta=None):
+        """
+        Update the extrinsic parameters of the layer.
+
+        Notes:
+            Modfies layer.ext_params in place.
+
+        Args:
+            scaled_units (tensor (num_samples, num_connected_units)):
+                The rescaled values of the connected units.
+            weights (tensor, (num_connected_units, num_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            None
+
+        """
         self.ext_params['field'] = be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['field'] *= be.broadcast(
@@ -774,6 +792,24 @@ class BernoulliLayer(Layer):
         pass
 
     def update(self, scaled_units, weights, beta=None):
+        """
+        Update the extrinsic parameters of the layer.
+
+        Notes:
+            Modfies layer.ext_params in place.
+
+        Args:
+            scaled_units (tensor (num_samples, num_connected_units)):
+                The rescaled values of the connected units.
+            weights (tensor, (num_connected_units, num_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            None
+
+        """
         self.ext_params['field'] = be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['field'] *= be.broadcast(
@@ -927,6 +963,24 @@ class ExponentialLayer(Layer):
         pass
 
     def update(self, scaled_units, weights, beta=None):
+        """
+        Update the extrinsic parameters of the layer.
+
+        Notes:
+            Modfies layer.ext_params in place.
+
+        Args:
+            scaled_units (tensor (num_samples, num_connected_units)):
+                The rescaled values of the connected units.
+            weights (tensor, (num_connected_units, num_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            None
+
+        """
         self.ext_params['rate'] = -be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['rate'] *= be.broadcast(
