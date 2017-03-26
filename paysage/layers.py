@@ -539,6 +539,19 @@ class IsingLayer(Layer):
         }
 
     def energy(self, data):
+        """
+        Compute the energy of the Ising layer.
+
+        For sample k,
+        E_k = -\sum_i loc_i * v_i
+
+        Args:
+            vis (tensor (num_samples, num_units)): values of units
+
+        Returns:
+            tensor (num_samples,): energy per sample
+
+        """
         return -be.dot(data, self.int_params['loc'])
 
     def log_partition_function(self, phi):
@@ -642,6 +655,19 @@ class BernoulliLayer(Layer):
         }
 
     def energy(self, data):
+        """
+        Compute the energy of the Bernoulli layer.
+
+        For sample k,
+        E_k = -\sum_i loc_i * v_i
+
+        Args:
+            vis (tensor (num_samples, num_units)): values of units
+
+        Returns:
+            tensor (num_samples,): energy per sample
+
+        """
         return -be.dot(data, self.int_params['loc'])
 
     def log_partition_function(self, phi):
@@ -745,6 +771,19 @@ class ExponentialLayer(Layer):
         }
 
     def energy(self, data):
+        """
+        Compute the energy of the Exponential layer.
+
+        For sample k,
+        E_k = \sum_i loc_i * v_i
+
+        Args:
+            vis (tensor (num_samples, num_units)): values of units
+
+        Returns:
+            tensor (num_samples,): energy per sample
+
+        """
         return be.dot(data, self.int_params['loc'])
 
     def log_partition_function(self, phi):
