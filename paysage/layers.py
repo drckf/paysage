@@ -651,6 +651,23 @@ class IsingLayer(Layer):
                                     )
 
     def derivatives(self, vis, hid, weights, beta=None):
+        """
+        Compute the derivatives of the intrinsic layer parameters.
+
+        Args:
+            vis (tensor (num_samples, num_units)):
+                The values of the visible units.
+            hid (tensor (num_samples, num_connected_units)):
+                The rescaled values of the hidden units.
+            weights (tensor, (num_units, num_connected_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            grad (dict): {param_name: tensor (contains gradient)}
+
+        """
         derivs = {
         'loc': be.zeros(self.len)
         }
@@ -822,6 +839,23 @@ class BernoulliLayer(Layer):
                                     )
 
     def derivatives(self, vis, hid, weights, beta=None):
+        """
+        Compute the derivatives of the intrinsic layer parameters.
+
+        Args:
+            vis (tensor (num_samples, num_units)):
+                The values of the visible units.
+            hid (tensor (num_samples, num_connected_units)):
+                The rescaled values of the hidden units.
+            weights (tensor, (num_units, num_connected_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            grad (dict): {param_name: tensor (contains gradient)}
+
+        """
         derivs = {
         'loc': be.zeros(self.len)
         }
@@ -993,6 +1027,23 @@ class ExponentialLayer(Layer):
                                     )
 
     def derivatives(self, vis, hid, weights, beta=None):
+        """
+        Compute the derivatives of the intrinsic layer parameters.
+
+        Args:
+            vis (tensor (num_samples, num_units)):
+                The values of the visible units.
+            hid (tensor (num_samples, num_connected_units)):
+                The rescaled values of the hidden units.
+            weights (tensor, (num_units, num_connected_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            grad (dict): {param_name: tensor (contains gradient)}
+
+        """
         derivs = {
         'loc': be.zeros(self.len)
         }
