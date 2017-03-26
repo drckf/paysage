@@ -722,6 +722,18 @@ class IsingLayer(Layer):
         return be.tanh(self.ext_params['field'])
 
     def sample_state(self):
+        """
+        Draw a random sample from the disribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): Sampled units.
+
+        """
         p = be.expit(self.ext_params['field'])
         r = self.rand(be.shape(p))
         return 2 * be.float_tensor(r < p) - 1
@@ -945,6 +957,18 @@ class BernoulliLayer(Layer):
         return be.expit(self.ext_params['field'])
 
     def sample_state(self):
+        """
+        Draw a random sample from the disribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): Sampled units.
+
+        """
         p = be.expit(self.ext_params['field'])
         r = self.rand(be.shape(p))
         return be.float_tensor(r < p)
@@ -1166,6 +1190,18 @@ class ExponentialLayer(Layer):
         return be.reciprocal(self.ext_params['rate'])
 
     def sample_state(self):
+        """
+        Draw a random sample from the disribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): Sampled units.
+
+        """
         r = self.rand(be.shape(self.ext_params['rate']))
         return -be.log(r) / self.ext_params['rate']
 
