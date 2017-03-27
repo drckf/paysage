@@ -20,3 +20,13 @@ __pycache__
 
 # Profiler output
 *.cprofile.txt
+
+### Docker specific subdirectories
+
+# notes / documentation
+___notes/
+
+# virtualenv
+venv/
+
+build/
