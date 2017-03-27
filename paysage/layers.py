@@ -20,7 +20,7 @@ class Layer(object):
         self.penalties = OrderedDict()
         self.constraints = OrderedDict()
 
-    def base_config(self):
+    def get_base_config(self):
         """
         Get a base configuration for the layer.
 
@@ -147,6 +147,39 @@ class Layer(object):
         be.subtract_dicts_inplace(self.int_params, deltas)
         self.enforce_constraints()
 
+    def get_config(self):
+        """
+        Get a full configuration for the layer.
+
+        Notes:
+            Encodes metadata on the layer.
+            Weights are separately retrieved.
+            Builds the base configuration.
+
+        Args:
+            None
+
+        Returns:
+            A dictionary configuration for the layer.
+        """
+        return get_base_config()
+
+    @classmethod
+    def from_config(cls):
+        """
+        Construct the layer from the configuration.
+
+        Notes:
+            A layer constructor from the configuration.
+
+        Args:
+            None
+
+        Returns:
+            An object which is a subclass of `Layer`.
+        """
+        raise NotImplementedError
+
 
 class Weights(Layer):
     """Layer class for weights"""
@@ -173,6 +206,11 @@ class Weights(Layer):
         self.int_params = {
         'matrix': 0.01 * be.randn(shape)
         }
+
+    def get_config(self):
+        base_config = self.get_base_config()
+        base_config["shape"] = self.shape
+        return base_config
 
     def W(self):
         """
@@ -273,6 +311,12 @@ class GaussianLayer(Layer):
         'mean': None,
         'variance': None
         }
+
+    def get_config(self):
+        base_config = self.get_base_config()
+        base_config["num_units"] = self.len
+        base_config["sample_size"] = self.sample_size
+        return base_config
 
     def energy(self, vis):
         """
@@ -552,6 +596,12 @@ class IsingLayer(Layer):
         'field': None
         }
 
+    def get_config(self):
+        base_config = self.get_base_config()
+        base_config["num_units"] = self.len
+        base_config["sample_size"] = self.sample_size
+        return base_config
+
     def energy(self, data):
         return -be.dot(data, self.int_params['loc'])
 
@@ -645,6 +695,12 @@ class BernoulliLayer(Layer):
         'field': None
         }
 
+    def get_config(self):
+        base_config = self.get_base_config()
+        base_config["num_units"] = self.len
+        base_config["sample_size"] = self.sample_size
+        return base_config
+
     def energy(self, data):
         return -be.dot(data, self.int_params['loc'])
 
@@ -737,6 +793,12 @@ class ExponentialLayer(Layer):
         self.ext_params = {
         'rate': None
         }
+
+    def get_config(self):
+        base_config = self.get_base_config()
+        base_config["num_units"] = self.len
+        base_config["sample_size"] = self.sample_size
+        return base_config
 
     def energy(self, data):
         return be.dot(data, self.int_params['loc'])
