@@ -16,8 +16,8 @@ class Layer(object):
 
         """
         self.int_params = {}
-        self.penalties = {}
-        self.constraints = {}
+        self.penalties = OrderedDict()
+        self.constraints = OrderedDict()
 
     def add_constraint(self, constraint):
         """
