@@ -1,4 +1,3 @@
-# FROM ubuntu:16.10
 FROM avctrh/pytorch
 
 # Needed to avoid debconf Display errors
