@@ -18,5 +18,3 @@ __pycache__
 # Conda files
 .spyderproject
 
-# Profiler output
-*.cprofile.txt

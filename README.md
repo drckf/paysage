@@ -1,7 +1,6 @@
 # Paysage
 
 Paysage is library for machine learning with Boltzmann machines written in Python. The library is still in the early stages, so new features will be added frequently. Currently, paysage can be used to train:
-
 * Bernoulli Restricted Boltzmann Machines (just a plain ol' RBM)
 * Gaussian Restricted Boltzmann Machines
 * Hopfield Models (an RBM with Gaussian hidden units)
@@ -38,8 +37,8 @@ Paysage uses one of two backends for performing computations. By default, comput
 
 ## System Dependencies
 
-- hdf5 1.8, required required by tables
-- llvm 3.9, llvm-config required by scikit-learn
+- hdf5, 1.8 required required by tables
+- llvm, llvm-config required by scikit-learn
 
 ## About the name:
 Boltzmann machines encode information in an ["energy landscape"](https://en.wikipedia.org/wiki/Energy_landscape) where highly probable states have low energy and lowly probable states have high energy. The name "landscape" was already taken, but the French translation "paysage" was not.
