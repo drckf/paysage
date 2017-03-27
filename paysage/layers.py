@@ -33,7 +33,7 @@ class Layer(object):
             None
 
         """
-        self.constraint.update(constraint)
+        self.constraints.update(constraint)
 
     def enforce_constraints(self):
         """
@@ -50,7 +50,7 @@ class Layer(object):
 
         """
         for param_name in self.constraints:
-            self.constraint[param_name](self.int_params[param_name])
+            self.constraints[param_name](self.int_params[param_name])
 
     def add_penalty(self, penalty):
         """
