@@ -43,6 +43,39 @@ class Layer(object):
                                 for ck in self.constraints}
                }
 
+    def get_config(self):
+        """
+        Get a full configuration for the layer.
+
+        Notes:
+            Encodes metadata on the layer.
+            Weights are separately retrieved.
+            Builds the base configuration.
+
+        Args:
+            None
+
+        Returns:
+            A dictionary configuration for the layer.
+        """
+        return get_base_config()
+
+    @classmethod
+    def from_config(cls):
+        """
+        Construct the layer from the configuration.
+
+        Notes:
+            A layer constructor from the configuration.
+
+        Args:
+            None
+
+        Returns:
+            An object which is a subclass of `Layer`.
+        """
+        raise NotImplementedError
+
     def add_constraint(self, constraint):
         """
         Add a parameter constraint to the layer.
@@ -146,39 +179,6 @@ class Layer(object):
         """
         be.subtract_dicts_inplace(self.int_params, deltas)
         self.enforce_constraints()
-
-    def get_config(self):
-        """
-        Get a full configuration for the layer.
-
-        Notes:
-            Encodes metadata on the layer.
-            Weights are separately retrieved.
-            Builds the base configuration.
-
-        Args:
-            None
-
-        Returns:
-            A dictionary configuration for the layer.
-        """
-        return get_base_config()
-
-    @classmethod
-    def from_config(cls):
-        """
-        Construct the layer from the configuration.
-
-        Notes:
-            A layer constructor from the configuration.
-
-        Args:
-            None
-
-        Returns:
-            An object which is a subclass of `Layer`.
-        """
-        raise NotImplementedError
 
 
 class Weights(Layer):
