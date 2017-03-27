@@ -1,53 +1,29 @@
 # Documentation for Hidden (hidden.py)
 
-## class GaussianRestrictedBoltzmannMachine
-GaussianRestrictedBoltzmanMachine<br />RBM with Gaussian visible units.<br /><br />Hinton, Geoffrey.<br />"A practical guide to training restricted Boltzmann machines."<br />Momentum 9.1 (2010): 926.
+## class Model
+General model class.<br />Currently only supports models with 2 layers,<br />(i.e., Restricted Boltzmann Machines).<br /><br />Example usage:<br />'''<br />vis = BernoulliLayer(nvis)<br />hid = BernoulliLayer(nhid)<br />rbm = Model([vis, hid])<br />'''
 ### \_\_init\_\_
 ```py
 
-def __init__(self, nvis, nhid, hid_type='bernoulli')
+def __init__(self, layer_list)
 
 ```
 
 
 
-### add\_constraints
-```py
-
-def add_constraints(self, cons)
-
-```
-
-
-
-### add\_weight\_decay
-```py
-
-def add_weight_decay(self, penalty, method='l2_penalty')
-
-```
-
-
-
-### derivatives
-```py
-
-def derivatives(self, visible)
-
-```
-
+Create a model.<br /><br />Notes:<br /> ~ Only 2-layer models currently supported.<br /><br />Args:<br /> ~ layer_list: A list of layers objects.<br /><br />Returns:<br /> ~ model: A model.
 
 
 ### deterministic\_iteration
 ```py
 
-def deterministic_iteration(self, vis, steps, beta=None)
+def deterministic_iteration(self, vis, n, beta=None)
 
 ```
 
 
 
-mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
+Perform multiple deterministic (maximum probability) updates.<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ n: Number of steps.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
 
 
 ### deterministic\_step
@@ -59,34 +35,19 @@ def deterministic_step(self, vis, beta=None)
 
 
 
-deterministic_step(v):<br />v -> h -> v'<br />return v'
+Perform a single deterministic (maximum probability) update.<br />v -> update h distribution -> h -> update v distribution -> v'<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
 
 
-### enforce\_constraints
+### gradient
 ```py
 
-def enforce_constraints(self)
+def gradient(self, vdata, vmodel)
 
 ```
 
 
 
-### hidden\_mean
-```py
-
-def hidden_mean(self, visible, beta=None)
-
-```
-
-
-
-### hidden\_mode
-```py
-
-def hidden_mode(self, visible, beta=None)
-
-```
-
+Compute the gradient of the model parameters.<br /><br />For vis \in {vdata, vmodel}, we:<br /><br />1. Scale the visible data.<br />vis_scaled = self.layers[i].rescale(vis)<br /><br />2. Update the hidden layer.<br />self.layers[i+1].update(vis_scaled, self.weights[i].W())<br /><br />3. Compute the mean of the hidden layer.<br />hid = self.layers[i].mean()<br /><br />4. Scale the mean of the hidden layer.<br />hid_scaled = self.layers[i+1].rescale(hid)<br /><br />5. Compute the derivatives.<br />vis_derivs = self.layers[i].derivatives(vis, hid_scaled,<br /> ~  ~  ~  ~  ~  ~  ~  ~  ~  ~ self.weights[i].W())<br />hid_derivs = self.layers[i+1].derivatives(hid, vis_scaled,<br /> ~  ~  ~  ~  ~  ~  ~   be.transpose(self.weights[i+1].W())<br />weight_derivs = self.weights[i].derivatives(vis_scaled, hid_scaled)<br /><br />The gradient is obtained by subtracting the vmodel contribution<br />from the vdata contribution.<br /><br />Args:<br /> ~ vdata: The observed visible units.<br /> ~ vmodel: The sampled visible units.<br /><br />Returns:<br /> ~ dict: Gradients of the model parameters.
 
 
 ### initialize
@@ -98,245 +59,43 @@ def initialize(self, data, method='hinton')
 
 
 
-### joint\_energy
-```py
-
-def joint_energy(self, visible, hidden, beta=None)
-
-```
-
-
-
-### marginal\_free\_energy
-```py
-
-def marginal_free_energy(self, visible, beta=None)
-
-```
-
-
-
-### markov\_chain
-```py
-
-def markov_chain(self, vis, steps, beta=None)
-
-```
-
-
-
-markov_chain(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
-
-
-### mcstep
-```py
-
-def mcstep(self, vis, beta=None)
-
-```
-
-
-
-mcstep(v):<br />v -> h -> v'<br />return v'
-
-
-### mean\_field\_iteration
-```py
-
-def mean_field_iteration(self, vis, steps, beta=None)
-
-```
-
-
-
-mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
-
-
-### mean\_field\_step
-```py
-
-def mean_field_step(self, vis, beta=None)
-
-```
-
-
-
-mean_field_step(v):<br />v -> h -> v'<br />return v'<br /><br />It may be worth looking into extended approaches:<br />Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.<br />"Training Restricted Boltzmann Machine via the￼<br />Thouless-Anderson-Palmer free energy."<br />Advances in Neural Information Processing Systems. 2015.
-
-
-### random
-```py
-
-def random(self, visible)
-
-```
-
-
-
-### sample\_hidden
-```py
-
-def sample_hidden(self, visible, beta=None)
-
-```
-
-
-
-### sample\_visible
-```py
-
-def sample_visible(self, hidden, beta=None)
-
-```
-
-
-
-### visible\_mean
-```py
-
-def visible_mean(self, hidden, beta=None)
-
-```
-
-
-
-### visible\_mode
-```py
-
-def visible_mode(self, hidden, beta=None)
-
-```
-
-
-
-
-
-## class RestrictedBoltzmannMachine
-RestrictedBoltzmanMachine<br /><br />Hinton, Geoffrey.<br />"A practical guide to training restricted Boltzmann machines."<br />Momentum 9.1 (2010): 926.
-### \_\_init\_\_
-```py
-
-def __init__(self, nvis, nhid, vis_type='ising', hid_type='bernoulli')
-
-```
-
-
-
-### add\_constraints
-```py
-
-def add_constraints(self, cons)
-
-```
-
-
-
-### add\_weight\_decay
-```py
-
-def add_weight_decay(self, penalty, method='l2_penalty')
-
-```
-
-
-
-### derivatives
-```py
-
-def derivatives(self, visible)
-
-```
-
-
-
-### deterministic\_iteration
-```py
-
-def deterministic_iteration(self, vis, steps, beta=None)
-
-```
-
-
-
-mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
-
-
-### deterministic\_step
-```py
-
-def deterministic_step(self, vis, beta=None)
-
-```
-
-
-
-deterministic_step(v):<br />v -> h -> v'<br />return v'
-
-
-### enforce\_constraints
-```py
-
-def enforce_constraints(self)
-
-```
-
-
-
-### hidden\_mean
-```py
-
-def hidden_mean(self, visible, beta=None)
-
-```
-
-
-
-### hidden\_mode
-```py
-
-def hidden_mode(self, visible, beta=None)
-
-```
-
-
-
-### initialize
-```py
-
-def initialize(self, data, method='hinton')
-
-```
-
+Inialize the parameters of the model.<br /><br />Args:<br /> ~ data: A batch object.<br /> ~ method (optional): The initalization method.<br /><br />Returns:<br /> ~ None
 
 
 ### joint\_energy
 ```py
 
-def joint_energy(self, visible, hidden, beta=None)
+def joint_energy(self, vis, hid)
 
 ```
 
+
+
+Compute the joint energy of the model.<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ hid (batch_size, num_hidden): Sampled hidden units:<br /><br />Returns:<br /> ~ tensor (batch_size, ): Joint energies.
 
 
 ### marginal\_free\_energy
 ```py
 
-def marginal_free_energy(self, visible, beta=None)
+def marginal_free_energy(self, vis)
 
 ```
 
+
+
+Compute the marginal free energy of the model.<br /><br />If the energy is:<br />E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j<br />Then the marginal free energy is:<br />F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /><br />Returns:<br /> ~ tensor (batch_size, ): Marginal free energies.
 
 
 ### markov\_chain
 ```py
 
-def markov_chain(self, vis, steps, beta=None)
+def markov_chain(self, vis, n, beta=None)
 
 ```
 
 
 
-markov_chain(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
+Perform multiple Gibbs sampling steps.<br />v ~ h ~ v_1 ~ h_1 ~ ... ~ v_n<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ n: Number of steps.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
 
 
 ### mcstep
@@ -348,19 +107,19 @@ def mcstep(self, vis, beta=None)
 
 
 
-mcstep(v):<br />v -> h -> v'<br />return v'
+Perform a single Gibbs sampling update.<br />v -> update h distribution ~ h -> update v distribution ~ v'<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
 
 
 ### mean\_field\_iteration
 ```py
 
-def mean_field_iteration(self, vis, steps, beta=None)
+def mean_field_iteration(self, vis, n, beta=None)
 
 ```
 
 
 
-mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
+Perform multiple mean-field updates.<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ n: Number of steps.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
 
 
 ### mean\_field\_step
@@ -372,411 +131,31 @@ def mean_field_step(self, vis, beta=None)
 
 
 
-mean_field_step(v):<br />v -> h -> v'<br />return v'<br /><br />It may be worth looking into extended approaches:<br />Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.<br />"Training Restricted Boltzmann Machine via the￼<br />Thouless-Anderson-Palmer free energy."<br />Advances in Neural Information Processing Systems. 2015.
+Perform a single mean-field update.<br />v -> update h distribution -> h -> update v distribution -> v'<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
+
+
+### parameter\_update
+```py
+
+def parameter_update(self, deltas)
+
+```
+
+
+
+Update the model parameters.<br /><br />Notes:<br /> ~ Modifies the model parameters in place.<br /><br />Args:<br /> ~ deltas: A dictionary of parameter updates.<br /><br />Returns:<br /> ~ None
 
 
 ### random
 ```py
 
-def random(self, visible)
+def random(self, vis)
 
 ```
 
 
 
-### sample\_hidden
-```py
-
-def sample_hidden(self, visible, beta=None)
-
-```
-
-
-
-### sample\_visible
-```py
-
-def sample_visible(self, hidden, beta=None)
-
-```
-
-
-
-### visible\_mean
-```py
-
-def visible_mean(self, hidden, beta=None)
-
-```
-
-
-
-### visible\_mode
-```py
-
-def visible_mode(self, hidden, beta=None)
-
-```
-
-
-
-
-
-## class HopfieldModel
-HopfieldModel<br />A model of associative memory with binary visible units and<br />Gaussian hidden units.<br /><br />Hopfield, John J.<br />"Neural networks and physical systems with emergent collective<br />computational abilities."<br />Proceedings of the national academy of sciences 79.8 (1982): 2554-2558.
-### \_\_init\_\_
-```py
-
-def __init__(self, nvis, nhid, vis_type='ising')
-
-```
-
-
-
-### add\_constraints
-```py
-
-def add_constraints(self, cons)
-
-```
-
-
-
-### add\_weight\_decay
-```py
-
-def add_weight_decay(self, penalty, method='l2_penalty')
-
-```
-
-
-
-### derivatives
-```py
-
-def derivatives(self, visible)
-
-```
-
-
-
-### deterministic\_iteration
-```py
-
-def deterministic_iteration(self, vis, steps, beta=None)
-
-```
-
-
-
-mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
-
-
-### deterministic\_step
-```py
-
-def deterministic_step(self, vis, beta=None)
-
-```
-
-
-
-deterministic_step(v):<br />v -> h -> v'<br />return v'
-
-
-### enforce\_constraints
-```py
-
-def enforce_constraints(self)
-
-```
-
-
-
-### hidden\_mean
-```py
-
-def hidden_mean(self, visible, beta=None)
-
-```
-
-
-
-### hidden\_mode
-```py
-
-def hidden_mode(self, visible, beta=None)
-
-```
-
-
-
-### initialize
-```py
-
-def initialize(self, data, method='hinton')
-
-```
-
-
-
-### joint\_energy
-```py
-
-def joint_energy(self, visible, hidden, beta=None)
-
-```
-
-
-
-### marginal\_free\_energy
-```py
-
-def marginal_free_energy(self, visible, beta=None)
-
-```
-
-
-
-### markov\_chain
-```py
-
-def markov_chain(self, vis, steps, beta=None)
-
-```
-
-
-
-markov_chain(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
-
-
-### mcstep
-```py
-
-def mcstep(self, vis, beta=None)
-
-```
-
-
-
-mcstep(v):<br />v -> h -> v'<br />return v'
-
-
-### mean\_field\_iteration
-```py
-
-def mean_field_iteration(self, vis, steps, beta=None)
-
-```
-
-
-
-mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
-
-
-### mean\_field\_step
-```py
-
-def mean_field_step(self, vis, beta=None)
-
-```
-
-
-
-mean_field_step(v):<br />v -> h -> v'<br />return v'<br /><br />It may be worth looking into extended approaches:<br />Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.<br />"Training Restricted Boltzmann Machine via the￼<br />Thouless-Anderson-Palmer free energy."<br />Advances in Neural Information Processing Systems. 2015.
-
-
-### random
-```py
-
-def random(self, visible)
-
-```
-
-
-
-### sample\_hidden
-```py
-
-def sample_hidden(self, visible, beta=None)
-
-```
-
-
-
-### sample\_visible
-```py
-
-def sample_visible(self, hidden, beta=None)
-
-```
-
-
-
-### visible\_mean
-```py
-
-def visible_mean(self, hidden, beta=None)
-
-```
-
-
-
-### visible\_mode
-```py
-
-def visible_mode(self, hidden, beta=None)
-
-```
-
-
-
-
-
-## class LatentModel
-LatentModel<br />Abstract class for a 2-layer neural network.
-### \_\_init\_\_
-```py
-
-def __init__(self)
-
-```
-
-
-
-### add\_constraints
-```py
-
-def add_constraints(self, cons)
-
-```
-
-
-
-### add\_weight\_decay
-```py
-
-def add_weight_decay(self, penalty, method='l2_penalty')
-
-```
-
-
-
-### deterministic\_iteration
-```py
-
-def deterministic_iteration(self, vis, steps, beta=None)
-
-```
-
-
-
-mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
-
-
-### deterministic\_step
-```py
-
-def deterministic_step(self, vis, beta=None)
-
-```
-
-
-
-deterministic_step(v):<br />v -> h -> v'<br />return v'
-
-
-### enforce\_constraints
-```py
-
-def enforce_constraints(self)
-
-```
-
-
-
-### marginal\_free\_energy
-```py
-
-def marginal_free_energy(self, visible, beta=None)
-
-```
-
-
-
-### markov\_chain
-```py
-
-def markov_chain(self, vis, steps, beta=None)
-
-```
-
-
-
-markov_chain(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
-
-
-### mcstep
-```py
-
-def mcstep(self, vis, beta=None)
-
-```
-
-
-
-mcstep(v):<br />v -> h -> v'<br />return v'
-
-
-### mean\_field\_iteration
-```py
-
-def mean_field_iteration(self, vis, steps, beta=None)
-
-```
-
-
-
-mean_field_iteration(v, n):<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br />return v_n
-
-
-### mean\_field\_step
-```py
-
-def mean_field_step(self, vis, beta=None)
-
-```
-
-
-
-mean_field_step(v):<br />v -> h -> v'<br />return v'<br /><br />It may be worth looking into extended approaches:<br />Gabrié, Marylou, Eric W. Tramel, and Florent Krzakala.<br />"Training Restricted Boltzmann Machine via the￼<br />Thouless-Anderson-Palmer free energy."<br />Advances in Neural Information Processing Systems. 2015.
-
-
-### random
-```py
-
-def random(self, visible)
-
-```
-
-
-
-### sample\_hidden
-```py
-
-def sample_hidden(self, visible, beta=None)
-
-```
-
-
-
-### sample\_visible
-```py
-
-def sample_visible(self, hidden, beta=None)
-
-```
-
+Generate a random sample with the same shape,<br />and of the same type, as the visible units.<br /><br />Args:<br /> ~ vis: The visible units.<br /><br />Returns:<br /> ~ tensor: Random sample with same shape as vis.
 
 
 
