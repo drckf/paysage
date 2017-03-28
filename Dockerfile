@@ -16,7 +16,7 @@ ADD . /opt/paysage
 
 # Install dependencies
 RUN pip install --upgrade pip
-RUN pip install -U -r /opt/paysage/requirements.txt
+RUN pip install -r /opt/paysage/requirements.txt
 
 # Install pytorch
 # (torch wheel already included in pytorch docker image)
