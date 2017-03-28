@@ -30,12 +30,12 @@ def hinton(batch, model):
         None
 
     """
-    i = 0
-    model.weights[i].val = 0.01 * be.randn(model.weights[i].shape)
+    for i in range(len(model.weights)):
+        model.weights[i].val = 0.01 * be.randn(model.weights[i].shape)
     while True:
         try:
             v_data = batch.get(mode='train')
         except StopIteration:
             break
-        model.layers[i].online_param_update(v_data)
-    model.layers[i].shrink_parameters(shrinkage=0.01)
+        model.layers[0].online_param_update(v_data)
+    model.layers[0].shrink_parameters(shrinkage=0.01)
