@@ -77,10 +77,10 @@ class Model(object):
             An instance of the model.
 
         """
-        layers = []
+        layer_list = []
         for ly in config["layers"]:
-            layers.append(Layer.from_config(ly))
-        return cls(layers)
+            layer_list.append(layers.Layer.from_config(ly))
+        return cls(layer_list)
 
     def initialize(self, data, method='hinton'):
         """
