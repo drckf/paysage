@@ -37,6 +37,7 @@ class Layer(object):
 
         Returns:
             A dictionary configuration for the layer.
+
         """
         return {
         "layer_type": self.__class__.__name__,
@@ -62,6 +63,7 @@ class Layer(object):
 
         Returns:
             A dictionary configuration for the layer.
+
         """
         return self.get_base_config()
 
@@ -75,6 +77,7 @@ class Layer(object):
 
         Returns:
             An object which is a subclass of `Layer`.
+
         """
         layer_obj = getattr(sys.modules[__name__], config["layer_type"])
         return layer_obj.from_config(config)
