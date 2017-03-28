@@ -67,11 +67,8 @@ class Layer(object):
         """
         Construct the layer from the base configuration.
 
-        Notes:
-            A layer constructor from the configuration.
-
         Args:
-            None
+            A dictionary configuration of the layer metadata.
 
         Returns:
             An object which is a subclass of `Layer`.
