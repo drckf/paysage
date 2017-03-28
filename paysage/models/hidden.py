@@ -45,6 +45,43 @@ class Model(object):
         for i in range(len(self.layers) - 1)
         ]
 
+    def get_config(self):
+        """
+        Get a configuration for the model.
+
+        Notes:
+            Includes metadata on the layers.
+
+        Args:
+            None
+
+        Returns:
+            A dictionary configuration for the model.
+
+        """
+        config = {
+        "model type": "RBM",
+        "layers": [ly.get_config() for ly in self.layers],
+        }
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        """
+        Build a model from the configuration.
+
+        Args:
+            A dictionary configuration of the model metadata.
+
+        Returns:
+            An instance of the model.
+
+        """
+        layers = []
+        for ly in config["layers"]:
+            layers.append(Layer.from_config(ly))
+        return cls(layers)
+
     def initialize(self, data, method='hinton'):
         """
         Inialize the parameters of the model.
