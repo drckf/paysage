@@ -11,9 +11,10 @@ dependencies:
     - sudo apt-get install llvm-3.8
     # CI image includes only 3.4 shared library;
     - sudo ln -s /usr/lib/x86_64-linux-gnu/libpython3.4m.so.1.0 /usr/lib/x86_64-linux-gnu/libpython3.6m.so.1.0
+    - pip install -U -r requirements.txt
 
   post:
-    - pip install http://download.pytorch.org/whl/cu75/torch-0.1.10.post2-cp36-cp36m-linux_x86_64.whl 
+    - pip install http://download.pytorch.org/whl/cu75/torch-0.1.10.post2-cp36-cp36m-linux_x86_64.whl
     - pip install torchvision
     - pip install -e .
 
@@ -33,4 +34,3 @@ test:
     # - python3 examples/example_mnist_grbm.py
     # - python3 examples/example_mnist_hopfield.py
     # - python3 examples/example_mnist_rbm.py
-
