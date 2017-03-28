@@ -5,7 +5,7 @@ StochasticGradientDescent<br />Basic algorithm of gradient descent with minibatc
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127f2ce10>, tolerance=0.001)
+def __init__(self, model, stepsize=0.001, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11db36518>, tolerance=0.001)
 
 ```
 
@@ -67,6 +67,70 @@ def increment(self, epoch)
 
 
 
+## class GradientMemory
+Many optimizers like RMSProp or ADAM keep track of moving averages<br />of the gradients. This class computes the first two moments of the<br />gradients as running averages.
+### \_\_init\_\_
+```py
+
+def __init__(self, mean_weight=0.9, mean_square_weight=0.0)
+
+```
+
+
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+
+### normalize
+```py
+
+def normalize(self, grad, unbiased=False)
+
+```
+
+
+
+Divide grad by the square root of the mean square gradient.
+
+
+### update
+```py
+
+def update(self, grad)
+
+```
+
+
+
+Update the running average of the model gradients and the running<br />average of the squared model gradients.
+
+
+### update\_mean
+```py
+
+def update_mean(self, grad)
+
+```
+
+
+
+Update the running average of the model gradients.
+
+
+### update\_mean\_square
+```py
+
+def update_mean_square(self, grad)
+
+```
+
+
+
+Update the running average of the squared model gradients.
+
+
+
+
 ## class PowerLawDecay
 ### \_\_init\_\_
 ```py
@@ -104,7 +168,7 @@ def increment(self, epoch)
 ### \_\_init\_\_
 ```py
 
-def __init__(self, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127f2cda0>, tolerance=0.001)
+def __init__(self, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11dbb4c88>, tolerance=0.001)
 
 ```
 
@@ -153,7 +217,7 @@ Momentum<br />Stochastic gradient descent with momentum.<br />Qian, N. (1999).<b
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, momentum=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127f2ceb8>, tolerance=1e-06)
+def __init__(self, model, stepsize=0.001, momentum=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11db365c0>, tolerance=1e-06)
 
 ```
 
@@ -187,7 +251,7 @@ RMSProp<br />Geoffrey Hinton's Coursera Course Lecture 6e
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127f2cf60>, tolerance=1e-06)
+def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11db36668>, tolerance=1e-06)
 
 ```
 
@@ -221,7 +285,7 @@ ADAM<br />Adaptive Moment Estimation algorithm.<br />Kingma, D. P., & Ba, J. L. 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127f27048>, tolerance=1e-06)
+def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11db36710>, tolerance=1e-06)
 
 ```
 
@@ -252,20 +316,26 @@ def update(self, model, v_data, v_model, epoch)
 
 ## functions
 
-### gradient
+### deepcopy
 ```py
 
-def gradient(model, minibatch, samples)
+def deepcopy(x, memo=None, _nil=[])
 
 ```
 
+
+
+Deep copy operation on arbitrary Python objects.<br /><br />See the module's __doc__ string for more info.
 
 
 ### gradient\_magnitude
 ```py
 
-def gradient_magnitude(grad)
+def gradient_magnitude(grad) -> float
 
 ```
 
+
+
+Compute the magnitude of the gradient.
 

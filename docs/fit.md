@@ -217,6 +217,10 @@ def update_state(self, steps)
 
 
 
+## class OrderedDict
+Dictionary that remembers insertion order
+
+
 ## class Sampler
 A base class for the sequential Monte Carlo samplers
 ### \_\_init\_\_
