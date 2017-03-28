@@ -1,6 +1,8 @@
 import sys
 from collections import OrderedDict
 
+from . import penalties
+from . import constraints
 from . import backends as be
 
 class Layer(object):
@@ -61,7 +63,7 @@ class Layer(object):
         Returns:
             A dictionary configuration for the layer.
         """
-        return get_base_config()
+        return self.get_base_config()
 
     @staticmethod
     def from_config(config):
