@@ -1,5 +1,6 @@
-from . import backends as be
+from collections import OrderedDict
 
+from . import backends as be
 
 class Layer(object):
     """A general layer class with common functionality."""
@@ -61,7 +62,7 @@ class Layer(object):
         return get_base_config()
 
     @classmethod
-    def from_config(cls):
+    def from_config(cls, config):
         """
         Construct the layer from the configuration.
 
@@ -211,6 +212,16 @@ class Weights(Layer):
         base_config = self.get_base_config()
         base_config["shape"] = self.shape
         return base_config
+
+    @classmethod
+    def from_config(cls, config):
+        shape = config["shape"]
+        layer = cls(shape)
+        for k, v in config["penalties"]:
+            layer.add_penalty({k: getattr(penalties, v)})
+        for k, v in config["constraints"]:
+            layer.add_constraint({k: getattr(constraints, v)})
+        return layer
 
     def W(self):
         """
