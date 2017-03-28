@@ -1,3 +1,4 @@
+import sys
 from collections import OrderedDict
 
 from . import backends as be
@@ -62,8 +63,8 @@ class Layer(object):
         """
         return get_base_config()
 
-    @classmethod
-    def from_config(cls, config):
+    @staticmethod
+    def from_config(config):
         """
         Construct the layer from the base configuration.
 
@@ -73,7 +74,8 @@ class Layer(object):
         Returns:
             An object which is a subclass of `Layer`.
         """
-        raise NotImplementedError
+        layer_obj = getattr(sys.modules[__name__], config["layer_type"])
+        return layer_obj.from_config(config)
 
     def add_constraint(self, constraint):
         """
