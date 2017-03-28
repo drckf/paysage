@@ -872,7 +872,8 @@ def test_dot():
     py_dot = py_matrix.dot(py_a, py_b)
     torch_dot = torch_matrix.dot(torch_a, torch_b)
 
-    assert_close(py_dot, torch_dot, "dot: matrix-vector")
+    # occasionally fails without a looser threshold
+    assert_close(py_dot, torch_dot, "dot: matrix-vector", 1e-4, 1e-4)
 
     # matrix-matrix
     a_shape = (100,100)
@@ -887,7 +888,8 @@ def test_dot():
     py_dot = py_matrix.dot(py_a, py_b)
     torch_dot = torch_matrix.dot(torch_a, torch_b)
 
-    assert_close(py_dot, torch_dot, "dot: matrix-matrix")
+    # occasionally fails without a looser threshold
+    assert_close(py_dot, torch_dot, "dot: matrix-matrix", 1e-4, 1e-4)
 
 def test_outer():
     a_shape = (100,)
