@@ -1337,10 +1337,10 @@ def test_fast_energy_distance():
     # py_rand.set_seed() because it uses the numba random number
     # generator rather than the one in numpy.
     # this test can fail stochastically
-    assert py_dist < 0.15, \
+    assert py_dist < 0.25, \
     "python energy distance is too big"
 
-    assert torch_dist < 0.15, \
+    assert torch_dist < 0.25, \
     "torch energy distance is too big"
 
     # distance distributions
