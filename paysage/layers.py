@@ -270,6 +270,7 @@ class GaussianLayer(Layer):
         result /= be.broadcast(scale, vis)
         return 0.5 * be.mean(result, axis=1)
 
+    #TODO: phi: list[tensor]
     def log_partition_function(self, phi):
         """
         Compute the logarithm of the partition function of the layer
@@ -349,6 +350,7 @@ class GaussianLayer(Layer):
         be.mix_inplace(be.float_scalar(1-shrinkage), var, be.ones_like(var))
         self.int_params['log_var'] = be.log(var)
 
+    #TODO: scaled_units: list[tensor], weights: list[tensor]
     def update(self, scaled_units, weights, beta=None):
         """
         Update the extrinsic parameters of the layer.
@@ -383,6 +385,7 @@ class GaussianLayer(Layer):
                                       self.ext_params['mean']
                                       )
 
+    #TODO: hid: list[tensor], weights: list[tensor]
     def derivatives(self, vis, hid, weights, beta=None):
         """
         Compute the derivatives of the intrinsic layer parameters.
@@ -554,6 +557,7 @@ class IsingLayer(Layer):
         """
         return -be.dot(data, self.int_params['loc'])
 
+    #TODO: phi: list[tensor]
     def log_partition_function(self, phi):
         """
         Compute the logarithm of the partition function of the layer
@@ -620,6 +624,7 @@ class IsingLayer(Layer):
         """
         pass
 
+    #TODO: scaled_units: list[tensor], weights: list[tensor]
     def update(self, scaled_units, weights, beta=None):
         """
         Update the extrinsic parameters of the layer.
@@ -650,6 +655,7 @@ class IsingLayer(Layer):
                                     self.ext_params['field']
                                     )
 
+    #TODO: hid: list[tensor], weights: list[tensor]
     def derivatives(self, vis, hid, weights, beta=None):
         """
         Compute the derivatives of the intrinsic layer parameters.
@@ -804,6 +810,7 @@ class BernoulliLayer(Layer):
         """
         return -be.dot(data, self.int_params['loc'])
 
+    #TODO: phi: list[tensor]
     def log_partition_function(self, phi):
         """
         Compute the logarithm of the partition function of the layer
@@ -870,6 +877,7 @@ class BernoulliLayer(Layer):
         """
         pass
 
+    #TODO: scaled_units: list[tensor], weights: list[tensor]
     def update(self, scaled_units, weights, beta=None):
         """
         Update the extrinsic parameters of the layer.
@@ -900,6 +908,7 @@ class BernoulliLayer(Layer):
                                     self.ext_params['field']
                                     )
 
+    #TODO: hid: list[tensor], weights: list[tensor]
     def derivatives(self, vis, hid, weights, beta=None):
         """
         Compute the derivatives of the intrinsic layer parameters.
@@ -1054,6 +1063,7 @@ class ExponentialLayer(Layer):
         """
         return be.dot(data, self.int_params['loc'])
 
+    #TODO: phi: list[tensor]
     def log_partition_function(self, phi):
         """
         Compute the logarithm of the partition function of the layer
@@ -1120,6 +1130,7 @@ class ExponentialLayer(Layer):
         """
         pass
 
+    #TODO: scaled_units: list[tensor], weights: list[tensor]
     def update(self, scaled_units, weights, beta=None):
         """
         Update the extrinsic parameters of the layer.
@@ -1150,6 +1161,7 @@ class ExponentialLayer(Layer):
                                     self.ext_params['rate']
                                     )
 
+    #TODO: hid: list[tensor], weights: list[tensor]
     def derivatives(self, vis, hid, weights, beta=None):
         """
         Compute the derivatives of the intrinsic layer parameters.
