@@ -29,7 +29,8 @@ class Sampler(object):
         else:
             raise ValueError("Unknown method {}".format(self.method))
 
-
+    #TODO: use State
+    # should use hidden.State object
     def randomize_state(self, shape):
         """
            Set up the inital states for each of the Markov Chains.
@@ -39,6 +40,8 @@ class Sampler(object):
         self.state = self.model.random(shape)
         self.has_state = True
 
+    #TODO: use State
+    # should use hidden.State object
     def set_state(self, tensor):
         """
            Set up the inital states for each of the Markov Chains.
@@ -47,6 +50,8 @@ class Sampler(object):
         self.state = be.float_tensor(tensor)
         self.has_state = True
 
+    #TODO: use State
+    # should use hidden.State object
     @classmethod
     def from_batch(cls, amodel, abatch,
                    method='stochastic',
@@ -66,12 +71,16 @@ class SequentialMC(Sampler):
                  method='stochastic'):
         super().__init__(amodel, method=method)
 
+    #TODO: use State
+    # should use hidden.State object
     def update_state(self, steps):
         if not self.has_state:
             raise AttributeError(
                   'You must set the initial state of the Markov Chain')
         self.state = self.updater(self.state, steps)
 
+    #TODO: use State
+    # should use hidden.State object
     def get_state(self):
         return self.state
 
@@ -107,6 +116,8 @@ class DrivenSequentialMC(Sampler):
         self.beta += self.beta_loc
         self.beta += self.beta_scale * be.randn(self.beta_shape)
 
+    #TODO: use State
+    # should use hidden.State object
     def update_state(self, steps):
         if not self.has_state:
             raise AttributeError(
@@ -115,6 +126,8 @@ class DrivenSequentialMC(Sampler):
         self.update_beta()
         self.state = self.updater(self.state, steps, self.beta)
 
+    #TODO: use State
+    # should use hidden.State object
     def get_state(self):
         return self.state
 
@@ -134,16 +147,17 @@ class TrainingMethod(object):
 
 
 class ContrastiveDivergence(TrainingMethod):
-    """ContrastiveDivergence
-       CD-k algorithm for approximate maximum likelihood inference.
+    """
+    ContrastiveDivergence
+    CD-k algorithm for approximate maximum likelihood inference.
 
-       Hinton, Geoffrey E.
-       "Training products of experts by minimizing contrastive divergence."
-       Neural computation 14.8 (2002): 1771-1800.
+    Hinton, Geoffrey E.
+    "Training products of experts by minimizing contrastive divergence."
+    Neural computation 14.8 (2002): 1771-1800.
 
-       Carreira-Perpinan, Miguel A., and Geoffrey Hinton.
-       "On Contrastive Divergence Learning."
-       AISTATS. Vol. 10. 2005.
+    Carreira-Perpinan, Miguel A., and Geoffrey Hinton.
+    "On Contrastive Divergence Learning."
+    AISTATS. Vol. 10. 2005.
 
     """
     def __init__(self, model, abatch, optimizer, sampler, epochs,
@@ -164,6 +178,12 @@ class ContrastiveDivergence(TrainingMethod):
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
+
+                #TODO: use State
+                # should use hidden.State objects
+                # note that we will need two states
+                # one for the positive phase (with visible units as observed)
+                # one for the negative phase (with visible units sampled from the model)
 
                 # CD resets the sampler from the visible data at each iteration
                 self.sampler.set_state(v_data)
@@ -222,6 +242,13 @@ class PersistentContrastiveDivergence(TrainingMethod):
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
+
+                #TODO: use State
+                # should use hidden.State objects
+                # note that we will need two states
+                # one for the positive phase (with visible units as observed)
+                # one for the negative phase (with visible units sampled from the model)
+
                 # PCD keeps the sampler from the previous iteration
                 self.sampler.update_state(self.mcsteps)
 
@@ -274,6 +301,9 @@ class ProgressMonitor(object):
                     v_data = self.batch.get(mode='validate')
                 except StopIteration:
                     break
+
+                #TODO: use State
+                # should use hidden.State objects
 
                 # compute the reconstructions
                 sampler.set_state(v_data)
