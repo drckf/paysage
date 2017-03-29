@@ -99,7 +99,7 @@ class Model(object):
                                 self.weights[i].W(), beta)
         hid = self.layers[i+1].sample_state()
         self.layers[i].update(self.layers[i+1].rescale(hid),
-                              be.transpose(self.weights[i].W()), beta)
+                              self.weights[i].W_T(), beta)
         return self.layers[i].sample_state()
 
     def markov_chain(self, vis, n, beta=None):
@@ -139,7 +139,7 @@ class Model(object):
                                 self.weights[i].W(), beta)
         hid = self.layers[i+1].mean()
         self.layers[i].update(self.layers[i+1].rescale(hid),
-                              be.transpose(self.weights[i].W()), beta)
+                              self.weights[i].W_T(), beta)
         return self.layers[i].mean()
 
     def mean_field_iteration(self, vis, n, beta=None):
@@ -179,7 +179,7 @@ class Model(object):
                                   self.weights[i].W(), beta)
         hid = self.layers[i+1].mode()
         self.layers[i].update(self.layers[i+1].rescale(hid),
-                              be.transpose(self.weights[i].W()), beta)
+                              self.weights[i].W_T(), beta)
         return self.layers[i].mode()
 
     def deterministic_iteration(self, vis, n, beta=None):
@@ -244,8 +244,6 @@ class Model(object):
         'weights': [None for w in self.weights]
         }
 
-        W_transpose = be.transpose(self.weights[0].W())
-
         # POSITIVE PHASE (using observed)
 
         # 1. Scale vdata
@@ -264,7 +262,7 @@ class Model(object):
         grad['layers'][i] = self.layers[i].derivatives(vdata, hid_scaled,
                                                self.weights[0].W())
         grad['layers'][i+1] = self.layers[i+1].derivatives(hid, vdata_scaled,
-                                                           W_transpose)
+                                               self.weights[0].W_T())
 
         grad['weights'][i] = self.weights[i].derivatives(vdata_scaled,
                                                          hid_scaled)
@@ -293,7 +291,7 @@ class Model(object):
                                   self.layers[i+1].derivatives(
                                                    hid,
                                                    vmodel_scaled,
-                                                   W_transpose))
+                                                   self.weights[0].W_T()))
 
         be.subtract_dicts_inplace(grad['weights'][i],
                                   self.weights[i].derivatives(
