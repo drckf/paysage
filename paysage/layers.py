@@ -1,6 +1,8 @@
 import sys
 from collections import OrderedDict
 
+from . import penalties
+from . import constraints
 from . import backends as be
 
 class Layer(object):
@@ -35,6 +37,7 @@ class Layer(object):
 
         Returns:
             A dictionary configuration for the layer.
+
         """
         return {
         "layer_type": self.__class__.__name__,
@@ -60,8 +63,9 @@ class Layer(object):
 
         Returns:
             A dictionary configuration for the layer.
+
         """
-        return get_base_config()
+        return self.get_base_config()
 
     @staticmethod
     def from_config(config):
@@ -73,6 +77,7 @@ class Layer(object):
 
         Returns:
             An object which is a subclass of `Layer`.
+
         """
         layer_obj = getattr(sys.modules[__name__], config["layer_type"])
         return layer_obj.from_config(config)
@@ -209,12 +214,32 @@ class Weights(Layer):
         }
 
     def get_config(self):
+        """
+        Get the configuration dictionary of the weights layer.
+
+        Args:
+            None:
+
+        Returns:
+            configuratiom (dict):
+
+        """
         base_config = self.get_base_config()
         base_config["shape"] = self.shape
         return base_config
 
     @classmethod
     def from_config(cls, config):
+        """
+        Create a weights layer form a configuration dictionary.
+
+        Args:
+            config (dict)
+
+        Returns:
+            layer (Weights)
+
+        """
         layer = cls(config["shape"])
         for k, v in config["penalties"]:
             layer.add_penalty({k: getattr(penalties, v)})
@@ -323,6 +348,16 @@ class GaussianLayer(Layer):
         }
 
     def get_config(self):
+        """
+        Get the configuration dictionary of the Gaussian layer.
+
+        Args:
+            None:
+
+        Returns:
+            configuratiom (dict):
+
+        """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
@@ -330,6 +365,16 @@ class GaussianLayer(Layer):
 
     @classmethod
     def from_config(cls, config):
+        """
+        Create a Gaussian layer form a configuration dictionary.
+
+        Args:
+            config (dict)
+
+        Returns:
+            layer (Gaussian)
+
+        """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
         for k, v in config["penalties"]:
@@ -627,6 +672,16 @@ class IsingLayer(Layer):
         }
 
     def get_config(self):
+        """
+        Get the configuration dictionary of the Ising layer.
+
+        Args:
+            None:
+
+        Returns:
+            configuratiom (dict):
+
+        """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
@@ -634,6 +689,16 @@ class IsingLayer(Layer):
 
     @classmethod
     def from_config(cls, config):
+        """
+        Create an Ising layer form a configuration dictionary.
+
+        Args:
+            config (dict)
+
+        Returns:
+            layer (Ising)
+
+        """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
         for k, v in config["penalties"]:
@@ -893,6 +958,16 @@ class BernoulliLayer(Layer):
         }
 
     def get_config(self):
+        """
+        Get the configuration dictionary of the Bernoulli layer.
+
+        Args:
+            None:
+
+        Returns:
+            configuratiom (dict):
+
+        """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
@@ -900,6 +975,16 @@ class BernoulliLayer(Layer):
 
     @classmethod
     def from_config(cls, config):
+        """
+        Create a Bernoulli layer form a configuration dictionary.
+
+        Args:
+            config (dict)
+
+        Returns:
+            layer (Bernoulli)
+
+        """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
         for k, v in config["penalties"]:
@@ -1159,6 +1244,16 @@ class ExponentialLayer(Layer):
         }
 
     def get_config(self):
+        """
+        Get the configuration dictionary of the Exponential layer.
+
+        Args:
+            None:
+
+        Returns:
+            configuratiom (dict):
+
+        """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
@@ -1166,6 +1261,16 @@ class ExponentialLayer(Layer):
 
     @classmethod
     def from_config(cls, config):
+        """
+        Create an Exponential layer form a configuration dictionary.
+
+        Args:
+            config (dict)
+
+        Returns:
+            layer (Weights)
+
+        """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
         for k, v in config["penalties"]:

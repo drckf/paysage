@@ -405,43 +405,45 @@ class Model(object):
         energy -= be.tsum(log_Z_hidden, axis=1)
         return energy
 
-    def save(self, filename):
+    def save(self, store):
         """
-        Save a model to an HDFStore.
+        Save a model to an open HDFStore.
+
+        Note:
+            Performs an IO operation.
 
         Args:
-            file name to save to.
+            store (pandas.HDFStore)
 
         Returns:
             None
 
         """
-        with pandas.HDFStore(filename, mode='w') as s:
-            # save the config as an attribute
-            config = self.get_config()
-            s.put('model', pandas.DataFrame())
-            s.get_storer('model').attrs.config = config
-            # save the weights
-            for i in range(self.num_layers - 1):
-                df_weights = pandas.DataFrame(
-                                be.to_numpy_array(self.weights[i].W())
-                             )
-                s.put('weights/weights_'+str(i), df_weights)
-            for i in range(len(self.layers)):
-                layer_type = config["layer_types"][i]
-                layer = config["layers"][i]
-                layer_key = os.path.join('layers',layer_type)
-                # intrinsic params
-                intrinsics = layer["intrinsic"]
-                for ip in intrinsics:
-                    df_params = pandas.DataFrame(
-                                be.to_numpy_array(self.layers[i].int_params[ip])
-                             )
-                    s.put(os.path.join(layer_key,'intrinsic',ip), df_params)
-                # extrinsic params
-                extrinsics = layer["extrinsic"]
-                for ep in extrinsics:
-                    df_params = pandas.DataFrame(
-                                be.to_numpy_array(self.layers[i].ext_params[ep])
-                             )
-                    s.put(os.path.join(layer_key,'extrinsic',ep), df_params)
+        # save the config as an attribute
+        config = self.get_config()
+        store.put('model', pandas.DataFrame())
+        store.get_storer('model').attrs.config = config
+        # save the weights
+        for i in range(self.num_layers - 1):
+            df_weights = pandas.DataFrame(
+                            be.to_numpy_array(self.weights[i].W())
+                         )
+            store.put('weights/weights_'+str(i), df_weights)
+        for i in range(len(self.layers)):
+            layer_type = config["layer_types"][i]
+            layer = config["layers"][i]
+            layer_key = os.path.join('layers', layer_type)
+            # intrinsic params
+            intrinsics = layer["intrinsic"]
+            for ip in intrinsics:
+                df_params = pandas.DataFrame(
+                            be.to_numpy_array(self.layers[i].int_params[ip])
+                         )
+                store.put(os.path.join(layer_key,'intrinsic', ip), df_params)
+            # extrinsic params
+            extrinsics = layer["extrinsic"]
+            for ep in extrinsics:
+                df_params = pandas.DataFrame(
+                            be.to_numpy_array(self.layers[i].ext_params[ep])
+                         )
+                store.put(os.path.join(layer_key,'extrinsic', ep), df_params)
