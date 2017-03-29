@@ -192,6 +192,22 @@ class Model(object):
         """
         return self.layers[0].random(vis)
 
+    #TODO: use State
+    # currently, this method takes in a single tensor (vis)
+    # and outputs a single tensor (new vis)
+    # the hidden units are only treated implicitly
+    #
+    # this method should take in a State (with the units of all of the layers)
+    # and output a new State (with the updated units of all of the layers)
+    #
+    # this could be done in with the following steps:
+    # 1) update the extrinsic parameters of the odd layers
+    # 2) sample new configurations for the odd layers
+    # 3) update the extrinsic parameters of the even layers
+    # 4) sample new configurations for the even layers
+    #
+    # either, this could return a new State object (which involves a copy)
+    # or, it could mutate the values of the State tensors in place
     def mcstep(self, vis, beta=None):
         """
         Perform a single Gibbs sampling update.
@@ -221,6 +237,9 @@ class Model(object):
 
         return self.layers[i].sample_state()
 
+    # TODO: use State
+    # this function is just a repeated application of mcstep
+    # so it should be changed to operate on State objects too
     def markov_chain(self, vis, n, beta=None):
         """
         Perform multiple Gibbs sampling steps.
@@ -240,6 +259,22 @@ class Model(object):
             new_vis = self.mcstep(new_vis, beta)
         return new_vis
 
+    #TODO: use State
+    # currently, this method takes in a single tensor (vis)
+    # and outputs a single tensor (new vis)
+    # the hidden units are only treated implicitly
+    #
+    # this method should take in a State (with the units of all of the layers)
+    # and output a new State (with the updated units of all of the layers)
+    #
+    # this could be done in with the following steps:
+    # 1) update the extrinsic parameters of the odd layers
+    # 2) compute the mean of the odd layers
+    # 3) update the extrinsic parameters of the even layers
+    # 4) compute the mean of the even layers
+    #
+    # either, this could return a new State object (which involves a copy)
+    # or, it could mutate the values of the State tensors in place
     def mean_field_step(self, vis, beta=None):
         """
         Perform a single mean-field update.
@@ -269,6 +304,9 @@ class Model(object):
 
         return self.layers[i].mean()
 
+    # TODO: use State
+    # this function is just a repeated application of mean_field_step
+    # so it should be changed to operate on State objects too
     def mean_field_iteration(self, vis, n, beta=None):
         """
         Perform multiple mean-field updates.
@@ -288,6 +326,22 @@ class Model(object):
             new_vis = self.mean_field_step(new_vis, beta)
         return new_vis
 
+    #TODO: use State
+    # currently, this method takes in a single tensor (vis)
+    # and outputs a single tensor (new vis)
+    # the hidden units are only treated implicitly
+    #
+    # this method should take in a State (with the units of all of the layers)
+    # and output a new State (with the updated units of all of the layers)
+    #
+    # this could be done in with the following steps:
+    # 1) update the extrinsic parameters of the odd layers
+    # 2) compute the mode of the odd layers
+    # 3) update the extrinsic parameters of the even layers
+    # 4) compute the mode of the even layers
+    #
+    # either, this could return a new State object (which involves a copy)
+    # or, it could mutate the values of the State tensors in place
     def deterministic_step(self, vis, beta=None):
         """
         Perform a single deterministic (maximum probability) update.
@@ -317,6 +371,9 @@ class Model(object):
 
         return self.layers[i].mode()
 
+    # TODO: use State
+    # this function is just a repeated application of deterministic_step
+    # so it should be changed to operate on State objects too
     def deterministic_iteration(self, vis, n, beta=None):
         """
         Perform multiple deterministic (maximum probability) updates.
