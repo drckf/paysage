@@ -43,7 +43,7 @@ class Layer(object):
         "layer_type": self.__class__.__name__,
         "intrinsic": list(self.int_params.keys()),
         "extrinsic": list(self.ext_params.keys()),
-        "penalties": {pk: self.penalties[pk].__name__
+        "penalties": {pk: self.penalties[pk].__class__.__name__
                         for pk in self.penalties},
         "constraints": {ck: self.constraints[ck].__name__
                         for ck in self.constraints}
