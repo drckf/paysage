@@ -36,21 +36,21 @@ class State(object):
         self.units = [layers[i].random(self.shapes[i])
                       for i in range(len(layers))]
 
-    def set_visible(self, vis):
+    def set_layer(self, values, i):
         """
-        Set the visible units to vis.
+        Set the units of layer i to values.
 
         Notes:
-            Updates layer.units[0] in place.
+            Updates layer.units[i] in place.
 
         Args:
-            vis (tensor (num_samples, num_visible))
+            values (tensor (num_samples, num_units))
 
         Returns:
             None
 
         """
-        self.units[0] = vis
+        self.units[i] = values
 
     @classmethod
     def from_visible(cls, vis, layers):
@@ -67,9 +67,8 @@ class State(object):
         """
         batch_size = be.shape(vis)[0]
         state = cls(batch_size, layers)
-        state.set_visible(vis)
+        state.set_visible(vis, 0)
         return state
-
 
 
 
@@ -104,8 +103,9 @@ class Model(object):
         # the layers are stored in a list with the visible units
         # as the zeroth element
         self.layers = layer_list
+        self.len = len(self.layers)
 
-        assert len(self.layers) == 2,\
+        assert self.len == 2,\
         "Only models with 2 layers are currently supported"
 
         # adjacent layers are connected by weights

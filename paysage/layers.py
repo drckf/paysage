@@ -270,7 +270,6 @@ class GaussianLayer(Layer):
         result /= be.broadcast(scale, vis)
         return 0.5 * be.mean(result, axis=1)
 
-    #TODO: phi: list[tensor]
     def log_partition_function(self, phi):
         """
         Compute the logarithm of the partition function of the layer
@@ -285,13 +284,14 @@ class GaussianLayer(Layer):
         log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2
 
         Args:
-            phi (tensor (num_samples, num_units)): external field
+            phi tensor (num_samples, num_units): external field
 
         Returns:
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
         scale = be.exp(self.int_params['log_var'])
+
 
         logZ = be.broadcast(self.int_params['loc'], phi) * phi
         logZ += be.broadcast(scale, phi) * be.square(phi)
@@ -557,7 +557,6 @@ class IsingLayer(Layer):
         """
         return -be.dot(data, self.int_params['loc'])
 
-    #TODO: phi: list[tensor]
     def log_partition_function(self, phi):
         """
         Compute the logarithm of the partition function of the layer
@@ -810,7 +809,6 @@ class BernoulliLayer(Layer):
         """
         return -be.dot(data, self.int_params['loc'])
 
-    #TODO: phi: list[tensor]
     def log_partition_function(self, phi):
         """
         Compute the logarithm of the partition function of the layer
@@ -1063,7 +1061,6 @@ class ExponentialLayer(Layer):
         """
         return be.dot(data, self.int_params['loc'])
 
-    #TODO: phi: list[tensor]
     def log_partition_function(self, phi):
         """
         Compute the logarithm of the partition function of the layer
