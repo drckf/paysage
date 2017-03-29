@@ -350,7 +350,6 @@ class GaussianLayer(Layer):
         be.mix_inplace(be.float_scalar(1-shrinkage), var, be.ones_like(var))
         self.int_params['log_var'] = be.log(var)
 
-    #TODO: scaled_units: list[tensor], weights: list[tensor]
     def update(self, scaled_units, weights, beta=None):
         """
         Update the extrinsic parameters of the layer.
@@ -359,9 +358,9 @@ class GaussianLayer(Layer):
             Modfies layer.ext_params in place.
 
         Args:
-            scaled_units (tensor (num_samples, num_connected_units)):
+            scaled_units list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the connected units.
-            weights (tensor, (num_connected_units, num_units)):
+            weights list[tensor, (num_connected_units, num_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -370,7 +369,10 @@ class GaussianLayer(Layer):
             None
 
         """
-        self.ext_params['mean'] = be.dot(scaled_units, weights)
+        self.ext_params['mean'] = be.dot(scaled_units[0], weights[0])
+        for i in range(1, len(weights)):
+            self.ext_params['mean'] += be.dot(scaled_units[i], weights[i])
+
         if beta is not None:
             self.ext_params['mean'] *= be.broadcast(
                                        beta,
@@ -623,7 +625,6 @@ class IsingLayer(Layer):
         """
         pass
 
-    #TODO: scaled_units: list[tensor], weights: list[tensor]
     def update(self, scaled_units, weights, beta=None):
         """
         Update the extrinsic parameters of the layer.
@@ -632,9 +633,9 @@ class IsingLayer(Layer):
             Modfies layer.ext_params in place.
 
         Args:
-            scaled_units (tensor (num_samples, num_connected_units)):
+            scaled_units list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the connected units.
-            weights (tensor, (num_connected_units, num_units)):
+            weights list[tensor, (num_connected_units, num_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -643,7 +644,10 @@ class IsingLayer(Layer):
             None
 
         """
-        self.ext_params['field'] = be.dot(scaled_units, weights)
+        self.ext_params['field'] = be.dot(scaled_units[0], weights[0])
+        for i in range(1, len(weights)):
+            self.ext_params['field'] += be.dot(scaled_units[i], weights[i])
+
         if beta is not None:
             self.ext_params['field'] *= be.broadcast(
                                         beta,
@@ -875,7 +879,6 @@ class BernoulliLayer(Layer):
         """
         pass
 
-    #TODO: scaled_units: list[tensor], weights: list[tensor]
     def update(self, scaled_units, weights, beta=None):
         """
         Update the extrinsic parameters of the layer.
@@ -884,9 +887,9 @@ class BernoulliLayer(Layer):
             Modfies layer.ext_params in place.
 
         Args:
-            scaled_units (tensor (num_samples, num_connected_units)):
+            scaled_units list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the connected units.
-            weights (tensor, (num_connected_units, num_units)):
+            weights list[tensor, (num_connected_units, num_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -895,7 +898,10 @@ class BernoulliLayer(Layer):
             None
 
         """
-        self.ext_params['field'] = be.dot(scaled_units, weights)
+        self.ext_params['field'] = be.dot(scaled_units[0], weights[0])
+        for i in range(1, len(weights)):
+            self.ext_params['field'] += be.dot(scaled_units[i], weights[i])
+
         if beta is not None:
             self.ext_params['field'] *= be.broadcast(
                                         beta,
@@ -1127,7 +1133,6 @@ class ExponentialLayer(Layer):
         """
         pass
 
-    #TODO: scaled_units: list[tensor], weights: list[tensor]
     def update(self, scaled_units, weights, beta=None):
         """
         Update the extrinsic parameters of the layer.
@@ -1136,9 +1141,9 @@ class ExponentialLayer(Layer):
             Modfies layer.ext_params in place.
 
         Args:
-            scaled_units (tensor (num_samples, num_connected_units)):
+            scaled_units list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the connected units.
-            weights (tensor, (num_connected_units, num_units)):
+            weights list[tensor, (num_connected_units, num_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -1147,7 +1152,10 @@ class ExponentialLayer(Layer):
             None
 
         """
-        self.ext_params['rate'] = -be.dot(scaled_units, weights)
+        self.ext_params['rate'] = -be.dot(scaled_units[0], weights[0])
+        for i in range(1, len(weights)):
+            self.ext_params['rate'] -= be.dot(scaled_units[i], weights[i])
+
         if beta is not None:
             self.ext_params['rate'] *= be.broadcast(
                                         beta,

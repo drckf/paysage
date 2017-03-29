@@ -165,11 +165,19 @@ class Model(object):
 
         """
         i = 0
-        self.layers[i+1].update(self.layers[i].rescale(vis),
-                                self.weights[i].W(), beta)
+
+        self.layers[i+1].update(
+        [self.layers[i].rescale(vis)],
+        [self.weights[i].W()],
+        beta)
+
         hid = self.layers[i+1].sample_state()
-        self.layers[i].update(self.layers[i+1].rescale(hid),
-                              self.weights[i].W_T(), beta)
+
+        self.layers[i].update(
+        [self.layers[i+1].rescale(hid)],
+        [self.weights[i].W_T()],
+        beta)
+
         return self.layers[i].sample_state()
 
     def markov_chain(self, vis, n, beta=None):
@@ -205,11 +213,19 @@ class Model(object):
 
         """
         i = 0
-        self.layers[i+1].update(self.layers[i].rescale(vis),
-                                self.weights[i].W(), beta)
+
+        self.layers[i+1].update(
+        [self.layers[i].rescale(vis)],
+        [self.weights[i].W()],
+        beta)
+
         hid = self.layers[i+1].mean()
-        self.layers[i].update(self.layers[i+1].rescale(hid),
-                              self.weights[i].W_T(), beta)
+
+        self.layers[i].update(
+        [self.layers[i+1].rescale(hid)],
+        [self.weights[i].W_T()],
+        beta)
+
         return self.layers[i].mean()
 
     def mean_field_iteration(self, vis, n, beta=None):
@@ -245,11 +261,19 @@ class Model(object):
 
         """
         i = 0
-        self.layers[i+1].update(self.layers[i].rescale(vis),
-                                  self.weights[i].W(), beta)
+
+        self.layers[i+1].update(
+        [self.layers[i].rescale(vis)],
+        [self.weights[i].W()],
+        beta)
+
         hid = self.layers[i+1].mode()
-        self.layers[i].update(self.layers[i+1].rescale(hid),
-                              self.weights[i].W_T(), beta)
+
+        self.layers[i].update(
+        [self.layers[i+1].rescale(hid)],
+        [self.weights[i].W_T()],
+        beta)
+
         return self.layers[i].mode()
 
     def deterministic_iteration(self, vis, n, beta=None):
@@ -320,7 +344,10 @@ class Model(object):
         vdata_scaled = self.layers[i].rescale(vdata)
 
         # 2. Update the hidden layer
-        self.layers[i+1].update(vdata_scaled, self.weights[0].W())
+        self.layers[i+1].update(
+        [vdata_scaled],
+        [self.weights[0].W()]
+        )
 
         # 3. Compute the mean of the hidden layer
         hid = self.layers[i+1].mean()
@@ -343,7 +370,10 @@ class Model(object):
         vmodel_scaled = self.layers[i].rescale(vmodel)
 
         # 2. Update the hidden layer
-        self.layers[i+1].update(vmodel_scaled, self.weights[0].W())
+        self.layers[i+1].update(
+        [vmodel_scaled],
+        [self.weights[0].W()]
+        )
 
         # 3. Compute the mean of the hidden layer
         hid = self.layers[i+1].mean()
