@@ -540,7 +540,7 @@ class GaussianLayer(Layer):
             None
 
         Returns:
-            tensor (num_units,): The mode of the distribution
+            tensor (num_samples, num_units): The mode of the distribution
 
         """
         return self.ext_params['mean']
@@ -555,7 +555,7 @@ class GaussianLayer(Layer):
             None
 
         Returns:
-            tensor (num_units,): The mean of the distribution.
+            tensor (num_samples, num_units): The mean of the distribution.
 
         """
         return self.ext_params['mean']
@@ -600,8 +600,18 @@ class GaussianLayer(Layer):
 
 
 class IsingLayer(Layer):
-
+    """Layer with Ising units (i.e., -1 or +1)."""
     def __init__(self, num_units):
+        """
+        Create a layer with Ising units.
+
+        Args:
+            num_units (int): the size of the layer
+
+        Returns:
+            ising layer
+
+        """
         super().__init__()
 
         self.len = num_units
@@ -633,10 +643,26 @@ class IsingLayer(Layer):
         return layer
 
     def energy(self, data):
+        """
+        Compute the energy of the Ising layer.
+
+        For sample k,
+        E_k = -\sum_i loc_i * v_i
+
+        Args:
+            vis (tensor (num_samples, num_units)): values of units
+
+        Returns:
+            tensor (num_samples,): energy per sample
+
+        """
         return -be.dot(data, self.int_params['loc'])
 
     def log_partition_function(self, phi):
         """
+        Compute the logarithm of the partition function of the layer
+        with external field phi.
+
         Let a_i be the intrinsic loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
@@ -645,11 +671,31 @@ class IsingLayer(Layer):
 
         log(Z_i) = logcosh(a_i + phi_i)
 
+        Args:
+            phi (tensor (num_samples, num_units)): external field
+
+        Returns:
+            logZ (tensor, num_samples, num_units)): log partition function
+
         """
         logZ = be.broadcast(self.int_params['loc'], phi) + phi
         return be.logcosh(logZ)
 
     def online_param_update(self, data):
+        """
+        Update the intrinsic parameters using an observed batch of data.
+        Used for initializing the layer parameters.
+
+        Notes:
+            Modifies layer.sample_size and layer.int_params in place.
+
+        Args:
+            data (tensor (num_samples, num_units)): observed values for units
+
+        Returns:
+            None
+
+        """
         n = len(data)
         new_sample_size = n + self.sample_size
         # update the first moment
@@ -662,9 +708,41 @@ class IsingLayer(Layer):
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
+        """
+        Apply shrinkage to the intrinsic parameters of the layer.
+        Does nothing for the Ising layer.
+
+        Notes:
+            Modifies layer.int_params['loc_var'] in place.
+
+        Args:
+            shrinkage (float \in [0,1]): the amount of shrinkage to apply
+
+        Returns:
+            None
+
+        """
         pass
 
     def update(self, scaled_units, weights, beta=None):
+        """
+        Update the extrinsic parameters of the layer.
+
+        Notes:
+            Modfies layer.ext_params in place.
+
+        Args:
+            scaled_units (tensor (num_samples, num_connected_units)):
+                The rescaled values of the connected units.
+            weights (tensor, (num_connected_units, num_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            None
+
+        """
         self.ext_params['field'] = be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['field'] *= be.broadcast(
@@ -677,6 +755,23 @@ class IsingLayer(Layer):
                                     )
 
     def derivatives(self, vis, hid, weights, beta=None):
+        """
+        Compute the derivatives of the intrinsic layer parameters.
+
+        Args:
+            vis (tensor (num_samples, num_units)):
+                The values of the visible units.
+            hid (tensor (num_samples, num_connected_units)):
+                The rescaled values of the hidden units.
+            weights (tensor, (num_units, num_connected_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            grad (dict): {param_name: tensor (contains gradient)}
+
+        """
         derivs = {
         'loc': be.zeros(self.len)
         }
@@ -687,20 +782,82 @@ class IsingLayer(Layer):
         return derivs
 
     def rescale(self, observations):
+        """
+        Rescale is equivalent to the identity function for the Ising layer.
+
+        Args:
+            observations (tensor (num_samples, num_units)):
+                Values of the observed units.
+
+        Returns:
+            tensor: observations
+
+        """
         return observations
 
     def mode(self):
+        """
+        Compute the mode of the distribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): The mode of the distribution
+
+        """
         return 2 * be.float_tensor(self.ext_params['field'] > 0) - 1
 
     def mean(self):
+        """
+        Compute the mean of the distribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): The mean of the distribution.
+
+        """
         return be.tanh(self.ext_params['field'])
 
     def sample_state(self):
+        """
+        Draw a random sample from the disribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): Sampled units.
+
+        """
         p = be.expit(self.ext_params['field'])
         r = self.rand(be.shape(p))
         return 2 * be.float_tensor(r < p) - 1
 
     def random(self, array_or_shape):
+        """
+        Generate a random sample with the same type as the layer.
+        For an Ising layer, draws -1 or +1 with equal probablity.
+
+        Used for generating initial configurations for Monte Carlo runs.
+
+        Args:
+            array_or_shape (array or shape tuple):
+                If tuple, then this is taken to be the shape.
+                If array, then it's shape is used.
+
+        Returns:
+            tensor: Random sample with desired shape.
+
+        """
         try:
             r = self.rand(be.shape(array_or_shape))
         except AttributeError:
@@ -709,8 +866,18 @@ class IsingLayer(Layer):
 
 
 class BernoulliLayer(Layer):
-
+    """Layer with Bernoulli units (i.e., 0 or +1)."""
     def __init__(self, num_units):
+        """
+        Create a layer with Bernoulli units.
+
+        Args:
+            num_units (int): the size of the layer
+
+        Returns:
+            bernoulli layer
+
+        """
         super().__init__()
 
         self.len = num_units
@@ -742,10 +909,26 @@ class BernoulliLayer(Layer):
         return layer
 
     def energy(self, data):
+        """
+        Compute the energy of the Bernoulli layer.
+
+        For sample k,
+        E_k = -\sum_i loc_i * v_i
+
+        Args:
+            vis (tensor (num_samples, num_units)): values of units
+
+        Returns:
+            tensor (num_samples,): energy per sample
+
+        """
         return -be.dot(data, self.int_params['loc'])
 
     def log_partition_function(self, phi):
         """
+        Compute the logarithm of the partition function of the layer
+        with external field phi.
+
         Let a_i be the intrinsic loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
@@ -754,11 +937,31 @@ class BernoulliLayer(Layer):
 
         log(Z_i) = softplus(a_i + phi_i)
 
+        Args:
+            phi (tensor (num_samples, num_units)): external field
+
+        Returns:
+            logZ (tensor, num_samples, num_units)): log partition function
+
         """
         logZ = be.broadcast(self.int_params['loc'], phi) + phi
         return be.softplus(logZ)
 
     def online_param_update(self, data):
+        """
+        Update the intrinsic parameters using an observed batch of data.
+        Used for initializing the layer parameters.
+
+        Notes:
+            Modifies layer.sample_size and layer.int_params in place.
+
+        Args:
+            data (tensor (num_samples, num_units)): observed values for units
+
+        Returns:
+            None
+
+        """
         n = len(data)
         new_sample_size = n + self.sample_size
         # update the first moment
@@ -771,9 +974,41 @@ class BernoulliLayer(Layer):
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
+        """
+        Apply shrinkage to the intrinsic parameters of the layer.
+        Does nothing for the Bernoulli layer.
+
+        Notes:
+            Modifies layer.int_params['loc_var'] in place.
+
+        Args:
+            shrinkage (float \in [0,1]): the amount of shrinkage to apply
+
+        Returns:
+            None
+
+        """
         pass
 
     def update(self, scaled_units, weights, beta=None):
+        """
+        Update the extrinsic parameters of the layer.
+
+        Notes:
+            Modfies layer.ext_params in place.
+
+        Args:
+            scaled_units (tensor (num_samples, num_connected_units)):
+                The rescaled values of the connected units.
+            weights (tensor, (num_connected_units, num_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            None
+
+        """
         self.ext_params['field'] = be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['field'] *= be.broadcast(
@@ -786,6 +1021,23 @@ class BernoulliLayer(Layer):
                                     )
 
     def derivatives(self, vis, hid, weights, beta=None):
+        """
+        Compute the derivatives of the intrinsic layer parameters.
+
+        Args:
+            vis (tensor (num_samples, num_units)):
+                The values of the visible units.
+            hid (tensor (num_samples, num_connected_units)):
+                The rescaled values of the hidden units.
+            weights (tensor, (num_units, num_connected_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            grad (dict): {param_name: tensor (contains gradient)}
+
+        """
         derivs = {
         'loc': be.zeros(self.len)
         }
@@ -796,20 +1048,82 @@ class BernoulliLayer(Layer):
         return derivs
 
     def rescale(self, observations):
+        """
+        Rescale is equivalent to the identity function for the Bernoulli layer.
+
+        Args:
+            observations (tensor (num_samples, num_units)):
+                Values of the observed units.
+
+        Returns:
+            tensor: observations
+
+        """
         return observations
 
     def mode(self):
+        """
+        Compute the mode of the distribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): The mode of the distribution
+
+        """
         return be.float_tensor(self.ext_params['field'] > 0.0)
 
     def mean(self):
+        """
+        Compute the mean of the distribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): The mean of the distribution.
+
+        """
         return be.expit(self.ext_params['field'])
 
     def sample_state(self):
+        """
+        Draw a random sample from the disribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): Sampled units.
+
+        """
         p = be.expit(self.ext_params['field'])
         r = self.rand(be.shape(p))
         return be.float_tensor(r < p)
 
     def random(self, array_or_shape):
+        """
+        Generate a random sample with the same type as the layer.
+        For a Bernoulli layer, draws 0 or 1 with equal probability.
+
+        Used for generating initial configurations for Monte Carlo runs.
+
+        Args:
+            array_or_shape (array or shape tuple):
+                If tuple, then this is taken to be the shape.
+                If array, then it's shape is used.
+
+        Returns:
+            tensor: Random sample with desired shape.
+
+        """
         try:
             r = self.rand(be.shape(array_or_shape))
         except AttributeError:
@@ -818,8 +1132,18 @@ class BernoulliLayer(Layer):
 
 
 class ExponentialLayer(Layer):
-
+    """Layer with Exponential units (non-negative)."""
     def __init__(self, num_units):
+        """
+        Create a layer with Exponential units.
+
+        Args:
+            num_units (int): the size of the layer
+
+        Returns:
+            exponential layer
+
+        """
         super().__init__()
 
         self.len = num_units
@@ -851,10 +1175,26 @@ class ExponentialLayer(Layer):
         return layer
 
     def energy(self, data):
+        """
+        Compute the energy of the Exponential layer.
+
+        For sample k,
+        E_k = \sum_i loc_i * v_i
+
+        Args:
+            vis (tensor (num_samples, num_units)): values of units
+
+        Returns:
+            tensor (num_samples,): energy per sample
+
+        """
         return be.dot(data, self.int_params['loc'])
 
     def log_partition_function(self, phi):
         """
+        Compute the logarithm of the partition function of the layer
+        with external field phi.
+
         Let a_i be the intrinsic loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
@@ -863,11 +1203,31 @@ class ExponentialLayer(Layer):
 
         log(Z_i) = -log(a_i - phi_i)
 
+        Args:
+            phi (tensor (num_samples, num_units)): external field
+
+        Returns:
+            logZ (tensor, num_samples, num_units)): log partition function
+
         """
         logZ = be.broadcast(self.int_params['loc'], phi) - phi
         return -be.log(logZ)
 
     def online_param_update(self, data):
+        """
+        Update the intrinsic parameters using an observed batch of data.
+        Used for initializing the layer parameters.
+
+        Notes:
+            Modifies layer.sample_size and layer.int_params in place.
+
+        Args:
+            data (tensor (num_samples, num_units)): observed values for units
+
+        Returns:
+            None
+
+        """
         n = len(data)
         new_sample_size = n + self.sample_size
         # update the first moment
@@ -880,9 +1240,41 @@ class ExponentialLayer(Layer):
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
+        """
+        Apply shrinkage to the intrinsic parameters of the layer.
+        Does nothing for the Exponential layer.
+
+        Notes:
+            Modifies layer.int_params['loc_var'] in place.
+
+        Args:
+            shrinkage (float \in [0,1]): the amount of shrinkage to apply
+
+        Returns:
+            None
+
+        """
         pass
 
     def update(self, scaled_units, weights, beta=None):
+        """
+        Update the extrinsic parameters of the layer.
+
+        Notes:
+            Modfies layer.ext_params in place.
+
+        Args:
+            scaled_units (tensor (num_samples, num_connected_units)):
+                The rescaled values of the connected units.
+            weights (tensor, (num_connected_units, num_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            None
+
+        """
         self.ext_params['rate'] = -be.dot(scaled_units, weights)
         if beta is not None:
             self.ext_params['rate'] *= be.broadcast(
@@ -895,6 +1287,23 @@ class ExponentialLayer(Layer):
                                     )
 
     def derivatives(self, vis, hid, weights, beta=None):
+        """
+        Compute the derivatives of the intrinsic layer parameters.
+
+        Args:
+            vis (tensor (num_samples, num_units)):
+                The values of the visible units.
+            hid (tensor (num_samples, num_connected_units)):
+                The rescaled values of the hidden units.
+            weights (tensor, (num_units, num_connected_units)):
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            grad (dict): {param_name: tensor (contains gradient)}
+
+        """
         derivs = {
         'loc': be.zeros(self.len)
         }
@@ -905,19 +1314,80 @@ class ExponentialLayer(Layer):
         return derivs
 
     def rescale(self, observations):
+        """
+        Rescale is equivalent to the identity function for the Exponential layer.
+
+        Args:
+            observations (tensor (num_samples, num_units)):
+                Values of the observed units.
+
+        Returns:
+            tensor: observations
+
+        """
         return observations
 
     def mode(self):
+        """
+        The mode of the Exponential distribution is undefined.
+
+        Args:
+            None
+
+        Raises:
+            NotImplementedError
+
+        """
         raise NotImplementedError("Exponential distribution has no mode.")
 
     def mean(self):
+        """
+        Compute the mean of the distribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): The mean of the distribution.
+
+        """
         return be.reciprocal(self.ext_params['rate'])
 
     def sample_state(self):
+        """
+        Draw a random sample from the disribution.
+
+        Determined from the extrinsic parameters (layer.ext_params).
+
+        Args:
+            None
+
+        Returns:
+            tensor (num_samples, num_units): Sampled units.
+
+        """
         r = self.rand(be.shape(self.ext_params['rate']))
         return -be.log(r) / self.ext_params['rate']
 
     def random(self, array_or_shape):
+        """
+        Generate a random sample with the same type as the layer.
+        For an Exponential layer, draws from the exponential distribution
+        with mean 1 (i.e., Expo(1)).
+
+        Used for generating initial configurations for Monte Carlo runs.
+
+        Args:
+            array_or_shape (array or shape tuple):
+                If tuple, then this is taken to be the shape.
+                If array, then it's shape is used.
+
+        Returns:
+            tensor: Random sample with desired shape.
+
+        """
         try:
             r = self.rand(be.shape(array_or_shape))
         except AttributeError:
