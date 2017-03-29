@@ -387,7 +387,6 @@ class GaussianLayer(Layer):
                                       self.ext_params['mean']
                                       )
 
-    #TODO: hid: list[tensor], weights: list[tensor]
     def derivatives(self, vis, hid, weights, beta=None):
         """
         Compute the derivatives of the intrinsic layer parameters.
@@ -395,9 +394,9 @@ class GaussianLayer(Layer):
         Args:
             vis (tensor (num_samples, num_units)):
                 The values of the visible units.
-            hid (tensor (num_samples, num_connected_units)):
+            hid list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the hidden units.
-            weights (tensor, (num_units, num_connected_units)):
+            weights list[tensor, (num_units, num_connected_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -418,12 +417,13 @@ class GaussianLayer(Layer):
         vis - be.broadcast(self.int_params['loc'], vis)
         )
         derivs['log_var'] = -0.5 * be.mean(diff, axis=0)
-        derivs['log_var'] += be.batch_dot(
-                             hid,
-                             be.transpose(weights),
-                             vis,
-                             axis=0
-                             ) / len(vis)
+        for i in range(len(hid)):
+            derivs['log_var'] += be.batch_dot(
+                                 hid[i],
+                                 be.transpose(weights[i]),
+                                 vis,
+                                 axis=0
+                                 ) / len(vis)
         derivs['log_var'] = self.rescale(derivs['log_var'])
 
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
@@ -658,7 +658,6 @@ class IsingLayer(Layer):
                                     self.ext_params['field']
                                     )
 
-    #TODO: hid: list[tensor], weights: list[tensor]
     def derivatives(self, vis, hid, weights, beta=None):
         """
         Compute the derivatives of the intrinsic layer parameters.
@@ -666,9 +665,9 @@ class IsingLayer(Layer):
         Args:
             vis (tensor (num_samples, num_units)):
                 The values of the visible units.
-            hid (tensor (num_samples, num_connected_units)):
+            hid list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the hidden units.
-            weights (tensor, (num_units, num_connected_units)):
+            weights list[tensor, (num_units, num_connected_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -912,7 +911,6 @@ class BernoulliLayer(Layer):
                                     self.ext_params['field']
                                     )
 
-    #TODO: hid: list[tensor], weights: list[tensor]
     def derivatives(self, vis, hid, weights, beta=None):
         """
         Compute the derivatives of the intrinsic layer parameters.
@@ -920,9 +918,9 @@ class BernoulliLayer(Layer):
         Args:
             vis (tensor (num_samples, num_units)):
                 The values of the visible units.
-            hid (tensor (num_samples, num_connected_units)):
+            hid list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the hidden units.
-            weights (tensor, (num_units, num_connected_units)):
+            weights list[tensor, (num_units, num_connected_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -1166,7 +1164,6 @@ class ExponentialLayer(Layer):
                                     self.ext_params['rate']
                                     )
 
-    #TODO: hid: list[tensor], weights: list[tensor]
     def derivatives(self, vis, hid, weights, beta=None):
         """
         Compute the derivatives of the intrinsic layer parameters.
@@ -1174,9 +1171,9 @@ class ExponentialLayer(Layer):
         Args:
             vis (tensor (num_samples, num_units)):
                 The values of the visible units.
-            hid (tensor (num_samples, num_connected_units)):
+            hid list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the hidden units.
-            weights (tensor, (num_units, num_connected_units)):
+            weights list[tensor, (num_units, num_connected_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.

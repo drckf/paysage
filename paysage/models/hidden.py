@@ -356,10 +356,15 @@ class Model(object):
         hid_scaled = self.layers[i+1].rescale(hid)
 
         # 5. Compute the gradients
-        grad['layers'][i] = self.layers[i].derivatives(vdata, hid_scaled,
-                                               self.weights[0].W())
-        grad['layers'][i+1] = self.layers[i+1].derivatives(hid, vdata_scaled,
-                                               self.weights[0].W_T())
+        grad['layers'][i] = self.layers[i].derivatives(vdata,
+                                           [hid_scaled],
+                                           [self.weights[0].W()]
+                                           )
+
+        grad['layers'][i+1] = self.layers[i+1].derivatives(hid,
+                                               [vdata_scaled],
+                                               [self.weights[0].W_T()]
+                                               )
 
         grad['weights'][i] = self.weights[i].derivatives(vdata_scaled,
                                                          hid_scaled)
@@ -385,13 +390,16 @@ class Model(object):
         be.subtract_dicts_inplace(grad['layers'][i],
                                   self.layers[i].derivatives(
                                                  vmodel,
-                                                 hid_scaled,
-                                                 self.weights[0].W()))
+                                                 [hid_scaled],
+                                                 [self.weights[0].W()]
+                                                 ))
+
         be.subtract_dicts_inplace(grad['layers'][i+1],
                                   self.layers[i+1].derivatives(
                                                    hid,
-                                                   vmodel_scaled,
-                                                   self.weights[0].W_T()))
+                                                   [vmodel_scaled],
+                                                   [self.weights[0].W_T()]
+                                                   ))
 
         be.subtract_dicts_inplace(grad['weights'][i],
                                   self.weights[i].derivatives(
