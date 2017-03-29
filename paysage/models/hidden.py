@@ -405,7 +405,7 @@ class Model(object):
         energy -= be.tsum(log_Z_hidden, axis=1)
         return energy
 
-    def write_to_store(self, store):
+    def save(self, store):
         """
         Save a model to an open HDFStore.
 
