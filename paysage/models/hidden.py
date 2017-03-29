@@ -23,21 +23,21 @@ class State(object):
     ]
 
     """
-    def __init__(self, batch_size, layers):
+    def __init__(self, batch_size, model):
         """
         Create a randomly initialized State object.
 
         Args:
             vis (tensor (num_samples, num_visible)): observed visible units
-            layers (list): list of layers objects
+            model (Model): a model object
 
         Returns:
             state object
 
         """
-        self.shapes = [(batch_size, l.len) for l in layers]
+        self.shapes = [(batch_size, l.len) for l in model.layers]
         self.units = [layers[i].random(self.shapes[i])
-                      for i in range(len(layers))]
+                      for i in range(model.num_layers)]
 
     def set_layer(self, values, i):
         """
@@ -56,20 +56,20 @@ class State(object):
         self.units[i] = values
 
     @classmethod
-    def from_visible(cls, vis, layers):
+    def from_visible(cls, vis, model):
         """
         Create a state object with given visible unit values.
 
         Args:
             vis (tensor (num_samples, num_visible))
-            layers (list): list of layers objects
+            model (Model): a model object
 
         Returns:
             state object
 
         """
         batch_size = be.shape(vis)[0]
-        state = cls(batch_size, layers)
+        state = cls(batch_size, model)
         state.set_visible(vis, 0)
         return state
 

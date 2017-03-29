@@ -3,6 +3,8 @@ from collections import OrderedDict
 from . import backends as be
 from . import metrics as M
 
+#TODO: should import the State class from hidden.py
+
 # -----  CLASSES ----- #
 
 class Sampler(object):
