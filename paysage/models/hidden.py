@@ -3,6 +3,76 @@ from .. import backends as be
 from ..models.initialize import init_hidden as init
 
 
+class State(object):
+    """
+    A State is a list of tensors that contains the states of the units
+    described by a model.
+
+    For a model with L hidden layers, the tensors have shapes
+
+    shapes = [
+    (num_samples, num_visible),
+    (num_samples, num_hidden_1),
+                .
+                .
+                .
+    (num_samples, num_hidden_L)
+    ]
+
+    """
+    def __init__(self, batch_size, layers):
+        """
+        Create a randomly initialized State object.
+
+        Args:
+            vis (tensor (num_samples, num_visible)): observed visible units
+            layers (list): list of layers objects
+
+        Returns:
+            state object
+
+        """
+        self.shapes = [(batch_size, l.len) for l in layers]
+        self.units = [layers[i].random(self.shapes[i])
+                      for i in range(len(layers))]
+
+    def set_visible(self, vis):
+        """
+        Set the visible units to vis.
+
+        Notes:
+            Updates layer.units[0] in place.
+
+        Args:
+            vis (tensor (num_samples, num_visible))
+
+        Returns:
+            None
+
+        """
+        self.units[0] = vis
+
+    @classmethod
+    def from_visible(cls, vis, layers):
+        """
+        Create a state object with given visible unit values.
+
+        Args:
+            vis (tensor (num_samples, num_visible))
+            layers (list): list of layers objects
+
+        Returns:
+            state object
+
+        """
+        batch_size = be.shape(vis)[0]
+        state = cls(batch_size, layers)
+        state.set_visible(vis)
+        return state
+
+
+
+
 class Model(object):
     """
     General model class.
@@ -331,10 +401,10 @@ class Model(object):
 
         """
         energy = 0
-        i = 0
-        energy += self.layers[i].energy(vis)
-        energy += self.layers[i+1].energy(vis)
-        energy += self.weights[i].energy(vis, hid)
+        for i in range(len(self.weights)):
+            energy += self.layers[i].energy(vis)
+            energy += self.layers[i+1].energy(vis)
+            energy += self.weights[i].energy(vis, hid)
         return energy
 
     def marginal_free_energy(self, vis):
