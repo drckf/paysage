@@ -393,6 +393,17 @@ class Model(object):
             new_vis = self.deterministic_step(new_vis, beta)
         return new_vis
 
+    #TODO: use State
+    # currently, gradients are computed using the mean of the hidden units
+    # conditioned on the value of the visible units
+    # this will not work for deep models, because we cannot compute
+    # the means for models with more than 1 hidden layer
+    # therefore, the gradients need to be computed from samples
+    # of all of the visible and hidden layer units (i.e., States)
+    #
+    # Args should be:
+    # data (State): observed visible units and sampled hidden units
+    # model (State): visible and hidden units sampled from the model
     def gradient(self, vdata, vmodel):
         """
         Compute the gradient of the model parameters.
@@ -524,6 +535,11 @@ class Model(object):
         for i in range(self.num_layers - 1):
             self.weights[i].parameter_step(deltas['weights'][i])
 
+    # TODO: use State
+    # Args should be:
+    # data (state): values of all the units
+    # this should be the easiest function to update
+    # also, it isn't really used anywhere right now
     def joint_energy(self, vis, hid):
         """
         Compute the joint energy of the model.
@@ -543,6 +559,10 @@ class Model(object):
             energy += self.weights[i].energy(vis, hid)
         return energy
 
+    # TODO: not sure what to do about this function for deep models
+    # i think it should be implemented only for models with 1 hidden layer
+    # could still take in a State object
+    # but should assert self.num_layers == 2
     def marginal_free_energy(self, vis):
         """
         Compute the marginal free energy of the model.
