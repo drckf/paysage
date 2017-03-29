@@ -1,5 +1,9 @@
-from . import backends as be
+import sys
+from collections import OrderedDict
 
+from . import penalties
+from . import constraints
+from . import backends as be
 
 class Layer(object):
     """A general layer class with common functionality."""
@@ -16,8 +20,67 @@ class Layer(object):
 
         """
         self.int_params = {}
-        self.penalties = {}
-        self.constraints = {}
+        self.ext_params = {}
+        self.penalties = OrderedDict()
+        self.constraints = OrderedDict()
+
+    def get_base_config(self):
+        """
+        Get a base configuration for the layer.
+
+        Notes:
+            Encodes metadata for the layer.
+            Includes the base layer data.
+
+        Args:
+            None
+
+        Returns:
+            A dictionary configuration for the layer.
+
+        """
+        return {
+        "layer_type": self.__class__.__name__,
+        "intrinsic": list(self.int_params.keys()),
+        "extrinsic": list(self.ext_params.keys()),
+        "penalties": {pk: self.penalties[pk].__class__.__name__
+                        for pk in self.penalties},
+        "constraints": {ck: self.constraints[ck].__name__
+                        for ck in self.constraints}
+        }
+
+    def get_config(self):
+        """
+        Get a full configuration for the layer.
+
+        Notes:
+            Encodes metadata on the layer.
+            Weights are separately retrieved.
+            Builds the base configuration.
+
+        Args:
+            None
+
+        Returns:
+            A dictionary configuration for the layer.
+
+        """
+        return self.get_base_config()
+
+    @staticmethod
+    def from_config(config):
+        """
+        Construct the layer from the base configuration.
+
+        Args:
+            A dictionary configuration of the layer metadata.
+
+        Returns:
+            An object which is a subclass of `Layer`.
+
+        """
+        layer_obj = getattr(sys.modules[__name__], config["layer_type"])
+        return layer_obj.from_config(config)
 
     def add_constraint(self, constraint):
         """
@@ -33,7 +96,7 @@ class Layer(object):
             None
 
         """
-        self.constraint.update(constraint)
+        self.constraints.update(constraint)
 
     def enforce_constraints(self):
         """
@@ -50,7 +113,7 @@ class Layer(object):
 
         """
         for param_name in self.constraints:
-            self.constraint[param_name](self.int_params[param_name])
+            self.constraints[param_name](self.int_params[param_name])
 
     def add_penalty(self, penalty):
         """
@@ -149,6 +212,40 @@ class Weights(Layer):
         self.int_params = {
         'matrix': 0.01 * be.randn(shape)
         }
+
+    def get_config(self):
+        """
+        Get the configuration dictionary of the weights layer.
+
+        Args:
+            None:
+
+        Returns:
+            configuratiom (dict):
+
+        """
+        base_config = self.get_base_config()
+        base_config["shape"] = self.shape
+        return base_config
+
+    @classmethod
+    def from_config(cls, config):
+        """
+        Create a weights layer form a configuration dictionary.
+
+        Args:
+            config (dict)
+
+        Returns:
+            layer (Weights)
+
+        """
+        layer = cls(config["shape"])
+        for k, v in config["penalties"]:
+            layer.add_penalty({k: getattr(penalties, v)})
+        for k, v in config["constraints"]:
+            layer.add_constraint({k: getattr(constraints, v)})
+        return layer
 
     def W(self):
         """
@@ -249,6 +346,42 @@ class GaussianLayer(Layer):
         'mean': None,
         'variance': None
         }
+
+    def get_config(self):
+        """
+        Get the configuration dictionary of the Gaussian layer.
+
+        Args:
+            None:
+
+        Returns:
+            configuratiom (dict):
+
+        """
+        base_config = self.get_base_config()
+        base_config["num_units"] = self.len
+        base_config["sample_size"] = self.sample_size
+        return base_config
+
+    @classmethod
+    def from_config(cls, config):
+        """
+        Create a Gaussian layer form a configuration dictionary.
+
+        Args:
+            config (dict)
+
+        Returns:
+            layer (Gaussian)
+
+        """
+        layer = cls(config["num_units"])
+        layer.sample_size = config["sample_size"]
+        for k, v in config["penalties"]:
+            layer.add_penalty({k: getattr(penalties, v)})
+        for k, v in config["constraints"]:
+            layer.add_constraint({k: getattr(constraints, v)})
+        return layer
 
     def energy(self, vis):
         """
@@ -543,6 +676,42 @@ class IsingLayer(Layer):
         'field': None
         }
 
+    def get_config(self):
+        """
+        Get the configuration dictionary of the Ising layer.
+
+        Args:
+            None:
+
+        Returns:
+            configuratiom (dict):
+
+        """
+        base_config = self.get_base_config()
+        base_config["num_units"] = self.len
+        base_config["sample_size"] = self.sample_size
+        return base_config
+
+    @classmethod
+    def from_config(cls, config):
+        """
+        Create an Ising layer form a configuration dictionary.
+
+        Args:
+            config (dict)
+
+        Returns:
+            layer (Ising)
+
+        """
+        layer = cls(config["num_units"])
+        layer.sample_size = config["sample_size"]
+        for k, v in config["penalties"]:
+            layer.add_penalty({k: getattr(penalties, v)})
+        for k, v in config["constraints"]:
+            layer.add_constraint({k: getattr(constraints, v)})
+        return layer
+
     def energy(self, data):
         """
         Compute the energy of the Ising layer.
@@ -796,6 +965,42 @@ class BernoulliLayer(Layer):
         'field': None
         }
 
+    def get_config(self):
+        """
+        Get the configuration dictionary of the Bernoulli layer.
+
+        Args:
+            None:
+
+        Returns:
+            configuratiom (dict):
+
+        """
+        base_config = self.get_base_config()
+        base_config["num_units"] = self.len
+        base_config["sample_size"] = self.sample_size
+        return base_config
+
+    @classmethod
+    def from_config(cls, config):
+        """
+        Create a Bernoulli layer form a configuration dictionary.
+
+        Args:
+            config (dict)
+
+        Returns:
+            layer (Bernoulli)
+
+        """
+        layer = cls(config["num_units"])
+        layer.sample_size = config["sample_size"]
+        for k, v in config["penalties"]:
+            layer.add_penalty({k: getattr(penalties, v)})
+        for k, v in config["constraints"]:
+            layer.add_constraint({k: getattr(constraints, v)})
+        return layer
+
     def energy(self, data):
         """
         Compute the energy of the Bernoulli layer.
@@ -1048,6 +1253,42 @@ class ExponentialLayer(Layer):
         self.ext_params = {
         'rate': None
         }
+
+    def get_config(self):
+        """
+        Get the configuration dictionary of the Exponential layer.
+
+        Args:
+            None:
+
+        Returns:
+            configuratiom (dict):
+
+        """
+        base_config = self.get_base_config()
+        base_config["num_units"] = self.len
+        base_config["sample_size"] = self.sample_size
+        return base_config
+
+    @classmethod
+    def from_config(cls, config):
+        """
+        Create an Exponential layer form a configuration dictionary.
+
+        Args:
+            config (dict)
+
+        Returns:
+            layer (Weights)
+
+        """
+        layer = cls(config["num_units"])
+        layer.sample_size = config["sample_size"]
+        for k, v in config["penalties"]:
+            layer.add_penalty({k: getattr(penalties, v)})
+        for k, v in config["constraints"]:
+            layer.add_constraint({k: getattr(constraints, v)})
+        return layer
 
     def energy(self, data):
         """
