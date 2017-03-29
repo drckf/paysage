@@ -16,6 +16,7 @@ class ReconstructionError(object):
         self.mean_square_error = 0
         self.norm = 0
 
+    #TODO: use State objects instead of tensors
     def update(self, minibatch=None, reconstructions=None, **kwargs):
         self.norm += len(minibatch)
         self.mean_square_error += be.tsum((minibatch - reconstructions)**2)
@@ -40,11 +41,11 @@ class EnergyDistance(object):
         self.energy_distance = 0
         self.norm = 0
 
+    #TODO: use State objects instead of tensors
     def update(self, minibatch=None, samples=None, **kwargs):
         self.norm += 1
         self.energy_distance += be.fast_energy_distance(minibatch, samples,
                                                      self.downsample)
-
     def value(self):
         if self.norm:
             return self.energy_distance / self.norm
@@ -64,6 +65,7 @@ class EnergyGap(object):
         self.energy_gap = 0
         self.norm = 0
 
+    #TODO: use State objects instead of tensors
     def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs):
         self.norm += 1
         self.energy_gap += be.mean(amodel.marginal_free_energy(minibatch))
@@ -90,6 +92,7 @@ class EnergyZscore(object):
         self.random_mean = 0
         self.random_mean_square = 0
 
+    #TODO: use State objects instead of tensors
     def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs):
         self.data_mean += be.mean(amodel.marginal_free_energy(minibatch))
         self.random_mean +=  be.mean(amodel.marginal_free_energy(random_samples))

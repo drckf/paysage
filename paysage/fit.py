@@ -304,6 +304,9 @@ class ProgressMonitor(object):
 
                 #TODO: use State
                 # should use hidden.State objects
+                # note that we will need two states
+                # one for the positive phase (with visible units as observed)
+                # one for the fantasy particles (with visible units sampled from the model)
 
                 # compute the reconstructions
                 sampler.set_state(v_data)
