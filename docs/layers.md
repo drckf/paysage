@@ -47,7 +47,7 @@ def derivatives(self, vis, hid, weights, beta=None)
 
 
 
-Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid (tensor (num_samples, num_connected_units)):<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights (tensor, (num_units, num_connected_units)):<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (dict): {param_name: tensor (contains gradient)}
+Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor, (num_units, num_connected_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (dict): {param_name: tensor (contains gradient)}
 
 
 ### energy
@@ -72,6 +72,30 @@ def enforce_constraints(self)
 
 
 Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+
+
+### get\_base\_config
+```py
+
+def get_base_config(self)
+
+```
+
+
+
+Get a base configuration for the layer.<br /><br />Notes:<br /> ~ Encodes metadata for the layer.<br /> ~ Includes the base layer data.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ A dictionary configuration for the layer.
+
+
+### get\_config
+```py
+
+def get_config(self)
+
+```
+
+
+
+Get the configuration dictionary of the Exponential layer.<br /><br />Args:<br /> ~ None:<br /><br />Returns:<br /> ~ configuratiom (dict):
 
 
 ### get\_penalties
@@ -215,7 +239,7 @@ def update(self, scaled_units, weights, beta=None)
 
 
 
-Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units (tensor (num_samples, num_connected_units)):<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights (tensor, (num_connected_units, num_units)):<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
+Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
 
 
 
@@ -267,7 +291,7 @@ def derivatives(self, vis, hid, weights, beta=None)
 
 
 
-Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid (tensor (num_samples, num_connected_units)):<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights (tensor, (num_units, num_connected_units)):<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (dict): {param_name: tensor (contains gradient)}
+Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor, (num_units, num_connected_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (dict): {param_name: tensor (contains gradient)}
 
 
 ### energy
@@ -292,6 +316,30 @@ def enforce_constraints(self)
 
 
 Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+
+
+### get\_base\_config
+```py
+
+def get_base_config(self)
+
+```
+
+
+
+Get a base configuration for the layer.<br /><br />Notes:<br /> ~ Encodes metadata for the layer.<br /> ~ Includes the base layer data.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ A dictionary configuration for the layer.
+
+
+### get\_config
+```py
+
+def get_config(self)
+
+```
+
+
+
+Get the configuration dictionary of the Bernoulli layer.<br /><br />Args:<br /> ~ None:<br /><br />Returns:<br /> ~ configuratiom (dict):
 
 
 ### get\_penalties
@@ -435,7 +483,7 @@ def update(self, scaled_units, weights, beta=None)
 
 
 
-Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units (tensor (num_samples, num_connected_units)):<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights (tensor, (num_connected_units, num_units)):<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
+Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
 
 
 
@@ -487,7 +535,7 @@ def derivatives(self, vis, hid, weights, beta=None)
 
 
 
-Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid (tensor (num_samples, num_connected_units)):<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights (tensor, (num_units, num_connected_units)):<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (dict): {param_name: tensor (contains gradient)}
+Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor, (num_units, num_connected_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (dict): {param_name: tensor (contains gradient)}
 
 
 ### energy
@@ -512,6 +560,30 @@ def enforce_constraints(self)
 
 
 Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+
+
+### get\_base\_config
+```py
+
+def get_base_config(self)
+
+```
+
+
+
+Get a base configuration for the layer.<br /><br />Notes:<br /> ~ Encodes metadata for the layer.<br /> ~ Includes the base layer data.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ A dictionary configuration for the layer.
+
+
+### get\_config
+```py
+
+def get_config(self)
+
+```
+
+
+
+Get the configuration dictionary of the Gaussian layer.<br /><br />Args:<br /> ~ None:<br /><br />Returns:<br /> ~ configuratiom (dict):
 
 
 ### get\_penalties
@@ -547,7 +619,7 @@ def log_partition_function(self, phi)
 
 
 
-Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let u_i and s_i be the intrinsic loc and scale parameters of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + \phi_i x_i)<br />= exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i<br /><br />log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
+Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let u_i and s_i be the intrinsic loc and scale parameters of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + \phi_i x_i)<br />= exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i<br /><br />log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2<br /><br />Args:<br /> ~ phi tensor (num_samples, num_units): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
 
 
 ### mean
@@ -655,9 +727,13 @@ def update(self, scaled_units, weights, beta=None)
 
 
 
-Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units (tensor (num_samples, num_connected_units)):<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights (tensor, (num_connected_units, num_units)):<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
+Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
 
 
+
+
+## class OrderedDict
+Dictionary that remembers insertion order
 
 
 ## class IsingLayer
@@ -707,7 +783,7 @@ def derivatives(self, vis, hid, weights, beta=None)
 
 
 
-Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid (tensor (num_samples, num_connected_units)):<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights (tensor, (num_units, num_connected_units)):<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (dict): {param_name: tensor (contains gradient)}
+Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor, (num_units, num_connected_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (dict): {param_name: tensor (contains gradient)}
 
 
 ### energy
@@ -732,6 +808,30 @@ def enforce_constraints(self)
 
 
 Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+
+
+### get\_base\_config
+```py
+
+def get_base_config(self)
+
+```
+
+
+
+Get a base configuration for the layer.<br /><br />Notes:<br /> ~ Encodes metadata for the layer.<br /> ~ Includes the base layer data.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ A dictionary configuration for the layer.
+
+
+### get\_config
+```py
+
+def get_config(self)
+
+```
+
+
+
+Get the configuration dictionary of the Ising layer.<br /><br />Args:<br /> ~ None:<br /><br />Returns:<br /> ~ configuratiom (dict):
 
 
 ### get\_penalties
@@ -875,7 +975,7 @@ def update(self, scaled_units, weights, beta=None)
 
 
 
-Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units (tensor (num_samples, num_connected_units)):<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights (tensor, (num_connected_units, num_units)):<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
+Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
 
 
 
@@ -978,6 +1078,30 @@ def enforce_constraints(self)
 Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
+### get\_base\_config
+```py
+
+def get_base_config(self)
+
+```
+
+
+
+Get a base configuration for the layer.<br /><br />Notes:<br /> ~ Encodes metadata for the layer.<br /> ~ Includes the base layer data.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ A dictionary configuration for the layer.
+
+
+### get\_config
+```py
+
+def get_config(self)
+
+```
+
+
+
+Get the configuration dictionary of the weights layer.<br /><br />Args:<br /> ~ None:<br /><br />Returns:<br /> ~ configuratiom (dict):
+
+
 ### get\_penalties
 ```py
 
@@ -1064,6 +1188,42 @@ def enforce_constraints(self)
 
 
 Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+
+
+### from\_config
+```py
+
+def from_config(config)
+
+```
+
+
+
+Construct the layer from the base configuration.<br /><br />Args:<br /> ~ A dictionary configuration of the layer metadata.<br /><br />Returns:<br /> ~ An object which is a subclass of `Layer`.
+
+
+### get\_base\_config
+```py
+
+def get_base_config(self)
+
+```
+
+
+
+Get a base configuration for the layer.<br /><br />Notes:<br /> ~ Encodes metadata for the layer.<br /> ~ Includes the base layer data.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ A dictionary configuration for the layer.
+
+
+### get\_config
+```py
+
+def get_config(self)
+
+```
+
+
+
+Get a full configuration for the layer.<br /><br />Notes:<br /> ~ Encodes metadata on the layer.<br /> ~ Weights are separately retrieved.<br /> ~ Builds the base configuration.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ A dictionary configuration for the layer.
 
 
 ### get\_penalties

@@ -5,7 +5,7 @@ StochasticGradientDescent<br />Basic algorithm of gradient descent with minibatc
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11db36518>, tolerance=0.001)
+def __init__(self, model, stepsize=0.001, scheduler=<paysage.optimizers.PowerLawDecay object at 0x116d50a90>, tolerance=0.001)
 
 ```
 
@@ -168,7 +168,7 @@ def increment(self, epoch)
 ### \_\_init\_\_
 ```py
 
-def __init__(self, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11dbb4c88>, tolerance=0.001)
+def __init__(self, scheduler=<paysage.optimizers.PowerLawDecay object at 0x116d50a20>, tolerance=0.001)
 
 ```
 
@@ -217,7 +217,7 @@ Momentum<br />Stochastic gradient descent with momentum.<br />Qian, N. (1999).<b
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, momentum=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11db365c0>, tolerance=1e-06)
+def __init__(self, model, stepsize=0.001, momentum=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x116d50b38>, tolerance=1e-06)
 
 ```
 
@@ -251,7 +251,7 @@ RMSProp<br />Geoffrey Hinton's Coursera Course Lecture 6e
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11db36668>, tolerance=1e-06)
+def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x116d50be0>, tolerance=1e-06)
 
 ```
 
@@ -285,7 +285,7 @@ ADAM<br />Adaptive Moment Estimation algorithm.<br />Kingma, D. P., & Ba, J. L. 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11db36710>, tolerance=1e-06)
+def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, scheduler=<paysage.optimizers.PowerLawDecay object at 0x116d50c88>, tolerance=1e-06)
 
 ```
 
