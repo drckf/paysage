@@ -23,6 +23,7 @@ else:
 
 
 # ----- COMMON FUNCTIONALITY ----- #
+# I am not sure if this is the right place to put these functions
 
 from collections import namedtuple
 
