@@ -963,7 +963,7 @@ def broadcast(vec: T.FloatTensor, matrix: T.FloatTensor) -> T.FloatTensor:
         raise BroadcastError('cannot broadcast vector of dimension {} \
 onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
 
-def add(a: T.FloatingTensor, b: T.FloatTensor) -> T.FloatingTensor:
+def add(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
     """
     Add tensor a to tensor b using broadcasting.
 
@@ -981,7 +981,7 @@ def add(a: T.FloatingTensor, b: T.FloatTensor) -> T.FloatingTensor:
     else:
         return broadcast(a, b) + b
 
-def subtract(a: T.FloatingTensor, b: T.FloatTensor) -> T.FloatingTensor:
+def subtract(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
     """
     Subtract tensor a from tensor b using broadcasting.
 
@@ -999,7 +999,7 @@ def subtract(a: T.FloatingTensor, b: T.FloatTensor) -> T.FloatingTensor:
     else:
         return b - broadcast(a, b)
 
-def multiply(a: T.FloatingTensor, b: T.FloatTensor) -> T.FloatingTensor:
+def multiply(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
     """
     Multiply tensor b with tensor a using broadcasting.
 
@@ -1017,7 +1017,7 @@ def multiply(a: T.FloatingTensor, b: T.FloatTensor) -> T.FloatingTensor:
     else:
         return broadcast(a, b) * b
 
-def divide(a: T.FloatingTensor, b: T.FloatTensor) -> T.FloatingTensor:
+def divide(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
     """
     Divide tensor b by tensor a using broadcasting.
 

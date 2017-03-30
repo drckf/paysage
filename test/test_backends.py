@@ -1001,6 +1001,70 @@ def test_broadcast():
     torch_broadcast = torch_matrix.broadcast(torch_a, torch_b)
     assert_close(py_broadcast, torch_broadcast, "broadcast: (N,) x (M, N)")
 
+def test_add():
+    N = 100
+    M = 50
+
+    # (N, 1) x (N, M)
+    a_shape = (N, 1)
+    b_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_add = py_matrix.add(py_a, py_b)
+    torch_add = torch_matrix.add(torch_a, torch_b)
+    assert_close(py_add, torch_add, "add: (N, 1) x (N, M)")
+
+    # (1, N) x (M, N)
+    a_shape = (1, N)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_add = py_matrix.add(py_a, py_b)
+    torch_add = torch_matrix.add(torch_a, torch_b)
+    assert_close(py_add, torch_add, "add: (1, N) x (M, N)")
+
+    # (N,) x (M, N)
+    a_shape = (N,)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_add = py_matrix.add(py_a, py_b)
+    torch_add = torch_matrix.add(torch_a, torch_b)
+    assert_close(py_add, torch_add, "add: (N,) x (M, N)")
+
+    # (M, N) x (M, N)
+    a_shape = (M, N)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_add = py_matrix.add(py_a, py_b)
+    torch_add = torch_matrix.add(torch_a, torch_b)
+    assert_close(py_add, torch_add, "add: (M, N) x (M, N)")
+
 def test_affine():
     # vector-vector-matrix
     N = 100
