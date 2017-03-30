@@ -6,6 +6,7 @@ from paysage import layers
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
+from paysage import metrics as M
 
 import pytest
 
@@ -55,7 +56,7 @@ def test_rbm(paysage_path=None):
     perf  = fit.ProgressMonitor(0,
                                 data,
                                 metrics=[
-                                'ReconstructionError'])
+                                M.ReconstructionError()])
     untrained_performance = perf.check_progress(rbm, 0)
 
 
@@ -68,14 +69,11 @@ def test_rbm(paysage_path=None):
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')
 
-    cd = fit.PCD(rbm,
-                 data,
-                 opt,
-                 sampler,
+    cd = fit.PCD(rbm, data, opt, sampler,
                  num_epochs,
                  mcsteps=mc_steps,
                  skip=200,
-                 metrics=['ReconstructionError'])
+                 metrics=[M.ReconstructionError()])
 
 
     # fit the model

@@ -121,7 +121,7 @@ class TrainingMethod(object):
 
     def __init__(self, model, abatch, optimizer, sampler, epochs,
                  skip=100,
-                 metrics=['ReconstructionError', 'EnergyDistance']):
+                 metrics=[M.ReconstructionError(), M.EnergyDistance()]):
         self.model = model
         self.batch = abatch
         self.epochs = epochs
@@ -147,7 +147,7 @@ class ContrastiveDivergence(TrainingMethod):
     def __init__(self, model, abatch, optimizer, sampler, epochs,
                  mcsteps=1,
                  skip=100,
-                 metrics=['ReconstructionError', 'EnergyDistance']):
+                 metrics=[M.ReconstructionError(), M.EnergyDistance()]):
         super().__init__(model, abatch, optimizer, sampler, epochs,
                         skip=skip,
                         metrics=metrics)
@@ -205,7 +205,7 @@ class PersistentContrastiveDivergence(TrainingMethod):
     def __init__(self, model, abatch, optimizer, sampler, epochs,
                  mcsteps=1,
                  skip=100,
-                 metrics=['ReconstructionError', 'EnergyDistance']):
+                 metrics=[M.ReconstructionError(), M.EnergyDistance()]):
        super().__init__(model, abatch, optimizer, sampler, epochs,
                         skip=skip,
                         metrics=metrics)
@@ -250,11 +250,11 @@ class PersistentContrastiveDivergence(TrainingMethod):
 class ProgressMonitor(object):
 
     def __init__(self, skip, batch,
-                 metrics=['ReconstructionError', 'EnergyDistance']):
+                 metrics=[M.ReconstructionError(), M.EnergyDistance()]):
         self.skip = skip
         self.batch = batch
         self.update_steps = 10
-        self.metrics = [M.__getattribute__(m)() for m in metrics]
+        self.metrics = metrics
         self.memory = []
 
     def check_progress(self, model, t,
@@ -286,11 +286,11 @@ class ProgressMonitor(object):
 
                 # compile argdict
                 argdict = {
-                'minibatch': v_data,
-                'reconstructions': reconstructions,
-                'random_samples': random_samples,
-                'samples': fantasy_particles,
-                'amodel': model
+                    'minibatch': v_data,
+                    'reconstructions': reconstructions,
+                    'random_samples': random_samples,
+                    'samples': fantasy_particles,
+                    'amodel': model
                 }
 
                 # update metrics

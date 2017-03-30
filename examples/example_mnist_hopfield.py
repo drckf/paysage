@@ -4,6 +4,7 @@ from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
+from paysage import metrics as M
 
 be.set_seed(137) # for determinism
 
@@ -42,17 +43,12 @@ def example_mnist_hopfield(paysage_path = None, show_plot = False):
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')
 
-    cd = fit.PCD(rbm,
-                 data,
-                 opt,
-                 sampler,
-                 num_epochs,
-                 mcsteps=mc_steps,
-                 skip=200,
-                 metrics=['ReconstructionError',
-                          'EnergyDistance',
-                          'EnergyGap',
-                          'EnergyZscore'])
+    cd = fit.PCD(rbm, data, opt, sampler,
+                 num_epochs, mcsteps=mc_steps, skip=200,
+                 metrics=[M.ReconstructionError(),
+                          M.EnergyDistance(),
+                          M.EnergyGap(),
+                          M.EnergyZscore()])
 
     # fit the model
     print('training with contrastive divergence')
@@ -61,7 +57,8 @@ def example_mnist_hopfield(paysage_path = None, show_plot = False):
     # evaluate the model
     # this will be the same as the final epoch results
     # it is repeated here to be consistent with the sklearn rbm example
-    metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore']
+    metrics = [M.ReconstructionError(), M.EnergyDistance(),
+               M.EnergyGap(), M.EnergyZscore()]
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
 
     util.show_metrics(rbm, performance)
