@@ -84,24 +84,84 @@ class ReconstructionError(object):
 
 
 class EnergyDistance(object):
+    """
+    Compute the energy distance between two distributions using
+    minibatches of sampled configurations.
+
+    Szekely, G.J. (2002)
+    E-statistics: The Energy of Statistical Samples.
+    Technical Report BGSU No 02-16.
+
+    """
 
     name = 'EnergyDistance'
 
     def __init__(self, downsample=100):
+        """
+        Create EnergyDistance object.
+
+        Args:
+            downsample (int; optional): how many samples to use
+
+        Returns:
+            energy distance object
+
+        """
         self.energy_distance = 0
         self.norm = 0
         self.downsample = 100
 
     def reset(self):
+        """
+        Reset the metric to it's initial state.
+
+        Note:
+            Modifies norm and energy_distance in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
         self.energy_distance = 0
         self.norm = 0
 
     #TODO: use State objects instead of tensors
     def update(self, minibatch=None, samples=None, **kwargs):
+        """
+        Update the estimate for the energy distance using a batch
+        of observations and a batch of fantasy particles.
+
+        Notes:
+            Changes norm and energy_distance in place.
+
+        Args:
+            minibatch (tensor (num_samples, num_units))
+            samples (tensor (num_samples, num)): fantasy particles
+            kwargs: key word arguments
+                not used, but helpful for looping through metric functions
+
+        Returns:
+            None
+
+        """
         self.norm += 1
         self.energy_distance += be.fast_energy_distance(minibatch, samples,
                                                      self.downsample)
+
     def value(self):
+        """
+        Get the value of the energy distance.
+
+        Args:
+            None
+
+        Returns:
+            reconstruction error (float)
+
+        """
         if self.norm:
             return self.energy_distance / self.norm
         else:
