@@ -159,7 +159,7 @@ class EnergyDistance(object):
             None
 
         Returns:
-            reconstruction error (float)
+            energy distance (float)
 
         """
         if self.norm:
@@ -169,24 +169,83 @@ class EnergyDistance(object):
 
 
 class EnergyGap(object):
+    """
+    Samples drawn from a model should have much lower energy
+    than purely random samples. The "energy gap" is the average
+    energy difference between samples from the model and random
+    samples.
+
+    """
 
     name = 'EnergyGap'
 
     def __init__(self):
+        """
+        Create an EnergyGap object.
+
+        Args:
+            None
+
+        Returns:
+            energy gap object
+
+        """
         self.energy_gap = 0
         self.norm = 0
 
     def reset(self):
+        """
+        Reset the metric to it's initial state.
+
+        Note:
+            Modifies norm and energy_gap in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
         self.energy_gap = 0
         self.norm = 0
 
     #TODO: use State objects instead of tensors
     def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs):
+        """
+        Update the estimate for the energy distance using a batch
+        of observations and a batch of fantasy particles.
+
+        Notes:
+            Changes norm and energy_gap in place.
+
+        Args:
+            minibatch (tensor (num_samples, num_units)):
+                samples from the model
+            random_samples (tensor (num_samples, num))
+            amodel (Model): the model
+            kwargs: key word arguments
+                not used, but helpful for looping through metric functions
+
+        Returns:
+            None
+
+        """
         self.norm += 1
         self.energy_gap += be.mean(amodel.marginal_free_energy(minibatch))
         self.energy_gap -= be.mean(amodel.marginal_free_energy(random_samples))
 
     def value(self):
+        """
+        Get the value of the energy gap.
+
+        Args:
+            None
+
+        Returns:
+            energy gap (float)
+
+        """
         if self.norm:
             return self.energy_gap / self.norm
         else:
