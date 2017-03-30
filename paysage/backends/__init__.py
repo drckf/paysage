@@ -23,62 +23,43 @@ else:
 
 
 # ----- COMMON FUNCTIONALITY ----- #
-# I am not sure if this is the right place to put these functions
 
-from collections import namedtuple
-
-def add_tuples(a, b):
+def mapzip(func, a, b):
     """
-    Add tuple a to tuple b entrywise.
+    Applies a function over the zip of iterables a and b,
+    giving back an object of the same type as a. That is,
+    c[i] = func(a[i], b[i]).
+
+    For example:
+
+    ```
+    from collections import namedtuple
+    from operator import add
+
+    coords = namedtuple("coordinates", ["x", "y"])
+
+    a = coords(1,2)
+    b = coords(2,3)
+
+    c = mapzip(add, a, b) # coordinates(x=2, y=4)
+
+    a = list(a)
+    b = list(b)
+
+    c = mapzip(add, a, b) # [2, 4]
+    ```
 
     Args:
-        a (namedtuple): (key: tensor)
-        b (namedtuple): (key: tensor)
+        func (callable): a function with two arguments
+        a (iterable; e.g., list or namedtuple)
+        b (iterable; e.g., list or namedtuple)
 
     Returns:
-        namedtuple: a + b (key: tensor)
+        type(a)
 
     """
-    return type(a)(*(add(x[0], x[1]) for x in zip(a, b)))
-
-def subtract_tuples(a, b):
-    """
-    Subtract tuple a from tuple b entrywise.
-
-    Args:
-        a (namedtuple): (key: tensor)
-        b (namedtuple): (key: tensor)
-
-    Returns:
-        namedtuple: b - a (key: tensor)
-
-    """
-    return type(a)(*(subtract(x[0], x[1]) for x in zip(a, b)))
-
-def multiply_tuples(a, b):
-    """
-    Multiply tuple b by tuple a entrywise.
-
-    Args:
-        a (namedtuple): (key: tensor)
-        b (namedtuple): (key: tensor)
-
-    Returns:
-        namedtuple: a * b (key: tensor)
-
-    """
-    return type(a)(*(multiply(x[0], x[1]) for x in zip(a, b)))
-
-def divide_tuples(a, b):
-    """
-    Divide tuple b by tuple a entrywise.
-
-    Args:
-        a (namedtuple; non-zero): (key: tensor)
-        b (namedtuple): (key: tensor)
-
-    Returns:
-        namedtuple: b / a (key: tensor)
-
-    """
-    return type(a)(*(divide(x[0], x[1]) for x in zip(a, b)))
+    lst = [func(x[0], x[1]) for x in zip(a, b)]
+    try:
+        return type(a)(*lst)
+    except TypeError:
+        return type(a)(lst)
