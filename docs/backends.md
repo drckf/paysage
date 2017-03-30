@@ -18,6 +18,18 @@ def acosh(x: numpy.ndarray) -> numpy.ndarray
 Elementwise inverse hyperbolic cosine of a tensor.<br /><br />Args:<br /> ~ x (greater than 1): A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise inverse hyperbolic cosine.
 
 
+### add
+```py
+
+def add(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Add tensor a to tensor b using broadcasting.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: a + b
+
+
 ### add\_dicts\_inplace
 ```py
 
@@ -28,6 +40,18 @@ def add_dicts_inplace(dict1: Dict[str, numpy.ndarray], dict2: Dict[str, numpy.nd
 
 
 Entrywise addition of dict2 to dict1.<br /><br />Note:<br /> ~ Modifies dict1 in place.<br /><br />Args:<br /> ~ dict1: A dictionary of tensors.<br /> ~ dict2: A dictionary of tensors.<br /><br />Returns:<br /> ~ None
+
+
+### add\_tuples
+```py
+
+def add_tuples(a, b)
+
+```
+
+
+
+Add tuple a to tuple b entrywise.<br /><br />Args:<br /> ~ a (namedtuple): (key: tensor)<br /> ~ b (namedtuple): (key: tensor)<br /><br />Returns:<br /> ~ namedtuple: a + b (key: tensor)
 
 
 ### affine
@@ -196,6 +220,30 @@ def diagonal_matrix(vec: numpy.ndarray) -> numpy.ndarray
 
 
 Return a matrix with vec along the diagonal.<br /><br />Args:<br /> ~ vec: A vector (i.e., 1D tensor).<br /><br />Returns:<br /> ~ tensor: A matrix with the elements of vec along the diagonal,<br /> ~  ~  ~ and zeros elsewhere.
+
+
+### divide
+```py
+
+def divide(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Divide tensor b by tensor a using broadcasting.<br /><br />Args:<br /> ~ a: A tensor (non-zero)<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: a * b
+
+
+### divide\_tuples
+```py
+
+def divide_tuples(a, b)
+
+```
+
+
+
+Divide tuple b by tuple a entrywise.<br /><br />Args:<br /> ~ a (namedtuple; non-zero): (key: tensor)<br /> ~ b (namedtuple): (key: tensor)<br /><br />Returns:<br /> ~ namedtuple: b / a (key: tensor)
 
 
 ### dot
@@ -498,6 +546,18 @@ def mix_inplace(w: Union[int, float], x: numpy.ndarray, y: numpy.ndarray) -> Non
 Compute a weighted average of two matrices (x and y) and store the results in x.<br />Useful for keeping track of running averages during training.<br /><br />x <- w * x + (1-w) * y<br /><br />Note:<br /> ~ Modifies x in place.<br /><br />Args:<br /> ~ w: The mixing coefficient between 0 and 1 .<br /> ~ x: A tensor.<br /> ~ y: A tensor:<br /><br />Returns:<br /> ~ None
 
 
+### multiply
+```py
+
+def multiply(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Multiply tensor b with tensor a using broadcasting.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: a * b
+
+
 ### multiply\_dict\_inplace
 ```py
 
@@ -508,6 +568,30 @@ def multiply_dict_inplace(dict1: Dict[str, numpy.ndarray], scalar: Union[int, fl
 
 
 Entrywise multiplication of dict1 by scalar.<br /><br />Note:<br /> ~ Modifies dict1 in place.<br /><br />Args:<br /> ~ dict1: A dictionary of tensors.<br /> ~ scalar: A scalar.<br /><br />Returns:<br /> ~ None
+
+
+### multiply\_tuples
+```py
+
+def multiply_tuples(a, b)
+
+```
+
+
+
+Multiply tuple b by tuple a entrywise.<br /><br />Args:<br /> ~ a (namedtuple): (key: tensor)<br /> ~ b (namedtuple): (key: tensor)<br /><br />Returns:<br /> ~ namedtuple: a * b (key: tensor)
+
+
+### namedtuple
+```py
+
+def namedtuple(typename, field_names, verbose=False, rename=False)
+
+```
+
+
+
+Returns a new subclass of tuple with named fields.<br /><br />>>> Point = namedtuple('Point', ['x', 'y'])<br />>>> Point.__doc__ ~  ~  ~  ~    # docstring for the new class<br />'Point(x, y)'<br />>>> p = Point(11, y=22) ~  ~  ~  # instantiate with positional args or keywords<br />>>> p[0] + p[1] ~  ~  ~  ~  ~  # indexable like a plain tuple<br />33<br />>>> x, y = p ~  ~  ~  ~  ~  ~ # unpack like a regular tuple<br />>>> x, y<br />(11, 22)<br />>>> p.x + p.y ~  ~  ~  ~  ~    # fields also accessible by name<br />33<br />>>> d = p._asdict() ~  ~  ~  ~  # convert to a dictionary<br />>>> d['x']<br />11<br />>>> Point(**d) ~  ~  ~  ~  ~   # convert from a dictionary<br />Point(x=11, y=22)<br />>>> p._replace(x=100) ~  ~  ~    # _replace() is like str.replace() but targets named fields<br />Point(x=100, y=22)
 
 
 ### ndim
@@ -798,6 +882,18 @@ def std(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.f
 Return the standard deviation of the elements of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis for taking the standard deviation.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall standard deviation of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The standard deviation of the tensor along the specified axis.
 
 
+### subtract
+```py
+
+def subtract(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Subtract tensor a from tensor b using broadcasting.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: b - a
+
+
 ### subtract\_dicts\_inplace
 ```py
 
@@ -808,6 +904,18 @@ def subtract_dicts_inplace(dict1: Dict[str, numpy.ndarray], dict2: Dict[str, num
 
 
 Entrywise subtraction of dict2 from dict1.<br /><br />Note:<br /> ~ Modifies dict1 in place.<br /><br />Args:<br /> ~ dict1: A dictionary of tensors.<br /> ~ dict2: A dictionary of tensors.<br /><br />Returns:<br /> ~ None
+
+
+### subtract\_tuples
+```py
+
+def subtract_tuples(a, b)
+
+```
+
+
+
+Subtract tuple a from tuple b entrywise.<br /><br />Args:<br /> ~ a (namedtuple): (key: tensor)<br /> ~ b (namedtuple): (key: tensor)<br /><br />Returns:<br /> ~ namedtuple: b - a (key: tensor)
 
 
 ### tabs
