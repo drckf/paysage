@@ -18,6 +18,18 @@ def acosh(x: numpy.ndarray) -> numpy.ndarray
 Elementwise inverse hyperbolic cosine of a tensor.<br /><br />Args:<br /> ~ x (greater than 1): A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise inverse hyperbolic cosine.
 
 
+### add
+```py
+
+def add(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Add tensor a to tensor b using broadcasting.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: a + b
+
+
 ### add\_dicts\_inplace
 ```py
 
@@ -196,6 +208,18 @@ def diagonal_matrix(vec: numpy.ndarray) -> numpy.ndarray
 
 
 Return a matrix with vec along the diagonal.<br /><br />Args:<br /> ~ vec: A vector (i.e., 1D tensor).<br /><br />Returns:<br /> ~ tensor: A matrix with the elements of vec along the diagonal,<br /> ~  ~  ~ and zeros elsewhere.
+
+
+### divide
+```py
+
+def divide(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Divide tensor b by tensor a using broadcasting.<br /><br />Args:<br /> ~ a: A tensor (non-zero)<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: a * b
 
 
 ### dot
@@ -450,6 +474,18 @@ def logit(x: numpy.ndarray) -> numpy.ndarray
 Elementwise logit function of a tensor. Inverse of the expit function.<br /><br />Args:<br /> ~ x (between 0 and 1): A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise logit function
 
 
+### mapzip
+```py
+
+def mapzip(func, a, b)
+
+```
+
+
+
+Applies a function over the zip of iterables a and b,<br />giving back an object of the same type as a. That is,<br />c[i] = func(a[i], b[i]).<br /><br />For example:<br /><br />```<br />from collections import namedtuple<br />from operator import add<br /><br />coords = namedtuple("coordinates", ["x", "y"])<br /><br />a = coords(1,2)<br />b = coords(2,3)<br /><br />c = mapzip(add, a, b) # coordinates(x=2, y=4)<br /><br />a = list(a)<br />b = list(b)<br /><br />c = mapzip(add, a, b) # [2, 4]<br />```<br /><br />Args:<br /> ~ func (callable): a function with two arguments<br /> ~ a (iterable; e.g., list or namedtuple)<br /> ~ b (iterable; e.g., list or namedtuple)<br /><br />Returns:<br /> ~ type(a)
+
+
 ### maximum
 ```py
 
@@ -496,6 +532,18 @@ def mix_inplace(w: Union[int, float], x: numpy.ndarray, y: numpy.ndarray) -> Non
 
 
 Compute a weighted average of two matrices (x and y) and store the results in x.<br />Useful for keeping track of running averages during training.<br /><br />x <- w * x + (1-w) * y<br /><br />Note:<br /> ~ Modifies x in place.<br /><br />Args:<br /> ~ w: The mixing coefficient between 0 and 1 .<br /> ~ x: A tensor.<br /> ~ y: A tensor:<br /><br />Returns:<br /> ~ None
+
+
+### multiply
+```py
+
+def multiply(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Multiply tensor b with tensor a using broadcasting.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: a * b
 
 
 ### multiply\_dict\_inplace
@@ -796,6 +844,18 @@ def std(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.f
 
 
 Return the standard deviation of the elements of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis for taking the standard deviation.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall standard deviation of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The standard deviation of the tensor along the specified axis.
+
+
+### subtract
+```py
+
+def subtract(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Subtract tensor a from tensor b using broadcasting.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: b - a
 
 
 ### subtract\_dicts\_inplace

@@ -965,6 +965,10 @@ class BernoulliLayer(Layer):
         'field': None
         }
 
+        self.derivs = {
+        'loc': be.zeros(self.len)
+        }
+
     def get_config(self):
         """
         Get the configuration dictionary of the Bernoulli layer.
@@ -1140,7 +1144,6 @@ class BernoulliLayer(Layer):
 
         derivs['loc'] = -be.mean(vis, axis=0)
         be.add_dicts_inplace(derivs, self.get_penalty_gradients())
-
         return derivs
 
     def rescale(self, observations):
