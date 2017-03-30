@@ -42,18 +42,6 @@ def add_dicts_inplace(dict1: Dict[str, numpy.ndarray], dict2: Dict[str, numpy.nd
 Entrywise addition of dict2 to dict1.<br /><br />Note:<br /> ~ Modifies dict1 in place.<br /><br />Args:<br /> ~ dict1: A dictionary of tensors.<br /> ~ dict2: A dictionary of tensors.<br /><br />Returns:<br /> ~ None
 
 
-### add\_tuples
-```py
-
-def add_tuples(a, b)
-
-```
-
-
-
-Add tuple a to tuple b entrywise.<br /><br />Args:<br /> ~ a (namedtuple): (key: tensor)<br /> ~ b (namedtuple): (key: tensor)<br /><br />Returns:<br /> ~ namedtuple: a + b (key: tensor)
-
-
 ### affine
 ```py
 
@@ -232,18 +220,6 @@ def divide(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
 
 
 Divide tensor b by tensor a using broadcasting.<br /><br />Args:<br /> ~ a: A tensor (non-zero)<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: a * b
-
-
-### divide\_tuples
-```py
-
-def divide_tuples(a, b)
-
-```
-
-
-
-Divide tuple b by tuple a entrywise.<br /><br />Args:<br /> ~ a (namedtuple; non-zero): (key: tensor)<br /> ~ b (namedtuple): (key: tensor)<br /><br />Returns:<br /> ~ namedtuple: b / a (key: tensor)
 
 
 ### dot
@@ -498,6 +474,18 @@ def logit(x: numpy.ndarray) -> numpy.ndarray
 Elementwise logit function of a tensor. Inverse of the expit function.<br /><br />Args:<br /> ~ x (between 0 and 1): A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise logit function
 
 
+### mapzip
+```py
+
+def mapzip(func, a, b)
+
+```
+
+
+
+Applies a function over the zip of iterables a and b,<br />giving back an object of the same type as a. That is,<br />c[i] = func(a[i], b[i]).<br /><br />For example:<br /><br />```<br />from collections import namedtuple<br />from operator import add<br /><br />coords = namedtuple("coordinates", ["x", "y"])<br /><br />a = coords(1,2)<br />b = coords(2,3)<br /><br />c = mapzip(add, a, b) # coordinates(x=2, y=4)<br /><br />a = list(a)<br />b = list(b)<br /><br />c = mapzip(add, a, b) # [2, 4]<br />```<br /><br />Args:<br /> ~ func (callable): a function with two arguments<br /> ~ a (iterable; e.g., list or namedtuple)<br /> ~ b (iterable; e.g., list or namedtuple)<br /><br />Returns:<br /> ~ type(a)
+
+
 ### maximum
 ```py
 
@@ -568,30 +556,6 @@ def multiply_dict_inplace(dict1: Dict[str, numpy.ndarray], scalar: Union[int, fl
 
 
 Entrywise multiplication of dict1 by scalar.<br /><br />Note:<br /> ~ Modifies dict1 in place.<br /><br />Args:<br /> ~ dict1: A dictionary of tensors.<br /> ~ scalar: A scalar.<br /><br />Returns:<br /> ~ None
-
-
-### multiply\_tuples
-```py
-
-def multiply_tuples(a, b)
-
-```
-
-
-
-Multiply tuple b by tuple a entrywise.<br /><br />Args:<br /> ~ a (namedtuple): (key: tensor)<br /> ~ b (namedtuple): (key: tensor)<br /><br />Returns:<br /> ~ namedtuple: a * b (key: tensor)
-
-
-### namedtuple
-```py
-
-def namedtuple(typename, field_names, verbose=False, rename=False)
-
-```
-
-
-
-Returns a new subclass of tuple with named fields.<br /><br />>>> Point = namedtuple('Point', ['x', 'y'])<br />>>> Point.__doc__ ~  ~  ~  ~    # docstring for the new class<br />'Point(x, y)'<br />>>> p = Point(11, y=22) ~  ~  ~  # instantiate with positional args or keywords<br />>>> p[0] + p[1] ~  ~  ~  ~  ~  # indexable like a plain tuple<br />33<br />>>> x, y = p ~  ~  ~  ~  ~  ~ # unpack like a regular tuple<br />>>> x, y<br />(11, 22)<br />>>> p.x + p.y ~  ~  ~  ~  ~    # fields also accessible by name<br />33<br />>>> d = p._asdict() ~  ~  ~  ~  # convert to a dictionary<br />>>> d['x']<br />11<br />>>> Point(**d) ~  ~  ~  ~  ~   # convert from a dictionary<br />Point(x=11, y=22)<br />>>> p._replace(x=100) ~  ~  ~    # _replace() is like str.replace() but targets named fields<br />Point(x=100, y=22)
 
 
 ### ndim
@@ -904,18 +868,6 @@ def subtract_dicts_inplace(dict1: Dict[str, numpy.ndarray], dict2: Dict[str, num
 
 
 Entrywise subtraction of dict2 from dict1.<br /><br />Note:<br /> ~ Modifies dict1 in place.<br /><br />Args:<br /> ~ dict1: A dictionary of tensors.<br /> ~ dict2: A dictionary of tensors.<br /><br />Returns:<br /> ~ None
-
-
-### subtract\_tuples
-```py
-
-def subtract_tuples(a, b)
-
-```
-
-
-
-Subtract tuple a from tuple b entrywise.<br /><br />Args:<br /> ~ a (namedtuple): (key: tensor)<br /> ~ b (namedtuple): (key: tensor)<br /><br />Returns:<br /> ~ namedtuple: b - a (key: tensor)
 
 
 ### tabs
