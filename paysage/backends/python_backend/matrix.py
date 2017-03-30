@@ -867,6 +867,78 @@ def broadcast(vec: T.Tensor, matrix: T.Tensor) -> T.Tensor:
         raise BroadcastError('cannot broadcast vector of dimension {} \
 onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
 
+def add(a: T.Tensor, b: T.Tensor) -> T.Tensor:
+    """
+    Add tensor a to tensor b using broadcasting.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        tensor: a + b
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+        return a + b
+    else:
+        return broadcast(a, b) + b
+
+def subtract(a: T.Tensor, b: T.Tensor) -> T.Tensor:
+    """
+    Subtract tensor a from tensor b using broadcasting.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        tensor: b - a
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+        return b - a
+    else:
+        return b - broadcast(a, b)
+
+def multiply(a: T.Tensor, b: T.Tensor) -> T.Tensor:
+    """
+    Multiply tensor b with tensor a using broadcasting.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        tensor: a * b
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+        return a * b
+    else:
+        return broadcast(a, b) * b
+
+def divide(a: T.Tensor, b: T.Tensor) -> T.Tensor:
+    """
+    Divide tensor b by tensor a using broadcasting.
+
+    Args:
+        a: A tensor (non-zero)
+        b: A tensor
+
+    Returns:
+        tensor: a * b
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+        return b / a
+    else:
+        return b / broadcast(a, b)
+
 def affine(a: T.Tensor, b: T.Tensor, W: T.Tensor) -> T.Tensor:
     """
     Evaluate the affine transformation a + W b.
