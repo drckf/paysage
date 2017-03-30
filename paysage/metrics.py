@@ -5,23 +5,78 @@ from . import backends as be
 
 
 class ReconstructionError(object):
+    """
+    Compute the root-mean-squared error between observations and their
+    reconstructions using minibatches.
+
+    """
 
     name = 'ReconstructionError'
 
     def __init__(self):
+        """
+        Create a ReconstructionError object.
+
+        Args:
+            None
+
+        Returns:
+            ReconstructionERror
+
+        """
         self.mean_square_error = 0
         self.norm = 0
 
     def reset(self):
+        """
+        Reset the metric to it's initial state.
+
+        Notes:
+            Changes norm and mean_square_error in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
         self.mean_square_error = 0
         self.norm = 0
 
     #TODO: use State objects instead of tensors
     def update(self, minibatch=None, reconstructions=None, **kwargs):
+        """
+        Update the estimate for the reconstruction error using a batch
+        of observations and a batch of reconstructions.
+
+        Notes:
+            Changes norm and mean_square_error in place.
+
+        Args:
+            minibatch (tensor (num_samples, num_units))
+            reconstructions (tensor (num_samples, num))
+            kwargs: key word arguments
+                not used, but helpful for looping through metric functions
+
+        Returns:
+            None
+
+        """
         self.norm += len(minibatch)
         self.mean_square_error += be.tsum((minibatch - reconstructions)**2)
 
     def value(self):
+        """
+        Get the value of the reconstruction error.
+
+        Args:
+            None
+
+        Returns:
+            reconstruction error (float)
+
+        """
         if self.norm:
             return math.sqrt(self.mean_square_error / self.norm)
         else:
