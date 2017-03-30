@@ -38,8 +38,8 @@ def test_bernoulli_update():
     visible_field += be.broadcast(a, visible_field)
 
     # update the extrinsic parameter using the layer functions
-    rbm.layers[0].update(hdata, be.transpose(rbm.weights[0].W()))
-    rbm.layers[1].update(vdata, rbm.weights[0].W())
+    rbm.layers[0].update([hdata], [rbm.weights[0].W_T()])
+    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
 
     assert be.allclose(hidden_field, rbm.layers[1].ext_params['field']), \
     "hidden field wrong in bernoulli-bernoulli rbm"
@@ -74,7 +74,7 @@ def test_bernoulli_derivatives():
     vdata_scaled = rbm.layers[0].rescale(vdata)
 
     # compute the mean of the hidden layer
-    rbm.layers[1].update(vdata, rbm.weights[0].W())
+    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
     hid_mean = rbm.layers[1].mean()
     hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
 
@@ -84,11 +84,11 @@ def test_bernoulli_derivatives():
     d_W = -be.batch_outer(vdata, hid_mean_scaled) / len(vdata)
 
     # compute the derivatives using the layer functions
-    vis_derivs = rbm.layers[0].derivatives(vdata, hid_mean_scaled,
-                                            rbm.weights[0].W())
+    vis_derivs = rbm.layers[0].derivatives(vdata, [hid_mean_scaled],
+                                            [rbm.weights[0].W()])
 
-    hid_derivs = rbm.layers[1].derivatives(hid_mean, vdata_scaled,
-                                           be.transpose(rbm.weights[0].W()))
+    hid_derivs = rbm.layers[1].derivatives(hid_mean, [vdata_scaled],
+                                          [rbm.weights[0].W_T()])
 
     weight_derivs = rbm.weights[0].derivatives(vdata, hid_mean_scaled)
 
@@ -135,8 +135,8 @@ def test_ising_update():
     visible_field += be.broadcast(a, visible_field)
 
     # update the extrinsic parameter using the layer functions
-    rbm.layers[1].update(vdata, rbm.weights[0].W())
-    rbm.layers[0].update(hdata, be.transpose(rbm.weights[0].W()))
+    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
+    rbm.layers[0].update([hdata], [rbm.weights[0].W_T()])
 
     assert be.allclose(hidden_field, rbm.layers[1].ext_params['field']), \
     "hidden field wrong in ising-ising rbm"
@@ -171,7 +171,7 @@ def test_ising_derivatives():
     vdata_scaled = rbm.layers[0].rescale(vdata)
 
     # compute the mean of the hidden layer
-    rbm.layers[1].update(vdata, rbm.weights[0].W())
+    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
     hid_mean = rbm.layers[1].mean()
     hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
 
@@ -181,11 +181,13 @@ def test_ising_derivatives():
     d_W = -be.batch_outer(vdata, hid_mean_scaled) / len(vdata)
 
     # compute the derivatives using the layer functions
-    vis_derivs = rbm.layers[0].derivatives(vdata, hid_mean_scaled,
-                                            rbm.weights[0].W())
+    vis_derivs = rbm.layers[0].derivatives(vdata, [hid_mean_scaled],
+                                            [rbm.weights[0].W()]
+                                            )
 
-    hid_derivs = rbm.layers[1].derivatives(hid_mean, vdata_scaled,
-                                           be.transpose(rbm.weights[0].W()))
+    hid_derivs = rbm.layers[1].derivatives(hid_mean, [vdata_scaled],
+                                           [rbm.weights[0].W_T()]
+                                           )
 
     weight_derivs = rbm.weights[0].derivatives(vdata, hid_mean_scaled)
 
@@ -233,8 +235,8 @@ def test_exponential_update():
     visible_rate += be.broadcast(a, visible_rate)
 
     # update the extrinsic parameter using the layer functions
-    rbm.layers[1].update(vdata, rbm.weights[0].W())
-    rbm.layers[0].update(hdata, be.transpose(rbm.weights[0].W()))
+    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
+    rbm.layers[0].update([hdata], [rbm.weights[0].W_T()])
 
     assert be.allclose(hidden_rate, rbm.layers[1].ext_params['rate']), \
     "hidden rate wrong in exponential-exponential rbm"
@@ -270,7 +272,7 @@ def test_exponential_derivatives():
     vdata_scaled = rbm.layers[0].rescale(vdata)
 
     # compute the mean of the hidden layer
-    rbm.layers[1].update(vdata, rbm.weights[0].W())
+    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
     hid_mean = rbm.layers[1].mean()
     hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
 
@@ -280,12 +282,11 @@ def test_exponential_derivatives():
     d_W = -be.batch_outer(vdata, hid_mean_scaled) / len(vdata)
 
     # compute the derivatives using the layer functions
-    vis_derivs = rbm.layers[0].derivatives(vdata, hid_mean_scaled,
-                                            rbm.weights[0].W())
+    vis_derivs = rbm.layers[0].derivatives(vdata, [hid_mean_scaled],
+                                            [rbm.weights[0].W()])
 
-    hid_derivs = rbm.layers[1].derivatives(hid_mean, vdata_scaled,
-                                           be.transpose(
-                                               rbm.weights[0].W()))
+    hid_derivs = rbm.layers[1].derivatives(hid_mean, [vdata_scaled],
+                                               [rbm.weights[0].W_T()])
 
     weight_derivs = rbm.weights[0].derivatives(vdata, hid_mean_scaled)
 
@@ -351,8 +352,8 @@ def test_gaussian_update():
     visible_mean += be.broadcast(a, visible_mean)
 
     # update the extrinsic parameters using the layer functions
-    rbm.layers[0].update(hdata_scaled, be.transpose(rbm.weights[0].W()))
-    rbm.layers[1].update(vdata_scaled, rbm.weights[0].W())
+    rbm.layers[0].update([hdata_scaled], [rbm.weights[0].W_T()])
+    rbm.layers[1].update([vdata_scaled], [rbm.weights[0].W()])
 
     assert be.allclose(visible_var, rbm.layers[0].ext_params['variance']),\
     "visible variance wrong in gaussian-gaussian rbm"
@@ -398,7 +399,7 @@ def test_gaussian_derivatives():
     vdata_scaled = vdata / be.broadcast(visible_var, vdata)
 
     # compute the mean of the hidden layer
-    rbm.layers[1].update(vdata_scaled, rbm.weights[0].W())
+    rbm.layers[1].update([vdata_scaled], [rbm.weights[0].W()])
     hidden_var = be.exp(log_var_b)
     hid_mean = rbm.layers[1].mean()
     hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
@@ -420,14 +421,14 @@ def test_gaussian_derivatives():
     d_W = -be.batch_outer(vdata_scaled, hid_mean_scaled) / len(vdata_scaled)
 
     # compute the derivatives using the layer functions
-    rbm.layers[1].update(vdata_scaled, rbm.weights[0].W())
-    rbm.layers[0].update(hid_mean_scaled, be.transpose(rbm.weights[0].W()))
+    rbm.layers[1].update([vdata_scaled], [rbm.weights[0].W()])
+    rbm.layers[0].update([hid_mean_scaled], [rbm.weights[0].W_T()])
 
-    vis_derivs = rbm.layers[0].derivatives(vdata, hid_mean_scaled,
-                                            rbm.weights[0].W())
+    vis_derivs = rbm.layers[0].derivatives(vdata, [hid_mean_scaled],
+                                            [rbm.weights[0].W()])
 
-    hid_derivs = rbm.layers[1].derivatives(hid_mean, vdata_scaled,
-                                           be.transpose(rbm.weights[0].W()))
+    hid_derivs = rbm.layers[1].derivatives(hid_mean, [vdata_scaled],
+                                           [rbm.weights[0].W_T()])
 
     weight_derivs = rbm.weights[0].derivatives(vdata_scaled, hid_mean_scaled)
 

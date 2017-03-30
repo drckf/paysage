@@ -38,6 +38,18 @@ def deterministic_step(self, vis, beta=None)
 Perform a single deterministic (maximum probability) update.<br />v -> update h distribution -> h -> update v distribution -> v'<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
 
 
+### get\_config
+```py
+
+def get_config(self)
+
+```
+
+
+
+Get a configuration for the model.<br /><br />Notes:<br /> ~ Includes metadata on the layers.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ A dictionary configuration for the model.
+
+
 ### gradient
 ```py
 
@@ -156,6 +168,46 @@ def random(self, vis)
 
 
 Generate a random sample with the same shape,<br />and of the same type, as the visible units.<br /><br />Args:<br /> ~ vis: The visible units.<br /><br />Returns:<br /> ~ tensor: Random sample with same shape as vis.
+
+
+### save
+```py
+
+def save(self, store)
+
+```
+
+
+
+Save a model to an open HDFStore.<br /><br />Note:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore)<br /><br />Returns:<br /> ~ None
+
+
+
+
+## class State
+A State is a list of tensors that contains the states of the units<br />described by a model.<br /><br />For a model with L hidden layers, the tensors have shapes<br /><br />shapes = [<br />(num_samples, num_visible),<br />(num_samples, num_hidden_1),<br />            .<br />            .<br />            .<br />(num_samples, num_hidden_L)<br />]
+### \_\_init\_\_
+```py
+
+def __init__(self, batch_size, model)
+
+```
+
+
+
+Create a randomly initialized State object.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_visible)): observed visible units<br /> ~ model (Model): a model object<br /><br />Returns:<br /> ~ state object
+
+
+### set\_layer
+```py
+
+def set_layer(self, values, i)
+
+```
+
+
+
+Set the units of layer i to values.<br /><br />Notes:<br /> ~ Updates layer.units[i] in place.<br /><br />Args:<br /> ~ values (tensor (num_samples, num_units))<br /><br />Returns:<br /> ~ None
 
 
 
