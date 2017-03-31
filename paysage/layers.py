@@ -483,7 +483,7 @@ class GaussianLayer(Layer):
         new_variance = (1-shrinkage) * old_variance + shrinkage * 1
 
         Notes:
-            Modifies layer.int_params['loc_var'] in place.
+            Modifies layer.int_params in place.
 
         Args:
             shrinkage (float \in [0,1]): the amount of shrinkage to apply
@@ -516,23 +516,14 @@ class GaussianLayer(Layer):
             None
 
         """
-        self.ext_params['mean'] = be.dot(scaled_units[0], weights[0])
+        mean = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
-            self.ext_params['mean'] += be.dot(scaled_units[i], weights[i])
-
+            mean += be.dot(scaled_units[i], weights[i])
         if beta is not None:
-            self.ext_params['mean'] *= be.broadcast(
-                                       beta,
-                                       self.ext_params['mean']
-                                       )
-        self.ext_params['mean'] += be.broadcast(
-                                   self.int_params['loc'],
-                                   self.ext_params['mean']
-                                   )
-        self.ext_params['variance'] = be.broadcast(
-                                      be.exp(self.int_params['log_var']),
-                                      self.ext_params['mean']
-                                      )
+            mean *= be.broadcast(beta, mean)
+        mean += be.broadcast(self.int_params.loc, mean)
+        var = be.broadcast(be.exp(self.int_params.log_var), mean)
+        self.ext_params = GaussianLayer.ExtrinsicParams(mean, var)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
