@@ -1323,24 +1323,25 @@ class ExponentialLayer(Layer):
             None
 
         """
+        # get the current value of the first moment
+        x = be.reciprocal(self.int_params.loc)
+
+        # update the sample size
         n = len(data)
         new_sample_size = n + self.sample_size
+
         # update the first moment
-        x = self.mean(self.int_params['loc'])
         x *= self.sample_size / new_sample_size
         x += n * be.mean(data, axis=0) / new_sample_size
-        # update the location parameter
-        self.int_params['loc'] = be.reciprocal(x)
-        # update the sample size
+
+        # update the class attributes
+        self.int_params = ExponentialLayer.IntrinsicParams(be.reciprocal(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
         """
         Apply shrinkage to the intrinsic parameters of the layer.
         Does nothing for the Exponential layer.
-
-        Notes:
-            Modifies layer.int_params['loc_var'] in place.
 
         Args:
             shrinkage (float \in [0,1]): the amount of shrinkage to apply
@@ -1370,19 +1371,13 @@ class ExponentialLayer(Layer):
             None
 
         """
-        self.ext_params['rate'] = -be.dot(scaled_units[0], weights[0])
+        rate = -be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
-            self.ext_params['rate'] -= be.dot(scaled_units[i], weights[i])
-
+            rate -= be.dot(scaled_units[i], weights[i])
         if beta is not None:
-            self.ext_params['rate'] *= be.broadcast(
-                                        beta,
-                                        self.ext_params['rate']
-                                        )
-        self.ext_params['rate'] += be.broadcast(
-                                    self.int_params['loc'],
-                                    self.ext_params['rate']
-                                    )
+            rate *= be.broadcast(beta,rate)
+        rate += be.broadcast(self.int_params.loc, rate)
+        self.ext_params = ExponentialLayer.ExtrinsicParams(rate)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
