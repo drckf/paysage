@@ -1284,7 +1284,7 @@ class ExponentialLayer(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        return be.dot(data, self.int_params['loc'])
+        return be.dot(data, self.int_params.loc)
 
     def log_partition_function(self, phi):
         """
@@ -1306,8 +1306,7 @@ class ExponentialLayer(Layer):
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        logZ = be.broadcast(self.int_params['loc'], phi) - phi
-        return -be.log(logZ)
+        return -be.log(be.subtract(self.int_params.loc, phi))
 
     def online_param_update(self, data):
         """
