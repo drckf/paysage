@@ -1,5 +1,5 @@
 import sys
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 from . import penalties
 from . import constraints
@@ -7,6 +7,10 @@ from . import backends as be
 
 class Layer(object):
     """A general layer class with common functionality."""
+
+    # placeholder tuple for model parameters
+    Params = namedtuple("Params", [])
+
     def __init__(self, *args, **kwargs):
         """
         Basic layer initalization method.
@@ -19,8 +23,10 @@ class Layer(object):
             layer
 
         """
-        self.int_params = {}
-        self.ext_params = {}
+        # these attributes are immutable (their keys don't change)
+        self.int_params = Layer.Params()
+        self.ext_params = Layer.Params()
+        # these attributes are mutable (their keys do change)
         self.penalties = OrderedDict()
         self.constraints = OrderedDict()
 
@@ -41,8 +47,8 @@ class Layer(object):
         """
         return {
         "layer_type": self.__class__.__name__,
-        "intrinsic": list(self.int_params.keys()),
-        "extrinsic": list(self.ext_params.keys()),
+        "intrinsic": list(self.int_params._fields),
+        "extrinsic": list(self.ext_params._fields),
         "penalties": {pk: self.penalties[pk].__class__.__name__
                         for pk in self.penalties},
         "constraints": {ck: self.constraints[ck].__name__
@@ -113,7 +119,9 @@ class Layer(object):
 
         """
         for param_name in self.constraints:
-            self.constraints[param_name](self.int_params[param_name])
+            self.constraints[param_name](
+            getattr(self.int_params, param_name)
+            )
 
     def add_penalty(self, penalty):
         """
@@ -145,7 +153,9 @@ class Layer(object):
 
         """
         pen = {param_name:
-            self.penalties[param_name].value(self.int_params[param_name])
+            self.penalties[param_name].value(
+            getattr(self.int_params,param_name)
+            )
             for param_name in self.penalties}
         return pen
 
@@ -163,7 +173,8 @@ class Layer(object):
 
         """
         pen = {param_name:
-            self.penalties[param_name].grad(self.int_params[param_name])
+            self.penalties[param_name].grad(
+            getattr(self.int_params, param_name))
             for param_name in self.penalties}
         return pen
 
@@ -183,7 +194,7 @@ class Layer(object):
             None
 
         """
-        be.subtract_dicts_inplace(self.int_params, deltas)
+        self.int_params = be.mapzip(be.subtract, deltas, self.int_params)
         self.enforce_constraints()
 
 
