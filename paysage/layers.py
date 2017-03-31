@@ -768,25 +768,25 @@ class IsingLayer(Layer):
             None
 
         """
+        # get the current value of the first moment
+        x = be.tanh(self.int_params['loc'])
 
+        # update the sample sizes
         n = len(data)
         new_sample_size = n + self.sample_size
-        # update the first moment
-        x = be.tanh(self.int_params['loc'])
+
+        # updat the first moment
         x *= self.sample_size / new_sample_size
         x += n * be.mean(data, axis=0) / new_sample_size
-        # update the location parameter
-        self.int_params['loc'] = be.atanh(x)
-        # update the sample size
+
+        # update the class attributes
+        self.int_params = IsingLayer.IntrinsicParams(be.atanh(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
         """
         Apply shrinkage to the intrinsic parameters of the layer.
         Does nothing for the Ising layer.
-
-        Notes:
-            Modifies layer.int_params['loc_var'] in place.
 
         Args:
             shrinkage (float \in [0,1]): the amount of shrinkage to apply
@@ -816,19 +816,13 @@ class IsingLayer(Layer):
             None
 
         """
-        self.ext_params['field'] = be.dot(scaled_units[0], weights[0])
+        field = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
-            self.ext_params['field'] += be.dot(scaled_units[i], weights[i])
-
+            field += be.dot(scaled_units[i], weights[i])
         if beta is not None:
-            self.ext_params['field'] *= be.broadcast(
-                                        beta,
-                                        self.ext_params['field']
-                                        )
-        self.ext_params['field'] += be.broadcast(
-                                    self.int_params['loc'],
-                                    self.ext_params['field']
-                                    )
+            field *= be.broadcast(beta,field)
+        field += be.broadcast(self.int_params.loc, field)
+        self.ext_params = IsingLayer.IntrinsicParams(field)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
