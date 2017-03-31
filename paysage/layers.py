@@ -1209,6 +1209,10 @@ class BernoulliLayer(Layer):
 
 class ExponentialLayer(Layer):
     """Layer with Exponential units (non-negative)."""
+
+    IntrinsicParams = namedtuple("IntrinsicParams", ["loc"])
+    ExtrinsicParams = namedtuple("ExtrinsicParams", ["rate"])
+
     def __init__(self, num_units):
         """
         Create a layer with Exponential units.
@@ -1226,13 +1230,9 @@ class ExponentialLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
 
-        self.int_params = {
-        'loc': be.zeros(self.len)
-        }
+        self.int_params = ExponentialLayer.IntrinsicParams(be.zeros(self.len))
+        self.ext_params = ExponentialLayer.ExtrinsicParams(None)
 
-        self.ext_params = {
-        'rate': None
-        }
 
     def get_config(self):
         """
