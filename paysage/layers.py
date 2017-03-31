@@ -1006,7 +1006,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        return -be.dot(data, self.int_params['loc'])
+        return -be.dot(data, self.int_params.loc)
 
     def log_partition_function(self, phi):
         """
@@ -1028,8 +1028,7 @@ class BernoulliLayer(Layer):
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        logZ = be.broadcast(self.int_params['loc'], phi) + phi
-        return be.softplus(logZ)
+        return be.softplus(be.add(self.int_params.loc, phi))
 
     def online_param_update(self, data):
         """
@@ -1046,15 +1045,19 @@ class BernoulliLayer(Layer):
             None
 
         """
+        # get the current value of the first moment
+        x = be.expit(self.int_params['loc'])
+
+        # update the sample size
         n = len(data)
         new_sample_size = n + self.sample_size
+
         # update the first moment
-        x = be.expit(self.int_params['loc'])
         x *= self.sample_size / new_sample_size
         x += n * be.mean(data, axis=0) / new_sample_size
-        # update the location parameter
-        self.int_params['loc'] = be.logit(x)
-        # update the sample size
+
+        # update the class attributes
+        self.int_params = BernoulliLayer.IntrinsicParams(be.logit(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
