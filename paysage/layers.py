@@ -149,7 +149,7 @@ class Layer(object):
             None
 
         Returns:
-            float: the value of the penalty functions
+            dict (float): the values of the penalty functions
 
         """
         pen = {param_name:
@@ -159,33 +159,34 @@ class Layer(object):
             for param_name in self.penalties}
         return pen
 
-    def get_penalty_gradients(self):
+    def get_penalty_grad(self, deriv, param_name):
         """
-        Get the gradients of the penalties.
+        Get the gradient of the penalties on a parameter.
 
         E.g., L2 penalty = penalty * parameter_i
 
         Args:
-            None
+            deriv (tensor): derivative of the parameter
+            param_name: name of the parameter
 
         Returns:
-            pen (dict): {param_name: tensor (containing gradient)}
+            tensor: derivative including penalty
 
         """
-        pen = {param_name:
-            self.penalties[param_name].grad(
-            getattr(self.int_params, param_name))
-            for param_name in self.penalties}
-        return pen
+        if param_name not in self.penalties:
+            return deriv
+        else:
+            return deriv + self.penalties[param_name].grad(
+                            getattr(self.int_params, param_name))
 
     def parameter_step(self, deltas):
         """
         Update the values of the intrinsic parameters:
 
-        layer.int_params['name'] -= deltas['name']
+        layer.int_params.name -= deltas.name
 
         Notes:
-            Modifies the layer.int_params attribute in place.
+            Modifies the elements of the layer.int_params attribute in place.
 
         Args:
             deltas (dict): {param_name: tensor (update)}
@@ -200,6 +201,9 @@ class Layer(object):
 
 class Weights(Layer):
     """Layer class for weights"""
+
+    IntrinsicParams = namedtuple("IntrinsicParams", ["matrix"])
+
     def __init__(self, shape):
         """
         Create a weight layer.
@@ -217,12 +221,8 @@ class Weights(Layer):
 
         """
         super().__init__()
-
         self.shape = shape
-
-        self.int_params = {
-        'matrix': 0.01 * be.randn(shape)
-        }
+        self.int_params = Weights.IntrinsicParams(0.01 * be.randn(shape))
 
     def get_config(self):
         """
@@ -262,7 +262,7 @@ class Weights(Layer):
         """
         Get the weight matrix.
 
-        A convenience method for accessing layer.int_params['matrix']
+        A convenience method for accessing layer.int_params.matrix
         with a shorter syntax.
 
         Args:
@@ -272,14 +272,14 @@ class Weights(Layer):
             tensor: weight matrix
 
         """
-        return self.int_params['matrix']
+        return self.int_params.matrix
 
     def W_T(self):
         """
         Get the transpose of the weight matrix.
 
         A convenience method for accessing the transpose of
-        layer.int_params['matrix'] with a shorter syntax.
+        layer.int_params.matrix with a shorter syntax.
 
         Args:
             None
@@ -288,7 +288,7 @@ class Weights(Layer):
             tensor: transpose of weight matrix
 
         """
-        return be.transpose(self.int_params['matrix'])
+        return be.transpose(self.int_params.matrix)
 
     def derivatives(self, vis, hid):
         """
@@ -301,14 +301,12 @@ class Weights(Layer):
             hid (tensor (num_samples, num_visible)): Rescaled hidden units.
 
         Returns:
-            derivs (dict): {'matrix': tensor (contains gradient)}
+            derivs (namedtuple): 'matrix': tensor (contains gradient)
 
         """
-        n = len(vis)
-        derivs = {
-        'matrix': -be.batch_outer(vis, hid) / n
-        }
-        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
+        derivs = Weights.IntrinsicParams(
+                 self.get_penalty_grad(-be.batch_outer(vis, hid) / len(vis),
+                                       "matrix"))
         return derivs
 
     def energy(self, vis, hid):
@@ -326,7 +324,7 @@ class Weights(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        return -be.batch_dot(vis, self.int_params['matrix'], hid)
+        return -be.batch_dot(vis, self.W(), hid)
 
 
 class GaussianLayer(Layer):
