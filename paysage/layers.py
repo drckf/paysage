@@ -329,6 +329,10 @@ class Weights(Layer):
 
 class GaussianLayer(Layer):
     """Layer with Gaussian units"""
+
+    IntrinsicParams = namedtuple("IntrinsicParams", ["loc", "log_var"])
+    ExtrinsicParams = namedtuple("ExtrinsicParams", ["mean", "variance"])
+
     def __init__(self, num_units):
         """
         Create a layer with Gaussian units.
@@ -346,15 +350,12 @@ class GaussianLayer(Layer):
         self.sample_size = 0
         self.rand = be.randn
 
-        self.int_params = {
-        'loc': be.zeros(self.len),
-        'log_var': be.zeros(self.len)
-        }
+        self.int_params = GaussianLayer.IntrinsicParams(
+                          be.zeros(self.len),
+                          be.zeros(self.len)
+                          )
 
-        self.ext_params = {
-        'mean': None,
-        'variance': None
-        }
+        self.ext_params = GaussianLayer.ExtrinsicParams(None, None)
 
     def get_config(self):
         """
@@ -406,8 +407,8 @@ class GaussianLayer(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        scale = be.exp(self.int_params['log_var'])
-        result = vis - be.broadcast(self.int_params['loc'], vis)
+        scale = be.exp(self.int_params.log_var)
+        result = vis - be.broadcast(self.int_params.loc, vis)
         result = be.square(result)
         result /= be.broadcast(scale, vis)
         return 0.5 * be.mean(result, axis=1)
@@ -432,10 +433,9 @@ class GaussianLayer(Layer):
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        scale = be.exp(self.int_params['log_var'])
+        scale = be.exp(self.int_params.log_var)
 
-
-        logZ = be.broadcast(self.int_params['loc'], phi) * phi
+        logZ = be.broadcast(self.int_params.loc, phi) * phi
         logZ += be.broadcast(scale, phi) * be.square(phi)
         logZ += be.log(be.broadcast(scale, phi))
 
@@ -456,21 +456,24 @@ class GaussianLayer(Layer):
             None
 
         """
+        new_loc = self.int_params.loc
+        new_scale = self.int_params.log_var
         n = len(data)
         new_sample_size = n + self.sample_size
         # compute the current value of the second moment
-        x2 = be.exp(self.int_params['log_var'])
-        x2 += self.int_params['loc']**2
+        x2 = be.exp(self.int_params.log_var)
+        x2 += self.int_params.loc**2
         # update the first moment / location parameter
-        self.int_params['loc'] *= self.sample_size / new_sample_size
-        self.int_params['loc'] += n * be.mean(data, axis=0) / new_sample_size
+        new_loc *= self.sample_size / new_sample_size
+        new_loc += n * be.mean(data, axis=0) / new_sample_size
         # update the second moment
         x2 *= self.sample_size / new_sample_size
         x2 += n * be.mean(be.square(data), axis=0) / new_sample_size
         # update the log_var parameter from the second moment
-        self.int_params['log_var'] = be.log(x2 - self.int_params['loc']**2)
+        new_scale = be.log(x2 - new_loc**2)
         # update the sample size
         self.sample_size = new_sample_size
+        self.int_params = GaussianLayer.IntrinsicParams(new_loc, new_scale)
 
     def shrink_parameters(self, shrinkage=0.1):
         """
