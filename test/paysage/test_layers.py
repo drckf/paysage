@@ -47,6 +47,12 @@ def test_get_penalties():
     ly.add_penalty({'matrix': p})
     ly.get_penalties()
 
+def test_get_penalty_gradients():
+    ly = layers.Weights((5,3))
+    p = penalties.l2_penalty(0.37)
+    ly.add_penalty({'matrix': p})
+    ly.get_penalty_gradients()
+
 def test_parameter_step():
     ly = layers.Weights((5,3))
     deltas = {'matrix': be.zeros_like(ly.W())}
@@ -58,3 +64,30 @@ def test_get_base_config():
     p = penalties.l2_penalty(0.37)
     ly.add_penalty({'matrix': p})
     ly.get_base_config()
+
+
+# ----- Weights LAYER ----- #
+
+def test_weights_derivative():
+    ly = layers.Weights((5,3))
+    p = penalties.l2_penalty(0.37)
+    ly.add_penalty({'matrix': p})
+    vis = be.ones((10,ly.shape[0]))
+    hid = be.ones((10,ly.shape[1]))
+    derivs = ly.derivatives(vis, hid)
+
+def test_weights_energy():
+    ly = layers.Weights((5,3))
+    vis = be.ones((10,ly.shape[0]))
+    hid = be.ones((10,ly.shape[1]))
+    ly.energy(vis, hid)
+
+def test_build_from_config():
+    ly = layers.Weights((5,3))
+    ly.add_constraint({'matrix': constraints.non_negative})
+    p = penalties.l2_penalty(0.37)
+    ly.add_penalty({'matrix': p})
+    ly_new = layers.Weights.from_config(ly.get_config())
+
+
+# ----- Gaussian LAYER ----- #
