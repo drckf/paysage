@@ -614,7 +614,7 @@ class GaussianLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        return self.ext_params.mean.
+        return self.ext_params.mean
 
     def sample_state(self):
         """
@@ -657,6 +657,10 @@ class GaussianLayer(Layer):
 
 class IsingLayer(Layer):
     """Layer with Ising units (i.e., -1 or +1)."""
+
+    IntrinsicParams = namedtuple("IntrinsicParams", ["loc"])
+    ExtrinsicParams = namedtuple("ExtrinsicParams", ["field"])
+
     def __init__(self, num_units):
         """
         Create a layer with Ising units.
@@ -674,13 +678,9 @@ class IsingLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
 
-        self.int_params = {
-        'loc': be.zeros(self.len)
-        }
+        self.int_params = IsingLayer.IntrinsicParams(be.zeros(self.len))
+        self.ext_params = IsingLayer.ExtrinsicParams(None)
 
-        self.ext_params = {
-        'field': None
-        }
 
     def get_config(self):
         """
