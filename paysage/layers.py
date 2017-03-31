@@ -932,6 +932,10 @@ class IsingLayer(Layer):
 
 class BernoulliLayer(Layer):
     """Layer with Bernoulli units (i.e., 0 or +1)."""
+
+    IntrinsicParams = namedtuple("IntrinsicParams", ["loc"])
+    ExtrinsicParams = namedtuple("ExtrinsicParams", ["field"])
+
     def __init__(self, num_units):
         """
         Create a layer with Bernoulli units.
@@ -949,17 +953,8 @@ class BernoulliLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
 
-        self.int_params = {
-        'loc': be.zeros(self.len)
-        }
-
-        self.ext_params = {
-        'field': None
-        }
-
-        self.derivs = {
-        'loc': be.zeros(self.len)
-        }
+        self.int_params = BernoulliLayer.IntrinsicParams(be.zeros(self.len))
+        self.ext_params = BernoulliLayer.ExtrinsicParams(None)
 
     def get_config(self):
         """
