@@ -1116,16 +1116,12 @@ class BernoulliLayer(Layer):
                 Inverse temperatures.
 
         Returns:
-            grad (dict): {param_name: tensor (contains gradient)}
+            grad (namedtuple): param_name: tensor (contains gradient)
 
         """
-        derivs = {
-        'loc': be.zeros(self.len)
-        }
-
-        derivs['loc'] = -be.mean(vis, axis=0)
-        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
-        return derivs
+        loc = -be.mean(vis, axis=0)
+        loc = self.get_penalty_grad(loc, 'loc')
+        return BernoulliLayer.IntrinsicParams(loc)
 
     def rescale(self, observations):
         """
