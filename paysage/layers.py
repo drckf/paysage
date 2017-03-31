@@ -434,11 +434,9 @@ class GaussianLayer(Layer):
 
         """
         scale = be.exp(self.int_params.log_var)
-
-        logZ = be.broadcast(self.int_params.loc, phi) * phi
-        logZ += be.broadcast(scale, phi) * be.square(phi)
+        logZ = be.multiply(self.int_params.loc, phi)
+        logZ += be.multiply(scale, be.square(phi))
         logZ += be.log(be.broadcast(scale, phi))
-
         return logZ
 
     def online_param_update(self, data):
@@ -681,7 +679,6 @@ class IsingLayer(Layer):
         self.int_params = IsingLayer.IntrinsicParams(be.zeros(self.len))
         self.ext_params = IsingLayer.ExtrinsicParams(None)
 
-
     def get_config(self):
         """
         Get the configuration dictionary of the Ising layer.
@@ -732,7 +729,7 @@ class IsingLayer(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        return -be.dot(data, self.int_params['loc'])
+        return -be.dot(data, self.int_params.loc)
 
     def log_partition_function(self, phi):
         """
@@ -754,8 +751,7 @@ class IsingLayer(Layer):
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        logZ = be.broadcast(self.int_params['loc'], phi) + phi
-        return be.logcosh(logZ)
+        return be.logcosh(be.add(self.int_params.loc, phi))
 
     def online_param_update(self, data):
         """
@@ -772,6 +768,7 @@ class IsingLayer(Layer):
             None
 
         """
+
         n = len(data)
         new_sample_size = n + self.sample_size
         # update the first moment
