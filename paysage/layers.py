@@ -839,17 +839,12 @@ class IsingLayer(Layer):
                 Inverse temperatures.
 
         Returns:
-            grad (dict): {param_name: tensor (contains gradient)}
+            grad (namedtuple): param_name: tensor (contains gradient)
 
         """
-        derivs = {
-        'loc': be.zeros(self.len)
-        }
-
-        derivs['loc'] = -be.mean(vis, axis=0)
-        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
-
-        return derivs
+        loc = -be.mean(vis, axis=0)
+        loc = self.get_penalty_grad(loc, 'loc')
+        return IsingLayer.IntrinsicParams(loc)
 
     def rescale(self, observations):
         """
@@ -878,7 +873,7 @@ class IsingLayer(Layer):
             tensor (num_samples, num_units): The mode of the distribution
 
         """
-        return 2 * be.float_tensor(self.ext_params['field'] > 0) - 1
+        return 2 * be.float_tensor(self.ext_params.field > 0) - 1
 
     def mean(self):
         """
@@ -893,7 +888,7 @@ class IsingLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        return be.tanh(self.ext_params['field'])
+        return be.tanh(self.ext_params.field)
 
     def sample_state(self):
         """
@@ -908,7 +903,7 @@ class IsingLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        p = be.expit(self.ext_params['field'])
+        p = be.expit(self.ext_params.field)
         r = self.rand(be.shape(p))
         return 2 * be.float_tensor(r < p) - 1
 
