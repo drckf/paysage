@@ -1065,9 +1065,6 @@ class BernoulliLayer(Layer):
         Apply shrinkage to the intrinsic parameters of the layer.
         Does nothing for the Bernoulli layer.
 
-        Notes:
-            Modifies layer.int_params['loc_var'] in place.
-
         Args:
             shrinkage (float \in [0,1]): the amount of shrinkage to apply
 
@@ -1096,19 +1093,13 @@ class BernoulliLayer(Layer):
             None
 
         """
-        self.ext_params['field'] = be.dot(scaled_units[0], weights[0])
+        field = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
-            self.ext_params['field'] += be.dot(scaled_units[i], weights[i])
-
+            field += be.dot(scaled_units[i], weights[i])
         if beta is not None:
-            self.ext_params['field'] *= be.broadcast(
-                                        beta,
-                                        self.ext_params['field']
-                                        )
-        self.ext_params['field'] += be.broadcast(
-                                    self.int_params['loc'],
-                                    self.ext_params['field']
-                                    )
+            field *= be.broadcast(beta, field)
+        field += be.broadcast(self.int_params.loc, field)
+        self.ext_params = BernoulliLayer.ExtrinsicParams(field)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
