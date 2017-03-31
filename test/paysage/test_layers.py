@@ -3,6 +3,7 @@ from paysage import constraints
 from paysage import penalties
 from paysage import backends as be
 
+import pytest
 
 # ----- CONSTRUCTORS ----- #
 
@@ -49,7 +50,7 @@ def test_get_penalties():
 
 def test_parameter_step():
     ly = layers.Weights((5,3))
-    deltas = {'matrix': be.zeros_like(ly.W())}
+    deltas = layers.Weights.IntrinsicParams(be.zeros_like(ly.W()))
     ly.parameter_step(deltas)
 
 def test_get_base_config():
@@ -58,3 +59,6 @@ def test_get_base_config():
     p = penalties.l2_penalty(0.37)
     ly.add_penalty({'matrix': p})
     ly.get_base_config()
+
+if __name__ == "__main__":
+    pytest.main([__file__])
