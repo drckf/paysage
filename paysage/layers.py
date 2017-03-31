@@ -153,7 +153,7 @@ class Layer(object):
         """
         Get the gradients of the penalties.
 
-        E.g., L2 penalty = penalty * parameter_i
+        E.g., L2 penalty gradient = penalty * parameter_i
 
         Args:
             None
@@ -241,9 +241,9 @@ class Weights(Layer):
 
         """
         layer = cls(config["shape"])
-        for k, v in config["penalties"]:
+        for k, v in config["penalties"].items():
             layer.add_penalty({k: getattr(penalties, v)})
-        for k, v in config["constraints"]:
+        for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
