@@ -456,24 +456,25 @@ class GaussianLayer(Layer):
             None
 
         """
-        new_loc = self.int_params.loc
-        new_scale = self.int_params.log_var
+        # get the current values of the first and second moments
+        x = self.int_params.loc
+        x2 = be.exp(self.int_params.log_var) + x**2
+
+        # update the size of the dataset
         n = len(data)
         new_sample_size = n + self.sample_size
-        # compute the current value of the second moment
-        x2 = be.exp(self.int_params.log_var)
-        x2 += self.int_params.loc**2
-        # update the first moment / location parameter
-        new_loc *= self.sample_size / new_sample_size
-        new_loc += n * be.mean(data, axis=0) / new_sample_size
+
+        # update the first moment
+        x *= self.sample_size / new_sample_size
+        x += n * be.mean(data, axis=0) / new_sample_size
+
         # update the second moment
         x2 *= self.sample_size / new_sample_size
         x2 += n * be.mean(be.square(data), axis=0) / new_sample_size
-        # update the log_var parameter from the second moment
-        new_scale = be.log(x2 - new_loc**2)
-        # update the sample size
+
+        # update the class attributes
         self.sample_size = new_sample_size
-        self.int_params = GaussianLayer.IntrinsicParams(new_loc, new_scale)
+        self.int_params = GaussianLayer.IntrinsicParams(x, be.log(x2 - x**2))
 
     def shrink_parameters(self, shrinkage=0.1):
         """
@@ -491,9 +492,10 @@ class GaussianLayer(Layer):
             None
 
         """
-        var = be.exp(self.int_params['log_var'])
+        var = be.exp(self.int_params.log_var)
         be.mix_inplace(be.float_scalar(1-shrinkage), var, be.ones_like(var))
-        self.int_params['log_var'] = be.log(var)
+        self.int_params = GaussianLayer.IntrinsicParams(
+                           self.int_params.loc, be.log(var))
 
     def update(self, scaled_units, weights, beta=None):
         """
