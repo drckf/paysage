@@ -540,32 +540,33 @@ class GaussianLayer(Layer):
                 Inverse temperatures.
 
         Returns:
-            grad (dict): {param_name: tensor (contains gradient)}
+            grad (namedtuple): param_name: tensor (contains gradient)
 
         """
-        derivs = {
-        'loc': be.zeros(self.len),
-        'log_var': be.zeros(self.len)
-        }
+        # initalize tensors for the location and scale derivatives
+        loc = be.zeros(self.len),
+        log_var = be.zeros(self.len)
 
+        # compute the derivative with respect to the location parameter
         v_scaled = self.rescale(vis)
-        derivs['loc'] = -be.mean(v_scaled, axis=0)
+        loc = -be.mean(v_scaled, axis=0)
+        loc = self.get_penalty_grad(loc, 'loc')
 
-        diff = be.square(
-        vis - be.broadcast(self.int_params['loc'], vis)
-        )
-        derivs['log_var'] = -0.5 * be.mean(diff, axis=0)
+        # compute the derivative with respect to the cale parameter
+        diff = be.square(vis - be.broadcast(loc, vis))
+        log_var = -0.5 * be.mean(diff, axis=0)
         for i in range(len(hid)):
-            derivs['log_var'] += be.batch_dot(
+            log_var += be.batch_dot(
                                  hid[i],
                                  be.transpose(weights[i]),
                                  vis,
                                  axis=0
                                  ) / len(vis)
-        derivs['log_var'] = self.rescale(derivs['log_var'])
+        log_var = self.rescale(log_var)
+        log_var = self.get_penalty_grad(log_var, 'log_var')
 
-        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
-        return derivs
+        # return the derivatives in a namedtuple
+        return GaussianLayer.IntrinsicParams(loc, log_var)
 
     def rescale(self, observations):
         """
@@ -581,8 +582,8 @@ class GaussianLayer(Layer):
             tensor: Rescaled observations
 
         """
-        scale = be.exp(self.int_params['log_var'])
-        return observations / be.broadcast(scale, observations)
+        scale = be.exp(self.int_params.log_var)
+        return be.divide(scale, observations)
 
     def mode(self):
         """
@@ -598,7 +599,7 @@ class GaussianLayer(Layer):
             tensor (num_samples, num_units): The mode of the distribution
 
         """
-        return self.ext_params['mean']
+        return self.ext_params.mean
 
     def mean(self):
         """
@@ -613,7 +614,7 @@ class GaussianLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        return self.ext_params['mean']
+        return self.ext_params.mean.
 
     def sample_state(self):
         """
@@ -628,8 +629,8 @@ class GaussianLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        r = be.float_tensor(self.rand(be.shape(self.ext_params['mean'])))
-        return self.ext_params['mean'] + be.sqrt(self.ext_params['variance'])*r
+        r = be.float_tensor(self.rand(be.shape(self.ext_params.mean)))
+        return self.ext_params.mean + be.sqrt(self.ext_params.variance)*r
 
     def random(self, array_or_shape):
         """
