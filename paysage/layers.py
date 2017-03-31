@@ -1394,17 +1394,12 @@ class ExponentialLayer(Layer):
                 Inverse temperatures.
 
         Returns:
-            grad (dict): {param_name: tensor (contains gradient)}
+            grad (namedtuple): param_name: tensor (contains gradient)
 
         """
-        derivs = {
-        'loc': be.zeros(self.len)
-        }
-
-        derivs['loc'] = be.mean(vis, axis=0)
-        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
-
-        return derivs
+        loc = be.mean(vis, axis=0)
+        loc = self.get_penalty_grad(loc, 'loc')
+        return ExponentialLayer.IntrinsicParams(loc)
 
     def rescale(self, observations):
         """
@@ -1446,7 +1441,7 @@ class ExponentialLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        return be.reciprocal(self.ext_params['rate'])
+        return be.reciprocal(self.ext_params.rate)
 
     def sample_state(self):
         """
@@ -1461,8 +1456,8 @@ class ExponentialLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        r = self.rand(be.shape(self.ext_params['rate']))
-        return -be.log(r) / self.ext_params['rate']
+        r = self.rand(be.shape(self.ext_params.rate))
+        return -be.log(r) / self.ext_params.rate
 
     def random(self, array_or_shape):
         """
