@@ -1,11 +1,35 @@
 from . import backends as be
 
-# ----- FUNCTIONS ----- #
+# ----- PENALTY OBJECTS ----- #
 
-class l2_penalty(object):
+class Penalty(object):
+    """
+    Base penalty class.
+    Derived classes should define `value` and `grad` functions.
 
+    """
     def __init__(self, penalty):
         self.penalty = penalty
+
+    def value(self, tensor):
+        """
+        The value of the penalty function on a tensor.
+
+        """
+        raise NotImplementedError
+
+    def grad(self, tensor):
+        """
+        The value of the gradient of the penalty function on a tensor.
+
+        """
+        raise NotImplementedError
+
+
+class l2_penalty(Penalty):
+
+    def __init__(self, penalty):
+        super().__init__(penalty)
 
     def value(self, tensor):
         return 0.5 * self.penalty * be.tsum(tensor**2)
@@ -14,10 +38,10 @@ class l2_penalty(object):
         return self.penalty * tensor
 
 
-class l1_penalty(object):
+class l1_penalty(Penalty):
 
     def __init__(self, penalty):
-        self.penalty = penalty
+        super().__init__(penalty)
 
     def value(self, tensor):
         return self.penalty * be.tsum(be.tabs(tensor))
@@ -26,10 +50,10 @@ class l1_penalty(object):
         return self.penalty * be.sign(tensor)
 
 
-class log_penalty(object):
+class log_penalty(Penalty):
 
     def __init__(self, penalty):
-        self.penalty = penalty
+        super().__init__(penalty)
 
     def value(self, tensor):
         return -self.penalty * be.log(tensor)
