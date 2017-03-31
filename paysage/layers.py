@@ -1150,7 +1150,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): The mode of the distribution
 
         """
-        return be.float_tensor(self.ext_params['field'] > 0.0)
+        return be.float_tensor(self.ext_params.field > 0.0)
 
     def mean(self):
         """
@@ -1165,7 +1165,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        return be.expit(self.ext_params['field'])
+        return be.expit(self.ext_params.field)
 
     def sample_state(self):
         """
@@ -1180,7 +1180,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        p = be.expit(self.ext_params['field'])
+        p = be.expit(self.ext_params.field)
         r = self.rand(be.shape(p))
         return be.float_tensor(r < p)
 
