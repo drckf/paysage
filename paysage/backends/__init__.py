@@ -36,6 +36,7 @@ def apply(func, a):
     from operator import mul
     from cytoolz import partial
 
+    # create a function to divide by 2
     halve = partial(mul, 0.5)
 
     coords = namedtuple("coordinates", ["x", "y"])

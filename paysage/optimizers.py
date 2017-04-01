@@ -2,6 +2,27 @@ from . import backends as be
 from math import sqrt
 from copy import deepcopy
 
+#TODO: better way of dealing with gradients
+#
+# gradients have the following form:
+# {
+#   'layers':[
+#             derivs (namedtuple),
+#             derivs (namedtuple) ...
+#            ],
+#   'weights': [
+#               derivs (namedtuple) ...
+#              ]
+# }
+#
+# we often have to do things to gradients like
+# add gradients together
+# multiply a gradient by a stepsize
+# compute the square of a gradient, etc
+# we should probably abstract this out somehow
+# because the functions below (like update_mean in GradientMemory)
+# are becoming unwieldy
+
 # ----- GRADIENT ----- #
 
 class GradientMemory(object):
