@@ -1,8 +1,22 @@
 import math
+from typing import Any, NamedTuple
+
 from . import backends as be
+from .models.hidden import Model
+
+# import backends as be
+# import models as M
 
 # ----- CLASSES ----- #
 
+class UpdateArgs(NamedTuple):
+    minibatch: Any
+    reconstructions: Any
+    random_samples: Any
+    samples: Any
+    amodel: Model
+    # TODO: leave tensors as Any until we figure out a better representation
+    # for type ambiguity here
 
 class ReconstructionError(object):
     """
@@ -45,7 +59,7 @@ class ReconstructionError(object):
         self.norm = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, argdict):
+    def update(self, update_args):
         """
         Update the estimate for the reconstruction error using a batch
         of observations and a batch of reconstructions.
@@ -61,10 +75,10 @@ class ReconstructionError(object):
 
         Returns:
             None
-
+0
         """
-        self.norm += len(argdict['minibatch'])
-        self.mean_square_error += be.tsum((argdict['minibatch'] - argdict['reconstructions'])**2)
+        self.norm += len(update_args.minibatch)
+        self.mean_square_error += be.tsum((update_args.minibatch - update_args.reconstructions)**2)
 
     def value(self):
         """
@@ -129,7 +143,7 @@ class EnergyDistance(object):
         self.norm = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, argdict):
+    def update(self, update_args):
         """
         Update the estimate for the energy distance using a batch
         of observations and a batch of fantasy particles.
@@ -149,7 +163,7 @@ class EnergyDistance(object):
         """
         self.norm += 1
         self.energy_distance += \
-            be.fast_energy_distance(argdict['minibatch'], argdict['samples'],
+            be.fast_energy_distance(update_args.minibatch, update_args.samples,
                                     self.downsample)
 
     def value(self):
@@ -212,7 +226,7 @@ class EnergyGap(object):
         self.norm = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, argdict):
+    def update(self, update_args):
         """
         Update the estimate for the energy gap using a batch
         of observations and a batch of fantasy particles.
@@ -233,10 +247,10 @@ class EnergyGap(object):
 
         """
         self.norm += 1
-        self.energy_gap += be.mean(argdict['amodel']
-                                   .marginal_free_energy(argdict['minibatch']))
-        self.energy_gap -= be.mean(argdict['amodel']
-                                   .marginal_free_energy(argdict['random_samples']))
+        self.energy_gap += be.mean(update_args.amodel
+                                   .marginal_free_energy(update_args.minibatch))
+        self.energy_gap -= be.mean(update_args.amodel
+                                   .marginal_free_energy(update_args.random_samples))
 
     def value(self):
         """
@@ -302,7 +316,7 @@ class EnergyZscore(object):
         self.random_mean_square = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, argdict):
+    def update(self, update_args):
         """
         Update the estimate for the energy z-score using a batch
         of observations and a batch of fantasy particles.
@@ -322,12 +336,12 @@ class EnergyZscore(object):
             None
 
         """
-        self.data_mean += be.mean(argdict['amodel']
-                                  .marginal_free_energy(argdict['minibatch']))
-        self.random_mean +=  be.mean(argdict['amodel']
-                                     .marginal_free_energy(argdict['random_samples']))
-        self.random_mean_square += be.mean(argdict['amodel']
-                                           .marginal_free_energy(argdict['random_samples'])**2)
+        self.data_mean += be.mean(update_args.amodel
+                                  .marginal_free_energy(update_args.minibatch))
+        self.random_mean +=  be.mean(update_args.amodel
+                                     .marginal_free_energy(update_args.random_samples))
+        self.random_mean_square += be.mean(update_args.amodel
+                                           .marginal_free_energy(update_args.random_samples)**2)
 
     def value(self):
         """

@@ -3,6 +3,7 @@ from collections import OrderedDict
 from . import backends as be
 from . import metrics as M
 
+
 #TODO: should import the State class from hidden.py
 
 # -----  CLASSES ----- #
@@ -320,17 +321,23 @@ class ProgressMonitor(object):
                 fantasy_particles = sampler.state
 
                 # compile argdict
-                argdict = {
-                    'minibatch'       : v_data,
-                    'reconstructions' : reconstructions,
-                    'random_samples'  : random_samples,
-                    'samples'         : fantasy_particles,
-                    'amodel'          : model
-                }
+                args = M.UpdateArgs(minibatch=v_data,
+                                    reconstructions=reconstructions,
+                                    random_samples=random_samples,
+                                    samples=fantasy_particles,
+                                    amodel=model)
+
+                # argdict = {
+                #     'minibatch'       : v_data,
+                #     'reconstructions' : reconstructions,
+                #     'random_samples'  : random_samples,
+                #     'samples'         : fantasy_particles,
+                #     'amodel'          : model
+                # }
 
                 # update metrics
                 for m in self.metrics:
-                    m.update(argdict)
+                    m.update(args)
 
             # compute metric dictionary
             metdict = OrderedDict([(m.name, m.value()) for m in self.metrics])
