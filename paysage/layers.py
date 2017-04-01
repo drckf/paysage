@@ -1046,7 +1046,7 @@ class BernoulliLayer(Layer):
 
         """
         # get the current value of the first moment
-        x = be.expit(self.int_params['loc'])
+        x = be.expit(self.int_params.loc)
 
         # update the sample size
         n = len(data)

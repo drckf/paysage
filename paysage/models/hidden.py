@@ -496,24 +496,27 @@ class Model(object):
         hid_scaled = self.layers[i+1].rescale(hid)
 
         # 5. Compute the gradients
-        be.subtract_dicts_inplace(grad['layers'][i],
+        grad['layers'][i] = be.mapzip(be.subtract,
                                   self.layers[i].derivatives(
                                                  vmodel,
                                                  [hid_scaled],
                                                  [self.weights[0].W()]
-                                                 ))
+                                                 ),
+                                  grad['layers'][i])
 
-        be.subtract_dicts_inplace(grad['layers'][i+1],
+        grad['layers'][i+1] = be.mapzip(be.subtract,
                                   self.layers[i+1].derivatives(
                                                    hid,
                                                    [vmodel_scaled],
                                                    [self.weights[0].W_T()]
-                                                   ))
+                                                   ),
+                                  grad['layers'][i+1])
 
-        be.subtract_dicts_inplace(grad['weights'][i],
+        grad['weights'][i] = be.mapzip(be.subtract,
                                   self.weights[i].derivatives(
                                                   vmodel_scaled,
-                                                  hid_scaled))
+                                                  hid_scaled),
+                                  grad['weights'][i])
         return grad
 
     def parameter_update(self, deltas):
