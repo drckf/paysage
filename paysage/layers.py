@@ -198,6 +198,10 @@ class Weights(Layer):
             They have no external parameters because they do not depend
             on the state of anything else.
 
+            The shape is regarded as a dimensionality of
+            the visible and hidden units for the layer,
+            as `shape = (visible, hidden)`.
+
         Args:
             shape (tuple): shape of the weight tensor (int, int)
 
@@ -221,7 +225,7 @@ class Weights(Layer):
             None:
 
         Returns:
-            configuratiom (dict):
+            configuration (dict):
 
         """
         base_config = self.get_base_config()
@@ -355,7 +359,7 @@ class GaussianLayer(Layer):
             None:
 
         Returns:
-            configuratiom (dict):
+            configuration (dict):
 
         """
         base_config = self.get_base_config()
@@ -377,9 +381,9 @@ class GaussianLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
-        for k, v in config["penalties"]:
+        for k, v in config["penalties"].items():
             layer.add_penalty({k: getattr(penalties, v)})
-        for k, v in config["constraints"]:
+        for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
@@ -493,7 +497,7 @@ class GaussianLayer(Layer):
         Args:
             scaled_units list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the connected units.
-            weights list[tensor, (num_connected_units, num_units)]:
+            weights list[tensor (num_connected_units, num_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -529,7 +533,7 @@ class GaussianLayer(Layer):
                 The values of the visible units.
             hid list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the hidden units.
-            weights list[tensor, (num_units, num_connected_units)]:
+            weights list[tensor (num_units, num_connected_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
