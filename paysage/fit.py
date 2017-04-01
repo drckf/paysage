@@ -321,16 +321,16 @@ class ProgressMonitor(object):
 
                 # compile argdict
                 argdict = {
-                'minibatch': v_data,
-                'reconstructions': reconstructions,
-                'random_samples': random_samples,
-                'samples': fantasy_particles,
-                'amodel': model
+                    'minibatch'       : v_data,
+                    'reconstructions' : reconstructions,
+                    'random_samples'  : random_samples,
+                    'samples'         : fantasy_particles,
+                    'amodel'          : model
                 }
 
                 # update metrics
                 for m in self.metrics:
-                    m.update(**argdict)
+                    m.update(argdict)
 
             # compute metric dictionary
             metdict = OrderedDict([(m.name, m.value()) for m in self.metrics])

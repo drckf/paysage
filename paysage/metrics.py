@@ -45,7 +45,7 @@ class ReconstructionError(object):
         self.norm = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, minibatch=None, reconstructions=None, **kwargs):
+    def update(self, argdict):
         """
         Update the estimate for the reconstruction error using a batch
         of observations and a batch of reconstructions.
@@ -63,8 +63,8 @@ class ReconstructionError(object):
             None
 
         """
-        self.norm += len(minibatch)
-        self.mean_square_error += be.tsum((minibatch - reconstructions)**2)
+        self.norm += len(argdict['minibatch'])
+        self.mean_square_error += be.tsum((argdict['minibatch'] - argdict['reconstructions'])**2)
 
     def value(self):
         """
@@ -129,7 +129,7 @@ class EnergyDistance(object):
         self.norm = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, minibatch=None, samples=None, **kwargs):
+    def update(self, argdict):
         """
         Update the estimate for the energy distance using a batch
         of observations and a batch of fantasy particles.
@@ -148,8 +148,9 @@ class EnergyDistance(object):
 
         """
         self.norm += 1
-        self.energy_distance += be.fast_energy_distance(minibatch, samples,
-                                                     self.downsample)
+        self.energy_distance += \
+            be.fast_energy_distance(argdict['minibatch'], argdict['samples'],
+                                    self.downsample)
 
     def value(self):
         """
@@ -211,7 +212,7 @@ class EnergyGap(object):
         self.norm = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs):
+    def update(self, argdict):
         """
         Update the estimate for the energy gap using a batch
         of observations and a batch of fantasy particles.
@@ -232,8 +233,10 @@ class EnergyGap(object):
 
         """
         self.norm += 1
-        self.energy_gap += be.mean(amodel.marginal_free_energy(minibatch))
-        self.energy_gap -= be.mean(amodel.marginal_free_energy(random_samples))
+        self.energy_gap += be.mean(argdict['amodel']
+                                   .marginal_free_energy(argdict['minibatch']))
+        self.energy_gap -= be.mean(argdict['amodel']
+                                   .marginal_free_energy(argdict['random_samples']))
 
     def value(self):
         """
@@ -299,7 +302,7 @@ class EnergyZscore(object):
         self.random_mean_square = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs):
+    def update(self, argdict):
         """
         Update the estimate for the energy z-score using a batch
         of observations and a batch of fantasy particles.
@@ -319,9 +322,12 @@ class EnergyZscore(object):
             None
 
         """
-        self.data_mean += be.mean(amodel.marginal_free_energy(minibatch))
-        self.random_mean +=  be.mean(amodel.marginal_free_energy(random_samples))
-        self.random_mean_square +=  be.mean(amodel.marginal_free_energy(random_samples)**2)
+        self.data_mean += be.mean(argdict['amodel']
+                                  .marginal_free_energy(argdict['minibatch']))
+        self.random_mean +=  be.mean(argdict['amodel']
+                                     .marginal_free_energy(argdict['random_samples']))
+        self.random_mean_square += be.mean(argdict['amodel']
+                                           .marginal_free_energy(argdict['random_samples'])**2)
 
     def value(self):
         """
