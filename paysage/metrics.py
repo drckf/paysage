@@ -10,18 +10,18 @@ from .models.hidden import Model
 
 # ----- CLASSES ----- #
 
-UpdateArgs = namedtuple('UpdateArgs', ['minibatch',
-                                       'reconstructions',
-                                       'random_samples',
-                                       'samples',
-                                       'amodel'], verbose = True)
+# UpdateArgs = namedtuple('UpdateArgs', ['minibatch',
+#                                        'reconstructions',
+#                                        'random_samples',
+#                                        'samples',
+#                                        'amodel'], verbose = True)
 
-# class UpdateArgs(NamedTuple):
-#     minibatch: Any
-#     reconstructions: Any
-#     random_samples: Any
-#     samples: Any
-#     amodel: Model
+class UpdateArgs(NamedTuple):
+    minibatch: Any
+    reconstructions: Any
+    random_samples: Any
+    samples: Any
+    amodel: Model
 
     # TODO: leave tensors as Any until we figure out a better representation
     # for type ambiguity here

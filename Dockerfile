@@ -12,9 +12,9 @@ RUN apt-get update \
 ENV LLVM_CONFIG /usr/lib/llvm-3.8/bin/llvm-config
 
 # Switch to python 3.6
-conda install -y python=3.6
-alias python=/opt/conda/bin/python3.6
-alias pip=/opt/conda/bin/pip
+RUN conda install -y python=3.6
+RUN alias python=/opt/conda/bin/python3.6
+RUN alias pip=/opt/conda/bin/pip
 
 # Add repo to container
 ADD . /opt/paysage
