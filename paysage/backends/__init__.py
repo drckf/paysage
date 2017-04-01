@@ -24,6 +24,44 @@ else:
 
 # ----- COMMON FUNCTIONALITY ----- #
 
+def apply(func, a):
+    """
+    Applies a function over iterable a, giving back an
+    object of the same type as a. That is, b[i] = func(a[i]).
+
+    For example:
+
+    '''
+    from collections import namedtuple
+    from operator import mul
+    from cytoolz import partial
+
+    halve = partial(mul, 0.5)
+
+    coords = namedtuple("coordinates", ["x", "y"])
+
+    a = coords(1,2)
+    b = apply(halve, a) # coordinates(x=0.5, y=1.0)
+
+    a = list(a)
+    b = apply(halve, a) # [0.5,1.0]
+
+    '''
+
+    Args:
+        func (callable): a function with a single argument
+        a (iterable: e.g., list or named tuple)
+
+    Returns:
+        object of type(a)
+
+    """
+    lst = [func(x) for x in a]
+    try:
+        return type(a)(*lst)
+    except TypeError:
+        return type(a)(lst)
+
 def mapzip(func, a, b):
     """
     Applies a function over the zip of iterables a and b,
@@ -55,7 +93,7 @@ def mapzip(func, a, b):
         b (iterable; e.g., list or namedtuple)
 
     Returns:
-        type(a)
+        object of type(a)
 
     """
     lst = [func(x[0], x[1]) for x in zip(a, b)]

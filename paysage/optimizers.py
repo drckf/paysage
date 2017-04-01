@@ -24,49 +24,54 @@ class GradientMemory(object):
         """
         Update the running average of the model gradients.
 
-        """
+        grad = dict( list( namedtuple ) )
 
+        """
         if self.mean_gradient is None:
             self.mean_gradient = deepcopy(grad)
         else:
             for key in grad:
                 # grad[key] is a list
                 for i in range(len(grad[key])):
-                    # grad[key][i] is a dict
-                    for p in grad[key][i]:
-                        # grad[key][i][p] is a tensor
+                    # grad[key][i] is a namedtuple
+                    for j in range(len(grad[key][i])):
+                        # grad[key][i][j] is a tensor
                         be.mix_inplace(self.mean_weight,
-                        self.mean_gradient[key][i][p],
-                        grad[key][i][p]
+                        self.mean_gradient[key][i][j],
+                        grad[key][i][j]
                         )
 
     def update_mean_square(self, grad):
         """
         Update the running average of the squared model gradients.
 
-        """
+        grad = dict( list( namedtuple ) )
 
+        """
         if self.mean_square_gradient is None:
-            self.mean_square_gradient = deepcopy(grad)
+            self.mean_square_gradient = {}
             for key in grad:
                 # grad[key] is a list
+                self.mean_square_gradient[key] = []
                 for i in range(len(grad[key])):
-                    # grad[key][i] is a dict
-                    for p in grad[key][i]:
-                        # grad[key][i][p] is a tensor
-                        self.mean_square_gradient[key][i][p] = be.square(
-                                                                grad[key][i][p]
-                                                                )
+                    # grad[key][i] is a namedtuple
+                    tmp = []
+                    for j in range(len(grad[key][i])):
+                        # grad[key][i][j] is a tensor
+                        tmp.append(be.square(grad[key][i][j]))
+                    # add the namedtuple to the list
+                    self.mean_square_gradient[key].append(
+                    type(grad[key][i])(*tmp))
         else:
             for key in grad:
                 # grad[key] is a list
                 for i in range(len(grad[key])):
-                    # grad[key][i] is a dict
-                    for p in grad[key][i]:
-                        # grad[key][i][p] is a tensor
+                    # grad[key][i] is a namedtuple
+                    for j in range(len(grad[key][i])):
+                        # grad[key][i][j] is a tensor
                         be.square_mix_inplace(self.mean_square_weight,
-                        self.mean_square_gradient[key][i][p],
-                        grad[key][i][p]
+                        self.mean_square_gradient[key][i][j],
+                        grad[key][i][j]
                         )
 
     def update(self, grad):
