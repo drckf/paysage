@@ -76,10 +76,11 @@ class ReconstructionError(object):
 
         Returns:
             None
-0
+
         """
         self.norm += len(update_args.minibatch)
-        self.mean_square_error += be.tsum((update_args.minibatch - update_args.reconstructions)**2)
+        self.mean_square_error += be.tsum(
+            (update_args.minibatch - update_args.reconstructions)**2)
 
     def value(self) -> float:
         """
@@ -339,7 +340,7 @@ class EnergyZscore(object):
         """
         self.data_mean += be.mean(update_args.amodel
                                   .marginal_free_energy(update_args.minibatch))
-        self.random_mean +=  be.mean(update_args.amodel
+        self.random_mean += be.mean(update_args.amodel
                                      .marginal_free_energy(update_args.random_samples))
         self.random_mean_square += be.mean(update_args.amodel
                                            .marginal_free_energy(update_args.random_samples)**2)

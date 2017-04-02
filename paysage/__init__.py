@@ -4,9 +4,4 @@ from . import batch
 from . import fit
 from . import optimizers
 from . import metrics
-from .models.initialize import init_hidden
-from .models.initialize import init_recurrent
-from .models.initialize import init_deep
-from .models import hidden
-from .models import recurrent
-from .models import deep
+from . import models
