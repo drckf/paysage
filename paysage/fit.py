@@ -320,24 +320,15 @@ class ProgressMonitor(object):
                 sampler.update_state(self.update_steps)
                 fantasy_particles = sampler.state
 
-                # compile argdict
-                args = M.UpdateArgs(minibatch=v_data,
-                                    reconstructions=reconstructions,
-                                    random_samples=random_samples,
-                                    samples=fantasy_particles,
-                                    amodel=model)
-
-                # argdict = {
-                #     'minibatch'       : v_data,
-                #     'reconstructions' : reconstructions,
-                #     'random_samples'  : random_samples,
-                #     'samples'         : fantasy_particles,
-                #     'amodel'          : model
-                # }
+                metric_state = M.MetricState(minibatch=v_data,
+                                             reconstructions=reconstructions,
+                                             random_samples=random_samples,
+                                             samples=fantasy_particles,
+                                             amodel=model)
 
                 # update metrics
                 for m in self.metrics:
-                    m.update(args)
+                    m.update(metric_state)
 
             # compute metric dictionary
             metdict = OrderedDict([(m.name, m.value()) for m in self.metrics])
