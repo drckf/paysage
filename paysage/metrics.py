@@ -1,8 +1,23 @@
+# -*- coding: utf-8 -*-
+"""This module defines classes that represent the state of some model fit
+ metric, derived from summary information about the current state of the model
+ (encapsulated in MetricState).
+"""
+
+from collections import namedtuple
 import math
+
 from . import backends as be
 
 # ----- CLASSES ----- #
 
+MetricState = namedtuple('MetricState', [
+    'minibatch',
+    'reconstructions',
+    'random_samples',
+    'samples',
+    'amodel'
+])
 
 class ReconstructionError(object):
     """
@@ -27,7 +42,7 @@ class ReconstructionError(object):
         self.mean_square_error = 0
         self.norm = 0
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the metric to it's initial state.
 
@@ -45,7 +60,7 @@ class ReconstructionError(object):
         self.norm = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, minibatch=None, reconstructions=None, **kwargs):
+    def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the reconstruction error using a batch
         of observations and a batch of reconstructions.
@@ -63,10 +78,11 @@ class ReconstructionError(object):
             None
 
         """
-        self.norm += len(minibatch)
-        self.mean_square_error += be.tsum((minibatch - reconstructions)**2)
+        self.norm += len(update_args.minibatch)
+        self.mean_square_error += be.tsum(
+            (update_args.minibatch - update_args.reconstructions)**2)
 
-    def value(self):
+    def value(self) -> float:
         """
         Get the value of the reconstruction error.
 
@@ -111,7 +127,7 @@ class EnergyDistance(object):
         self.norm = 0
         self.downsample = 100
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the metric to it's initial state.
 
@@ -129,7 +145,7 @@ class EnergyDistance(object):
         self.norm = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, minibatch=None, samples=None, **kwargs):
+    def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the energy distance using a batch
         of observations and a batch of fantasy particles.
@@ -148,10 +164,11 @@ class EnergyDistance(object):
 
         """
         self.norm += 1
-        self.energy_distance += be.fast_energy_distance(minibatch, samples,
-                                                     self.downsample)
+        self.energy_distance += \
+            be.fast_energy_distance(update_args.minibatch, update_args.samples,
+                                    self.downsample)
 
-    def value(self):
+    def value(self) -> float:
         """
         Get the value of the energy distance.
 
@@ -193,7 +210,7 @@ class EnergyGap(object):
         self.energy_gap = 0
         self.norm = 0
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the metric to it's initial state.
 
@@ -211,7 +228,7 @@ class EnergyGap(object):
         self.norm = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs):
+    def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the energy gap using a batch
         of observations and a batch of fantasy particles.
@@ -232,8 +249,10 @@ class EnergyGap(object):
 
         """
         self.norm += 1
-        self.energy_gap += be.mean(amodel.marginal_free_energy(minibatch))
-        self.energy_gap -= be.mean(amodel.marginal_free_energy(random_samples))
+        self.energy_gap += be.mean(update_args.amodel
+                                   .marginal_free_energy(update_args.minibatch))
+        self.energy_gap -= be.mean(update_args.amodel
+                                   .marginal_free_energy(update_args.random_samples))
 
     def value(self):
         """
@@ -280,7 +299,7 @@ class EnergyZscore(object):
         self.random_mean = 0
         self.random_mean_square = 0
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the metric to it's initial state.
 
@@ -299,7 +318,7 @@ class EnergyZscore(object):
         self.random_mean_square = 0
 
     #TODO: use State objects instead of tensors
-    def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs):
+    def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the energy z-score using a batch
         of observations and a batch of fantasy particles.
@@ -319,11 +338,14 @@ class EnergyZscore(object):
             None
 
         """
-        self.data_mean += be.mean(amodel.marginal_free_energy(minibatch))
-        self.random_mean +=  be.mean(amodel.marginal_free_energy(random_samples))
-        self.random_mean_square +=  be.mean(amodel.marginal_free_energy(random_samples)**2)
+        self.data_mean += be.mean(update_args.amodel
+                                  .marginal_free_energy(update_args.minibatch))
+        self.random_mean += be.mean(update_args.amodel
+                                     .marginal_free_energy(update_args.random_samples))
+        self.random_mean_square += be.mean(update_args.amodel
+                                           .marginal_free_energy(update_args.random_samples)**2)
 
-    def value(self):
+    def value(self) -> float:
         """
         Get the value of the energy z-score.
 
