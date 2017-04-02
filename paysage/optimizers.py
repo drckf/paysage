@@ -15,10 +15,12 @@ from copy import deepcopy
 #              ]
 # }
 #
-# we often have to do things to gradients like
+# we often have to do things to gradients like:
+#
 # add gradients together
 # multiply a gradient by a stepsize
 # compute the square of a gradient, etc
+#
 # we should probably abstract this out somehow
 # because the functions below (like update_mean in GradientMemory)
 # are becoming unwieldy
