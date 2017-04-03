@@ -33,6 +33,7 @@ test:
     - pytest test/test_backends.py
     - pytest test/test_rbm.py
     - pytest test/test_derivatives.py
+    - pytest test/paysage/test_layers.py
     # pytorch currently not on pypi (only conda)
     # - pytest test/test_backends.py
 

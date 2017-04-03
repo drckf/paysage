@@ -43,7 +43,7 @@ class Layer(object):
         "layer_type": self.__class__.__name__,
         "intrinsic": list(self.int_params.keys()),
         "extrinsic": list(self.ext_params.keys()),
-        "penalties": {pk: self.penalties[pk].__class__.__name__
+        "penalties": {pk: self.penalties[pk].get_config()
                         for pk in self.penalties},
         "constraints": {ck: self.constraints[ck].__name__
                         for ck in self.constraints}
@@ -153,7 +153,7 @@ class Layer(object):
         """
         Get the gradients of the penalties.
 
-        E.g., L2 penalty = penalty * parameter_i
+        E.g., L2 penalty gradient = penalty * parameter_i
 
         Args:
             None
@@ -198,6 +198,10 @@ class Weights(Layer):
             They have no external parameters because they do not depend
             on the state of anything else.
 
+            The shape is regarded as a dimensionality of
+            the visible and hidden units for the layer,
+            as `shape = (visible, hidden)`.
+
         Args:
             shape (tuple): shape of the weight tensor (int, int)
 
@@ -221,7 +225,7 @@ class Weights(Layer):
             None:
 
         Returns:
-            configuratiom (dict):
+            configuration (dict):
 
         """
         base_config = self.get_base_config()
@@ -241,9 +245,9 @@ class Weights(Layer):
 
         """
         layer = cls(config["shape"])
-        for k, v in config["penalties"]:
-            layer.add_penalty({k: getattr(penalties, v)})
-        for k, v in config["constraints"]:
+        for k, v in config["penalties"].items():
+            layer.add_penalty({k: penalties.from_config(v)})
+        for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
@@ -355,7 +359,7 @@ class GaussianLayer(Layer):
             None:
 
         Returns:
-            configuratiom (dict):
+            configuration (dict):
 
         """
         base_config = self.get_base_config()
@@ -377,9 +381,9 @@ class GaussianLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
-        for k, v in config["penalties"]:
-            layer.add_penalty({k: getattr(penalties, v)})
-        for k, v in config["constraints"]:
+        for k, v in config["penalties"].items():
+            layer.add_penalty({k: penalties.from_config(v)})
+        for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
@@ -493,7 +497,7 @@ class GaussianLayer(Layer):
         Args:
             scaled_units list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the connected units.
-            weights list[tensor, (num_connected_units, num_units)]:
+            weights list[tensor (num_connected_units, num_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -529,7 +533,7 @@ class GaussianLayer(Layer):
                 The values of the visible units.
             hid list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the hidden units.
-            weights list[tensor, (num_units, num_connected_units)]:
+            weights list[tensor (num_units, num_connected_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -636,7 +640,7 @@ class GaussianLayer(Layer):
         Args:
             array_or_shape (array or shape tuple):
                 If tuple, then this is taken to be the shape.
-                If array, then it's shape is used.
+                If array, then its shape is used.
 
         Returns:
             tensor: Random sample with desired shape.
@@ -706,9 +710,9 @@ class IsingLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
-        for k, v in config["penalties"]:
-            layer.add_penalty({k: getattr(penalties, v)})
-        for k, v in config["constraints"]:
+        for k, v in config["penalties"].items():
+            layer.add_penalty({k: penalties.from_config(v)})
+        for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
@@ -925,7 +929,7 @@ class IsingLayer(Layer):
         Args:
             array_or_shape (array or shape tuple):
                 If tuple, then this is taken to be the shape.
-                If array, then it's shape is used.
+                If array, then its shape is used.
 
         Returns:
             tensor: Random sample with desired shape.
@@ -999,9 +1003,9 @@ class BernoulliLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
-        for k, v in config["penalties"]:
-            layer.add_penalty({k: getattr(penalties, v)})
-        for k, v in config["constraints"]:
+        for k, v in config["penalties"].items():
+            layer.add_penalty({k: penalties.from_config(v)})
+        for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
@@ -1217,7 +1221,7 @@ class BernoulliLayer(Layer):
         Args:
             array_or_shape (array or shape tuple):
                 If tuple, then this is taken to be the shape.
-                If array, then it's shape is used.
+                If array, then its shape is used.
 
         Returns:
             tensor: Random sample with desired shape.
@@ -1287,9 +1291,9 @@ class ExponentialLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
-        for k, v in config["penalties"]:
-            layer.add_penalty({k: getattr(penalties, v)})
-        for k, v in config["constraints"]:
+        for k, v in config["penalties"].items():
+            layer.add_penalty({k: penalties.from_config(v)})
+        for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
@@ -1504,7 +1508,7 @@ class ExponentialLayer(Layer):
         Args:
             array_or_shape (array or shape tuple):
                 If tuple, then this is taken to be the shape.
-                If array, then it's shape is used.
+                If array, then its shape is used.
 
         Returns:
             tensor: Random sample with desired shape.
