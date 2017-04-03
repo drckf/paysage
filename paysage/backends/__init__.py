@@ -83,10 +83,10 @@ def apply_(func_, a):
     coords = namedtuple("coordinates", ["x", "y"])
 
     a = coords(np.ones(1), 2 * np.ones(1))
-    apply_(halve_, a) # coordinates(x=np.array(0.5), y=np.array(1.0))
+    apply_(halve_, a) # a = coordinates(x=np.array(0.5), y=np.array(1.0))
 
     a = list(a)
-    apply_(halve_, a) # [np.array(0.25), np.array(0.5)]
+    apply_(halve_, a) # a = [np.array(0.25), np.array(0.5)]
 
     '''
 
@@ -140,3 +140,44 @@ def mapzip(func, a, b):
         return type(a)(*lst)
     except TypeError:
         return type(a)(lst)
+
+def mapzip_(func_, a, b):
+    """
+    Applies an in place function over the zip of iterables a and b,
+    storing the result in a. That is,
+    a[i] = func(a[i], b[i]).
+
+    For example:
+
+    ```
+    from collections import namedtuple
+    import numpy as np
+    import numexpr as ne
+
+    def add_(x: np.ndarray, y: np.ndarray) -> None:
+        ne.evaluate('x + y', out=x)
+
+    coords = namedtuple("coordinates", ["x", "y"])
+
+    a = coords(np.array([1]), np.array([2]))
+    b = coords(np.array([3]), np.array([4]))
+
+    mapzip_(add_, a, b) # a = coordinates(x=4, y=6)
+
+    a = list(a)
+    b = list(b)
+
+    mapzip_(add_, a, b) # a = [7, 10]
+    ```
+
+    Args:
+        func (callable): an in place function with two arguments
+        a (iterable; e.g., list or namedtuple)
+        b (iterable; e.g., list or namedtuple)
+
+    Returns:
+        None
+
+    """
+    for i in range(len(a)):
+        func_(a[i], b[i])
