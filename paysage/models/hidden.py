@@ -667,6 +667,26 @@ class Model(object):
 # because the functions below (like update_mean in GradientMemory)
 # are becoming unwieldy
 
+def grad_fold(func, grad):
+    """
+    Apply a function entrywise over a Gradient objet,
+    accumulating the result.
+
+    Args:
+        func (callable)
+        grad (Gradient)
+
+    returns:
+        float
+
+    """
+    result = 0
+    for ly in grad.layers:
+        result = be.fold(func, ly)
+    for w in grad.weights:
+        result = be.fold(func, w)
+    return result
+
 def grad_apply(func, grad):
     """
     Apply a function entrywise over a Gradient object.
@@ -706,29 +726,41 @@ def grad_apply_(func_, grad):
 
 def grad_mapzip(func, grad1, grad2):
     """
-    Apply a function entrywise over a Gradient object.
-
-    Notes:
-        Modifies elements of grad in place.
+    Apply a function entrywise over the zip of two Gradient objects.
 
     Args:
         func_ (callable, in place operation)
         grad (Gradient)
 
     Returns:
-        None
+        Gradient
 
     """
-    n = range(len(grad1.layers))
-    m = range(len(grad1.weights))
+    n = len(grad1.layers)
+    m = len(grad1.weights)
     return Gradient(
     [be.mapzip(func, grad1.layers[i], grad2.layers[i]) for i in range(n)],
     [be.mapzip(func, grad1.weights[i], grad2.weights[i]) for i in range(m)]
     )
 
 def grad_mapzip_(func_, grad1, grad2):
-    n = range(len(grad1.layers))
-    m = range(len(grad1.weights))
+    """
+    Apply an in place function entrywise over the zip of two Gradient objects.
+
+    Notes:
+        Modifies elements of grad1 in place.
+
+    Args:
+        func_ (callable, in place operation)
+        grad1 (Gradient)
+        grad2 (Gradient)
+
+    Returns:
+        None
+
+    """
+    n = len(grad1.layers)
+    m = len(grad1.weights)
     for i in range(n):
         be.mapzip_(func_, grad1.layers[i], grad2.layers[i])
     for j in range(m):
