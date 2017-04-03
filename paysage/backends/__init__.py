@@ -63,6 +63,44 @@ def apply(func, a):
     except TypeError:
         return type(a)(lst)
 
+def apply_(func_, a):
+    """
+    Applies an in place function over iterable a.
+
+    That is, a[i] = func(a[i]).
+
+    For example:
+
+    '''
+    from collections import namedtuple
+    import numpy as np
+    import numexpr as ne
+
+    # create an in place function to divide an array by 2
+    def halve_(x: np.ndarray) -> None:
+        ne.evaluate('0.5 * x', out=x)
+
+    coords = namedtuple("coordinates", ["x", "y"])
+
+    a = coords(np.ones(1), 2 * np.ones(1))
+    apply_(halve_, a) # coordinates(x=np.array(0.5), y=np.array(1.0))
+
+    a = list(a)
+    apply_(halve_, a) # [np.array(0.25), np.array(0.5)]
+
+    '''
+
+    Args:
+        func_ (callable): an in place function of a single argument
+        a (iterable: e.g., list or named tuple)
+
+    Returns:
+        None
+
+    """
+    for x in a:
+        func_(x)
+
 def mapzip(func, a, b):
     """
     Applies a function over the zip of iterables a and b,

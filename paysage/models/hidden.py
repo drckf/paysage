@@ -641,3 +641,120 @@ class Model(object):
                             be.to_numpy_array(self.layers[i].ext_params[ep])
                          )
                 store.put(os.path.join(layer_key,'extrinsic', ep), df_params)
+
+# ----- FUNCTIONS ----- #
+
+#TODO: better way of dealing with gradients
+#
+# gradients have the following form:
+# {
+#   'layers':[
+#             derivs (namedtuple),
+#             derivs (namedtuple) ...
+#            ],
+#   'weights': [
+#               derivs (namedtuple) ...
+#              ]
+# }
+#
+# we often have to do things to gradients like:
+#
+# add gradients together
+# multiply a gradient by a stepsize
+# compute the square of a gradient, etc
+#
+# we should probably abstract this out somehow
+# because the functions below (like update_mean in GradientMemory)
+# are becoming unwieldy
+
+def grad_apply(func, grad):
+    """
+    Apply a function entrywise over a Gradient object.
+
+    Args:
+        func (callable)
+        grad (Gradient)
+
+    Returns:
+        Gradient
+
+    """
+    return Gradient(
+    [be.apply(func, ly) for ly in grad.layers],
+    [be.apply(func, w) for w in grad.weights]
+    )
+
+def grad_apply_(func_, grad):
+    """
+    Apply a function entrywise over a Gradient object.
+
+    Notes:
+        Modifies elements of grad in place.
+
+    Args:
+        func_ (callable, in place operation)
+        grad (Gradient)
+
+    Returns:
+        None
+
+    """
+    for ly in grad.layers:
+        be.apply_(func_, ly)
+    for w in grad.weights:
+        be.apply_(func_, w)
+
+def grad_mapzip(func, grad1, grad2):
+    """
+    Apply a function entrywise over a Gradient object.
+
+    Notes:
+        Modifies elements of grad in place.
+
+    Args:
+        func_ (callable, in place operation)
+        grad (Gradient)
+
+    Returns:
+        None
+
+    """
+    n = range(len(grad1.layers))
+    m = range(len(grad1.weights))
+    return Gradient(
+    [be.mapzip(func, grad1.layers[i], grad2.layers[i]) for i in range(n)],
+    [be.mapzip(func, grad1.weights[i], grad2.weights[i]) for i in range(m)]
+    )
+
+def grad_mapzip_(func_, grad1, grad2):
+    n = range(len(grad1.layers))
+    m = range(len(grad1.weights))
+    for i in range(n):
+        be.mapzip_(func_, grad1.layers[i], grad2.layers[i])
+    for j in range(m):
+        be.mapzip_(func_, grad1.weights[i], grad2.weights[i])
+
+'''
+def gradient_magnitude(grad) -> float:
+    """
+    Compute the magnitude of the gradient.
+
+    """
+
+    # for an rbm
+    # grad looks someting like like
+    # {'layers:
+    # [{'loc': visible_derivative: Tensor},
+    # {'loc': hidden_divative: Tensor}],
+    # 'weights':
+    # [{'matrix': weights_derivative: Tensor}]}
+
+    mag = 0
+    norm = 0
+    for key in grad:
+        for layer in grad[key]:
+            for param in layer:
+                norm += 1
+                mag += be.norm(layer[param]) ** 2 / len(layer[param])
+    return sqrt(mag / norm)
+'''
