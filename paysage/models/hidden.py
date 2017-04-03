@@ -1,9 +1,18 @@
 import os
 import pandas
+from collections import namedtuple
 
 from .. import layers
 from .. import backends as be
 from ..models.initialize import init_hidden as init
+
+# ----- CLASSES ----- #
+
+Gradient = namedtuple("Gradient", [
+    "layers",
+    "weights"
+])
+
 
 
 class State(object):
@@ -442,10 +451,10 @@ class Model(object):
         """
         i = 0
 
-        grad = {
-        'layers': [None for l in self.layers],
-        'weights': [None for w in self.weights]
-        }
+        grad = Gradient(
+        [None for l in self.layers],
+        [None for w in self.weights]
+        )
 
         # POSITIVE PHASE (using observed)
 
@@ -465,17 +474,17 @@ class Model(object):
         hid_scaled = self.layers[i+1].rescale(hid)
 
         # 5. Compute the gradients
-        grad['layers'][i] = self.layers[i].derivatives(vdata,
+        grad.layers[i] = self.layers[i].derivatives(vdata,
                                            [hid_scaled],
                                            [self.weights[0].W()]
                                            )
 
-        grad['layers'][i+1] = self.layers[i+1].derivatives(hid,
+        grad.layers[i+1] = self.layers[i+1].derivatives(hid,
                                                [vdata_scaled],
                                                [self.weights[0].W_T()]
                                                )
 
-        grad['weights'][i] = self.weights[i].derivatives(vdata_scaled,
+        grad.weights[i] = self.weights[i].derivatives(vdata_scaled,
                                                          hid_scaled)
 
         # NEGATIVE PHASE (using sampled)
@@ -496,27 +505,27 @@ class Model(object):
         hid_scaled = self.layers[i+1].rescale(hid)
 
         # 5. Compute the gradients
-        grad['layers'][i] = be.mapzip(be.subtract,
+        grad.layers[i] = be.mapzip(be.subtract,
                                   self.layers[i].derivatives(
                                                  vmodel,
                                                  [hid_scaled],
                                                  [self.weights[0].W()]
                                                  ),
-                                  grad['layers'][i])
+                                  grad.layers[i])
 
-        grad['layers'][i+1] = be.mapzip(be.subtract,
+        grad.layers[i+1] = be.mapzip(be.subtract,
                                   self.layers[i+1].derivatives(
                                                    hid,
                                                    [vmodel_scaled],
                                                    [self.weights[0].W_T()]
                                                    ),
-                                  grad['layers'][i+1])
+                                  grad.layers[i+1])
 
-        grad['weights'][i] = be.mapzip(be.subtract,
+        grad.weights[i] = be.mapzip(be.subtract,
                                   self.weights[i].derivatives(
                                                   vmodel_scaled,
                                                   hid_scaled),
-                                  grad['weights'][i])
+                                  grad.weights[i])
         return grad
 
     def parameter_update(self, deltas):
@@ -527,16 +536,16 @@ class Model(object):
             Modifies the model parameters in place.
 
         Args:
-            deltas: A dictionary of parameter updates.
+            deltas (Gradient)
 
         Returns:
             None
 
         """
         for i in range(self.num_layers):
-            self.layers[i].parameter_step(deltas['layers'][i])
+            self.layers[i].parameter_step(deltas.layers[i])
         for i in range(self.num_layers - 1):
-            self.weights[i].parameter_step(deltas['weights'][i])
+            self.weights[i].parameter_step(deltas.weights[i])
 
     # TODO: use State
     # Args should be:

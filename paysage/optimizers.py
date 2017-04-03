@@ -25,6 +25,11 @@ from copy import deepcopy
 # because the functions below (like update_mean in GradientMemory)
 # are becoming unwieldy
 
+def apply_grad(func, grad):
+
+
+    result = {}
+
 # ----- GRADIENT ----- #
 
 class GradientMemory(object):
