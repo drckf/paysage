@@ -1,3 +1,5 @@
+import sys
+
 from . import backends as be
 
 # ----- PENALTY OBJECTS ----- #
@@ -25,6 +27,14 @@ class Penalty(object):
         """
         raise NotImplementedError
 
+    def get_config(self):
+        """
+        Returns a config for the penalty.
+
+        """
+        return {"name": self.__class__.__name__,
+                "penalty": self.penalty
+               }
 
 class l2_penalty(Penalty):
 
@@ -60,6 +70,17 @@ class log_penalty(Penalty):
 
     def grad(self, tensor):
         return -self.penalty / tensor
+
+
+# ----- FUNCTIONS ----- #
+
+def from_config(config):
+    """
+    Builds an instance from a config.
+
+    """
+    pen = getattr(sys.modules[__name__], config["name"])
+    return pen(config["penalty"])
 
 
 # ----- ALIASES ----- #
