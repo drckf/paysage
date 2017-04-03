@@ -77,6 +77,7 @@ def test_weights_build_from_config():
     p = penalties.l2_penalty(0.37)
     ly.add_penalty({'matrix': p})
     ly_new = layers.Layer.from_config(ly.get_config())
+    assert ly_new.get_config() == ly.get_config()
 
 def test_weights_derivative():
     ly = layers.Weights((num_vis, num_hid))
@@ -101,6 +102,7 @@ def test_gaussian_build_from_config():
     p = penalties.l2_penalty(0.37)
     ly.add_penalty({'log_var': p})
     ly_new = layers.Layer.from_config(ly.get_config())
+    assert ly_new.get_config() == ly.get_config()
 
 def test_gaussian_energy():
     ly = layers.GaussianLayer(num_vis)
@@ -147,6 +149,7 @@ def test_ising_build_from_config():
     p = penalties.l2_penalty(0.37)
     ly.add_penalty({'log_var': p})
     ly_new = layers.Layer.from_config(ly.get_config())
+    assert ly_new.get_config() == ly.get_config()
 
 def test_ising_energy():
     ly = layers.IsingLayer(num_vis)
@@ -189,6 +192,7 @@ def test_bernoulli_build_from_config():
     p = penalties.l2_penalty(0.37)
     ly.add_penalty({'log_var': p})
     ly_new = layers.Layer.from_config(ly.get_config())
+    assert ly_new.get_config() == ly.get_config()
 
 def test_bernoulli_energy():
     ly = layers.BernoulliLayer(num_vis)
@@ -231,6 +235,7 @@ def test_exponential_build_from_config():
     p = penalties.l2_penalty(0.37)
     ly.add_penalty({'log_var': p})
     ly_new = layers.Layer.from_config(ly.get_config())
+    assert ly_new.get_config() == ly.get_config()
 
 def test_exponential_energy():
     ly = layers.BernoulliLayer(num_vis)

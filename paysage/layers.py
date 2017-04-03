@@ -43,7 +43,7 @@ class Layer(object):
         "layer_type": self.__class__.__name__,
         "intrinsic": list(self.int_params.keys()),
         "extrinsic": list(self.ext_params.keys()),
-        "penalties": {pk: self.penalties[pk].__class__.__name__
+        "penalties": {pk: self.penalties[pk].get_config()
                         for pk in self.penalties},
         "constraints": {ck: self.constraints[ck].__name__
                         for ck in self.constraints}
@@ -246,7 +246,7 @@ class Weights(Layer):
         """
         layer = cls(config["shape"])
         for k, v in config["penalties"].items():
-            layer.add_penalty({k: getattr(penalties, v)})
+            layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
@@ -382,7 +382,7 @@ class GaussianLayer(Layer):
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
         for k, v in config["penalties"].items():
-            layer.add_penalty({k: getattr(penalties, v)})
+            layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
@@ -711,7 +711,7 @@ class IsingLayer(Layer):
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
         for k, v in config["penalties"].items():
-            layer.add_penalty({k: getattr(penalties, v)})
+            layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
@@ -1004,7 +1004,7 @@ class BernoulliLayer(Layer):
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
         for k, v in config["penalties"].items():
-            layer.add_penalty({k: getattr(penalties, v)})
+            layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
@@ -1292,7 +1292,7 @@ class ExponentialLayer(Layer):
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
         for k, v in config["penalties"].items():
-            layer.add_penalty({k: getattr(penalties, v)})
+            layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
