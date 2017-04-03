@@ -54,7 +54,7 @@ def fold(func, a):
     """
     result = 0
     for x in a:
-        result = func(x, result)
+        result = func(result, x)
     return result
 
 def apply(func, a):

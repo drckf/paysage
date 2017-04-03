@@ -745,6 +745,9 @@ def grad_mapzip_(func_, grad1, grad2):
         be.mapzip_(func_, grad1.weights[j], grad2.weights[j])
 
 
+
+
+
 '''
 def gradient_magnitude(grad) -> float:
     """

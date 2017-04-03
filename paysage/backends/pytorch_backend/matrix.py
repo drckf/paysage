@@ -135,6 +135,19 @@ def ndim(tensor: T.TorchTensor) -> int:
     """
     return tensor.ndimension()
 
+def num_elements(tensor: T.TorchTensor) -> int:
+    """
+    Return the number of elements in a tensor.
+
+    Args:
+        tensor: A tensor:
+
+    Returns:
+        int: The number of elements in the tensor.
+
+    """
+    return numpy.prod(shape(tensor))
+
 def transpose(tensor: T.TorchTensor) -> T.FloatTensor:
     """
     Return the transpose of a tensor.
