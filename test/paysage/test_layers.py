@@ -3,6 +3,8 @@ from paysage import constraints
 from paysage import penalties
 from paysage import backends as be
 
+import pytest
+
 num_vis = 8
 num_hid = 5
 num_samples = 10
@@ -268,3 +270,6 @@ def test_exponential_derivatives():
     weights = [w.W()]
     beta = be.rand((num_samples, 1))
     ly.derivatives(vis, hid, weights, beta)
+
+if __name__ == "__main__":
+    pytest.main([__file__])
