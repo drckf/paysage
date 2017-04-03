@@ -1,6 +1,7 @@
 import os
 import pandas
 from collections import namedtuple
+from math import sqrt
 
 from .. import layers
 from .. import backends as be
@@ -644,29 +645,6 @@ class Model(object):
 
 # ----- FUNCTIONS ----- #
 
-#TODO: better way of dealing with gradients
-#
-# gradients have the following form:
-# {
-#   'layers':[
-#             derivs (namedtuple),
-#             derivs (namedtuple) ...
-#            ],
-#   'weights': [
-#               derivs (namedtuple) ...
-#              ]
-# }
-#
-# we often have to do things to gradients like:
-#
-# add gradients together
-# multiply a gradient by a stepsize
-# compute the square of a gradient, etc
-#
-# we should probably abstract this out somehow
-# because the functions below (like update_mean in GradientMemory)
-# are becoming unwieldy
-
 def grad_fold(func, grad):
     """
     Apply a function entrywise over a Gradient objet,
@@ -764,7 +742,8 @@ def grad_mapzip_(func_, grad1, grad2):
     for i in range(n):
         be.mapzip_(func_, grad1.layers[i], grad2.layers[i])
     for j in range(m):
-        be.mapzip_(func_, grad1.weights[i], grad2.weights[i])
+        be.mapzip_(func_, grad1.weights[j], grad2.weights[j])
+
 
 '''
 def gradient_magnitude(grad) -> float:
