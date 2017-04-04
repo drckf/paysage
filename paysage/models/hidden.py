@@ -1,6 +1,7 @@
 import os
 import pandas
 from collections import namedtuple
+from cytoolz import compose
 from math import sqrt
 
 from .. import layers
@@ -744,8 +745,10 @@ def grad_mapzip_(func_, grad1, grad2):
     for j in range(m):
         be.mapzip_(func_, grad1.weights[j], grad2.weights[j])
 
+def grad_magnitude(grad):
+    total_num_elements = grad_fold(be.num_elements, grad)
 
-
+    return total_num_elements
 
 
 '''

@@ -130,7 +130,7 @@ def ndim(tensor: T.Tensor) -> int:
     """
     return tensor.ndim
 
-def num_elements(tensor: T.TorchTensor) -> int:
+def num_elements(tensor: T.Tensor) -> int:
     """
     Return the number of elements in a tensor.
 
