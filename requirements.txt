@@ -2,7 +2,7 @@ appdirs==1.4.0
 appnope==0.1.0
 astroid==1.4.9
 cycler==0.10.0
-ctyoolz==0.8.2
+cytoolz==0.8.2
 decorator==4.0.11
 h5py==2.7.0rc2
 ipython==5.2.2
