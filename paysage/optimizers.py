@@ -1,6 +1,7 @@
 from . import backends as be
 from math import sqrt
-from copy import deepcopy
+from cytoolz import identity
+from .models import hidden
 
 # ----- GRADIENT ----- #
 
@@ -20,59 +21,41 @@ class GradientMemory(object):
         self.mean_gradient = None
         self.mean_square_gradient = None
 
+        from cytoolz import partial
+        self.mixer_ = partial(be.mix_inplace, self.mean_weight)
+        self.square_mixer_ = partial(be.square_mix_inplace, self.mean_square_weight)
+
     def update_mean(self, grad):
         """
         Update the running average of the model gradients.
 
-        grad = dict( list( namedtuple ) )
+        Args:
+            grad (a Gradient object)
+
+        Returns:
+            None
 
         """
         if self.mean_gradient is None:
-            self.mean_gradient = deepcopy(grad)
+            self.mean_gradient = hidden.grad_apply(identity, grad)
         else:
-            for key in grad:
-                # grad[key] is a list
-                for i in range(len(grad[key])):
-                    # grad[key][i] is a namedtuple
-                    for j in range(len(grad[key][i])):
-                        # grad[key][i][j] is a tensor
-                        be.mix_inplace(self.mean_weight,
-                        self.mean_gradient[key][i][j],
-                        grad[key][i][j]
-                        )
+            hidden.grad_mapzip_(self.mixer_, self.mean_gradient, grad)
 
     def update_mean_square(self, grad):
         """
         Update the running average of the squared model gradients.
 
-        grad = dict( list( namedtuple ) )
+        Args:
+            grad (a Gradient object)
+
+        Returns:
+            None
 
         """
         if self.mean_square_gradient is None:
-            self.mean_square_gradient = {}
-            for key in grad:
-                # grad[key] is a list
-                self.mean_square_gradient[key] = []
-                for i in range(len(grad[key])):
-                    # grad[key][i] is a namedtuple
-                    tmp = []
-                    for j in range(len(grad[key][i])):
-                        # grad[key][i][j] is a tensor
-                        tmp.append(be.square(grad[key][i][j]))
-                    # add the namedtuple to the list
-                    self.mean_square_gradient[key].append(
-                    type(grad[key][i])(*tmp))
+            self.mean_square_gradient = hidden.grad_apply(be.square, grad)
         else:
-            for key in grad:
-                # grad[key] is a list
-                for i in range(len(grad[key])):
-                    # grad[key][i] is a namedtuple
-                    for j in range(len(grad[key][i])):
-                        # grad[key][i][j] is a tensor
-                        be.square_mix_inplace(self.mean_square_weight,
-                        self.mean_square_gradient[key][i][j],
-                        grad[key][i][j]
-                        )
+            hidden.grad_mapzip_(self.square_mixer_, self.mean_square_gradient, grad)
 
     def update(self, grad):
         """
@@ -89,31 +72,36 @@ class GradientMemory(object):
         """
         Divide grad by the square root of the mean square gradient.
 
+        Notes:
+            A running average is biased due to autoregressive correlations
+            between adjacent timepoints. The bias can be corrected by
+            dividing the results by appropriate weights that reflect
+            the degree of autocorrelation.
+
+            Acts like the identity function if mean_square_weight = 0.
+
+        Args:
+            grad (a Gradient object)
+            unbiased (bool): whether to unbias the estimates
+
+        Returns:
+            normalized Gradient object
+
         """
-
-        # a running average is biased due to the autoregressive correlations
-        # between adjacent timepoints
-        # the bias can be corrected by renormalizing the results
-
-        mean_norm = be.float_scalar(1)
-        mean_square_norm = be.float_scalar(1)
+        if not self.mean_square_gradient:
+            return grad
 
         if unbiased:
             mean_norm = be.float_scalar(1 - self.mean_weight)
             mean_square_norm = be.float_scalar(1 - self.mean_square_weight)
+            def normalizer(mean, mean_square):
+                return be.sqrt_div(mean / mean_norm,
+                                   mean_square / mean_square_norm)
+        else:
+            def normalizer(mean, mean_square):
+                return be.sqrt_div(mean, mean_square)
 
-        result = deepcopy(grad)
-        for key in grad:
-            # grad[key] is a list
-            for i in range(len(grad[key])):
-                # grad[key][i] is a dict
-                for p in grad[key][i]:
-                    # grad[key][i][p] is a tensor
-                    result[key][i][p] = be.sqrt_div(
-                    grad[key][i][p] / mean_norm,
-                    self.mean_square_gradient[key][i][p] / mean_square_norm
-                    )
-        return result
+        return hidden.grad_mapzip(normalizer, grad, self.mean_square_gradient)
 
 
 # ----- LEARNING RATE SCHEDULERS ----- #
