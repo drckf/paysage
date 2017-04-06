@@ -2,7 +2,7 @@ from . import backends as be
 from cytoolz import identity, partial
 from .models import hidden
 
-# ----- GRADIENT ----- #
+# ----- CLASSES ----- #
 
 class GradientMemory(object):
     """
@@ -13,7 +13,20 @@ class GradientMemory(object):
     """
 
     def __init__(self, mean_weight=0.9, mean_square_weight=0.0):
+        """
+        Create a gradient memory object to keep track of the first two
+        moments of the gradient.
 
+        Args:
+            mean_weight (float \in (0,1); optional):
+                how strongly to weight the previous gradient
+            mean_square_weight (float \in (0,1); optional)
+                how strongly to weight the square of the previous gradient
+
+        Returns:
+            GradientMemory
+
+        """
         self.mean_weight = be.float_scalar(mean_weight)
         self.mean_square_weight = be.float_scalar(mean_square_weight)
 
@@ -61,6 +74,15 @@ class GradientMemory(object):
         Update the running average of the model gradients and the running
         average of the squared model gradients.
 
+        Notes:
+            Modifies mean_weight and mean_square_weight attributes in place.
+
+        Args:
+            grad (a Gradient object)
+
+        Returns:
+            None
+
         """
         if self.mean_weight:
             self.update_mean(grad)
@@ -103,23 +125,54 @@ class GradientMemory(object):
         return hidden.grad_mapzip(normalizer, grad, self.mean_square_gradient)
 
 
-# ----- LEARNING RATE SCHEDULERS ----- #
-
 class Scheduler(object):
-
+    """Base class for the learning rate schedulers"""
     def __init__(self):
+        """
+        Create a scheduler object.
+
+        Args:
+            None
+
+        Returns:
+            Scheduler
+
+        """
         self.lr = 1
         self.iter = 0
         self.epoch = 0
 
     def increment(self, epoch):
+        """
+        Update the iter and epoch attributes.
+
+        Notes:
+            Modifies iter and epoch attributes in place.
+
+        Args:
+            epoch (int): the current epoch
+
+        Returns:
+            None
+
+        """
         self.iter += 1
         self.epoch = epoch
 
 
 class ExponentialDecay(Scheduler):
-
+    """Learning rate that decays exponentially per epoch"""
     def __init__(self, lr_decay=0.9):
+        """
+        Create an exponential decay learning rate schedule.
+
+        Args:
+            lr_decay (float \in (0,1))
+
+        Returns:
+            ExponentialDecay
+
+        """
         super().__init__()
         self.lr_decay = lr_decay
 
