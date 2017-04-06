@@ -125,6 +125,7 @@ class GradientMemory(object):
         return hidden.grad_mapzip(normalizer, grad, self.mean_square_gradient)
 
 
+
 class Scheduler(object):
     """Base class for the learning rate schedulers"""
     def __init__(self):
@@ -165,6 +166,7 @@ class ExponentialDecay(Scheduler):
     def __init__(self, lr_decay=0.9):
         """
         Create an exponential decay learning rate schedule.
+        Larger lr_decay -> slower decay.
 
         Args:
             lr_decay (float \in (0,1))
@@ -177,33 +179,85 @@ class ExponentialDecay(Scheduler):
         self.lr_decay = lr_decay
 
     def get_lr(self):
+        """
+        Compute the current value of the learning rate.
+
+        Args:
+            None
+
+        Returns:
+            lr (float)
+
+        """
         self.lr = (self.lr_decay ** self.epoch)
         return self.lr
 
 
 class PowerLawDecay(Scheduler):
-
+    """Learning rate that decays with a power law per epoch"""
     def __init__(self, lr_decay=0.1):
+        """
+        Create a power law decay learning rate schedule.
+        Larger lr_decay -> faster decay.
+
+        Args:
+            lr_decay (float \in (0,1))
+
+        Returns:
+            PowerLawDecay
+
+        """
         super().__init__()
         self.lr_decay = lr_decay
 
     def get_lr(self):
+        """
+        Compute the current value of the learning rate.
+
+        Args:
+            None
+
+        Returns:
+            lr (float)
+
+        """
         self.lr = 1 / (1 + self.lr_decay * self.epoch)
         return self.lr
 
 
-# ----- OPTIMIZERS ----- #
 
 class Optimizer(object):
-
+    """Base class for the optimizer methods."""
     def __init__(self,
                  scheduler=PowerLawDecay(),
                  tolerance=1e-7):
+        """
+        Create an optimizer object:
+
+        Args:
+            scheduler (a learning rate schedule object; optional)
+            tolerance (float; optional):
+                the gradient magnitude to declar convergence
+
+        Returns:
+            Optimizer
+
+        """
         self.scheduler = scheduler
         self.tolerance = tolerance
         self.delta = {}
 
     def check_convergence(self):
+        """
+        Check the convergence criterion.
+
+        Args:
+            None
+
+        Returns:
+            bool: True if convergenced, False if not
+
+        """
         mag = hidden.grad_magnitude(self.delta)
         if mag <= self.tolerance:
             return True
@@ -212,18 +266,48 @@ class Optimizer(object):
 
 
 class StochasticGradientDescent(Optimizer):
-    """StochasticGradientDescent
-       Basic algorithm of gradient descent with minibatches.
-
-    """
+    """Basic algorithm of gradient descent with minibatches."""
     def __init__(self, model,
                  stepsize=0.001,
                  scheduler=PowerLawDecay(),
                  tolerance=1e-7):
+        """
+        Create a stochastic gradient descent optimizer.
+
+        Aliases:
+            SGD, sgd
+
+        Args:
+            model: a Model object to optimize
+            stepsize (float; optional): the initial stepsize
+            scheduler (a learning rate scheduler object; optional)
+            tolerance (float; optional):
+                the gradient magnitude to declar convergence
+
+        Returns:
+            StochasticGradientDescent
+
+        """
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
 
     def update(self, model, v_data, v_model, epoch):
+        """
+        Update the model parameters with a gradient step.
+
+        Notes:
+            Changes parameters of model in place.
+
+        Args:
+            model: a Model object to optimize
+            v_data (tensor): observations
+            v_mdoel (tensor): samples from the model
+            epoch (int): the current epoch
+
+        Returns:
+            None
+
+        """
         self.scheduler.increment(epoch)
         lr_ = partial(be.tmul_,
                       be.float_scalar(self.scheduler.get_lr() * self.stepsize))
@@ -234,8 +318,7 @@ class StochasticGradientDescent(Optimizer):
 
 
 class Momentum(Optimizer):
-    """Momentum
-       Stochastic gradient descent with momentum.
+    """Stochastic gradient descent with momentum.
        Qian, N. (1999).
        On the momentum term in gradient descent learning algorithms.
        Neural Networks, 12(1), 145–151
@@ -246,12 +329,46 @@ class Momentum(Optimizer):
                  momentum=0.9,
                  scheduler=PowerLawDecay(),
                  tolerance=1e-7):
+        """
+        Create a stochastic gradient descent with momentum optimizer.
+
+        Aliases:
+            momentum
+
+        Args:
+            model: a Model object to optimize
+            stepsize (float; optional): the initial stepsize
+            momentum (float; optional): the amount of momentum
+            scheduler (a learning rate scheduler object; optional)
+            tolerance (float; optional):
+                the gradient magnitude to declar convergence
+
+        Returns:
+            Momentum
+
+        """
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
         self.memory = GradientMemory(mean_weight=momentum,
                                      mean_square_weight=0)
 
     def update(self, model, v_data, v_model, epoch):
+        """
+        Update the model parameters with a gradient step.
+
+        Notes:
+            Changes parameters of model in place.
+
+        Args:
+            model: a Model object to optimize
+            v_data (tensor): observations
+            v_mdoel (tensor): samples from the model
+            epoch (int): the current epoch
+
+        Returns:
+            None
+
+        """
         self.scheduler.increment(epoch)
         lr = partial(be.tmul,
                       be.float_scalar(self.scheduler.get_lr() * self.stepsize))
@@ -263,7 +380,7 @@ class Momentum(Optimizer):
 
 
 class RMSProp(Optimizer):
-    """RMSProp
+    """Stochastic gradient descent with RMSProp.
        Geoffrey Hinton's Coursera Course Lecture 6e
 
     """
@@ -272,6 +389,25 @@ class RMSProp(Optimizer):
                  mean_square_weight=0.9,
                  scheduler=PowerLawDecay(),
                  tolerance=1e-7):
+        """
+        Create a stochastic gradient descent with RMSProp optimizer.
+
+        Aliases:
+            rmsprop
+
+        Args:
+            model: a Model object to optimize
+            stepsize (float; optional): the initial stepsize
+            mean_square_weight (float; optional):
+                for computing the running average of the mean-square gradient
+            scheduler (a learning rate scheduler object; optional)
+            tolerance (float; optional):
+                the gradient magnitude to declar convergence
+
+        Returns:
+            RMSProp
+
+        """
         super().__init__(scheduler, tolerance)
         self.stepsize = be.float_scalar(stepsize)
 
@@ -279,6 +415,22 @@ class RMSProp(Optimizer):
                                      mean_square_weight=mean_square_weight)
 
     def update(self, model, v_data, v_model, epoch):
+        """
+        Update the model parameters with a gradient step.
+
+        Notes:
+            Changes parameters of model in place.
+
+        Args:
+            model: a Model object to optimize
+            v_data (tensor): observations
+            v_mdoel (tensor): samples from the model
+            epoch (int): the current epoch
+
+        Returns:
+            None
+
+        """
         self.scheduler.increment(epoch)
         lr_ = partial(be.tmul_,
                       be.float_scalar(self.scheduler.get_lr() * self.stepsize))
@@ -291,8 +443,8 @@ class RMSProp(Optimizer):
 
 
 class ADAM(Optimizer):
-    """ADAM
-       Adaptive Moment Estimation algorithm.
+    """Stochastic gradient descent with Adaptive Moment Estimation algorithm.
+
        Kingma, D. P., & Ba, J. L. (2015).
        Adam: a Method for Stochastic Optimization.
        International Conference on Learning Representations, 1–13.
@@ -304,6 +456,27 @@ class ADAM(Optimizer):
                  mean_square_weight=0.999,
                  scheduler=PowerLawDecay(),
                  tolerance=1e-7):
+        """
+        Create a stochastic gradient descent with ADAM optimizer.
+
+        Aliases:
+            adam
+
+        Args:
+            model: a Model object to optimize
+            stepsize (float; optional): the initial stepsize
+            mean_weight (float; optional):
+                for computing the running average of the mean gradient
+            mean_square_weight (float; optional):
+                for computing the running average of the mean-square gradient
+            scheduler (a learning rate scheduler object; optional)
+            tolerance (float; optional):
+                the gradient magnitude to declar convergence
+
+        Returns:
+            ADAM
+
+        """
         super().__init__(scheduler, tolerance)
         self.stepsize = be.float_scalar(stepsize)
 
@@ -311,6 +484,22 @@ class ADAM(Optimizer):
                                      mean_square_weight=mean_square_weight)
 
     def update(self, model, v_data, v_model, epoch):
+        """
+        Update the model parameters with a gradient step.
+
+        Notes:
+            Changes parameters of model in place.
+
+        Args:
+            model: a Model object to optimize
+            v_data (tensor): observations
+            v_mdoel (tensor): samples from the model
+            epoch (int): the current epoch
+
+        Returns:
+            None
+
+        """
         self.scheduler.increment(epoch)
         lr_ = partial(be.tmul_,
                       be.float_scalar(self.scheduler.get_lr() * self.stepsize))
