@@ -1,6 +1,5 @@
 from . import backends as be
-from math import sqrt
-from cytoolz import identity
+from cytoolz import identity, partial
 from .models import hidden
 
 # ----- GRADIENT ----- #
@@ -152,7 +151,7 @@ class Optimizer(object):
         self.delta = {}
 
     def check_convergence(self):
-        mag = gradient_magnitude(self.delta)
+        mag = hidden.gradient_magnitude(self.delta)
         if mag <= self.tolerance:
             return True
         else:
@@ -175,13 +174,24 @@ class StochasticGradientDescent(Optimizer):
         self.scheduler.increment(epoch)
         lr = self.scheduler.get_lr() * self.stepsize
 
+
+
+        def lr(x):
+            return self.scheduler.get_lr() * self.stepsize
+
         self.delta = model.gradient(v_data, v_model)
+
+        """
 
         for l in self.delta['layers']:
             be.multiply_dict_inplace(l, lr)
 
         for l in self.delta['weights']:
             be.multiply_dict_inplace(l, lr)
+
+        """
+
+        self.delta = hidden.grad_apply()
 
         model.parameter_update(self.delta)
 
@@ -298,29 +308,3 @@ sgd = SGD = StochasticGradientDescent
 momentum = Momentum
 rmsprop = RMSProp
 adam = ADAM
-
-
-# ----- FUNCTIONS ----- #
-
-def gradient_magnitude(grad) -> float:
-    """
-    Compute the magnitude of the gradient.
-
-    """
-
-    # for an rbm
-    # grad looks someting like like
-    # {'layers:
-    # [{'loc': visible_derivative: Tensor},
-    # {'loc': hidden_divative: Tensor}],
-    # 'weights':
-    # [{'matrix': weights_derivative: Tensor}]}
-
-    mag = 0
-    norm = 0
-    for key in grad:
-        for layer in grad[key]:
-            for param in layer:
-                norm += 1
-                mag += be.norm(layer[param]) ** 2 / len(layer[param])
-    return sqrt(mag / norm)
