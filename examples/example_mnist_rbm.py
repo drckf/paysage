@@ -10,7 +10,7 @@ be.set_seed(137) # for determinism
 import example_util as util
 
 def example_mnist_rbm(paysage_path=None, show_plot = False):
-    num_hidden_units = 10
+    num_hidden_units = 500
     batch_size = 50
     num_epochs = 10
     learning_rate = 0.01
@@ -34,7 +34,7 @@ def example_mnist_rbm(paysage_path=None, show_plot = False):
     rbm.initialize(data)
 
     # set up the optimizer and the fit method
-    opt = optimizers.RMSProp(rbm,
+    opt = optimizers.ADAM(rbm,
                           stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
 

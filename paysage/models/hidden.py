@@ -767,7 +767,7 @@ def grad_mapzip_(func_, grad1, grad2):
 
 def grad_magnitude(grad):
     """
-    Compute the root-mean-square of all of the gradient.
+    Compute the root-mean-square of the gradient.
 
     Args:
         grad (Gradient)
