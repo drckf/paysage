@@ -406,7 +406,7 @@ def test_gaussian_derivatives():
 
     # compute the derivatives
     d_vis_loc = -be.mean(vdata_scaled, axis=0)
-    d_vis_logvar = -0.5 * be.mean(be.square(vdata - be.broadcast(a, vdata)), axis=0)
+    d_vis_logvar = -0.5 * be.mean(be.square(be.subtract(a, vdata)), axis=0)
     d_vis_logvar += be.batch_dot(hid_mean_scaled, be.transpose(W), vdata,
                                  axis=0) / len(vdata)
     d_vis_logvar /= visible_var
@@ -431,8 +431,6 @@ def test_gaussian_derivatives():
                                            [rbm.weights[0].W_T()])
 
     weight_derivs = rbm.weights[0].derivatives(vdata_scaled, hid_mean_scaled)
-
-    print(be.tmax(be.tabs(d_vis_logvar - vis_derivs.log_var)))
 
     assert be.allclose(d_vis_loc, vis_derivs.loc), \
     "derivative of visible loc wrong in gaussian-gaussian rbm"

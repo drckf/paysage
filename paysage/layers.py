@@ -555,8 +555,8 @@ class GaussianLayer(Layer):
         loc = self.get_penalty_grad(loc, 'loc')
 
         # compute the derivative with respect to the cale parameter
-        diff = be.square(vis - be.broadcast(loc, vis))
-        log_var = -0.5 * be.mean(diff, axis=0)
+        log_var = -0.5 * be.mean(be.square(be.subtract(
+                            self.int_params.loc, vis)), axis=0)
         for i in range(len(hid)):
             log_var += be.batch_dot(
                                  hid[i],
