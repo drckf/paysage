@@ -1,5 +1,9 @@
 # Documentation for Metrics (metrics.py)
 
+This module defines classes that represent the state of some model fit
+ metric, derived from summary information about the current state of the model
+ (encapsulated in MetricState).
+
 ## class ReconstructionError
 Compute the root-mean-squared error between observations and their<br />reconstructions using minibatches.
 ### \_\_init\_\_
@@ -17,7 +21,7 @@ Create a ReconstructionError object.<br /><br />Args:<br /> ~ None<br /><br />Re
 ### reset
 ```py
 
-def reset(self)
+def reset(self) -> None
 
 ```
 
@@ -29,7 +33,7 @@ Reset the metric to it's initial state.<br /><br />Notes:<br /> ~ Changes norm a
 ### update
 ```py
 
-def update(self, minibatch=None, reconstructions=None, **kwargs)
+def update(self, update_args: paysage.metrics.MetricState) -> None
 
 ```
 
@@ -41,7 +45,7 @@ Update the estimate for the reconstruction error using a batch<br />of observati
 ### value
 ```py
 
-def value(self)
+def value(self) -> float
 
 ```
 
@@ -69,7 +73,7 @@ Create EnergyDistance object.<br /><br />Args:<br /> ~ downsample (int; optional
 ### reset
 ```py
 
-def reset(self)
+def reset(self) -> None
 
 ```
 
@@ -81,7 +85,7 @@ Reset the metric to it's initial state.<br /><br />Note:<br /> ~ Modifies norm a
 ### update
 ```py
 
-def update(self, minibatch=None, samples=None, **kwargs)
+def update(self, update_args: paysage.metrics.MetricState) -> None
 
 ```
 
@@ -93,7 +97,7 @@ Update the estimate for the energy distance using a batch<br />of observations a
 ### value
 ```py
 
-def value(self)
+def value(self) -> float
 
 ```
 
@@ -121,7 +125,7 @@ Create an EnergyZscore object.<br /><br />Args:<br /> ~ None<br /><br />Returns:
 ### reset
 ```py
 
-def reset(self)
+def reset(self) -> None
 
 ```
 
@@ -133,7 +137,7 @@ Reset the metric to it's initial state.<br /><br />Note:<br /> ~ Modifies norm, 
 ### update
 ```py
 
-def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs)
+def update(self, update_args: paysage.metrics.MetricState) -> None
 
 ```
 
@@ -145,7 +149,7 @@ Update the estimate for the energy z-score using a batch<br />of observations an
 ### value
 ```py
 
-def value(self)
+def value(self) -> float
 
 ```
 
@@ -154,6 +158,10 @@ def value(self)
 Get the value of the energy z-score.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ energy z-score (float)
 
 
+
+
+## class MetricState
+MetricState(minibatch, reconstructions, random_samples, samples, amodel)
 
 
 ## class EnergyGap
@@ -173,7 +181,7 @@ Create an EnergyGap object.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br
 ### reset
 ```py
 
-def reset(self)
+def reset(self) -> None
 
 ```
 
@@ -185,7 +193,7 @@ Reset the metric to it's initial state.<br /><br />Note:<br /> ~ Modifies norm a
 ### update
 ```py
 
-def update(self, minibatch=None, random_samples=None, amodel=None, **kwargs)
+def update(self, update_args: paysage.metrics.MetricState) -> None
 
 ```
 
@@ -206,4 +214,18 @@ def value(self)
 Get the value of the energy gap.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ energy gap (float)
 
 
+
+
+## functions
+
+### namedtuple
+```py
+
+def namedtuple(typename, field_names, verbose=False, rename=False)
+
+```
+
+
+
+Returns a new subclass of tuple with named fields.<br /><br />>>> Point = namedtuple('Point', ['x', 'y'])<br />>>> Point.__doc__ ~  ~  ~  ~    # docstring for the new class<br />'Point(x, y)'<br />>>> p = Point(11, y=22) ~  ~  ~  # instantiate with positional args or keywords<br />>>> p[0] + p[1] ~  ~  ~  ~  ~  # indexable like a plain tuple<br />33<br />>>> x, y = p ~  ~  ~  ~  ~  ~ # unpack like a regular tuple<br />>>> x, y<br />(11, 22)<br />>>> p.x + p.y ~  ~  ~  ~  ~    # fields also accessible by name<br />33<br />>>> d = p._asdict() ~  ~  ~  ~  # convert to a dictionary<br />>>> d['x']<br />11<br />>>> Point(**d) ~  ~  ~  ~  ~   # convert from a dictionary<br />Point(x=11, y=22)<br />>>> p._replace(x=100) ~  ~  ~    # _replace() is like str.replace() but targets named fields<br />Point(x=100, y=22)
 
