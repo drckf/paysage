@@ -227,18 +227,13 @@ class RMSProp(Optimizer):
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
-        lr = self.scheduler.get_lr() * self.stepsize
+        lr_ = partial(be.tmul_,
+                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
         self.delta = self.memory.normalize(grad, unbiased=True)
-
-        for l in self.delta['layers']:
-            be.multiply_dict_inplace(l, lr)
-
-        for l in self.delta['weights']:
-            be.multiply_dict_inplace(l, lr)
-
+        hidden.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
 
 
@@ -264,19 +259,14 @@ class ADAM(Optimizer):
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
-        lr = self.scheduler.get_lr() * self.stepsize
+        lr_ = partial(be.tmul_,
+                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
         self.delta = self.memory.normalize(self.memory.mean_gradient,
                                            unbiased=True)
-
-        for l in self.delta['layers']:
-            be.multiply_dict_inplace(l, lr)
-
-        for l in self.delta['weights']:
-            be.multiply_dict_inplace(l, lr)
-
+        hidden.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
 
 
