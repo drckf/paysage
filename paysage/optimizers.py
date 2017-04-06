@@ -145,13 +145,13 @@ class Optimizer(object):
 
     def __init__(self,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-3):
+                 tolerance=1e-7):
         self.scheduler = scheduler
         self.tolerance = tolerance
         self.delta = {}
 
     def check_convergence(self):
-        mag = hidden.gradient_magnitude(self.delta)
+        mag = hidden.grad_magnitude(self.delta)
         if mag <= self.tolerance:
             return True
         else:
@@ -166,33 +166,17 @@ class StochasticGradientDescent(Optimizer):
     def __init__(self, model,
                  stepsize=0.001,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-3):
+                 tolerance=1e-7):
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
-        lr = self.scheduler.get_lr() * self.stepsize
-
-
-
-        def lr(x):
-            return self.scheduler.get_lr() * self.stepsize
+        lr_ = partial(be.tmul_,
+                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
         self.delta = model.gradient(v_data, v_model)
-
-        """
-
-        for l in self.delta['layers']:
-            be.multiply_dict_inplace(l, lr)
-
-        for l in self.delta['weights']:
-            be.multiply_dict_inplace(l, lr)
-
-        """
-
-        self.delta = hidden.grad_apply()
-
+        hidden.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
 
 
@@ -208,7 +192,7 @@ class Momentum(Optimizer):
                  stepsize=0.001,
                  momentum=0.9,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-6):
+                 tolerance=1e-7):
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
         self.memory = GradientMemory(mean_weight=momentum,
@@ -216,18 +200,12 @@ class Momentum(Optimizer):
 
     def update(self, model, v_data, v_model, epoch):
         self.scheduler.increment(epoch)
-        lr = self.scheduler.get_lr() * self.stepsize
+        lr = partial(be.tmul,
+                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
-        self.delta = deepcopy(self.memory.mean_gradient)
-
-        for l in self.delta['layers']:
-            be.multiply_dict_inplace(l, lr)
-
-        for l in self.delta['weights']:
-            be.multiply_dict_inplace(l, lr)
-
+        self.delta = hidden.grad_apply(lr, self.memory.mean_gradient)
         model.parameter_update(self.delta)
 
 
@@ -240,7 +218,7 @@ class RMSProp(Optimizer):
                  stepsize=0.001,
                  mean_square_weight=0.9,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-6):
+                 tolerance=1e-7):
         super().__init__(scheduler, tolerance)
         self.stepsize = be.float_scalar(stepsize)
 
@@ -277,7 +255,7 @@ class ADAM(Optimizer):
                  mean_weight=0.9,
                  mean_square_weight=0.999,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-6):
+                 tolerance=1e-7):
         super().__init__(scheduler, tolerance)
         self.stepsize = be.float_scalar(stepsize)
 
