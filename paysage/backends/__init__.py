@@ -24,9 +24,10 @@ else:
 
 # ----- COMMON FUNCTIONALITY ----- #
 
+
 def fold(func, a):
     """
-    Accumulates the result of a function over iterable a.
+    Combines the result of a function over iterable a.
 
     For example:
 
@@ -56,6 +57,38 @@ def fold(func, a):
     for x in a:
         result = func(result, x)
     return result
+
+def accumulate(func, a):
+    """
+    Accumulates the result of a function over iterable a.
+
+    For example:
+
+    '''
+    from collections import namedtuple
+
+    def square(x):
+        return x**2
+
+    coords = namedtuple("coordinates", ["x", "y"])
+
+    a = coords(1,2)
+    b = accumulate(square, a) # 5
+
+    a = list(a)
+    b = accumulate(add, a) # 5
+
+    '''
+
+    Args:
+        func (callable): a function with one argument
+        a (iterable: e.g., list or named tuple)
+
+    Returns:
+        float
+
+    """
+    return sum(func(x) for x in a)
 
 def apply(func, a):
     """

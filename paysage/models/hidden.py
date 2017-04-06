@@ -649,10 +649,10 @@ class Model(object):
 def grad_fold(func, grad):
     """
     Apply a function entrywise over a Gradient objet,
-    accumulating the result.
+    combining the result.
 
     Args:
-        func (callable)
+        func (callable): function with two arguments
         grad (Gradient)
 
     returns:
@@ -664,6 +664,26 @@ def grad_fold(func, grad):
         result = be.fold(func, ly)
     for w in grad.weights:
         result = be.fold(func, w)
+    return result
+
+def grad_accumulate(func, grad):
+    """
+    Apply a funciton entrywise over a Gradient object,
+    accumulating the result.
+
+    Args:
+        func (callable): function with one argument
+        grad (Gradient)
+
+    returns:
+        float
+
+    """
+    result = 0
+    for ly in grad.layers:
+        result = be.accumulate(func, ly)
+    for w in grad.weights:
+        result = be.accumulate(func, w)
     return result
 
 def grad_apply(func, grad):
@@ -746,32 +766,16 @@ def grad_mapzip_(func_, grad1, grad2):
         be.mapzip_(func_, grad1.weights[j], grad2.weights[j])
 
 def grad_magnitude(grad):
-    total_num_elements = grad_fold(be.num_elements, grad)
-
-    return total_num_elements
-
-
-'''
-def gradient_magnitude(grad) -> float:
     """
-    Compute the magnitude of the gradient.
+    Compute the root-mean-square of all of the gradient.
+
+    Args:
+        grad (Gradient)
+
+    Returns:
+        magnitude (float)
 
     """
-
-    # for an rbm
-    # grad looks someting like like
-    # {'layers:
-    # [{'loc': visible_derivative: Tensor},
-    # {'loc': hidden_divative: Tensor}],
-    # 'weights':
-    # [{'matrix': weights_derivative: Tensor}]}
-
-    mag = 0
-    norm = 0
-    for key in grad:
-        for layer in grad[key]:
-            for param in layer:
-                norm += 1
-                mag += be.norm(layer[param]) ** 2 / len(layer[param])
-    return sqrt(mag / norm)
-'''
+    n = len(grad.layers) + len(grad.weights)
+    tensor_mean_square = compose(be.mean, be.square)
+    return sqrt(grad_accumulate(tensor_mean_square, grad) / n)
