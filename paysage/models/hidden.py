@@ -34,7 +34,6 @@ class State(object):
     ]
 
     """
-    #TODO: this should just take a list of tensors
     def __init__(self, tensors):
         """
         Create a State object.
