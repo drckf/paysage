@@ -34,37 +34,37 @@ class State(object):
     ]
 
     """
-    def __init__(self, batch_size, model):
+    #TODO: this should just take a list of tensors
+    def __init__(self, tensors):
         """
-        Create a randomly initialized State object.
+        Create a State object.
 
         Args:
-            vis (tensor (num_samples, num_visible)): observed visible units
+            tensors: a list of tensors
+
+        Returns:
+            state object
+
+        """
+        self.units = tensors
+        self.shapes = [be.shape(t) for t in self.units]
+
+    @classmethod
+    def from_model(cls, batch_size, model):
+        """
+        Create a State object.
+
+        Args:
+            batch_size (int): the number of samples per layer
             model (Model): a model object
 
         Returns:
             state object
 
         """
-        self.shapes = [(batch_size, l.len) for l in model.layers]
-        self.units = [layers[i].random(self.shapes[i])
-                      for i in range(model.num_layers)]
-
-    def set_layer(self, values, i):
-        """
-        Set the units of layer i to values.
-
-        Notes:
-            Updates layer.units[i] in place.
-
-        Args:
-            values (tensor (num_samples, num_units))
-
-        Returns:
-            None
-
-        """
-        self.units[i] = values
+        shapes = [(batch_size, l.len) for l in model.layers]
+        units = [layers[i].random(shapes[i]) for i in range(model.num_layers)]
+        return cls(units)
 
     @classmethod
     def from_visible(cls, vis, model):
@@ -80,8 +80,8 @@ class State(object):
 
         """
         batch_size = be.shape(vis)[0]
-        state = cls(batch_size, model)
-        state.set_visible(vis, 0)
+        state = cls.from_model(batch_size, model)
+        state.units[0] = vis
         return state
 
 
@@ -219,19 +219,29 @@ class Model(object):
     #
     # either, this could return a new State object (which involves a copy)
     # or, it could mutate the values of the State tensors in place
-    def mcstep(self, vis, beta=None):
+    def mcstep(self, state, beta=None, update_vis=True):
         """
         Perform a single Gibbs sampling update.
         v -> update h distribution ~ h -> update v distribution ~ v'
 
         Args:
-            vis (batch_size, num_visible): Observed visible units.
-            beta (optional, (batch_size, 1)): Inverse temperatures.
+            state (State object): the current state of each layer
+            beta (optional, (batch_size, 1)): Inverse temperatures
+            update_vis (bool): update state of layer 0 if True
 
         Returns:
-            tensor: New visible units (v').
+            new state
 
         """
+        # update the odd layers
+        for i in range(1, self.num_layers, 2):
+            pass
+
+
+        # update the even layers
+        for i in range(0, self.num_layers, 2):
+            pass
+
         i = 0
 
         self.layers[i+1].update(
