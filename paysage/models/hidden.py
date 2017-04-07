@@ -34,7 +34,7 @@ class State(object):
     ]
 
     """
-    def __init__(self, batch_size, model):
+    def __init__(self, batch_size: int, model: Model):
         """
         Create a randomly initialized State object.
 
@@ -125,11 +125,11 @@ class Model(object):
         # adjacent layers are connected by weights
         # therefore, if there are len(layers) = n then len(weights) = n - 1
         self.weights = [
-        layers.Weights((self.layers[i].len, self.layers[i+1].len))
+            layers.Weights((self.layers[i].len, self.layers[i+1].len))
         for i in range(self.num_layers - 1)
         ]
 
-    def get_config(self):
+    def get_config(self) -> dict:
         """
         Get a configuration for the model.
 
@@ -144,14 +144,14 @@ class Model(object):
 
         """
         config = {
-        "model type": "RBM",
-        "layers": [ly.get_config() for ly in self.layers],
-        "layer_types": ["visible", "hidden"],
+            "model type": "RBM",
+            "layers": [ly.get_config() for ly in self.layers],
+            "layer_types": ["visible", "hidden"],
         }
         return config
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config: dict):
         """
         Build a model from the configuration.
 
@@ -167,7 +167,7 @@ class Model(object):
             layer_list.append(layers.Layer.from_config(ly))
         return cls(layer_list)
 
-    def initialize(self, data, method='hinton'):
+    def initialize(self, data: Batch, method: str='hinton'):
         """
         Inialize the parameters of the model.
 
@@ -235,16 +235,16 @@ class Model(object):
         i = 0
 
         self.layers[i+1].update(
-        [self.layers[i].rescale(vis)],
-        [self.weights[i].W()],
-        beta)
+            [self.layers[i].rescale(vis)],
+            [self.weights[i].W()],
+            beta)
 
         hid = self.layers[i+1].sample_state()
 
         self.layers[i].update(
-        [self.layers[i+1].rescale(hid)],
-        [self.weights[i].W_T()],
-        beta)
+            [self.layers[i+1].rescale(hid)],
+            [self.weights[i].W_T()],
+            beta)
 
         return self.layers[i].sample_state()
 
@@ -302,16 +302,16 @@ class Model(object):
         i = 0
 
         self.layers[i+1].update(
-        [self.layers[i].rescale(vis)],
-        [self.weights[i].W()],
-        beta)
+            [self.layers[i].rescale(vis)],
+            [self.weights[i].W()],
+            beta)
 
         hid = self.layers[i+1].mean()
 
         self.layers[i].update(
-        [self.layers[i+1].rescale(hid)],
-        [self.weights[i].W_T()],
-        beta)
+            [self.layers[i+1].rescale(hid)],
+            [self.weights[i].W_T()],
+            beta)
 
         return self.layers[i].mean()
 
@@ -369,23 +369,23 @@ class Model(object):
         i = 0
 
         self.layers[i+1].update(
-        [self.layers[i].rescale(vis)],
-        [self.weights[i].W()],
-        beta)
+            [self.layers[i].rescale(vis)],
+            [self.weights[i].W()],
+            beta)
 
         hid = self.layers[i+1].mode()
 
         self.layers[i].update(
-        [self.layers[i+1].rescale(hid)],
-        [self.weights[i].W_T()],
-        beta)
+            [self.layers[i+1].rescale(hid)],
+            [self.weights[i].W_T()],
+            beta)
 
         return self.layers[i].mode()
 
     # TODO: use State
     # this function is just a repeated application of deterministic_step
     # so it should be changed to operate on State objects too
-    def deterministic_iteration(self, vis, n, beta=None):
+    def deterministic_iteration(self, vis, n: int, beta=None):
         """
         Perform multiple deterministic (maximum probability) updates.
         v -> h -> v_1 -> h_1 -> ... -> v_n
@@ -454,8 +454,8 @@ class Model(object):
         i = 0
 
         grad = Gradient(
-        [None for l in self.layers],
-        [None for w in self.weights]
+            [None for l in self.layers],
+            [None for w in self.weights]
         )
 
         # POSITIVE PHASE (using observed)
@@ -465,8 +465,8 @@ class Model(object):
 
         # 2. Update the hidden layer
         self.layers[i+1].update(
-        [vdata_scaled],
-        [self.weights[0].W()]
+            [vdata_scaled],
+            [self.weights[0].W()]
         )
 
         # 3. Compute the mean of the hidden layer
@@ -477,17 +477,17 @@ class Model(object):
 
         # 5. Compute the gradients
         grad.layers[i] = self.layers[i].derivatives(vdata,
-                                           [hid_scaled],
-                                           [self.weights[0].W()]
-                                           )
+                                                    [hid_scaled],
+                                                    [self.weights[0].W()]
+        )
 
         grad.layers[i+1] = self.layers[i+1].derivatives(hid,
-                                               [vdata_scaled],
-                                               [self.weights[0].W_T()]
-                                               )
+                                                        [vdata_scaled],
+                                                        [self.weights[0].W_T()]
+        )
 
         grad.weights[i] = self.weights[i].derivatives(vdata_scaled,
-                                                         hid_scaled)
+                                                      hid_scaled)
 
         # NEGATIVE PHASE (using sampled)
 
@@ -496,8 +496,8 @@ class Model(object):
 
         # 2. Update the hidden layer
         self.layers[i+1].update(
-        [vmodel_scaled],
-        [self.weights[0].W()]
+            [vmodel_scaled],
+            [self.weights[0].W()]
         )
 
         # 3. Compute the mean of the hidden layer
@@ -508,26 +508,26 @@ class Model(object):
 
         # 5. Compute the gradients
         grad.layers[i] = be.mapzip(be.subtract,
-                                  self.layers[i].derivatives(
-                                                 vmodel,
-                                                 [hid_scaled],
-                                                 [self.weights[0].W()]
-                                                 ),
-                                  grad.layers[i])
+                                   self.layers[i].derivatives(
+                                       vmodel,
+                                       [hid_scaled],
+                                       [self.weights[0].W()]
+                                   ),
+                                   grad.layers[i])
 
         grad.layers[i+1] = be.mapzip(be.subtract,
-                                  self.layers[i+1].derivatives(
-                                                   hid,
-                                                   [vmodel_scaled],
-                                                   [self.weights[0].W_T()]
-                                                   ),
-                                  grad.layers[i+1])
+                                     self.layers[i+1].derivatives(
+                                         hid,
+                                         [vmodel_scaled],
+                                         [self.weights[0].W_T()]
+                                     ),
+                                     grad.layers[i+1])
 
         grad.weights[i] = be.mapzip(be.subtract,
-                                  self.weights[i].derivatives(
-                                                  vmodel_scaled,
-                                                  hid_scaled),
-                                  grad.weights[i])
+                                    self.weights[i].derivatives(
+                                        vmodel_scaled,
+                                        hid_scaled),
+                                    grad.weights[i])
         return grad
 
     def parameter_update(self, deltas):
@@ -622,8 +622,8 @@ class Model(object):
         # save the weights
         for i in range(self.num_layers - 1):
             df_weights = pandas.DataFrame(
-                            be.to_numpy_array(self.weights[i].W())
-                         )
+                be.to_numpy_array(self.weights[i].W())
+            )
             store.put('weights/weights_'+str(i), df_weights)
         for i in range(len(self.layers)):
             layer_type = config["layer_types"][i]
@@ -633,16 +633,16 @@ class Model(object):
             intrinsics = layer["intrinsic"]
             for ip in intrinsics:
                 df_params = pandas.DataFrame(
-                            be.to_numpy_array(self.layers[i].int_params[ip])
-                         )
-                store.put(os.path.join(layer_key,'intrinsic', ip), df_params)
+                    be.to_numpy_array(self.layers[i].int_params[ip])
+                )
+                store.put(os.path.join(layer_key, 'intrinsic', ip), df_params)
             # extrinsic params
             extrinsics = layer["extrinsic"]
             for ep in extrinsics:
                 df_params = pandas.DataFrame(
-                            be.to_numpy_array(self.layers[i].ext_params[ep])
-                         )
-                store.put(os.path.join(layer_key,'extrinsic', ep), df_params)
+                    be.to_numpy_array(self.layers[i].ext_params[ep])
+                )
+                store.put(os.path.join(layer_key, 'extrinsic', ep), df_params)
 
 # ----- FUNCTIONS ----- #
 
@@ -699,8 +699,8 @@ def grad_apply(func, grad):
 
     """
     return Gradient(
-    [be.apply(func, ly) for ly in grad.layers],
-    [be.apply(func, w) for w in grad.weights]
+        [be.apply(func, ly) for ly in grad.layers],
+        [be.apply(func, w) for w in grad.weights]
     )
 
 def grad_apply_(func_, grad):
