@@ -70,13 +70,13 @@ class Batch(object):
         self.generators = {mode: self.iterators[mode].__iter__()
                            for mode in self.iterators}
 
-    def num_validation_samples(self):
+    def num_validation_samples(self) -> int:
         return self.nrows - self.split
 
-    def close(self):
+    def close(self) -> None:
         self.store.close()
 
-    def reset_generator(self, mode):
+    def reset_generator(self, mode: str) -> None:
         if mode == 'train':
             self.generators['train'] = self.iterators['train'].__iter__()
         elif mode == 'validate':
@@ -85,7 +85,7 @@ class Batch(object):
             self.generators = {mode: self.iterators[mode].__iter__()
                                for mode in self.iterators}
 
-    def get(self, mode):
+    def get(self, mode: str):
         try:
             vals = next(self.generators[mode]).as_matrix()
         except StopIteration:

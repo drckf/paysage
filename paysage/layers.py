@@ -828,7 +828,7 @@ class IsingLayer(Layer):
         if beta is not None:
             field *= be.broadcast(beta,field)
         field += be.broadcast(self.int_params.loc, field)
-        self.ext_params = ExtrinsicParams(field)
+        self.ext_params = ExtrinsicParamsIsing(field)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
