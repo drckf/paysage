@@ -34,7 +34,7 @@ class State(object):
     ]
 
     """
-    def __init__(self, batch_size: int, model: Model):
+    def __init__(self, batch_size: int, model):
         """
         Create a randomly initialized State object.
 
