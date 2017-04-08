@@ -31,7 +31,8 @@ def hinton(batch, model):
 
     """
     for i in range(len(model.weights)):
-        model.weights[i].val = 0.01 * be.randn(model.weights[i].shape)
+        model.weights[i].int_params.matrix[:] = \
+                        0.01 * be.randn(model.weights[i].shape)
     while True:
         try:
             v_data = batch.get(mode='train')

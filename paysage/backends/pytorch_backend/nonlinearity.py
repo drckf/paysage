@@ -4,6 +4,37 @@ from . import typedef as T
 
 LOG2 = 0.6931471805599453
 
+def tmul(a: T.Scalar, x: T.FloatTensor) -> T.FloatTensor:
+    """
+    Elementwise multiplication of tensor x by scalar a.
+
+    Args:
+        x: A tensor.
+        a: scalar.
+
+    Returns:
+        tensor: Elementwise a * x.
+
+    """
+    return x.mul(a)
+
+def tmul_(a: T.Scalar, x: T.FloatTensor) -> T.FloatTensor:
+    """
+    Elementwise multiplication of tensor x by scalar a.
+
+    Notes:
+        Modifes x in place
+
+    Args:
+        x: A tensor.
+        a: scalar.
+
+    Returns:
+        tensor: Elementwise a * x.
+
+    """
+    x.mul_(a)
+
 def tabs(x: T.FloatTensor) -> T.FloatTensor:
     """
     Elementwise absolute value of a tensor.

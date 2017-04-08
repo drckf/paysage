@@ -1,8 +1,8 @@
 from . import backends as be
-from math import sqrt
-from copy import deepcopy
+from cytoolz import identity, partial
+from .models import hidden
 
-# ----- GRADIENT ----- #
+# ----- CLASSES ----- #
 
 class GradientMemory(object):
     """
@@ -13,66 +13,74 @@ class GradientMemory(object):
     """
 
     def __init__(self, mean_weight=0.9, mean_square_weight=0.0):
+        """
+        Create a gradient memory object to keep track of the first two
+        moments of the gradient.
 
+        Args:
+            mean_weight (float \in (0,1); optional):
+                how strongly to weight the previous gradient
+            mean_square_weight (float \in (0,1); optional)
+                how strongly to weight the square of the previous gradient
+
+        Returns:
+            GradientMemory
+
+        """
         self.mean_weight = be.float_scalar(mean_weight)
         self.mean_square_weight = be.float_scalar(mean_square_weight)
 
         self.mean_gradient = None
         self.mean_square_gradient = None
 
+        self.mixer_ = partial(be.mix_inplace, self.mean_weight)
+        self.square_mixer_ = partial(be.square_mix_inplace, self.mean_square_weight)
+
     def update_mean(self, grad):
         """
         Update the running average of the model gradients.
 
-        """
+        Args:
+            grad (a Gradient object)
 
+        Returns:
+            None
+
+        """
         if self.mean_gradient is None:
-            self.mean_gradient = deepcopy(grad)
+            self.mean_gradient = hidden.grad_apply(identity, grad)
         else:
-            for key in grad:
-                # grad[key] is a list
-                for i in range(len(grad[key])):
-                    # grad[key][i] is a dict
-                    for p in grad[key][i]:
-                        # grad[key][i][p] is a tensor
-                        be.mix_inplace(self.mean_weight,
-                        self.mean_gradient[key][i][p],
-                        grad[key][i][p]
-                        )
+            hidden.grad_mapzip_(self.mixer_, self.mean_gradient, grad)
 
     def update_mean_square(self, grad):
         """
         Update the running average of the squared model gradients.
 
-        """
+        Args:
+            grad (a Gradient object)
 
+        Returns:
+            None
+
+        """
         if self.mean_square_gradient is None:
-            self.mean_square_gradient = deepcopy(grad)
-            for key in grad:
-                # grad[key] is a list
-                for i in range(len(grad[key])):
-                    # grad[key][i] is a dict
-                    for p in grad[key][i]:
-                        # grad[key][i][p] is a tensor
-                        self.mean_square_gradient[key][i][p] = be.square(
-                                                                grad[key][i][p]
-                                                                )
+            self.mean_square_gradient = hidden.grad_apply(be.square, grad)
         else:
-            for key in grad:
-                # grad[key] is a list
-                for i in range(len(grad[key])):
-                    # grad[key][i] is a dict
-                    for p in grad[key][i]:
-                        # grad[key][i][p] is a tensor
-                        be.square_mix_inplace(self.mean_square_weight,
-                        self.mean_square_gradient[key][i][p],
-                        grad[key][i][p]
-                        )
+            hidden.grad_mapzip_(self.square_mixer_, self.mean_square_gradient, grad)
 
     def update(self, grad):
         """
         Update the running average of the model gradients and the running
         average of the squared model gradients.
+
+        Notes:
+            Modifies mean_weight and mean_square_weight attributes in place.
+
+        Args:
+            grad (a Gradient object)
+
+        Returns:
+            None
 
         """
         if self.mean_weight:
@@ -84,118 +92,229 @@ class GradientMemory(object):
         """
         Divide grad by the square root of the mean square gradient.
 
+        Notes:
+            A running average is biased due to autoregressive correlations
+            between adjacent timepoints. The bias can be corrected by
+            dividing the results by appropriate weights that reflect
+            the degree of autocorrelation.
+
+            Acts like the identity function if mean_square_weight = 0.
+
+        Args:
+            grad (a Gradient object)
+            unbiased (bool): whether to unbias the estimates
+
+        Returns:
+            normalized Gradient object
+
         """
-
-        # a running average is biased due to the autoregressive correlations
-        # between adjacent timepoints
-        # the bias can be corrected by renormalizing the results
-
-        mean_norm = be.float_scalar(1)
-        mean_square_norm = be.float_scalar(1)
+        if not self.mean_square_gradient:
+            return grad
 
         if unbiased:
             mean_norm = be.float_scalar(1 - self.mean_weight)
             mean_square_norm = be.float_scalar(1 - self.mean_square_weight)
+            def normalizer(mean, mean_square):
+                return be.sqrt_div(mean / mean_norm,
+                                   mean_square / mean_square_norm)
+        else:
+            def normalizer(mean, mean_square):
+                return be.sqrt_div(mean, mean_square)
 
-        result = deepcopy(grad)
-        for key in grad:
-            # grad[key] is a list
-            for i in range(len(grad[key])):
-                # grad[key][i] is a dict
-                for p in grad[key][i]:
-                    # grad[key][i][p] is a tensor
-                    result[key][i][p] = be.sqrt_div(
-                    grad[key][i][p] / mean_norm,
-                    self.mean_square_gradient[key][i][p] / mean_square_norm
-                    )
-        return result
+        return hidden.grad_mapzip(normalizer, grad, self.mean_square_gradient)
 
 
-# ----- LEARNING RATE SCHEDULERS ----- #
 
 class Scheduler(object):
-
+    """Base class for the learning rate schedulers"""
     def __init__(self):
+        """
+        Create a scheduler object.
+
+        Args:
+            None
+
+        Returns:
+            Scheduler
+
+        """
         self.lr = 1
         self.iter = 0
         self.epoch = 0
 
     def increment(self, epoch):
+        """
+        Update the iter and epoch attributes.
+
+        Notes:
+            Modifies iter and epoch attributes in place.
+
+        Args:
+            epoch (int): the current epoch
+
+        Returns:
+            None
+
+        """
         self.iter += 1
         self.epoch = epoch
 
 
 class ExponentialDecay(Scheduler):
-
+    """Learning rate that decays exponentially per epoch"""
     def __init__(self, lr_decay=0.9):
+        """
+        Create an exponential decay learning rate schedule.
+        Larger lr_decay -> slower decay.
+
+        Args:
+            lr_decay (float \in (0,1))
+
+        Returns:
+            ExponentialDecay
+
+        """
         super().__init__()
         self.lr_decay = lr_decay
 
     def get_lr(self):
+        """
+        Compute the current value of the learning rate.
+
+        Args:
+            None
+
+        Returns:
+            lr (float)
+
+        """
         self.lr = (self.lr_decay ** self.epoch)
         return self.lr
 
 
 class PowerLawDecay(Scheduler):
-
+    """Learning rate that decays with a power law per epoch"""
     def __init__(self, lr_decay=0.1):
+        """
+        Create a power law decay learning rate schedule.
+        Larger lr_decay -> faster decay.
+
+        Args:
+            lr_decay (float \in (0,1))
+
+        Returns:
+            PowerLawDecay
+
+        """
         super().__init__()
         self.lr_decay = lr_decay
 
     def get_lr(self):
+        """
+        Compute the current value of the learning rate.
+
+        Args:
+            None
+
+        Returns:
+            lr (float)
+
+        """
         self.lr = 1 / (1 + self.lr_decay * self.epoch)
         return self.lr
 
 
-# ----- OPTIMIZERS ----- #
 
 class Optimizer(object):
-
+    """Base class for the optimizer methods."""
     def __init__(self,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-3):
+                 tolerance=1e-7):
+        """
+        Create an optimizer object:
+
+        Args:
+            scheduler (a learning rate schedule object; optional)
+            tolerance (float; optional):
+                the gradient magnitude to declar convergence
+
+        Returns:
+            Optimizer
+
+        """
         self.scheduler = scheduler
         self.tolerance = tolerance
         self.delta = {}
 
     def check_convergence(self):
-        mag = gradient_magnitude(self.delta)
-        if mag <= self.tolerance:
-            return True
-        else:
-            return False
+        """
+        Check the convergence criterion.
+
+        Args:
+            None
+
+        Returns:
+            bool: True if convergenced, False if not
+
+        """
+        mag = hidden.grad_magnitude(self.delta)
+        return mag <= self.tolerance
 
 
 class StochasticGradientDescent(Optimizer):
-    """StochasticGradientDescent
-       Basic algorithm of gradient descent with minibatches.
-
-    """
+    """Basic algorithm of gradient descent with minibatches."""
     def __init__(self, model,
                  stepsize=0.001,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-3):
+                 tolerance=1e-7):
+        """
+        Create a stochastic gradient descent optimizer.
+
+        Aliases:
+            SGD, sgd
+
+        Args:
+            model: a Model object to optimize
+            stepsize (float; optional): the initial stepsize
+            scheduler (a learning rate scheduler object; optional)
+            tolerance (float; optional):
+                the gradient magnitude to declar convergence
+
+        Returns:
+            StochasticGradientDescent
+
+        """
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
 
     def update(self, model, v_data, v_model, epoch):
+        """
+        Update the model parameters with a gradient step.
+
+        Notes:
+            Changes parameters of model in place.
+
+        Args:
+            model: a Model object to optimize
+            v_data (tensor): observations
+            v_mdoel (tensor): samples from the model
+            epoch (int): the current epoch
+
+        Returns:
+            None
+
+        """
         self.scheduler.increment(epoch)
-        lr = self.scheduler.get_lr() * self.stepsize
+        lr_ = partial(be.tmul_,
+                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
         self.delta = model.gradient(v_data, v_model)
-
-        for l in self.delta['layers']:
-            be.multiply_dict_inplace(l, lr)
-
-        for l in self.delta['weights']:
-            be.multiply_dict_inplace(l, lr)
-
+        hidden.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
 
 
 class Momentum(Optimizer):
-    """Momentum
-       Stochastic gradient descent with momentum.
+    """Stochastic gradient descent with momentum.
        Qian, N. (1999).
        On the momentum term in gradient descent learning algorithms.
        Neural Networks, 12(1), 145–151
@@ -205,31 +324,59 @@ class Momentum(Optimizer):
                  stepsize=0.001,
                  momentum=0.9,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-6):
+                 tolerance=1e-7):
+        """
+        Create a stochastic gradient descent with momentum optimizer.
+
+        Aliases:
+            momentum
+
+        Args:
+            model: a Model object to optimize
+            stepsize (float; optional): the initial stepsize
+            momentum (float; optional): the amount of momentum
+            scheduler (a learning rate scheduler object; optional)
+            tolerance (float; optional):
+                the gradient magnitude to declar convergence
+
+        Returns:
+            Momentum
+
+        """
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
         self.memory = GradientMemory(mean_weight=momentum,
                                      mean_square_weight=0)
 
     def update(self, model, v_data, v_model, epoch):
+        """
+        Update the model parameters with a gradient step.
+
+        Notes:
+            Changes parameters of model in place.
+
+        Args:
+            model: a Model object to optimize
+            v_data (tensor): observations
+            v_mdoel (tensor): samples from the model
+            epoch (int): the current epoch
+
+        Returns:
+            None
+
+        """
         self.scheduler.increment(epoch)
-        lr = self.scheduler.get_lr() * self.stepsize
+        lr = partial(be.tmul,
+                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
-        self.delta = deepcopy(self.memory.mean_gradient)
-
-        for l in self.delta['layers']:
-            be.multiply_dict_inplace(l, lr)
-
-        for l in self.delta['weights']:
-            be.multiply_dict_inplace(l, lr)
-
+        self.delta = hidden.grad_apply(lr, self.memory.mean_gradient)
         model.parameter_update(self.delta)
 
 
 class RMSProp(Optimizer):
-    """RMSProp
+    """Stochastic gradient descent with RMSProp.
        Geoffrey Hinton's Coursera Course Lecture 6e
 
     """
@@ -237,7 +384,26 @@ class RMSProp(Optimizer):
                  stepsize=0.001,
                  mean_square_weight=0.9,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-6):
+                 tolerance=1e-7):
+        """
+        Create a stochastic gradient descent with RMSProp optimizer.
+
+        Aliases:
+            rmsprop
+
+        Args:
+            model: a Model object to optimize
+            stepsize (float; optional): the initial stepsize
+            mean_square_weight (float; optional):
+                for computing the running average of the mean-square gradient
+            scheduler (a learning rate scheduler object; optional)
+            tolerance (float; optional):
+                the gradient magnitude to declar convergence
+
+        Returns:
+            RMSProp
+
+        """
         super().__init__(scheduler, tolerance)
         self.stepsize = be.float_scalar(stepsize)
 
@@ -245,25 +411,36 @@ class RMSProp(Optimizer):
                                      mean_square_weight=mean_square_weight)
 
     def update(self, model, v_data, v_model, epoch):
+        """
+        Update the model parameters with a gradient step.
+
+        Notes:
+            Changes parameters of model in place.
+
+        Args:
+            model: a Model object to optimize
+            v_data (tensor): observations
+            v_mdoel (tensor): samples from the model
+            epoch (int): the current epoch
+
+        Returns:
+            None
+
+        """
         self.scheduler.increment(epoch)
-        lr = self.scheduler.get_lr() * self.stepsize
+        lr_ = partial(be.tmul_,
+                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
         self.delta = self.memory.normalize(grad, unbiased=True)
-
-        for l in self.delta['layers']:
-            be.multiply_dict_inplace(l, lr)
-
-        for l in self.delta['weights']:
-            be.multiply_dict_inplace(l, lr)
-
+        hidden.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
 
 
 class ADAM(Optimizer):
-    """ADAM
-       Adaptive Moment Estimation algorithm.
+    """Stochastic gradient descent with Adaptive Moment Estimation algorithm.
+
        Kingma, D. P., & Ba, J. L. (2015).
        Adam: a Method for Stochastic Optimization.
        International Conference on Learning Representations, 1–13.
@@ -274,7 +451,28 @@ class ADAM(Optimizer):
                  mean_weight=0.9,
                  mean_square_weight=0.999,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-6):
+                 tolerance=1e-7):
+        """
+        Create a stochastic gradient descent with ADAM optimizer.
+
+        Aliases:
+            adam
+
+        Args:
+            model: a Model object to optimize
+            stepsize (float; optional): the initial stepsize
+            mean_weight (float; optional):
+                for computing the running average of the mean gradient
+            mean_square_weight (float; optional):
+                for computing the running average of the mean-square gradient
+            scheduler (a learning rate scheduler object; optional)
+            tolerance (float; optional):
+                the gradient magnitude to declar convergence
+
+        Returns:
+            ADAM
+
+        """
         super().__init__(scheduler, tolerance)
         self.stepsize = be.float_scalar(stepsize)
 
@@ -282,20 +480,31 @@ class ADAM(Optimizer):
                                      mean_square_weight=mean_square_weight)
 
     def update(self, model, v_data, v_model, epoch):
+        """
+        Update the model parameters with a gradient step.
+
+        Notes:
+            Changes parameters of model in place.
+
+        Args:
+            model: a Model object to optimize
+            v_data (tensor): observations
+            v_mdoel (tensor): samples from the model
+            epoch (int): the current epoch
+
+        Returns:
+            None
+
+        """
         self.scheduler.increment(epoch)
-        lr = self.scheduler.get_lr() * self.stepsize
+        lr_ = partial(be.tmul_,
+                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
         self.delta = self.memory.normalize(self.memory.mean_gradient,
                                            unbiased=True)
-
-        for l in self.delta['layers']:
-            be.multiply_dict_inplace(l, lr)
-
-        for l in self.delta['weights']:
-            be.multiply_dict_inplace(l, lr)
-
+        hidden.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
 
 
@@ -305,29 +514,3 @@ sgd = SGD = StochasticGradientDescent
 momentum = Momentum
 rmsprop = RMSProp
 adam = ADAM
-
-
-# ----- FUNCTIONS ----- #
-
-def gradient_magnitude(grad) -> float:
-    """
-    Compute the magnitude of the gradient.
-
-    """
-
-    # for an rbm
-    # grad looks someting like like
-    # {'layers:
-    # [{'loc': visible_derivative: Tensor},
-    # {'loc': hidden_divative: Tensor}],
-    # 'weights':
-    # [{'matrix': weights_derivative: Tensor}]}
-
-    mag = 0
-    norm = 0
-    for key in grad:
-        for layer in grad[key]:
-            for param in layer:
-                norm += 1
-                mag += be.norm(layer[param]) ** 2 / len(layer[param])
-    return sqrt(mag / norm)

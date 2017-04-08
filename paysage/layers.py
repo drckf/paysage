@@ -1,12 +1,15 @@
 import sys
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 from . import penalties
 from . import constraints
 from . import backends as be
 
+ParamsLayer = namedtuple("Params", [])
+
 class Layer(object):
     """A general layer class with common functionality."""
+
     def __init__(self, *args, **kwargs):
         """
         Basic layer initalization method.
@@ -19,8 +22,9 @@ class Layer(object):
             layer
 
         """
-        self.int_params = {}
-        self.ext_params = {}
+        # these attributes are immutable (their keys don't change)
+        self.int_params = ParamsLayer()
+        # these attributes are mutable (their keys do change)
         self.penalties = OrderedDict()
         self.constraints = OrderedDict()
 
@@ -40,13 +44,12 @@ class Layer(object):
 
         """
         return {
-        "layer_type": self.__class__.__name__,
-        "intrinsic": list(self.int_params.keys()),
-        "extrinsic": list(self.ext_params.keys()),
-        "penalties": {pk: self.penalties[pk].get_config()
-                        for pk in self.penalties},
-        "constraints": {ck: self.constraints[ck].__name__
-                        for ck in self.constraints}
+            "layer_type"  : self.__class__.__name__,
+            "intrinsic"   : list(self.int_params._fields),
+            "penalties"   : {pk: self.penalties[pk].get_config()
+                             for pk in self.penalties},
+            "constraints" : {ck: self.constraints[ck].__name__
+                             for ck in self.constraints}
         }
 
     def get_config(self):
@@ -113,7 +116,9 @@ class Layer(object):
 
         """
         for param_name in self.constraints:
-            self.constraints[param_name](self.int_params[param_name])
+            self.constraints[param_name](
+                getattr(self.int_params, param_name)
+            )
 
     def add_penalty(self, penalty):
         """
@@ -141,40 +146,44 @@ class Layer(object):
             None
 
         Returns:
-            float: the value of the penalty functions
+            dict (float): the values of the penalty functions
 
         """
         pen = {param_name:
-            self.penalties[param_name].value(self.int_params[param_name])
-            for param_name in self.penalties}
+               self.penalties[param_name].value(
+                   getattr(self.int_params, param_name)
+               )
+               for param_name in self.penalties}
         return pen
 
-    def get_penalty_gradients(self):
+    def get_penalty_grad(self, deriv, param_name):
         """
-        Get the gradients of the penalties.
+        Get the gradient of the penalties on a parameter.
 
         E.g., L2 penalty gradient = penalty * parameter_i
 
         Args:
-            None
+            deriv (tensor): derivative of the parameter
+            param_name: name of the parameter
 
         Returns:
-            pen (dict): {param_name: tensor (containing gradient)}
+            tensor: derivative including penalty
 
         """
-        pen = {param_name:
-            self.penalties[param_name].grad(self.int_params[param_name])
-            for param_name in self.penalties}
-        return pen
+        if param_name not in self.penalties:
+            return deriv
+        else:
+            return deriv + self.penalties[param_name].grad(
+                getattr(self.int_params, param_name))
 
     def parameter_step(self, deltas):
         """
         Update the values of the intrinsic parameters:
 
-        layer.int_params['name'] -= deltas['name']
+        layer.int_params.name -= deltas.name
 
         Notes:
-            Modifies the layer.int_params attribute in place.
+            Modifies the elements of the layer.int_params attribute in place.
 
         Args:
             deltas (dict): {param_name: tensor (update)}
@@ -183,12 +192,15 @@ class Layer(object):
             None
 
         """
-        be.subtract_dicts_inplace(self.int_params, deltas)
+        self.int_params = be.mapzip(be.subtract, deltas, self.int_params)
         self.enforce_constraints()
 
 
+IntrinsicParamsWeights = namedtuple("IntrinsicParamsWeights", ["matrix"])
+
 class Weights(Layer):
     """Layer class for weights"""
+
     def __init__(self, shape):
         """
         Create a weight layer.
@@ -210,12 +222,8 @@ class Weights(Layer):
 
         """
         super().__init__()
-
         self.shape = shape
-
-        self.int_params = {
-        'matrix': 0.01 * be.randn(shape)
-        }
+        self.int_params = IntrinsicParamsWeights(0.01 * be.randn(shape))
 
     def get_config(self):
         """
@@ -245,6 +253,7 @@ class Weights(Layer):
 
         """
         layer = cls(config["shape"])
+        # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
@@ -255,7 +264,7 @@ class Weights(Layer):
         """
         Get the weight matrix.
 
-        A convenience method for accessing layer.int_params['matrix']
+        A convenience method for accessing layer.int_params.matrix
         with a shorter syntax.
 
         Args:
@@ -265,14 +274,14 @@ class Weights(Layer):
             tensor: weight matrix
 
         """
-        return self.int_params['matrix']
+        return self.int_params.matrix
 
     def W_T(self):
         """
         Get the transpose of the weight matrix.
 
         A convenience method for accessing the transpose of
-        layer.int_params['matrix'] with a shorter syntax.
+        layer.int_params.matrix with a shorter syntax.
 
         Args:
             None
@@ -281,7 +290,7 @@ class Weights(Layer):
             tensor: transpose of weight matrix
 
         """
-        return be.transpose(self.int_params['matrix'])
+        return be.transpose(self.int_params.matrix)
 
     def derivatives(self, vis, hid):
         """
@@ -294,14 +303,12 @@ class Weights(Layer):
             hid (tensor (num_samples, num_visible)): Rescaled hidden units.
 
         Returns:
-            derivs (dict): {'matrix': tensor (contains gradient)}
+            derivs (namedtuple): 'matrix': tensor (contains gradient)
 
         """
-        n = len(vis)
-        derivs = {
-        'matrix': -be.batch_outer(vis, hid) / n
-        }
-        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
+        derivs = IntrinsicParamsWeights(
+            self.get_penalty_grad(-be.batch_outer(vis, hid) / len(vis),
+                                  "matrix"))
         return derivs
 
     def energy(self, vis, hid):
@@ -319,11 +326,15 @@ class Weights(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        return -be.batch_dot(vis, self.int_params['matrix'], hid)
+        return -be.batch_dot(vis, self.W(), hid)
 
+
+IntrinsicParamsGaussian = namedtuple("IntrinsicParamsGaussian", ["loc", "log_var"])
+ExtrinsicParamsGaussian = namedtuple("ExtrinsicParamsGaussian", ["mean", "variance"])
 
 class GaussianLayer(Layer):
     """Layer with Gaussian units"""
+
     def __init__(self, num_units):
         """
         Create a layer with Gaussian units.
@@ -341,15 +352,12 @@ class GaussianLayer(Layer):
         self.sample_size = 0
         self.rand = be.randn
 
-        self.int_params = {
-        'loc': be.zeros(self.len),
-        'log_var': be.zeros(self.len)
-        }
+        self.int_params = IntrinsicParamsGaussian(
+            be.zeros(self.len),
+            be.zeros(self.len)
+        )
 
-        self.ext_params = {
-        'mean': None,
-        'variance': None
-        }
+        self.ext_params = ExtrinsicParamsGaussian(None, None)
 
     def get_config(self):
         """
@@ -363,6 +371,7 @@ class GaussianLayer(Layer):
 
         """
         base_config = self.get_base_config()
+        base_config["extrinsic"] = list(self.ext_params._fields),
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -381,6 +390,7 @@ class GaussianLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
+        # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
@@ -401,8 +411,8 @@ class GaussianLayer(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        scale = be.exp(self.int_params['log_var'])
-        result = vis - be.broadcast(self.int_params['loc'], vis)
+        scale = be.exp(self.int_params.log_var)
+        result = vis - be.broadcast(self.int_params.loc, vis)
         result = be.square(result)
         result /= be.broadcast(scale, vis)
         return 0.5 * be.mean(result, axis=1)
@@ -427,13 +437,10 @@ class GaussianLayer(Layer):
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        scale = be.exp(self.int_params['log_var'])
-
-
-        logZ = be.broadcast(self.int_params['loc'], phi) * phi
-        logZ += be.broadcast(scale, phi) * be.square(phi)
+        scale = be.exp(self.int_params.log_var)
+        logZ = be.multiply(self.int_params.loc, phi)
+        logZ += be.multiply(scale, be.square(phi))
         logZ += be.log(be.broadcast(scale, phi))
-
         return logZ
 
     def online_param_update(self, data):
@@ -451,21 +458,25 @@ class GaussianLayer(Layer):
             None
 
         """
+        # get the current values of the first and second moments
+        x = self.int_params.loc
+        x2 = be.exp(self.int_params.log_var) + x**2
+
+        # update the size of the dataset
         n = len(data)
         new_sample_size = n + self.sample_size
-        # compute the current value of the second moment
-        x2 = be.exp(self.int_params['log_var'])
-        x2 += self.int_params['loc']**2
-        # update the first moment / location parameter
-        self.int_params['loc'] *= self.sample_size / new_sample_size
-        self.int_params['loc'] += n * be.mean(data, axis=0) / new_sample_size
+
+        # update the first moment
+        x *= self.sample_size / new_sample_size
+        x += n * be.mean(data, axis=0) / new_sample_size
+
         # update the second moment
         x2 *= self.sample_size / new_sample_size
         x2 += n * be.mean(be.square(data), axis=0) / new_sample_size
-        # update the log_var parameter from the second moment
-        self.int_params['log_var'] = be.log(x2 - self.int_params['loc']**2)
-        # update the sample size
+
+        # update the class attributes
         self.sample_size = new_sample_size
+        self.int_params = IntrinsicParamsGaussian(x, be.log(x2 - x**2))
 
     def shrink_parameters(self, shrinkage=0.1):
         """
@@ -474,7 +485,7 @@ class GaussianLayer(Layer):
         new_variance = (1-shrinkage) * old_variance + shrinkage * 1
 
         Notes:
-            Modifies layer.int_params['loc_var'] in place.
+            Modifies layer.int_params in place.
 
         Args:
             shrinkage (float \in [0,1]): the amount of shrinkage to apply
@@ -483,9 +494,10 @@ class GaussianLayer(Layer):
             None
 
         """
-        var = be.exp(self.int_params['log_var'])
+        var = be.exp(self.int_params.log_var)
         be.mix_inplace(be.float_scalar(1-shrinkage), var, be.ones_like(var))
-        self.int_params['log_var'] = be.log(var)
+        self.int_params = IntrinsicParamsGaussian(
+            self.int_params.loc, be.log(var))
 
     def update(self, scaled_units, weights, beta=None):
         """
@@ -506,23 +518,14 @@ class GaussianLayer(Layer):
             None
 
         """
-        self.ext_params['mean'] = be.dot(scaled_units[0], weights[0])
+        mean = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
-            self.ext_params['mean'] += be.dot(scaled_units[i], weights[i])
-
+            mean += be.dot(scaled_units[i], weights[i])
         if beta is not None:
-            self.ext_params['mean'] *= be.broadcast(
-                                       beta,
-                                       self.ext_params['mean']
-                                       )
-        self.ext_params['mean'] += be.broadcast(
-                                   self.int_params['loc'],
-                                   self.ext_params['mean']
-                                   )
-        self.ext_params['variance'] = be.broadcast(
-                                      be.exp(self.int_params['log_var']),
-                                      self.ext_params['mean']
-                                      )
+            mean *= be.broadcast(beta, mean)
+        mean += be.broadcast(self.int_params.loc, mean)
+        var = be.broadcast(be.exp(self.int_params.log_var), mean)
+        self.ext_params = ExtrinsicParamsGaussian(mean, var)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -539,32 +542,33 @@ class GaussianLayer(Layer):
                 Inverse temperatures.
 
         Returns:
-            grad (dict): {param_name: tensor (contains gradient)}
+            grad (namedtuple): param_name: tensor (contains gradient)
 
         """
-        derivs = {
-        'loc': be.zeros(self.len),
-        'log_var': be.zeros(self.len)
-        }
+        # initalize tensors for the location and scale derivatives
+        loc = be.zeros(self.len),
+        log_var = be.zeros(self.len)
 
+        # compute the derivative with respect to the location parameter
         v_scaled = self.rescale(vis)
-        derivs['loc'] = -be.mean(v_scaled, axis=0)
+        loc = -be.mean(v_scaled, axis=0)
+        loc = self.get_penalty_grad(loc, 'loc')
 
-        diff = be.square(
-        vis - be.broadcast(self.int_params['loc'], vis)
-        )
-        derivs['log_var'] = -0.5 * be.mean(diff, axis=0)
+        # compute the derivative with respect to the cale parameter
+        log_var = -0.5 * be.mean(be.square(be.subtract(
+            self.int_params.loc, vis)), axis=0)
         for i in range(len(hid)):
-            derivs['log_var'] += be.batch_dot(
-                                 hid[i],
-                                 be.transpose(weights[i]),
-                                 vis,
-                                 axis=0
-                                 ) / len(vis)
-        derivs['log_var'] = self.rescale(derivs['log_var'])
+            log_var += be.batch_dot(
+                hid[i],
+                be.transpose(weights[i]),
+                vis,
+                axis=0
+            ) / len(vis)
+        log_var = self.rescale(log_var)
+        log_var = self.get_penalty_grad(log_var, 'log_var')
 
-        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
-        return derivs
+        # return the derivatives in a namedtuple
+        return IntrinsicParamsGaussian(loc, log_var)
 
     def rescale(self, observations):
         """
@@ -580,8 +584,8 @@ class GaussianLayer(Layer):
             tensor: Rescaled observations
 
         """
-        scale = be.exp(self.int_params['log_var'])
-        return observations / be.broadcast(scale, observations)
+        scale = be.exp(self.int_params.log_var)
+        return be.divide(scale, observations)
 
     def mode(self):
         """
@@ -597,7 +601,7 @@ class GaussianLayer(Layer):
             tensor (num_samples, num_units): The mode of the distribution
 
         """
-        return self.ext_params['mean']
+        return self.ext_params.mean
 
     def mean(self):
         """
@@ -612,7 +616,7 @@ class GaussianLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        return self.ext_params['mean']
+        return self.ext_params.mean
 
     def sample_state(self):
         """
@@ -627,8 +631,8 @@ class GaussianLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        r = be.float_tensor(self.rand(be.shape(self.ext_params['mean'])))
-        return self.ext_params['mean'] + be.sqrt(self.ext_params['variance'])*r
+        r = be.float_tensor(self.rand(be.shape(self.ext_params.mean)))
+        return self.ext_params.mean + be.sqrt(self.ext_params.variance)*r
 
     def random(self, array_or_shape):
         """
@@ -653,8 +657,12 @@ class GaussianLayer(Layer):
         return r
 
 
+IntrinsicParamsIsing = namedtuple("IntrinsicParamsIsing", ["loc"])
+ExtrinsicParamsIsing = namedtuple("ExtrinsicParamsIsing", ["field"])
+
 class IsingLayer(Layer):
     """Layer with Ising units (i.e., -1 or +1)."""
+
     def __init__(self, num_units):
         """
         Create a layer with Ising units.
@@ -672,13 +680,8 @@ class IsingLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
 
-        self.int_params = {
-        'loc': be.zeros(self.len)
-        }
-
-        self.ext_params = {
-        'field': None
-        }
+        self.int_params = IntrinsicParamsIsing(be.zeros(self.len))
+        self.ext_params = ExtrinsicParamsIsing(None)
 
     def get_config(self):
         """
@@ -692,6 +695,7 @@ class IsingLayer(Layer):
 
         """
         base_config = self.get_base_config()
+        base_config["extrinsic"] = list(self.ext_params._fields),
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -710,6 +714,7 @@ class IsingLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
+        # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
@@ -730,7 +735,7 @@ class IsingLayer(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        return -be.dot(data, self.int_params['loc'])
+        return -be.dot(data, self.int_params.loc)
 
     def log_partition_function(self, phi):
         """
@@ -752,8 +757,7 @@ class IsingLayer(Layer):
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        logZ = be.broadcast(self.int_params['loc'], phi) + phi
-        return be.logcosh(logZ)
+        return be.logcosh(be.add(self.int_params.loc, phi))
 
     def online_param_update(self, data):
         """
@@ -770,24 +774,25 @@ class IsingLayer(Layer):
             None
 
         """
+        # get the current value of the first moment
+        x = be.tanh(self.int_params.loc)
+
+        # update the sample sizes
         n = len(data)
         new_sample_size = n + self.sample_size
-        # update the first moment
-        x = be.tanh(self.int_params['loc'])
+
+        # updat the first moment
         x *= self.sample_size / new_sample_size
         x += n * be.mean(data, axis=0) / new_sample_size
-        # update the location parameter
-        self.int_params['loc'] = be.atanh(x)
-        # update the sample size
+
+        # update the class attributes
+        self.int_params = IntrinsicParamsIsing(be.atanh(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
         """
         Apply shrinkage to the intrinsic parameters of the layer.
         Does nothing for the Ising layer.
-
-        Notes:
-            Modifies layer.int_params['loc_var'] in place.
 
         Args:
             shrinkage (float \in [0,1]): the amount of shrinkage to apply
@@ -817,19 +822,13 @@ class IsingLayer(Layer):
             None
 
         """
-        self.ext_params['field'] = be.dot(scaled_units[0], weights[0])
+        field = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
-            self.ext_params['field'] += be.dot(scaled_units[i], weights[i])
-
+            field += be.dot(scaled_units[i], weights[i])
         if beta is not None:
-            self.ext_params['field'] *= be.broadcast(
-                                        beta,
-                                        self.ext_params['field']
-                                        )
-        self.ext_params['field'] += be.broadcast(
-                                    self.int_params['loc'],
-                                    self.ext_params['field']
-                                    )
+            field *= be.broadcast(beta,field)
+        field += be.broadcast(self.int_params.loc, field)
+        self.ext_params = ExtrinsicParamsIsing(field)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -846,17 +845,12 @@ class IsingLayer(Layer):
                 Inverse temperatures.
 
         Returns:
-            grad (dict): {param_name: tensor (contains gradient)}
+            grad (namedtuple): param_name: tensor (contains gradient)
 
         """
-        derivs = {
-        'loc': be.zeros(self.len)
-        }
-
-        derivs['loc'] = -be.mean(vis, axis=0)
-        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
-
-        return derivs
+        loc = -be.mean(vis, axis=0)
+        loc = self.get_penalty_grad(loc, 'loc')
+        return IntrinsicParamsIsing(loc)
 
     def rescale(self, observations):
         """
@@ -885,7 +879,7 @@ class IsingLayer(Layer):
             tensor (num_samples, num_units): The mode of the distribution
 
         """
-        return 2 * be.float_tensor(self.ext_params['field'] > 0) - 1
+        return 2 * be.float_tensor(self.ext_params.field > 0) - 1
 
     def mean(self):
         """
@@ -900,7 +894,7 @@ class IsingLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        return be.tanh(self.ext_params['field'])
+        return be.tanh(self.ext_params.field)
 
     def sample_state(self):
         """
@@ -915,7 +909,7 @@ class IsingLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        p = be.expit(self.ext_params['field'])
+        p = be.expit(self.ext_params.field)
         r = self.rand(be.shape(p))
         return 2 * be.float_tensor(r < p) - 1
 
@@ -942,8 +936,12 @@ class IsingLayer(Layer):
         return 2 * be.float_tensor(r < 0.5) - 1
 
 
+IntrinsicParamsBernoulli = namedtuple("IntrinsicParamsBernoulli", ["loc"])
+ExtrinsicParamsBernoulli = namedtuple("ExtrinsicParamsBernoulli", ["field"])
+
 class BernoulliLayer(Layer):
     """Layer with Bernoulli units (i.e., 0 or +1)."""
+
     def __init__(self, num_units):
         """
         Create a layer with Bernoulli units.
@@ -961,17 +959,8 @@ class BernoulliLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
 
-        self.int_params = {
-        'loc': be.zeros(self.len)
-        }
-
-        self.ext_params = {
-        'field': None
-        }
-
-        self.derivs = {
-        'loc': be.zeros(self.len)
-        }
+        self.int_params = IntrinsicParamsBernoulli(be.zeros(self.len))
+        self.ext_params = ExtrinsicParamsBernoulli(None)
 
     def get_config(self):
         """
@@ -985,6 +974,7 @@ class BernoulliLayer(Layer):
 
         """
         base_config = self.get_base_config()
+        base_config["extrinsic"] = list(self.ext_params._fields),
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -1003,6 +993,7 @@ class BernoulliLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
+        # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
@@ -1023,7 +1014,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        return -be.dot(data, self.int_params['loc'])
+        return -be.dot(data, self.int_params.loc)
 
     def log_partition_function(self, phi):
         """
@@ -1045,8 +1036,7 @@ class BernoulliLayer(Layer):
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        logZ = be.broadcast(self.int_params['loc'], phi) + phi
-        return be.softplus(logZ)
+        return be.softplus(be.add(self.int_params.loc, phi))
 
     def online_param_update(self, data):
         """
@@ -1063,24 +1053,25 @@ class BernoulliLayer(Layer):
             None
 
         """
+        # get the current value of the first moment
+        x = be.expit(self.int_params.loc)
+
+        # update the sample size
         n = len(data)
         new_sample_size = n + self.sample_size
+
         # update the first moment
-        x = be.expit(self.int_params['loc'])
         x *= self.sample_size / new_sample_size
         x += n * be.mean(data, axis=0) / new_sample_size
-        # update the location parameter
-        self.int_params['loc'] = be.logit(x)
-        # update the sample size
+
+        # update the class attributes
+        self.int_params = IntrinsicParamsBernoulli(be.logit(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
         """
         Apply shrinkage to the intrinsic parameters of the layer.
         Does nothing for the Bernoulli layer.
-
-        Notes:
-            Modifies layer.int_params['loc_var'] in place.
 
         Args:
             shrinkage (float \in [0,1]): the amount of shrinkage to apply
@@ -1110,19 +1101,13 @@ class BernoulliLayer(Layer):
             None
 
         """
-        self.ext_params['field'] = be.dot(scaled_units[0], weights[0])
+        field = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
-            self.ext_params['field'] += be.dot(scaled_units[i], weights[i])
-
+            field += be.dot(scaled_units[i], weights[i])
         if beta is not None:
-            self.ext_params['field'] *= be.broadcast(
-                                        beta,
-                                        self.ext_params['field']
-                                        )
-        self.ext_params['field'] += be.broadcast(
-                                    self.int_params['loc'],
-                                    self.ext_params['field']
-                                    )
+            field *= be.broadcast(beta, field)
+        field += be.broadcast(self.int_params.loc, field)
+        self.ext_params = ExtrinsicParamsBernoulli(field)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -1139,16 +1124,12 @@ class BernoulliLayer(Layer):
                 Inverse temperatures.
 
         Returns:
-            grad (dict): {param_name: tensor (contains gradient)}
+            grad (namedtuple): param_name: tensor (contains gradient)
 
         """
-        derivs = {
-        'loc': be.zeros(self.len)
-        }
-
-        derivs['loc'] = -be.mean(vis, axis=0)
-        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
-        return derivs
+        loc = -be.mean(vis, axis=0)
+        loc = self.get_penalty_grad(loc, 'loc')
+        return IntrinsicParamsBernoulli(loc)
 
     def rescale(self, observations):
         """
@@ -1177,7 +1158,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): The mode of the distribution
 
         """
-        return be.float_tensor(self.ext_params['field'] > 0.0)
+        return be.float_tensor(self.ext_params.field > 0.0)
 
     def mean(self):
         """
@@ -1192,7 +1173,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        return be.expit(self.ext_params['field'])
+        return be.expit(self.ext_params.field)
 
     def sample_state(self):
         """
@@ -1207,7 +1188,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        p = be.expit(self.ext_params['field'])
+        p = be.expit(self.ext_params.field)
         r = self.rand(be.shape(p))
         return be.float_tensor(r < p)
 
@@ -1234,8 +1215,13 @@ class BernoulliLayer(Layer):
         return be.float_tensor(r < 0.5)
 
 
+IntrinsicParamsExponential = namedtuple("IntrinsicParamsExponential", ["loc"])
+ExtrinsicParamsExponential = namedtuple("ExtrinsicParamsExponential", ["rate"])
+
+
 class ExponentialLayer(Layer):
     """Layer with Exponential units (non-negative)."""
+
     def __init__(self, num_units):
         """
         Create a layer with Exponential units.
@@ -1253,13 +1239,9 @@ class ExponentialLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
 
-        self.int_params = {
-        'loc': be.zeros(self.len)
-        }
+        self.int_params = IntrinsicParamsExponential(be.zeros(self.len))
+        self.ext_params = ExtrinsicParamsExponential(None)
 
-        self.ext_params = {
-        'rate': None
-        }
 
     def get_config(self):
         """
@@ -1273,6 +1255,7 @@ class ExponentialLayer(Layer):
 
         """
         base_config = self.get_base_config()
+        base_config["extrinsic"] = list(self.ext_params._fields),
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -1291,6 +1274,7 @@ class ExponentialLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
+        # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
@@ -1311,7 +1295,7 @@ class ExponentialLayer(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        return be.dot(data, self.int_params['loc'])
+        return be.dot(data, self.int_params.loc)
 
     def log_partition_function(self, phi):
         """
@@ -1333,8 +1317,7 @@ class ExponentialLayer(Layer):
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        logZ = be.broadcast(self.int_params['loc'], phi) - phi
-        return -be.log(logZ)
+        return -be.log(be.subtract(self.int_params.loc, phi))
 
     def online_param_update(self, data):
         """
@@ -1351,24 +1334,25 @@ class ExponentialLayer(Layer):
             None
 
         """
+        # get the current value of the first moment
+        x = be.reciprocal(self.int_params.loc)
+
+        # update the sample size
         n = len(data)
         new_sample_size = n + self.sample_size
+
         # update the first moment
-        x = self.mean(self.int_params['loc'])
         x *= self.sample_size / new_sample_size
         x += n * be.mean(data, axis=0) / new_sample_size
-        # update the location parameter
-        self.int_params['loc'] = be.reciprocal(x)
-        # update the sample size
+
+        # update the class attributes
+        self.int_params = IntrinsicParamsExponential(be.reciprocal(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
         """
         Apply shrinkage to the intrinsic parameters of the layer.
         Does nothing for the Exponential layer.
-
-        Notes:
-            Modifies layer.int_params['loc_var'] in place.
 
         Args:
             shrinkage (float \in [0,1]): the amount of shrinkage to apply
@@ -1398,19 +1382,13 @@ class ExponentialLayer(Layer):
             None
 
         """
-        self.ext_params['rate'] = -be.dot(scaled_units[0], weights[0])
+        rate = -be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
-            self.ext_params['rate'] -= be.dot(scaled_units[i], weights[i])
-
+            rate -= be.dot(scaled_units[i], weights[i])
         if beta is not None:
-            self.ext_params['rate'] *= be.broadcast(
-                                        beta,
-                                        self.ext_params['rate']
-                                        )
-        self.ext_params['rate'] += be.broadcast(
-                                    self.int_params['loc'],
-                                    self.ext_params['rate']
-                                    )
+            rate *= be.broadcast(beta,rate)
+        rate += be.broadcast(self.int_params.loc, rate)
+        self.ext_params = ExtrinsicParamsExponential(rate)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -1427,17 +1405,12 @@ class ExponentialLayer(Layer):
                 Inverse temperatures.
 
         Returns:
-            grad (dict): {param_name: tensor (contains gradient)}
+            grad (namedtuple): param_name: tensor (contains gradient)
 
         """
-        derivs = {
-        'loc': be.zeros(self.len)
-        }
-
-        derivs['loc'] = be.mean(vis, axis=0)
-        be.add_dicts_inplace(derivs, self.get_penalty_gradients())
-
-        return derivs
+        loc = be.mean(vis, axis=0)
+        loc = self.get_penalty_grad(loc, 'loc')
+        return IntrinsicParamsExponential(loc)
 
     def rescale(self, observations):
         """
@@ -1479,7 +1452,7 @@ class ExponentialLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        return be.reciprocal(self.ext_params['rate'])
+        return be.reciprocal(self.ext_params.rate)
 
     def sample_state(self):
         """
@@ -1494,8 +1467,8 @@ class ExponentialLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        r = self.rand(be.shape(self.ext_params['rate']))
-        return -be.log(r) / self.ext_params['rate']
+        r = self.rand(be.shape(self.ext_params.rate))
+        return -be.log(r) / self.ext_params.rate
 
     def random(self, array_or_shape):
         """

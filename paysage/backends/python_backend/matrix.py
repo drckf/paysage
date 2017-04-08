@@ -3,66 +3,6 @@ from numba import jit
 import numexpr as ne
 from . import typedef as T
 
-def add_dicts_inplace(dict1: T.Dict[str, T.Tensor],
-                      dict2: T.Dict[str, T.Tensor]) ->  T.Dict[str, T.Tensor]:
-    """
-    Entrywise addition of dict2 to dict1.
-
-    Note:
-        Modifies dict1 in place.
-
-    Args:
-        dict1: A dictionary of tensors.
-        dict2: A dictionary of tensors.
-
-    Returns:
-        None
-
-    """
-
-    for key in dict2:
-        dict1[key] += dict2[key]
-
-
-def subtract_dicts_inplace(dict1: T.Dict[str, T.Tensor],
-                           dict2: T.Dict[str, T.Tensor]) -> T.Dict[str, T.Tensor]:
-    """
-    Entrywise subtraction of dict2 from dict1.
-
-    Note:
-        Modifies dict1 in place.
-
-    Args:
-        dict1: A dictionary of tensors.
-        dict2: A dictionary of tensors.
-
-    Returns:
-        None
-
-    """
-
-    for key in dict2:
-        dict1[key] -= dict2[key]
-
-def multiply_dict_inplace(dict1: T.Dict[str, T.Tensor], scalar: T.Scalar) -> None:
-    """
-    Entrywise multiplication of dict1 by scalar.
-
-    Note:
-        Modifies dict1 in place.
-
-    Args:
-        dict1: A dictionary of tensors.
-        scalar: A scalar.
-
-    Returns:
-        None
-
-    """
-
-    for key in dict1:
-        dict1[key] *= scalar
-
 def float_scalar(scalar: T.Scalar) -> float:
     """
     Cast scalar to a 32-bit float.
@@ -129,6 +69,19 @@ def ndim(tensor: T.Tensor) -> int:
 
     """
     return tensor.ndim
+
+def num_elements(tensor: T.Tensor) -> int:
+    """
+    Return the number of elements in a tensor.
+
+    Args:
+        tensor: A tensor:
+
+    Returns:
+        int: The number of elements in the tensor.
+
+    """
+    return numpy.prod(shape(tensor))
 
 def transpose(tensor: T.Tensor) -> T.Tensor:
     """

@@ -52,15 +52,15 @@ def test_get_penalties():
     ly.add_penalty({'matrix': p})
     ly.get_penalties()
 
-def test_get_penalty_gradients():
+def test_get_penalty_grad():
     ly = layers.Weights((num_vis, num_hid))
     p = penalties.l2_penalty(0.37)
     ly.add_penalty({'matrix': p})
-    ly.get_penalty_gradients()
+    ly.get_penalty_grad(ly.W(), 'matrix')
 
 def test_parameter_step():
     ly = layers.Weights((num_vis, num_hid))
-    deltas = {'matrix': be.randn(ly.shape)}
+    deltas = layers.IntrinsicParamsWeights(be.randn(ly.shape))
     ly.parameter_step(deltas)
 
 def test_get_base_config():
@@ -270,6 +270,7 @@ def test_exponential_derivatives():
     weights = [w.W()]
     beta = be.rand((num_samples, 1))
     ly.derivatives(vis, hid, weights, beta)
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
