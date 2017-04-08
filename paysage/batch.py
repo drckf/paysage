@@ -12,15 +12,15 @@ def scale(tensor, denominator):
     return be.float_tensor(tensor/denominator)
 
 def binarize_color(tensor):
-    """binarize_color
-       Scales an int8 "color" value to [0, 1].  Converts to float32.
+    """
+    Scales an int8 "color" value to [0, 1].  Converts to float32.
 
     """
     return be.float_tensor(be.tround(tensor/255))
 
 def binary_to_ising(tensor):
-    """binary_to_ising
-       Scales a [0, 1] value to [-1, 1].  Converts to float32.
+    """
+    Scales a [0, 1] value to [-1, 1].  Converts to float32.
 
     """
     return 2.0 * be.float_tensor(tensor) - 1.0
@@ -35,12 +35,12 @@ def color_to_ising(tensor):
 # ----- CLASSES ----- #
 
 class Batch(object):
-    """Batch
-       Serves up minibatches from an HDFStore.
-       The validation set is taken as the last (1 - train_fraction)
-       samples in the store.
-       The data should probably be randomly shuffled if being used to
-       train a non-recurrent model.
+    """
+    Serves up minibatches from an HDFStore.
+    The validation set is taken as the last (1 - train_fraction)
+    samples in the store.
+    The data should probably be randomly shuffled if being used to
+    train a non-recurrent model.
 
     """
     def __init__(self, filename, key, batch_size,
@@ -70,13 +70,13 @@ class Batch(object):
         self.generators = {mode: self.iterators[mode].__iter__()
                            for mode in self.iterators}
 
-    def num_validation_samples(self):
+    def num_validation_samples(self) -> int:
         return self.nrows - self.split
 
-    def close(self):
+    def close(self) -> None:
         self.store.close()
 
-    def reset_generator(self, mode):
+    def reset_generator(self, mode: str) -> None:
         if mode == 'train':
             self.generators['train'] = self.iterators['train'].__iter__()
         elif mode == 'validate':
@@ -85,7 +85,7 @@ class Batch(object):
             self.generators = {mode: self.iterators[mode].__iter__()
                                for mode in self.iterators}
 
-    def get(self, mode):
+    def get(self, mode: str):
         try:
             vals = next(self.generators[mode]).as_matrix()
         except StopIteration:
@@ -96,8 +96,8 @@ class Batch(object):
 
 
 class TableStatistics(object):
-    """TableStatistics
-       Stores basic statistics about a table.
+    """
+    Stores basic statistics about a table.
 
     """
     def __init__(self, store, key):
@@ -109,18 +109,18 @@ class TableStatistics(object):
         self.mem_footprint = numpy.prod(self.shape) * self.itemsize / 1024**3 # in GiB
 
     def chunksize(self, allowed_mem):
-        """chunksize
-           Returns the sample count that will fit in allowed_mem,
-           given the shape of the table.
+        """
+        Returns the sample count that will fit in allowed_mem,
+        given the shape of the table.
 
         """
         return int(self.shape[0] * allowed_mem / self.mem_footprint)
 
 
 class DataShuffler(object):
-    """DataShuffler
-       Shuffles data in an HDF5 file.
-       Synchronized shuffling between tables (with matching numbers of rows).
+    """
+    Shuffles data in an HDF5 file.
+    Synchronized shuffling between tables (with matching numbers of rows).
 
     """
     def __init__(self, filename, shuffled_filename,
@@ -154,8 +154,8 @@ class DataShuffler(object):
 
 
     def shuffle(self):
-        """shuffle
-           Shuffles all the tables in the HDFStore.
+        """
+        Shuffles all the tables in the HDFStore.
 
         """
         for k in self.keys:
@@ -169,8 +169,8 @@ class DataShuffler(object):
 
 
     def shuffle_table(self, key):
-        """shuffle_table
-           Shuffle a table in the HDFStore, write to a new file.
+        """
+        Shuffle a table in the HDFStore, write to a new file.
 
         """
         # split up the table into chunks
@@ -186,9 +186,9 @@ class DataShuffler(object):
 
 
     def divide_table_into_chunks(self, key):
-        """divide_table_into_chunks
-           Divides a table into chunks, each with their own table.
-           Shuffles the chunked tables.
+        """
+        Divides a table into chunks, each with their own table.
+        Shuffles the chunked tables.
 
         """
         num_read = 0
@@ -219,8 +219,8 @@ class DataShuffler(object):
 
 
     def reassemble_table(self, key, num_chunks, chunk_keys, chunk_counts):
-        """reassemble_table
-           Takes a set of chunked tables and rebuilds the shuffled table.
+        """
+        Takes a set of chunked tables and rebuilds the shuffled table.
 
         """
         # find a streaming map

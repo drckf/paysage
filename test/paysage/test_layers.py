@@ -60,7 +60,7 @@ def test_get_penalty_grad():
 
 def test_parameter_step():
     ly = layers.Weights((num_vis, num_hid))
-    deltas = layers.Weights.IntrinsicParams(be.randn(ly.shape))
+    deltas = layers.IntrinsicParamsWeights(be.randn(ly.shape))
     ly.parameter_step(deltas)
 
 def test_get_base_config():
