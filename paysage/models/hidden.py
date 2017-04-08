@@ -167,7 +167,7 @@ class Model(object):
             layer_list.append(layers.Layer.from_config(ly))
         return cls(layer_list)
 
-    def initialize(self, data: Batch, method: str='hinton'):
+    def initialize(self, data, method: str='hinton'):
         """
         Inialize the parameters of the model.
 
