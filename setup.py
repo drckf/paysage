@@ -24,7 +24,8 @@ setup(name='paysage',
           'scipy',
           'seaborn',
           'tables',
-	  'prospector'
+          'prospector',
+          'cytoolz'
           ],
       tests_require=[
           'pytest'

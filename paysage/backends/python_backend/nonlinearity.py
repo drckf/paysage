@@ -5,6 +5,37 @@ from . import typedef as T
 EPSILON = float(numpy.finfo(numpy.float32).eps)
 LOG2 = 0.6931471805599453
 
+def tmul(a: T.Scalar, x: T.Tensor) -> T.Tensor:
+    """
+    Elementwise multiplication of tensor x by scalar a.
+
+    Args:
+        x: A tensor.
+        a: scalar.
+
+    Returns:
+        tensor: Elementwise a * x.
+
+    """
+    return a * x
+
+def tmul_(a: T.Scalar, x: T.Tensor) -> T.Tensor:
+    """
+    Elementwise multiplication of tensor x by scalar a.
+
+    Notes:
+        Modifes x in place
+
+    Args:
+        x: A tensor.
+        a: scalar.
+
+    Returns:
+        tensor: Elementwise a * x.
+
+    """
+    ne.evaluate('a * x', out=x)
+
 def tabs(x: T.Tensor) -> T.Tensor:
     """
     Elementwise absolute value of a tensor.

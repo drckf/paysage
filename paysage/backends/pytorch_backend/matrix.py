@@ -1,65 +1,6 @@
 import numpy, torch
 from . import typedef as T
 
-def add_dicts_inplace(dict1: T.Dict[str, T.Tensor],
-                      dict2: T.Dict[str, T.Tensor]) -> None:
-    """
-    Entrywise addition of dict2 to dict1.
-
-    Note:
-        Modifies dict1 in place.
-
-    Args:
-        dict1: A dictionary of tensors.
-        dict2: A dictionary of tensors.
-
-    Returns:
-        None
-
-    """
-
-    for key in dict2:
-        dict1[key] += dict2[key]
-
-def subtract_dicts_inplace(dict1: T.Dict[str, T.Tensor],
-                           dict2: T.Dict[str, T.Tensor]) -> None:
-    """
-    Entrywise subtraction of dict2 from dict1.
-
-    Note:
-        Modifies dict1 in place.
-
-    Args:
-        dict1: A dictionary of tensors.
-        dict2: A dictionary of tensors.
-
-    Returns:
-        None
-
-    """
-
-    for key in dict2:
-        dict1[key] -= dict2[key]
-
-def multiply_dict_inplace(dict1: T.Dict[str, T.Tensor], scalar: T.Scalar) -> None:
-    """
-    Entrywise multiplication of dict1 by scalar.
-
-    Note:
-        Modifies dict1 in place.
-
-    Args:
-        dict1: A dictionary of tensors.
-        scalar: A scalar.
-
-    Returns:
-        None
-
-    """
-
-    for key in dict1:
-        dict1[key] *= scalar
-
 def float_scalar(scalar: T.Scalar) -> float:
     """
     Cast scalar to a float.
@@ -134,6 +75,19 @@ def ndim(tensor: T.TorchTensor) -> int:
 
     """
     return tensor.ndimension()
+
+def num_elements(tensor: T.TorchTensor) -> int:
+    """
+    Return the number of elements in a tensor.
+
+    Args:
+        tensor: A tensor:
+
+    Returns:
+        int: The number of elements in the tensor.
+
+    """
+    return numpy.prod(shape(tensor))
 
 def transpose(tensor: T.TorchTensor) -> T.FloatTensor:
     """
@@ -962,6 +916,78 @@ def broadcast(vec: T.FloatTensor, matrix: T.FloatTensor) -> T.FloatTensor:
     except ValueError:
         raise BroadcastError('cannot broadcast vector of dimension {} \
 onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
+
+def add(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
+    """
+    Add tensor a to tensor b using broadcasting.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        tensor: a + b
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+        return a + b
+    else:
+        return broadcast(a, b) + b
+
+def subtract(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
+    """
+    Subtract tensor a from tensor b using broadcasting.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        tensor: b - a
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+        return b - a
+    else:
+        return b - broadcast(a, b)
+
+def multiply(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
+    """
+    Multiply tensor b with tensor a using broadcasting.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        tensor: a * b
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+        return a * b
+    else:
+        return broadcast(a, b) * b
+
+def divide(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
+    """
+    Divide tensor b by tensor a using broadcasting.
+
+    Args:
+        a: A tensor (non-zero)
+        b: A tensor
+
+    Returns:
+        tensor: a * b
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+        return b / a
+    else:
+        return b / broadcast(a, b)
 
 def affine(a: T.FloatTensor,
            b: T.FloatTensor,
