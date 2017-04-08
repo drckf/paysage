@@ -14,8 +14,8 @@ class Sampler(object):
 
     """
     def __init__(self, amodel,
-                method='stochastic',
-                **kwargs):
+                 method='stochastic',
+                 **kwargs):
         self.model = amodel
         self.state = None
         self.has_state = False

@@ -5,11 +5,10 @@ from . import penalties
 from . import constraints
 from . import backends as be
 
+ParamsLayer = namedtuple("Params", [])
+
 class Layer(object):
     """A general layer class with common functionality."""
-
-    # placeholder tuple for model parameters
-    Params = namedtuple("Params", [])
 
     def __init__(self, *args, **kwargs):
         """
@@ -24,8 +23,7 @@ class Layer(object):
 
         """
         # these attributes are immutable (their keys don't change)
-        self.int_params = Layer.Params()
-        self.ext_params = Layer.Params()
+        self.int_params = ParamsLayer()
         # these attributes are mutable (their keys do change)
         self.penalties = OrderedDict()
         self.constraints = OrderedDict()
@@ -46,13 +44,12 @@ class Layer(object):
 
         """
         return {
-        "layer_type": self.__class__.__name__,
-        "intrinsic": list(self.int_params._fields),
-        "extrinsic": list(self.ext_params._fields),
-        "penalties": {pk: self.penalties[pk].get_config()
-                        for pk in self.penalties},
-        "constraints": {ck: self.constraints[ck].__name__
-                        for ck in self.constraints}
+            "layer_type"  : self.__class__.__name__,
+            "intrinsic"   : list(self.int_params._fields),
+            "penalties"   : {pk: self.penalties[pk].get_config()
+                             for pk in self.penalties},
+            "constraints" : {ck: self.constraints[ck].__name__
+                             for ck in self.constraints}
         }
 
     def get_config(self):
@@ -120,7 +117,7 @@ class Layer(object):
         """
         for param_name in self.constraints:
             self.constraints[param_name](
-            getattr(self.int_params, param_name)
+                getattr(self.int_params, param_name)
             )
 
     def add_penalty(self, penalty):
@@ -153,10 +150,10 @@ class Layer(object):
 
         """
         pen = {param_name:
-            self.penalties[param_name].value(
-            getattr(self.int_params,param_name)
-            )
-            for param_name in self.penalties}
+               self.penalties[param_name].value(
+                   getattr(self.int_params, param_name)
+               )
+               for param_name in self.penalties}
         return pen
 
     def get_penalty_grad(self, deriv, param_name):
@@ -177,7 +174,7 @@ class Layer(object):
             return deriv
         else:
             return deriv + self.penalties[param_name].grad(
-                            getattr(self.int_params, param_name))
+                getattr(self.int_params, param_name))
 
     def parameter_step(self, deltas):
         """
@@ -199,10 +196,10 @@ class Layer(object):
         self.enforce_constraints()
 
 
+IntrinsicParamsWeights = namedtuple("IntrinsicParamsWeights", ["matrix"])
+
 class Weights(Layer):
     """Layer class for weights"""
-
-    IntrinsicParams = namedtuple("IntrinsicParams", ["matrix"])
 
     def __init__(self, shape):
         """
@@ -226,7 +223,7 @@ class Weights(Layer):
         """
         super().__init__()
         self.shape = shape
-        self.int_params = Weights.IntrinsicParams(0.01 * be.randn(shape))
+        self.int_params = IntrinsicParamsWeights(0.01 * be.randn(shape))
 
     def get_config(self):
         """
@@ -256,6 +253,7 @@ class Weights(Layer):
 
         """
         layer = cls(config["shape"])
+        # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
@@ -308,9 +306,9 @@ class Weights(Layer):
             derivs (namedtuple): 'matrix': tensor (contains gradient)
 
         """
-        derivs = Weights.IntrinsicParams(
-                 self.get_penalty_grad(-be.batch_outer(vis, hid) / len(vis),
-                                       "matrix"))
+        derivs = IntrinsicParamsWeights(
+            self.get_penalty_grad(-be.batch_outer(vis, hid) / len(vis),
+                                  "matrix"))
         return derivs
 
     def energy(self, vis, hid):
@@ -331,11 +329,11 @@ class Weights(Layer):
         return -be.batch_dot(vis, self.W(), hid)
 
 
+IntrinsicParamsGaussian = namedtuple("IntrinsicParamsGaussian", ["loc", "log_var"])
+ExtrinsicParamsGaussian = namedtuple("ExtrinsicParamsGaussian", ["mean", "variance"])
+
 class GaussianLayer(Layer):
     """Layer with Gaussian units"""
-
-    IntrinsicParams = namedtuple("IntrinsicParams", ["loc", "log_var"])
-    ExtrinsicParams = namedtuple("ExtrinsicParams", ["mean", "variance"])
 
     def __init__(self, num_units):
         """
@@ -354,12 +352,12 @@ class GaussianLayer(Layer):
         self.sample_size = 0
         self.rand = be.randn
 
-        self.int_params = GaussianLayer.IntrinsicParams(
-                          be.zeros(self.len),
-                          be.zeros(self.len)
-                          )
+        self.int_params = IntrinsicParamsGaussian(
+            be.zeros(self.len),
+            be.zeros(self.len)
+        )
 
-        self.ext_params = GaussianLayer.ExtrinsicParams(None, None)
+        self.ext_params = ExtrinsicParamsGaussian(None, None)
 
     def get_config(self):
         """
@@ -373,6 +371,7 @@ class GaussianLayer(Layer):
 
         """
         base_config = self.get_base_config()
+        base_config["extrinsic"] = list(self.ext_params._fields),
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -391,6 +390,7 @@ class GaussianLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
+        # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
@@ -476,7 +476,7 @@ class GaussianLayer(Layer):
 
         # update the class attributes
         self.sample_size = new_sample_size
-        self.int_params = GaussianLayer.IntrinsicParams(x, be.log(x2 - x**2))
+        self.int_params = IntrinsicParamsGaussian(x, be.log(x2 - x**2))
 
     def shrink_parameters(self, shrinkage=0.1):
         """
@@ -496,8 +496,8 @@ class GaussianLayer(Layer):
         """
         var = be.exp(self.int_params.log_var)
         be.mix_inplace(be.float_scalar(1-shrinkage), var, be.ones_like(var))
-        self.int_params = GaussianLayer.IntrinsicParams(
-                           self.int_params.loc, be.log(var))
+        self.int_params = IntrinsicParamsGaussian(
+            self.int_params.loc, be.log(var))
 
     def update(self, scaled_units, weights, beta=None):
         """
@@ -525,7 +525,7 @@ class GaussianLayer(Layer):
             mean *= be.broadcast(beta, mean)
         mean += be.broadcast(self.int_params.loc, mean)
         var = be.broadcast(be.exp(self.int_params.log_var), mean)
-        self.ext_params = GaussianLayer.ExtrinsicParams(mean, var)
+        self.ext_params = ExtrinsicParamsGaussian(mean, var)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -556,19 +556,19 @@ class GaussianLayer(Layer):
 
         # compute the derivative with respect to the cale parameter
         log_var = -0.5 * be.mean(be.square(be.subtract(
-                            self.int_params.loc, vis)), axis=0)
+            self.int_params.loc, vis)), axis=0)
         for i in range(len(hid)):
             log_var += be.batch_dot(
-                                 hid[i],
-                                 be.transpose(weights[i]),
-                                 vis,
-                                 axis=0
-                                 ) / len(vis)
+                hid[i],
+                be.transpose(weights[i]),
+                vis,
+                axis=0
+            ) / len(vis)
         log_var = self.rescale(log_var)
         log_var = self.get_penalty_grad(log_var, 'log_var')
 
         # return the derivatives in a namedtuple
-        return GaussianLayer.IntrinsicParams(loc, log_var)
+        return IntrinsicParamsGaussian(loc, log_var)
 
     def rescale(self, observations):
         """
@@ -657,11 +657,11 @@ class GaussianLayer(Layer):
         return r
 
 
+IntrinsicParamsIsing = namedtuple("IntrinsicParamsIsing", ["loc"])
+ExtrinsicParamsIsing = namedtuple("ExtrinsicParamsIsing", ["field"])
+
 class IsingLayer(Layer):
     """Layer with Ising units (i.e., -1 or +1)."""
-
-    IntrinsicParams = namedtuple("IntrinsicParams", ["loc"])
-    ExtrinsicParams = namedtuple("ExtrinsicParams", ["field"])
 
     def __init__(self, num_units):
         """
@@ -680,8 +680,8 @@ class IsingLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
 
-        self.int_params = IsingLayer.IntrinsicParams(be.zeros(self.len))
-        self.ext_params = IsingLayer.ExtrinsicParams(None)
+        self.int_params = IntrinsicParamsIsing(be.zeros(self.len))
+        self.ext_params = ExtrinsicParamsIsing(None)
 
     def get_config(self):
         """
@@ -695,6 +695,7 @@ class IsingLayer(Layer):
 
         """
         base_config = self.get_base_config()
+        base_config["extrinsic"] = list(self.ext_params._fields),
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -713,6 +714,7 @@ class IsingLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
+        # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
@@ -784,7 +786,7 @@ class IsingLayer(Layer):
         x += n * be.mean(data, axis=0) / new_sample_size
 
         # update the class attributes
-        self.int_params = IsingLayer.IntrinsicParams(be.atanh(x))
+        self.int_params = IntrinsicParamsIsing(be.atanh(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
@@ -826,7 +828,7 @@ class IsingLayer(Layer):
         if beta is not None:
             field *= be.broadcast(beta,field)
         field += be.broadcast(self.int_params.loc, field)
-        self.ext_params = IsingLayer.ExtrinsicParams(field)
+        self.ext_params = ExtrinsicParamsIsing(field)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -848,7 +850,7 @@ class IsingLayer(Layer):
         """
         loc = -be.mean(vis, axis=0)
         loc = self.get_penalty_grad(loc, 'loc')
-        return IsingLayer.IntrinsicParams(loc)
+        return IntrinsicParamsIsing(loc)
 
     def rescale(self, observations):
         """
@@ -934,11 +936,11 @@ class IsingLayer(Layer):
         return 2 * be.float_tensor(r < 0.5) - 1
 
 
+IntrinsicParamsBernoulli = namedtuple("IntrinsicParamsBernoulli", ["loc"])
+ExtrinsicParamsBernoulli = namedtuple("ExtrinsicParamsBernoulli", ["field"])
+
 class BernoulliLayer(Layer):
     """Layer with Bernoulli units (i.e., 0 or +1)."""
-
-    IntrinsicParams = namedtuple("IntrinsicParams", ["loc"])
-    ExtrinsicParams = namedtuple("ExtrinsicParams", ["field"])
 
     def __init__(self, num_units):
         """
@@ -957,8 +959,8 @@ class BernoulliLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
 
-        self.int_params = BernoulliLayer.IntrinsicParams(be.zeros(self.len))
-        self.ext_params = BernoulliLayer.ExtrinsicParams(None)
+        self.int_params = IntrinsicParamsBernoulli(be.zeros(self.len))
+        self.ext_params = ExtrinsicParamsBernoulli(None)
 
     def get_config(self):
         """
@@ -972,6 +974,7 @@ class BernoulliLayer(Layer):
 
         """
         base_config = self.get_base_config()
+        base_config["extrinsic"] = list(self.ext_params._fields),
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -990,6 +993,7 @@ class BernoulliLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
+        # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
@@ -1061,7 +1065,7 @@ class BernoulliLayer(Layer):
         x += n * be.mean(data, axis=0) / new_sample_size
 
         # update the class attributes
-        self.int_params = BernoulliLayer.IntrinsicParams(be.logit(x))
+        self.int_params = IntrinsicParamsBernoulli(be.logit(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
@@ -1103,7 +1107,7 @@ class BernoulliLayer(Layer):
         if beta is not None:
             field *= be.broadcast(beta, field)
         field += be.broadcast(self.int_params.loc, field)
-        self.ext_params = BernoulliLayer.ExtrinsicParams(field)
+        self.ext_params = ExtrinsicParamsBernoulli(field)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -1125,7 +1129,7 @@ class BernoulliLayer(Layer):
         """
         loc = -be.mean(vis, axis=0)
         loc = self.get_penalty_grad(loc, 'loc')
-        return BernoulliLayer.IntrinsicParams(loc)
+        return IntrinsicParamsBernoulli(loc)
 
     def rescale(self, observations):
         """
@@ -1211,11 +1215,12 @@ class BernoulliLayer(Layer):
         return be.float_tensor(r < 0.5)
 
 
+IntrinsicParamsExponential = namedtuple("IntrinsicParamsExponential", ["loc"])
+ExtrinsicParamsExponential = namedtuple("ExtrinsicParamsExponential", ["rate"])
+
+
 class ExponentialLayer(Layer):
     """Layer with Exponential units (non-negative)."""
-
-    IntrinsicParams = namedtuple("IntrinsicParams", ["loc"])
-    ExtrinsicParams = namedtuple("ExtrinsicParams", ["rate"])
 
     def __init__(self, num_units):
         """
@@ -1234,8 +1239,8 @@ class ExponentialLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
 
-        self.int_params = ExponentialLayer.IntrinsicParams(be.zeros(self.len))
-        self.ext_params = ExponentialLayer.ExtrinsicParams(None)
+        self.int_params = IntrinsicParamsExponential(be.zeros(self.len))
+        self.ext_params = ExtrinsicParamsExponential(None)
 
 
     def get_config(self):
@@ -1250,6 +1255,7 @@ class ExponentialLayer(Layer):
 
         """
         base_config = self.get_base_config()
+        base_config["extrinsic"] = list(self.ext_params._fields),
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -1268,6 +1274,7 @@ class ExponentialLayer(Layer):
         """
         layer = cls(config["num_units"])
         layer.sample_size = config["sample_size"]
+        # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
         for k, v in config["constraints"].items():
@@ -1339,7 +1346,7 @@ class ExponentialLayer(Layer):
         x += n * be.mean(data, axis=0) / new_sample_size
 
         # update the class attributes
-        self.int_params = ExponentialLayer.IntrinsicParams(be.reciprocal(x))
+        self.int_params = IntrinsicParamsExponential(be.reciprocal(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
@@ -1381,7 +1388,7 @@ class ExponentialLayer(Layer):
         if beta is not None:
             rate *= be.broadcast(beta,rate)
         rate += be.broadcast(self.int_params.loc, rate)
-        self.ext_params = ExponentialLayer.ExtrinsicParams(rate)
+        self.ext_params = ExtrinsicParamsExponential(rate)
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -1403,7 +1410,7 @@ class ExponentialLayer(Layer):
         """
         loc = be.mean(vis, axis=0)
         loc = self.get_penalty_grad(loc, 'loc')
-        return ExponentialLayer.IntrinsicParams(loc)
+        return IntrinsicParamsExponential(loc)
 
     def rescale(self, observations):
         """

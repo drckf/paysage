@@ -33,7 +33,6 @@ class GradientMemory(object):
         self.mean_gradient = None
         self.mean_square_gradient = None
 
-        from cytoolz import partial
         self.mixer_ = partial(be.mix_inplace, self.mean_weight)
         self.square_mixer_ = partial(be.square_mix_inplace, self.mean_square_weight)
 
@@ -259,10 +258,7 @@ class Optimizer(object):
 
         """
         mag = hidden.grad_magnitude(self.delta)
-        if mag <= self.tolerance:
-            return True
-        else:
-            return False
+        return mag <= self.tolerance
 
 
 class StochasticGradientDescent(Optimizer):
