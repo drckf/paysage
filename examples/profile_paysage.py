@@ -5,13 +5,17 @@ import example_mnist_grbm as grbm
 import example_mnist_hopfield as hopfield
 import example_mnist_rbm as rbm
 
-def run_profiling() -> None:
+
+def run_profiling(mode="short") -> None:
     """
     Execute a shortened run of example models
     """
-    # grbm.example_mnist_grbm(num_epochs=1)
-    # hopfield.example_mnist_hopfield(num_epochs=1)
-    rbm.example_mnist_rbm(num_epochs=2)
+    if mode == "short":
+        rbm.example_mnist_rbm(num_epochs=3)
+    else:
+        grbm.example_mnist_grbm()
+        hopfield.example_mnist_hopfield()
+        rbm.example_mnist_rbm()
 
 def pstats() -> None:
     """
@@ -21,8 +25,6 @@ def pstats() -> None:
     p = pstats.Stats('profstats')
     p.sort_stats('cumulative').print_stats(20)
     p.sort_stats('time').print_stats(20)
-    p.sort_stats('cumulative').print_callers(5)
-    p.sort_stats('time').print_callers(5)
 
 if __name__ == "__main__":
-    run_profiling()
+    run_profiling("short")
