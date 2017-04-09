@@ -7,10 +7,6 @@ machine:
   services:
     - docker
 
-general:
-  artifacts:
-    "paysage_profiling.cprof"
-
 dependencies:
   pre:
     - sudo apt-get install libhdf5-dev
@@ -36,13 +32,13 @@ test:
     - pytest test/test_rbm.py
     - pytest test/test_derivatives.py
     - pytest test/paysage/test_layers.py
-    - echo "No profiling run" > paysage_profiling.cprof
+    - echo "No profiling run" > ${CIRCLE_ARTIFACTS}/paysage_profiling.cprof
     # Test docker container
     # - docker run paysage
 
   post:
-    # Run profiling as nightly build (takes too long to include in regular CI
+    # Run profiling as nightly build (takes too long to include in regular CI)
     - >
       if [ -n "${RUN_NIGHTLY_BUILD}" ]; then
-        python -m cProfile -o paysage_profiling.cprof examples/profile_paysage.py
+        python -m cProfile -o ${CIRCLE_ARTIFACTS}/paysage_profiling.cprof examples/profile_paysage.py
       fi   
