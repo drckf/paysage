@@ -38,7 +38,7 @@ test:
     - pytest test/paysage/test_layers.py
 
     # profiling
-    - python -m cProfile -o paysage_profiling.cprof ./examples/profile_paysage.py
+    - python -m cProfile -o paysage_profiling.cprof examples/profile_paysage.py
 
     # check docker container functionality
     # - docker run paysage
