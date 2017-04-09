@@ -7,7 +7,6 @@ machine:
   services:
     - docker
 
-
 dependencies:
   pre:
     - sudo apt-get install libhdf5-dev
@@ -15,12 +14,12 @@ dependencies:
     # CI image includes only 3.4 shared library
     - sudo ln -s /usr/lib/x86_64-linux-gnu/libpython3.4m.so.1.0 /usr/lib/x86_64-linux-gnu/libpython3.6m.so.1.0
     - pip install -U -r requirements.txt
-
   post:
-    # - docker build --rm=false -t paysage .
     - pip install http://download.pytorch.org/whl/cu75/torch-0.1.10.post2-cp36-cp36m-linux_x86_64.whl
     - pip install torchvision
     - pip install -e .
+    # Build docker container
+    # - docker build --rm=false -t paysage .
 
 test:
   pre:
@@ -33,12 +32,14 @@ test:
     - pytest test/test_rbm.py
     - pytest test/test_derivatives.py
     - pytest test/paysage/test_layers.py
-    # pytorch currently not on pypi (only conda)
-    # - pytest test/test_backends.py
-
-    # check docker container functionality
+    # Test docker container
     # - docker run paysage
 
-    # check that examples run to completion (exclude this for now due to long CI runtimes)
-    # - python3 examples/example_mnist_grbm.py
-    # ...
+  post:
+    # Profiling
+    - echo "No profiling run" > ${CIRCLE_ARTIFACTS}/paysage_profiling.cprof
+    # - python -m cProfile -o ${CIRCLE_ARTIFACTS}/paysage_profiling.cprof examples/profile_paysage.py
+    - >
+      if [ -n "${RUN_NIGHTLY_BUILD}" ]; then
+        python -m cProfile -o ${CIRCLE_ARTIFACTS}/paysage_profiling.cprof examples/profile_paysage.py
+      fi   
