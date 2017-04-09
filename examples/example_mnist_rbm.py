@@ -53,7 +53,6 @@ def example_mnist_rbm(paysage_path=None, num_epochs=10, show_plot=False):
 
     # evaluate the model
     # this will be the same as the final epoch results
-    # it is repeated here to be consistent with the sklearn rbm example
     metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore']
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
 

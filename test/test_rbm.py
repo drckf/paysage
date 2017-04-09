@@ -10,7 +10,8 @@ from paysage import optimizers
 import pytest
 
 def test_rbm(paysage_path=None):
-    """TODO : this is just a placeholder, need to clean up & simplifiy setup. Also
+    """
+    TODO : this is just a placeholder, need to clean up & simplifiy setup. Also
     need to figure how to deal with consistent random seeding throughout the
     codebase to obtain deterministic checkable results.
     """
@@ -68,12 +69,8 @@ def test_rbm(paysage_path=None):
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')
 
-    cd = fit.PCD(rbm, data, opt, sampler,
-                 num_epochs,
-                 mcsteps=mc_steps,
-                 skip=200,
-                 metrics=['ReconstructionError'])
-
+    cd = fit.PCD(rbm, data, opt, sampler, num_epochs, mcsteps=mc_steps,
+                 skip=200, metrics=['ReconstructionError'])
 
     # fit the model
     print('training with contrastive divergence')
