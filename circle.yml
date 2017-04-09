@@ -9,7 +9,7 @@ machine:
 
 general:
   artifacts:
-    ./paysage_profiling.cprof
+    "paysage_profiling.cprof"
 
 dependencies:
   pre:
@@ -18,12 +18,12 @@ dependencies:
     # CI image includes only 3.4 shared library
     - sudo ln -s /usr/lib/x86_64-linux-gnu/libpython3.4m.so.1.0 /usr/lib/x86_64-linux-gnu/libpython3.6m.so.1.0
     - pip install -U -r requirements.txt
-
   post:
-    # - docker build --rm=false -t paysage .
     - pip install http://download.pytorch.org/whl/cu75/torch-0.1.10.post2-cp36-cp36m-linux_x86_64.whl
     - pip install torchvision
     - pip install -e .
+    # Build docker container
+    # - docker build --rm=false -t paysage .
 
 test:
   pre:
@@ -36,9 +36,13 @@ test:
     - pytest test/test_rbm.py
     - pytest test/test_derivatives.py
     - pytest test/paysage/test_layers.py
-
-    # profiling
-    - python -m cProfile -o paysage_profiling.cprof examples/profile_paysage.py
-
-    # check docker container functionality
+    - echo "No profiling run" > paysage_profiling.cprof
+    # Test docker container
     # - docker run paysage
+
+  post:
+    # Run profiling as nightly build (takes too long to include in regular CI
+    - >
+      if [ -n "${RUN_NIGHTLY_BUILD}" ]; then
+        python -m cProfile -o paysage_profiling.cprof examples/profile_paysage.py
+      fi   
