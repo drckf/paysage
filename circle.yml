@@ -7,6 +7,9 @@ machine:
   services:
     - docker
 
+general:
+  artifacts:
+    ./paysage_profiling.cprof
 
 dependencies:
   pre:
@@ -33,12 +36,9 @@ test:
     - pytest test/test_rbm.py
     - pytest test/test_derivatives.py
     - pytest test/paysage/test_layers.py
-    # pytorch currently not on pypi (only conda)
-    # - pytest test/test_backends.py
+
+    # profiling
+    - python -m cProfile -o paysage_profiling.cprof ./profile_paysage.py
 
     # check docker container functionality
     # - docker run paysage
-
-    # check that examples run to completion (exclude this for now due to long CI runtimes)
-    # - python3 examples/example_mnist_grbm.py
-    # ...

@@ -10,11 +10,10 @@ be.set_seed(137) # for determinism
 
 import example_util as util
 
-def example_mnist_hopfield(paysage_path = None, show_plot = False):
+def example_mnist_hopfield(paysage_path = None, num_epochs = 10, show_plot = False):
 
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 10
     learning_rate = 0.001
     mc_steps = 1
 
@@ -56,7 +55,6 @@ def example_mnist_hopfield(paysage_path = None, show_plot = False):
 
     # evaluate the model
     # this will be the same as the final epoch results
-    # it is repeated here to be consistent with the sklearn rbm example
     metrics = [M.ReconstructionError(), M.EnergyDistance(),
                M.EnergyGap(), M.EnergyZscore()]
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
