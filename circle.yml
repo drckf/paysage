@@ -33,11 +33,12 @@ test:
     - pytest test/test_derivatives.py
     - pytest test/paysage/test_layers.py
     - echo "No profiling run" > ${CIRCLE_ARTIFACTS}/paysage_profiling.cprof
+    - python -m cProfile -o ${CIRCLE_ARTIFACTS}/paysage_profiling.cprof examples/profile_paysage.py
     # Test docker container
     # - docker run paysage
 
   post:
-    # Run profiling as nightly build (takes too long to include in regular CI)
+    # Run profiling as nightly build
     - >
       if [ -n "${RUN_NIGHTLY_BUILD}" ]; then
         python -m cProfile -o ${CIRCLE_ARTIFACTS}/paysage_profiling.cprof examples/profile_paysage.py
