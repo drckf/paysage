@@ -13,11 +13,10 @@ import example_util as util
 
 transform = partial(batch.scale, denominator=255)
 
-def example_mnist_grbm(paysage_path = None, show_plot = False):
+def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
 
     num_hidden_units = 500
     batch_size = 50
-    num_epochs = 10
     learning_rate = 0.001 # gaussian rbm usually requires smaller learnign rate
     mc_steps = 1
 
@@ -46,13 +45,7 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')
 
-    cd = fit.PCD(rbm,
-                 data,
-                 opt,
-                 sampler,
-                 num_epochs,
-                 mcsteps=mc_steps,
-                 skip=200,
+    cd = fit.PCD(rbm, data, opt, sampler, num_epochs, mcsteps=mc_steps, skip=200,
                  metrics=['ReconstructionError',
                           'EnergyDistance',
                           'EnergyGap',
@@ -64,7 +57,6 @@ def example_mnist_grbm(paysage_path = None, show_plot = False):
 
     # evaluate the model
     # this will be the same as the final epoch results
-    # it is repeated here to be consistent with the sklearn rbm example
     metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore']
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
 

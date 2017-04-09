@@ -1,5 +1,4 @@
 import os
-
 import numpy
 
 import plotting
@@ -81,10 +80,10 @@ def show_fantasy_particles(rbm, v_data, fit, show_plot):
     example_plot(grid, show_plot)
 
 def compute_weights(rbm):
-    idx = numpy.random.choice(
-          range(rbm.weights[0].shape[1]),
-          5, replace=False)
-    return numpy.array([[be.to_numpy_array(rbm.weights[0].W()[:, i])] for i in idx])
+    idx = numpy.random.choice(range(rbm.weights[0].shape[1]),
+                              5, replace=False)
+    return numpy.array([[be.to_numpy_array(rbm.weights[0].W()[:, i])]
+                        for i in idx])
 
 def show_weights(rbm, show_plot):
     print("\nPlot a random sample of the weights")

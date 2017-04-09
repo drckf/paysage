@@ -3,13 +3,13 @@ import example_mnist_hopfield as hopfield
 import example_mnist_rbm as rbm
 
 def all_examples():
-    print("grbm")
+    print("GRBM")
     grbm.example_mnist_grbm()
-    print("hopfield")
+    print("Hopfield")
     hopfield.example_mnist_hopfield()
-    print("rbm")
+    print("RBM")
     rbm.example_mnist_rbm()
-    print("Finished all examples")
+    print("Finished")
 
 if __name__ == "__main__":
     all_examples()
