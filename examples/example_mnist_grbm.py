@@ -6,7 +6,6 @@ from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
-from paysage import metrics as M
 
 be.set_seed(137) # for determinism
 
@@ -14,7 +13,7 @@ import example_util as util
 
 transform = partial(batch.scale, denominator=255)
 
-def example_mnist_grbm(paysage_path = None, num_epochs = 10, show_plot = False):
+def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
 
     num_hidden_units = 500
     batch_size = 50
@@ -48,10 +47,10 @@ def example_mnist_grbm(paysage_path = None, num_epochs = 10, show_plot = False):
 
     cd = fit.PCD(rbm, data, opt, sampler,
                  num_epochs, mcsteps=mc_steps, skip=200,
-                 metrics=[M.ReconstructionError(),
-                          M.EnergyDistance(),
-                          M.EnergyGap(),
-                          M.EnergyZscore()])
+                 metrics=['ReconstructionError',
+                          'EnergyDistance',
+                          'EnergyGap',
+                          'EnergyZscore'])
 
     # fit the model
     print('training with contrastive divergence')
@@ -59,7 +58,8 @@ def example_mnist_grbm(paysage_path = None, num_epochs = 10, show_plot = False):
 
     # evaluate the model
     # this will be the same as the final epoch results
-    metrics = [M.ReconstructionError(), M.EnergyDistance(), M.EnergyGap(), M.EnergyZscore()]
+    # it is repeated here to be consistent with the sklearn rbm example
+    metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore']
     performance = fit.ProgressMonitor(0, data, metrics=metrics)
 
     util.show_metrics(rbm, performance)

@@ -6,7 +6,6 @@ from paysage import layers
 from paysage.models import hidden
 from paysage import fit
 from paysage import optimizers
-from paysage import metrics as M
 
 import pytest
 
@@ -56,7 +55,7 @@ def test_rbm(paysage_path=None):
     perf  = fit.ProgressMonitor(0,
                                 data,
                                 metrics=[
-                                M.ReconstructionError()])
+                                'ReconstructionError'])
     untrained_performance = perf.check_progress(rbm, 0)
 
 
@@ -73,7 +72,7 @@ def test_rbm(paysage_path=None):
                  num_epochs,
                  mcsteps=mc_steps,
                  skip=200,
-                 metrics=[M.ReconstructionError()])
+                 metrics=['ReconstructionError'])
 
 
     # fit the model

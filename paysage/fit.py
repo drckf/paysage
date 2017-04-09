@@ -137,7 +137,7 @@ class TrainingMethod(object):
 
     def __init__(self, model, abatch, optimizer, sampler, epochs,
                  skip=100,
-                 metrics=[M.ReconstructionError(), M.EnergyDistance()]):
+                 metrics=['ReconstructionError', 'EnergyDistance']):
         self.model = model
         self.batch = abatch
         self.epochs = epochs
@@ -164,7 +164,7 @@ class ContrastiveDivergence(TrainingMethod):
     def __init__(self, model, abatch, optimizer, sampler, epochs,
                  mcsteps=1,
                  skip=100,
-                 metrics=[M.ReconstructionError(), M.EnergyDistance()]):
+                 metrics=['ReconstructionError', 'EnergyDistance']):
         super().__init__(model, abatch, optimizer, sampler, epochs,
                         skip=skip,
                         metrics=metrics)
@@ -228,7 +228,7 @@ class PersistentContrastiveDivergence(TrainingMethod):
     def __init__(self, model, abatch, optimizer, sampler, epochs,
                  mcsteps=1,
                  skip=100,
-                 metrics=[M.ReconstructionError(), M.EnergyDistance()]):
+                 metrics=['ReconstructionError', 'EnergyDistance']):
        super().__init__(model, abatch, optimizer, sampler, epochs,
                         skip=skip,
                         metrics=metrics)
@@ -280,11 +280,11 @@ class PersistentContrastiveDivergence(TrainingMethod):
 class ProgressMonitor(object):
 
     def __init__(self, skip, batch,
-                 metrics=[M.ReconstructionError(), M.EnergyDistance()]):
+                 metrics=['ReconstructionError', 'EnergyDistance']):
         self.skip = skip
         self.batch = batch
         self.update_steps = 10
-        self.metrics = metrics
+        self.metrics = [M.__getattribute__(m)() for m in metrics]
         self.memory = []
 
     def check_progress(self, model, t,
