@@ -4,7 +4,7 @@ from . import backends as be
 from . import metrics as M
 
 
-#TODO: should import the State class from hidden.py
+#TODO: should import the State class from model.py
 
 # -----  CLASSES ----- #
 
@@ -388,3 +388,4 @@ class ProgressMonitor(object):
 
 CD = ContrastiveDivergence
 PCD = PersistentContrastiveDivergence
+sgd = SGD = StochasticGradientDescent
