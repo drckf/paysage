@@ -1,16 +1,16 @@
 # Paysage
 
-Paysage is library for machine learning with Boltzmann machines written in Python. The library is still in the early stages, so new features will be added frequently. Currently, paysage can be used to train:
-* Bernoulli Restricted Boltzmann Machines (just a plain ol' RBM)
+Paysage is library for unsuperised learning and probabilistic generative models written in Python. The library is still in the early stages and is not yet stable, so new features will be added frequently.
+
+Currently, paysage can be used to train things like:
+
+* Bernoulli Restricted Boltzmann Machines
 * Gaussian Restricted Boltzmann Machines
-* Hopfield Models (an RBM with Gaussian hidden units)
+* Hopfield Models
 
-Soon, we will be adding support for:
-* Ising and Potts models (i.e., Markov Random Fields)
-* Layer-by-layer training of Deep Boltzmann Machines
-* Utilizing a GPU backend to speed up training
+Using advanced mean field and Markov Chain Monte Carlo methods. 
 
-## Make Boltzmann machines great again!
+## Physics-inspired machine learning
 * **Better performance through better algorithms**. We are focused on making better Monte Carlo samplers, initialization methods, and optimizers that allow you to train Boltzmann machines without emptying your wallet for a new computer.
 * **Stay close to Python**. Everybody loves Python, but sometimes it is too slow to get the job done. We want to minimize the amount of computation that gets shifted to the backend by targeting efforts for acceleration to the main bottlenecks in training.
 
