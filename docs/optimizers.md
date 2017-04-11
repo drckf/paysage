@@ -5,7 +5,7 @@ Basic algorithm of gradient descent with minibatches.
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, scheduler=<paysage.optimizers.PowerLawDecay object at 0x119a1f5f8>, tolerance=1e-07)
+def __init__(self, model, stepsize=0.001, scheduler=<paysage.optimizers.PowerLawDecay object at 0x111245748>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -23,7 +23,7 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if convergenced, False if not
+Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not<br /> ~
 
 
 ### update
@@ -189,7 +189,7 @@ Base class for the optimizer methods.
 ### \_\_init\_\_
 ```py
 
-def __init__(self, scheduler=<paysage.optimizers.PowerLawDecay object at 0x119a1f588>, tolerance=1e-07)
+def __init__(self, scheduler=<paysage.optimizers.PowerLawDecay object at 0x1112455c0>, tolerance=1e-07)
 
 ```
 
@@ -207,7 +207,7 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if convergenced, False if not
+Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not<br /> ~
 
 
 
@@ -245,7 +245,7 @@ Stochastic gradient descent with momentum.<br />Qian, N. (1999).<br />On the mom
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, momentum=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x119926550>, tolerance=1e-07)
+def __init__(self, model, stepsize=0.001, momentum=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11138c438>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -263,7 +263,7 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if convergenced, False if not
+Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not<br /> ~
 
 
 ### update
@@ -285,7 +285,7 @@ Stochastic gradient descent with RMSProp.<br />Geoffrey Hinton's Coursera Course
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x119926f60>, tolerance=1e-07)
+def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11138c588>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -303,7 +303,7 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if convergenced, False if not
+Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not<br /> ~
 
 
 ### update
@@ -329,7 +329,7 @@ Stochastic gradient descent with Adaptive Moment Estimation algorithm.<br /><br 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, scheduler=<paysage.optimizers.PowerLawDecay object at 0x119993f60>, tolerance=1e-07)
+def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11138c940>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -347,7 +347,7 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if convergenced, False if not
+Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not<br /> ~
 
 
 ### update

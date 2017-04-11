@@ -25,6 +25,31 @@ def train(self)
 
 
 
+## class StochasticGradientDescent
+Stochastic gradient descent with minibatches
+### \_\_init\_\_
+```py
+
+def __init__(self, model, abatch, optimizer, epochs, skip=100, metrics=['ReconstructionError', 'EnergyDistance'])
+
+```
+
+
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+
+### train
+```py
+
+def train(self)
+
+```
+
+
+
+
+
 ## class ContrastiveDivergence
 ContrastiveDivergence<br />CD-k algorithm for approximate maximum likelihood inference.<br /><br />Hinton, Geoffrey E.<br />"Training products of experts by minimizing contrastive divergence."<br />Neural computation 14.8 (2002): 1771-1800.<br /><br />Carreira-Perpinan, Miguel A., and Geoffrey Hinton.<br />"On Contrastive Divergence Learning."<br />AISTATS. Vol. 10. 2005.
 ### \_\_init\_\_
