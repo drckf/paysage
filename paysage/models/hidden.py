@@ -633,14 +633,14 @@ class Model(object):
             intrinsics = layer["intrinsic"]
             for ip in intrinsics:
                 df_params = pandas.DataFrame(
-                    be.to_numpy_array(self.layers[i].int_params[ip])
+                    be.to_numpy_array(getattr(self.layers[i].int_params, ip))
                 )
                 store.put(os.path.join(layer_key, 'intrinsic', ip), df_params)
             # extrinsic params
             extrinsics = layer["extrinsic"]
             for ep in extrinsics:
                 df_params = pandas.DataFrame(
-                    be.to_numpy_array(self.layers[i].ext_params[ep])
+                    be.to_numpy_array(getattr(self.layers[i].ext_params, ep))
                 )
                 store.put(os.path.join(layer_key, 'extrinsic', ep), df_params)
 

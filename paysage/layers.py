@@ -243,7 +243,7 @@ class Weights(Layer):
     @classmethod
     def from_config(cls, config):
         """
-        Create a weights layer form a configuration dictionary.
+        Create a weights layer from a configuration dictionary.
 
         Args:
             config (dict)
@@ -371,7 +371,7 @@ class GaussianLayer(Layer):
 
         """
         base_config = self.get_base_config()
-        base_config["extrinsic"] = list(self.ext_params._fields),
+        base_config["extrinsic"] = list(self.ext_params._fields)
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -379,7 +379,7 @@ class GaussianLayer(Layer):
     @classmethod
     def from_config(cls, config):
         """
-        Create a Gaussian layer form a configuration dictionary.
+        Create a Gaussian layer from a configuration dictionary.
 
         Args:
             config (dict)
@@ -695,7 +695,7 @@ class IsingLayer(Layer):
 
         """
         base_config = self.get_base_config()
-        base_config["extrinsic"] = list(self.ext_params._fields),
+        base_config["extrinsic"] = list(self.ext_params._fields)
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -703,7 +703,7 @@ class IsingLayer(Layer):
     @classmethod
     def from_config(cls, config):
         """
-        Create an Ising layer form a configuration dictionary.
+        Create an Ising layer from a configuration dictionary.
 
         Args:
             config (dict)
@@ -974,7 +974,7 @@ class BernoulliLayer(Layer):
 
         """
         base_config = self.get_base_config()
-        base_config["extrinsic"] = list(self.ext_params._fields),
+        base_config["extrinsic"] = list(self.ext_params._fields)
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -982,7 +982,7 @@ class BernoulliLayer(Layer):
     @classmethod
     def from_config(cls, config):
         """
-        Create a Bernoulli layer form a configuration dictionary.
+        Create a Bernoulli layer from a configuration dictionary.
 
         Args:
             config (dict)
@@ -1255,7 +1255,7 @@ class ExponentialLayer(Layer):
 
         """
         base_config = self.get_base_config()
-        base_config["extrinsic"] = list(self.ext_params._fields),
+        base_config["extrinsic"] = list(self.ext_params._fields)
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -1263,7 +1263,7 @@ class ExponentialLayer(Layer):
     @classmethod
     def from_config(cls, config):
         """
-        Create an Exponential layer form a configuration dictionary.
+        Create an Exponential layer from a configuration dictionary.
 
         Args:
             config (dict)
