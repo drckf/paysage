@@ -19,6 +19,26 @@ class TAP_rbm(model.Model):
 
     """
 
+    def __init__(self, layer_list, init_lr_EMF=0.1, tolerance_EMF=1e-4, max_iters_EMF=500):
+        """
+        Create a TAP rbm model.
+
+        Notes:
+            Only 2-layer models currently supported.
+
+        Args:
+            layer_list: A list of layers objects.
+
+        Returns:
+            model: A TAP rbm model.
+
+        """
+        super().__init__(layer_list)
+        self.tolerance_EMF = tolerance_EMF
+        self.max_iters_EMF = max_iters_EMF
+        self.init_lr_EMF = init_lr_EMF
+
+
     def gibbs_free_energy_TAP2(self, init_lr=0.1, tol=1e-4, max_iters=500):
         """
         Compute the Gibbs free engergy of the model according to the TAP
@@ -138,7 +158,9 @@ class TAP_rbm(model.Model):
         b = self.layers[1].int_params.loc
 
         # compute the TAP2 approximation to the Gibbs free energy:
-        (m_v_min, m_h_min, EMF) = self.gibbs_free_energy_TAP2()
+        (m_v_min, m_h_min, EMF) = self.gibbs_free_energy_TAP2(self.init_lr_EMF,
+                                                              self.tolerance_EMF,
+                                                              self.max_iters_EMF)
         # Compute the gradients at this minimizing magnetization
         m_v_quad = m_v_min - be.square(m_v_min)
         m_h_quad = m_h_min - be.square(m_h_min)
