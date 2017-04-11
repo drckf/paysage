@@ -48,7 +48,7 @@ def test_tap_machine(paysage_path=None):
     vis_layer = layers.BernoulliLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = tap_machine.TAP_rbm([vis_layer, hid_layer])
+    rbm = tap_machine.TAP_rbm([vis_layer, hid_layer], tolerance_EMF=1e-2, max_iters_EMF=50)
     rbm.initialize(data)
 
     # obtain initial estimate of the reconstruction error
