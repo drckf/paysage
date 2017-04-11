@@ -3,7 +3,7 @@ import os
 from paysage import backends as be
 from paysage import batch
 from paysage import layers
-from paysage.models import hidden
+from paysage.models import model
 from paysage import fit
 from paysage import optimizers
 
@@ -49,7 +49,7 @@ def test_rbm(paysage_path=None):
     vis_layer = layers.BernoulliLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
     rbm.initialize(data)
 
     # obtain initial estimate of the reconstruction error
