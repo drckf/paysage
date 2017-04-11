@@ -88,7 +88,7 @@ class Layer(object):
 
     def save_params(self, store, key):
         """
-        Save the intrinsic and extrinsic parameters to a HDFStore.
+        Save the intrinsic parameters to a HDFStore.
 
         Notes:
             Performs an IO operation.
@@ -109,7 +109,7 @@ class Layer(object):
 
     def load_params(self, store, key):
         """
-        Load the intrinsic and extrinsic parameters from an HDFStore.
+        Load the intrinsic parameters from an HDFStore.
 
         Notes:
             Performs an IO operation.
