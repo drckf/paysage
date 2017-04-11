@@ -255,7 +255,7 @@ class Optimizer(object):
 
         Returns:
             bool: True if converged, False if not
-            """
+        """
         mag = gu.grad_magnitude(self.delta)
         return mag <= self.tolerance
 
