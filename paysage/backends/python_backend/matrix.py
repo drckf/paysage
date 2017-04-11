@@ -883,7 +883,7 @@ def divide(a: T.Tensor, b: T.Tensor) -> T.Tensor:
         b: A tensor
 
     Returns:
-        tensor: a * b
+        tensor: b / a
 
     """
     if shape(a) == shape(b):
