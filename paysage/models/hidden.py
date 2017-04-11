@@ -146,7 +146,6 @@ class Model(object):
         config = {
             "model type": "RBM",
             "layers": [ly.get_config() for ly in self.layers],
-            "layer_types": ["visible", "hidden"],
         }
         return config
 
@@ -605,7 +604,7 @@ class Model(object):
         """
         Save a model to an open HDFStore.
 
-        Note:
+        Notes:
             Performs an IO operation.
 
         Args:
@@ -621,35 +620,18 @@ class Model(object):
         store.get_storer('model').attrs.config = config
         # save the weights
         for i in range(self.num_layers - 1):
-            df_weights = pandas.DataFrame(
-                be.to_numpy_array(self.weights[i].W())
-            )
-            store.put('weights/weights_'+str(i), df_weights)
+            key = os.path.join('weights', 'weights'+str(i))
+            self.weights[i].save_params(store, key)
         for i in range(len(self.layers)):
-            layer_type = config["layer_types"][i]
-            layer = config["layers"][i]
-            layer_key = os.path.join('layers', layer_type)
-            # intrinsic params
-            intrinsics = layer["intrinsic"]
-            for ip in intrinsics:
-                df_params = pandas.DataFrame(
-                    be.to_numpy_array(getattr(self.layers[i].int_params, ip))
-                )
-                store.put(os.path.join(layer_key, 'intrinsic', ip), df_params)
-            # extrinsic params
-            extrinsics = layer["extrinsic"]
-            for ep in extrinsics:
-                df_params = pandas.DataFrame(
-                    be.to_numpy_array(getattr(self.layers[i].ext_params, ep))
-                )
-                store.put(os.path.join(layer_key, 'extrinsic', ep), df_params)
+            key = os.path.join('layers', 'layers'+str(i))
+            self.layers[i].save_params(store, key)
 
     @classmethod
     def from_saved(cls, store):
         """
         Build a model by reading from an open HDFStore.
 
-        Note:
+        Notes:
             Performs an IO operation.
 
         Args:
@@ -662,33 +644,14 @@ class Model(object):
         # create the model from the config
         config = store.get_storer('model').attrs.config
         model = cls.from_config(config)
-        # transfer the weights
+        # load the weights
         for i in range(len(model.weights)):
-            w = store.get("weights/weights_"+str(i)).as_matrix()
-            w = be.float_tensor(w)
-            model.weights[i].int_params = layers.IntrinsicParamsWeights(matrix=w)
-        # transfer the layer parameters
-        layer_types = ['visible', 'hidden']
+            key = os.path.join('weights', 'weights'+str(i))
+            model.weights[i].load_params(store, key)
+        # load the layer parameters
         for i in range(len(model.layers)):
-            layer_key_base = os.path.join('layers', layer_types[i])
-            # intrinsic params
-            intrinsics = model.layers[i].int_params._fields
-            int_params = {}
-            for ip in intrinsics:
-                layer_key = os.path.join(layer_key_base, 'intrinsic', ip)
-                params = be.float_tensor(store.get(layer_key).as_matrix())
-                int_params[ip] = params.squeeze() # collapse trivial dimensions
-            int_params_type = model.layers[i].int_params.__class__
-            model.layers[i].int_params = int_params_type(**int_params)
-            # extrinsic params
-            extrinsics = model.layers[i].ext_params._fields
-            ext_params = {}
-            for ep in extrinsics:
-                layer_key = os.path.join(layer_key_base, 'extrinsic', ep)
-                params = be.float_tensor(store.get(layer_key).as_matrix())
-                ext_params[ep] = params
-            ext_params_type = model.layers[i].ext_params.__class__
-            model.layers[i].ext_params = ext_params_type(**ext_params)
+            key = os.path.join('layers', 'layers'+str(i))
+            model.layers[i].load_params(store, key)
         return model
 
 
