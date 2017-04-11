@@ -15,7 +15,7 @@ def test_tap_machine(paysage_path=None):
     need to figure how to deal with consistent random seeding throughout the
     codebase to obtain deterministic checkable results.
     """
-    num_hidden_units = 25
+    num_hidden_units = 10
     batch_size = 50
     num_epochs = 1
     learning_rate = 0.01
@@ -63,6 +63,7 @@ def test_tap_machine(paysage_path=None):
     opt = optimizers.Gradient(rbm,
                               stepsize=learning_rate,
                               scheduler=optimizers.PowerLawDecay(0.1),
+                              tolerance=1e-3,
                               ascent=True)
 
     solver = fit.SGD(rbm, data, opt, num_epochs, 
