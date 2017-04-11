@@ -31,6 +31,7 @@ test:
     - pytest test/test_backends.py
     - pytest test/test_rbm.py
     - pytest test/test_derivatives.py
+    - pytest test/test_tap_machine.py
     - pytest test/paysage/test_layers.py
     # Test docker container
     # - docker run paysage
