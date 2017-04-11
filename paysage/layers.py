@@ -106,12 +106,6 @@ class Layer(object):
                 be.to_numpy_array(ip)
             )
             store.put(os.path.join(key, 'intrinsic', str(i)), df_params)
-        if hasattr(self, "ext_params"):
-            for i, ep in enumerate(self.ext_params):
-                df_params = pandas.DataFrame(
-                    be.to_numpy_array(ep)
-                )
-                store.put(os.path.join(key, 'extrinsic', str(i)), df_params)
 
     def load_params(self, store, key):
         """
@@ -135,14 +129,6 @@ class Layer(object):
                 store.get(os.path.join(key, 'intrinsic', str(i))).as_matrix()
             ).squeeze()) # collapse trivial dimensions to a vector
         self.int_params = self.int_params.__class__(*int_params)
-        # extrinsic params
-        if hasattr(self, "ext_params"):
-            ext_params = []
-            for i, ep in enumerate(self.ext_params):
-                ext_params.append(be.float_tensor(
-                    store.get(os.path.join(key, 'extrinsic', str(i))).as_matrix()
-                ))
-            self.ext_params = self.ext_params.__class__(*ext_params)
 
     def add_constraint(self, constraint):
         """
