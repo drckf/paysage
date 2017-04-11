@@ -1,8 +1,5 @@
 import os
 import pandas
-from collections import namedtuple
-from cytoolz import compose
-from math import sqrt
 
 from .. import layers
 from .. import backends as be
