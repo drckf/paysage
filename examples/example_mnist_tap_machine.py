@@ -36,17 +36,17 @@ def example_mnist_tap_machine(paysage_path=None, show_plot=True):
     #opt = optimizers.ADAM(rbm,
     #                      stepsize=learning_rate,
     #                      scheduler=optimizers.PowerLawDecay(0.1))
-    opt = optimizers.SGD(rbm,
-                         stepsize=learning_rate,
-                         scheduler=optimizers.PowerLawDecay(0.1),
-                         tolerance=1e-3,
-                         ascent=True)
+    opt = optimizers.Gradient(rbm,
+                              stepsize=learning_rate,
+                              scheduler=optimizers.PowerLawDecay(0.1),
+                              tolerance=1e-3,
+                              ascent=True)
 
 
-    sgd = fit.StochasticGradientDescent(rbm,
-                                        data,
-                                        opt,
-                                        num_epochs)
+    sgd = fit.SGD(rbm,
+                  data,
+                  opt,
+                  num_epochs)
 
     # fit the model
     print('training with stochastic gradient ascent ')

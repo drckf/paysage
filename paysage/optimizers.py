@@ -260,18 +260,18 @@ class Optimizer(object):
         return mag <= self.tolerance
 
 
-class StochasticGradientDescent(Optimizer):
-    """Basic algorithm of gradient descent with minibatches."""
+class Gradient(Optimizer):
+    """Vanilla gradient optimizer"""
     def __init__(self, model,
                  stepsize=0.001,
                  scheduler=PowerLawDecay(),
                  tolerance=1e-7,
                  ascent=False):
         """
-        Create a stochastic gradient descent optimizer.
+        Create a gradient ascent/descent optimizer.
 
         Aliases:
-            SGD, sgd
+            gradient
 
         Args:
             model: a Model object to optimize
@@ -315,7 +315,6 @@ class StochasticGradientDescent(Optimizer):
         self.delta = model.gradient(v_data, v_model)
         gu.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
-
 
 class Momentum(Optimizer):
     """Stochastic gradient descent with momentum.
@@ -529,7 +528,7 @@ class ADAM(Optimizer):
 
 # ----- ALIASES ----- #
 
-sgd = SGD = StochasticGradientDescent
+gradient = Gradient
 momentum = Momentum
 rmsprop = RMSProp
 adam = ADAM
