@@ -2,7 +2,7 @@ import tempfile
 import pandas
 
 from paysage import layers
-from paysage.models import hidden
+from paysage.models import model
 from paysage import backends as be
 
 import pytest
@@ -16,17 +16,17 @@ num_samples = 10
 def test_rmb_construction():
     vis_layer = layers.BernoulliLayer(num_vis)
     hid_layer = layers.BernoulliLayer(num_hid)
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
 
 def test_grbm_construction():
     vis_layer = layers.GaussianLayer(num_vis)
     hid_layer = layers.BernoulliLayer(num_hid)
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
 
 def test_hopfield_construction():
     vis_layer = layers.BernoulliLayer(num_vis)
     hid_layer = layers.GaussianLayer(num_hid)
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
 
 
 # ----- CONFIG CREATION ----- #
@@ -34,16 +34,16 @@ def test_hopfield_construction():
 def test_grbm_config():
     vis_layer = layers.BernoulliLayer(num_vis)
     hid_layer = layers.GaussianLayer(num_hid)
-    grbm = hidden.Model([vis_layer, hid_layer])
+    grbm = model.Model([vis_layer, hid_layer])
     grbm.get_config()
 
 def test_grbm_from_config():
     vis_layer = layers.BernoulliLayer(num_vis)
     hid_layer = layers.GaussianLayer(num_hid)
-    grbm = hidden.Model([vis_layer, hid_layer])
+    grbm = model.Model([vis_layer, hid_layer])
     config = grbm.get_config()
 
-    rbm_from_config = hidden.Model.from_config(config)
+    rbm_from_config = model.Model.from_config(config)
     config_from_config = rbm_from_config.get_config()
     assert config == config_from_config
 
@@ -58,7 +58,7 @@ def test_grbm_save():
         mean=hid_layer.random((num_samples, num_vis)),
         variance=hid_layer.random((num_samples, num_vis))
     )
-    grbm = hidden.Model([vis_layer, hid_layer])
+    grbm = model.Model([vis_layer, hid_layer])
     with tempfile.NamedTemporaryFile() as file:
         store = pandas.HDFStore(file.name, mode='w')
         grbm.save(store)
@@ -75,7 +75,7 @@ def test_grbm_reload():
         mean=hid_layer.random((num_samples, num_vis)),
         variance=hid_layer.random((num_samples, num_vis))
     )
-    grbm = hidden.Model([vis_layer, hid_layer])
+    grbm = model.Model([vis_layer, hid_layer])
     with tempfile.NamedTemporaryFile() as file:
         # save the model
         store = pandas.HDFStore(file.name, mode='w')
@@ -83,7 +83,7 @@ def test_grbm_reload():
         store.close()
         # reload
         store = pandas.HDFStore(file.name, mode='r')
-        grbm_reload = hidden.Model.from_saved(store)
+        grbm_reload = model.Model.from_saved(store)
         store.close()
     # check the two models are consistent
     vis_state = vis_layer.sample_state()
