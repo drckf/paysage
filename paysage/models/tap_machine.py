@@ -22,7 +22,7 @@ class TAP_rbm(model.Model):
 
     """
 
-    def __init__(self, layer_list, init_lr_EMF=0.1, tolerance_EMF=1e-4, max_iters_EMF=500, persistent=True):
+    def __init__(self, layer_list, init_lr_EMF=0.1, tolerance_EMF=1e-2, max_iters_EMF=100, num_persistent_samples=0):
         """
         Create a TAP rbm model.
 
@@ -32,6 +32,13 @@ class TAP_rbm(model.Model):
         Args:
             layer_list: A list of layers objects.
 
+            EMF computation parameters:
+                init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+                tol float: tolerance for quitting minimization.
+                max_iters: maximum gradient decsent steps
+                number of persistent magnetization parameters to keep as seeds for gradient descent.
+                    0 implies we use a random seed each iteration
+
         Returns:
             model: A TAP rbm model.
 
@@ -40,7 +47,9 @@ class TAP_rbm(model.Model):
         self.tolerance_EMF = tolerance_EMF
         self.max_iters_EMF = max_iters_EMF
         self.init_lr_EMF = init_lr_EMF
-        self.persistent = persistent
+        self.persistent_samples = []
+        for i in range (num_persistent_samples):
+            self.persistent_samples.append(None)
         self.tap_seed = None
 
 
@@ -175,12 +184,24 @@ class TAP_rbm(model.Model):
         b = self.layers[1].int_params.loc
 
         # compute the TAP2 approximation to the Gibbs free energy:
-        (m, EMF) = self.gibbs_free_energy_TAP2(self.tap_seed if self.persistent else None,
-                                               self.init_lr_EMF,
-                                               self.tolerance_EMF,
-                                               self.max_iters_EMF)
-        if (self.persistent):
-            self.tap_seed = m
+        EMF = 1e6
+        m = Magnetization(None,None)
+        if len(self.persistent_samples) == 0: # random seed
+            (m, EMF) = self.gibbs_free_energy_TAP2(None,
+                                                   self.init_lr_EMF,
+                                                   self.tolerance_EMF,
+                                                   self.max_iters_EMF)
+        else:
+            best_EMF = 1e6
+            for s in range(len(self.persistent_samples)): # persistent seeds
+                (self.persistent_samples[s], EMF) = self.gibbs_free_energy_TAP2(self.persistent_samples[s],
+                                                                                self.init_lr_EMF,
+                                                                                self.tolerance_EMF,
+                                                                                self.max_iters_EMF)
+                if EMF < best_EMF:
+                    best_EMF = EMF
+                    m = self.persistent_samples[s]
+
 
         # Compute the gradients at this minimizing magnetization
         m_v_quad = m.m_v - be.square(m.m_v)
