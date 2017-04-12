@@ -1,6 +1,6 @@
 from paysage import backends as be
 from paysage import layers
-from paysage.models import hidden
+from paysage.models import model
 
 import pytest
 
@@ -15,7 +15,7 @@ def test_bernoulli_update():
     # set up some layer and model objects
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))
@@ -58,7 +58,7 @@ def test_bernoulli_derivatives():
     # set up some layer and model objects
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))
@@ -112,7 +112,7 @@ def test_ising_update():
     # set up some layer and model objects
     vis_layer = layers.IsingLayer(num_visible_units)
     hid_layer = layers.IsingLayer(num_hidden_units)
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))
@@ -155,7 +155,7 @@ def test_ising_derivatives():
     # set up some layer and model objects
     vis_layer = layers.IsingLayer(num_visible_units)
     hid_layer = layers.IsingLayer(num_hidden_units)
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))
@@ -211,7 +211,7 @@ def test_exponential_update():
     # set up some layer and model objects
     vis_layer = layers.ExponentialLayer(num_visible_units)
     hid_layer = layers.ExponentialLayer(num_hidden_units)
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     # for the exponential layers, we need a > 0, b > 0, and W < 0
@@ -255,7 +255,7 @@ def test_exponential_derivatives():
     # set up some layer and model objects
     vis_layer = layers.ExponentialLayer(num_visible_units)
     hid_layer = layers.ExponentialLayer(num_hidden_units)
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     # for the exponential layers, we need a > 0, b > 0, and W < 0
@@ -310,7 +310,7 @@ def test_gaussian_update():
     # set up some layer and model objects
     vis_layer = layers.GaussianLayer(num_visible_units)
     hid_layer = layers.GaussianLayer(num_hidden_units)
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))
@@ -378,7 +378,7 @@ def test_gaussian_derivatives():
     # set up some layer and model objects
     vis_layer = layers.GaussianLayer(num_visible_units)
     hid_layer = layers.GaussianLayer(num_hidden_units)
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))

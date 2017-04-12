@@ -1,4 +1,4 @@
-# Documentation for Init_Hidden (init_hidden.py)
+# Documentation for Init_Model (init_model.py)
 
 ## functions
 
