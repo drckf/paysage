@@ -1,9 +1,12 @@
+from collections import namedtuple
+
 from .. import layers
 from .. import backends as be
 from ..models.initialize import init_model as init
 from . import gradient_util as gu
 from . import model
 
+Magnetization = namedtuple("Magnetization", ["m_v", "m_h"])
 
 # Derives from Model object defined in hidden.py
 class TAP_rbm(model.Model):
@@ -102,14 +105,20 @@ class TAP_rbm(model.Model):
             return be.log(be.divide(1.0 - m_h, m_h)) - b - be.dot(m_v,w) - \
                    be.multiply(be.dot(m_v_quad,ww),0.5 - m_h)
 
-        def minimize_gamma_GD(w, a, b, m_v, m_h, init_lr, tol, max_iters):
+        def minimize_gamma_GD(w, a, b, seed, init_lr, tol, max_iters):
             """
             Simple gradient descent routine to minimize Gamma
+
+            Warning: this function modifies seed to avoid an extra copy
+
             """
             eps = 1e-6
             its = 0
             lr = init_lr
+            m_v = seed.m_v
+            m_h = seed.m_h
             gam = gamma_TAP2(m_v, m_h, w, a, b)
+            #print(gam)
             while (its < max_iters):
                 its += 1
                 m_v_provisional = m_v - lr*grad_v_gamma_TAP2(m_v, m_h, w, a)
@@ -129,7 +138,9 @@ class TAP_rbm(model.Model):
                     m_v = m_v_provisional
                     m_h = m_h_provisional
                     gam = gam_provisional
-            return (m_v, m_h, gam)
+                    #print(gam)
+            return (Magnetization(m_v, m_h), gam)
+
 
         # generate random sample in domain to use as a starting location for gradient descent
         num_visible_units = be.shape(a)[0]
@@ -162,12 +173,12 @@ class TAP_rbm(model.Model):
                                                               self.tolerance_EMF,
                                                               self.max_iters_EMF)
         # Compute the gradients at this minimizing magnetization
-        m_v_quad = m_v_min - be.square(m_v_min)
-        m_h_quad = m_h_min - be.square(m_h_min)
+        m_v_quad = m.m_v - be.square(m.m_v)
+        m_h_quad = m.m_h - be.square(m.m_h)
 
-        dw_EMF = -be.outer(m_v_min, m_h_min) - be.multiply(w, be.outer(m_v_quad, m_h_quad))
-        da_EMF = -m_v_min
-        db_EMF = -m_h_min
+        dw_EMF = -be.outer(m.m_v, m.m_h) - be.multiply(w, be.outer(m_v_quad, m_h_quad))
+        da_EMF = -m.m_v
+        db_EMF = -m.m_h
 
         # compute average grad_F_c over the minibatch
         #score = 0.0
