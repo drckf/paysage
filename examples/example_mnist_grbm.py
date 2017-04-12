@@ -70,4 +70,4 @@ def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
     print("Done")
 
 if __name__ == "__main__":
-    example_mnist_grbm(show_plot = True)
+    example_mnist_grbm(show_plot = False)
