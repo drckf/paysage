@@ -9,10 +9,10 @@ be.set_seed(137) # for determinism
 
 import example_util as util
 
-def example_mnist_tap_machine(paysage_path=None, show_plot=True):
+def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True):
+
     num_hidden_units = 500
     batch_size = 100
-    num_epochs = 10
     learning_rate = 0.1
 
     (_, _, shuffled_filepath) = \

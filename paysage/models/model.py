@@ -135,7 +135,6 @@ class Model(object):
         config = {
             "model type": "RBM",
             "layers": [ly.get_config() for ly in self.layers],
-            "layer_types": ["visible", "hidden"],
         }
         return config
 
@@ -594,7 +593,7 @@ class Model(object):
         """
         Save a model to an open HDFStore.
 
-        Note:
+        Notes:
             Performs an IO operation.
 
         Args:
@@ -610,25 +609,36 @@ class Model(object):
         store.get_storer('model').attrs.config = config
         # save the weights
         for i in range(self.num_layers - 1):
-            df_weights = pandas.DataFrame(
-                be.to_numpy_array(self.weights[i].W())
-            )
-            store.put('weights/weights_'+str(i), df_weights)
+            key = os.path.join('weights', 'weights'+str(i))
+            self.weights[i].save_params(store, key)
         for i in range(len(self.layers)):
-            layer_type = config["layer_types"][i]
-            layer = config["layers"][i]
-            layer_key = os.path.join('layers', layer_type)
-            # intrinsic params
-            intrinsics = layer["intrinsic"]
-            for ip in intrinsics:
-                df_params = pandas.DataFrame(
-                    be.to_numpy_array(self.layers[i].int_params[ip])
-                )
-                store.put(os.path.join(layer_key, 'intrinsic', ip), df_params)
-            # extrinsic params
-            extrinsics = layer["extrinsic"]
-            for ep in extrinsics:
-                df_params = pandas.DataFrame(
-                    be.to_numpy_array(self.layers[i].ext_params[ep])
-                )
-                store.put(os.path.join(layer_key, 'extrinsic', ep), df_params)
+            key = os.path.join('layers', 'layers'+str(i))
+            self.layers[i].save_params(store, key)
+
+    @classmethod
+    def from_saved(cls, store):
+        """
+        Build a model by reading from an open HDFStore.
+
+        Notes:
+            Performs an IO operation.
+
+        Args:
+            store (pandas.HDFStore)
+
+        Returns:
+            None
+
+        """
+        # create the model from the config
+        config = store.get_storer('model').attrs.config
+        model = cls.from_config(config)
+        # load the weights
+        for i in range(len(model.weights)):
+            key = os.path.join('weights', 'weights'+str(i))
+            model.weights[i].load_params(store, key)
+        # load the layer parameters
+        for i in range(len(model.layers)):
+            key = os.path.join('layers', 'layers'+str(i))
+            model.layers[i].load_params(store, key)
+        return model
