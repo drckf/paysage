@@ -42,7 +42,7 @@ def test_tap_machine(paysage_path=None):
                        'train/images',
                        batch_size,
                        transform=batch.binarize_color,
-                       train_fraction=0.99)
+                       train_fraction=0.1)
 
     # set up the model and initialize the parameters
     vis_layer = layers.BernoulliLayer(data.ncols)

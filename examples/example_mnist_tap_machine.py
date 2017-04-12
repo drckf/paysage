@@ -29,7 +29,8 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True
     vis_layer = layers.BernoulliLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = tap_machine.TAP_rbm([vis_layer, hid_layer])
+    rbm = tap_machine.TAP_rbm([vis_layer, hid_layer],
+                              tolerance_EMF=1e-1, max_iters_EMF=100)
     rbm.initialize(data, 'hinton')
 
     # set up the optimizer and the fit method
