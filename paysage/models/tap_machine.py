@@ -22,7 +22,7 @@ class TAP_rbm(model.Model):
 
     """
 
-    def __init__(self, layer_list, init_lr_EMF=0.1, tolerance_EMF=1e-4, max_iters_EMF=500):
+    def __init__(self, layer_list, init_lr_EMF=0.1, tolerance_EMF=1e-4, max_iters_EMF=500, persistent=True):
         """
         Create a TAP rbm model.
 
@@ -40,9 +40,11 @@ class TAP_rbm(model.Model):
         self.tolerance_EMF = tolerance_EMF
         self.max_iters_EMF = max_iters_EMF
         self.init_lr_EMF = init_lr_EMF
+        self.persistent = persistent
+        self.tap_seed = None
 
 
-    def gibbs_free_energy_TAP2(self, init_lr=0.1, tol=1e-4, max_iters=500):
+    def gibbs_free_energy_TAP2(self, seed=None, init_lr=0.1, tol=1e-4, max_iters=500):
         """
         Compute the Gibbs free engergy of the model according to the TAP
         expansion around infinite temperature to second order.
@@ -69,7 +71,8 @@ class TAP_rbm(model.Model):
         This implementation uses gradient descent from a random starting location to minimize the function
 
         Args:
-            vis (batch_size, num_visible): Observed visible units.
+            seed 'None' or Magnetization: initial seed for the minimization routine.
+                                          Chosing 'None' will result in a random seed
             init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
             tol float: tolerance for quitting minimization.
             max_iters: maximum gradient decsent steps
@@ -143,11 +146,14 @@ class TAP_rbm(model.Model):
 
 
         # generate random sample in domain to use as a starting location for gradient descent
-        num_visible_units = be.shape(a)[0]
-        num_hidden_units = be.shape(b)[0]
-        m_v = 0.99 * be.float_tensor(be.rand((num_visible_units,))) + 0.005
-        m_h = 0.99 * be.float_tensor(be.rand((num_hidden_units,))) + 0.005
-        return minimize_gamma_GD(w, a, b, m_v, m_h, init_lr, tol, max_iters)
+        if seed==None :
+            num_visible_units = be.shape(a)[0]
+            num_hidden_units = be.shape(b)[0]
+            seed = Magnetization(
+                0.99 * be.float_tensor(be.rand((num_visible_units,))) + 0.005,
+                0.99 * be.float_tensor(be.rand((num_hidden_units,))) + 0.005
+            )
+        return minimize_gamma_GD(w, a, b, seed, init_lr, tol, max_iters)
 
     def clamped_free_energy(self, v, w, a, b):
         """
@@ -169,9 +175,13 @@ class TAP_rbm(model.Model):
         b = self.layers[1].int_params.loc
 
         # compute the TAP2 approximation to the Gibbs free energy:
-        (m_v_min, m_h_min, EMF) = self.gibbs_free_energy_TAP2(self.init_lr_EMF,
-                                                              self.tolerance_EMF,
-                                                              self.max_iters_EMF)
+        (m, EMF) = self.gibbs_free_energy_TAP2(self.tap_seed if self.persistent else None,
+                                               self.init_lr_EMF,
+                                               self.tolerance_EMF,
+                                               self.max_iters_EMF)
+        if (self.persistent):
+            self.tap_seed = m
+
         # Compute the gradients at this minimizing magnetization
         m_v_quad = m.m_v - be.square(m.m_v)
         m_h_quad = m.m_h - be.square(m.m_h)
