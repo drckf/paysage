@@ -197,9 +197,7 @@ class ContrastiveDivergence(TrainingMethod):
 
             # end of epoch processing
             print('End of epoch {}: '.format(epoch))
-            prog = self.monitor.check_progress(self.model, 0,
-                                               store=True,
-                                               show=True)
+            self.monitor.check_progress(self.model, 0, store=True, show=True)
 
             end_time = time.time()
             print('Epoch took {0:.2f} seconds'.format(end_time - start_time),
@@ -260,9 +258,7 @@ class PersistentContrastiveDivergence(TrainingMethod):
 
             # end of epoch processing
             print('End of epoch {}: '.format(epoch))
-            prog = self.monitor.check_progress(self.model, 0,
-                                               store=True,
-                                               show=True)
+            self.monitor.check_progress(self.model, 0, store=True, show=True)
 
             end_time = time.time()
             print('Epoch took {0:.2f} seconds'.format(end_time - start_time),
@@ -303,9 +299,7 @@ class StochasticGradientDescent(TrainingMethod):
 
             # end of epoch processing
             print('End of epoch {}: '.format(epoch))
-            prog = self.monitor.check_progress(self.model, 0,
-                                               store=True,
-                                               show=True)
+            self.monitor.check_progress(self.model, 0, store=True, show=True)
 
             end_time = time.time()
             print('Epoch took {0:.2f} seconds'.format(end_time - start_time),
