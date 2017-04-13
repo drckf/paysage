@@ -9,7 +9,7 @@ be.set_seed(137) # for determinism
 
 import example_util as util
 
-def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True):
+def example_mnist_tap_machine(paysage_path=None, num_epochs = 30, show_plot=True):
 
     num_hidden_units = 500
     batch_size = 100
@@ -29,8 +29,8 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True
     vis_layer = layers.BernoulliLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = tap_machine.TAP_rbm([vis_layer, hid_layer],
-                              tolerance_EMF=1e-1, max_iters_EMF=100)
+    rbm = tap_machine.TAP_rbm([vis_layer, hid_layer], num_persistent_samples=0,
+                              tolerance_EMF=1e-2, max_iters_EMF=100)
     rbm.initialize(data, 'hinton')
 
     # set up the optimizer and the fit method
@@ -69,4 +69,4 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True
     print("Done")
 
 if __name__ == "__main__":
-    example_mnist_tap_machine(show_plot = False)
+    example_mnist_tap_machine(show_plot = True)
