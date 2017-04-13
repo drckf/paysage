@@ -9,14 +9,21 @@ from . import metrics as M
 # -----  CLASSES ----- #
 
 class Sampler(object):
-    """
-       A base class for the sequential Monte Carlo samplers
+    """Base class for the sequential Monte Carlo samplers"""
+    def __init__(self, model, method='stochastic', **kwargs):
+        """
+        Create a sampler.
 
-    """
-    def __init__(self, amodel,
-                 method='stochastic',
-                 **kwargs):
-        self.model = amodel
+        Args:
+            model: a model object
+            method (str; optional): how to update the particles
+            kwargs (optional)
+
+        Returns:
+            sampler
+
+        """
+        self.model = model
         self.state = None
         self.has_state = False
 
@@ -34,8 +41,17 @@ class Sampler(object):
     # should use hidden.State object
     def randomize_state(self, shape):
         """
-           Set up the inital states for each of the Markov Chains.
-           The initial state is randomly initalized.
+        Set up the inital states for each of the Markov Chains.
+        The initial state is randomly initalized.
+
+        Notes:
+            Modifies the state attribute in place.
+
+        Args:
+            shape (tuple): shape if the visible layer
+
+        Returns:
+            None
 
         """
         self.state = self.model.random(shape)
@@ -45,7 +61,16 @@ class Sampler(object):
     # should use hidden.State object
     def set_state(self, tensor):
         """
-           Set up the inital states for each of the Markov Chains.
+        Set up the inital states for each of the Markov Chains.
+
+        Notes:
+            Modifies state attribute in place.
+
+        Args:
+            tensor: the observed visible units
+
+        Returns:
+            None
 
         """
         self.state = be.float_tensor(tensor)
@@ -54,12 +79,23 @@ class Sampler(object):
     #TODO: use State
     # should use hidden.State object
     @classmethod
-    def from_batch(cls, amodel, abatch,
-                   method='stochastic',
-                   **kwargs):
-        tmp = cls(amodel, method=method, **kwargs)
-        tmp.set_state(abatch.get('train'))
-        abatch.reset_generator('all')
+    def from_batch(cls, model, batch, method='stochastic', **kwargs):
+        """
+        Create a sampler from a batch object.
+
+        Args:
+            model: a model object
+            batch: a batch object
+            method (str; optional): how to update the particles
+            kwargs (optional)
+
+        Returns:
+            sampler
+
+        """
+        tmp = cls(model, method=method, **kwargs)
+        tmp.set_state(batch.get('train'))
+        batch.reset_generator('all')
         return tmp
 
 
@@ -315,9 +351,22 @@ class StochasticGradientDescent(TrainingMethod):
 
 
 class ProgressMonitor(object):
+    """
+    Monitor the progress of training by computing statistics on the
+    validation set.
 
+    """
     def __init__(self, skip, batch,
                  metrics=['ReconstructionError', 'EnergyDistance']):
+        """
+        Create a progress monitor.
+
+        Args:
+            skip (int): how often to compute the updates
+            batch (int): the
+
+
+        """
         self.skip = skip
         self.batch = batch
         self.update_steps = 10
