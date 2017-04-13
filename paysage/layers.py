@@ -1,5 +1,6 @@
-import sys
+import os, sys
 from collections import OrderedDict, namedtuple
+import pandas
 
 from . import penalties
 from . import constraints
@@ -84,6 +85,50 @@ class Layer(object):
         """
         layer_obj = getattr(sys.modules[__name__], config["layer_type"])
         return layer_obj.from_config(config)
+
+    def save_params(self, store, key):
+        """
+        Save the intrinsic parameters to a HDFStore.
+
+        Notes:
+            Performs an IO operation.
+
+        Args:
+            store (pandas.HDFStore): the writeable stream for the params.
+            key (str): the path for the layer params.
+
+        Returns:
+            None
+
+        """
+        for i, ip in enumerate(self.int_params):
+            df_params = pandas.DataFrame(
+                be.to_numpy_array(ip)
+            )
+            store.put(os.path.join(key, 'intrinsic', str(i)), df_params)
+
+    def load_params(self, store, key):
+        """
+        Load the intrinsic parameters from an HDFStore.
+
+        Notes:
+            Performs an IO operation.
+
+        Args:
+            store (pandas.HDFStore): the readable stream for the params.
+            key (str): the path for the layer params.
+
+        Returns:
+            None
+
+        """
+        # intrinsic params
+        int_params = []
+        for i, ip in enumerate(self.int_params):
+            int_params.append(be.float_tensor(
+                store.get(os.path.join(key, 'intrinsic', str(i))).as_matrix()
+            ).squeeze()) # collapse trivial dimensions to a vector
+        self.int_params = self.int_params.__class__(*int_params)
 
     def add_constraint(self, constraint):
         """
