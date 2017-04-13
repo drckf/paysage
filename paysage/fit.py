@@ -100,17 +100,37 @@ class Sampler(object):
 
 
 class SequentialMC(Sampler):
-    """SequentialMC
-       Simple class for a sequential Monte Carlo sampler.
+    """Basic sequential Monte Carlo sampler"""
+    def __init__(self, model, method='stochastic'):
+        """
+        Create a sequential Monte Carlo sampler.
 
-    """
-    def __init__(self, amodel,
-                 method='stochastic'):
-        super().__init__(amodel, method=method)
+        Args:
+            model: a model object
+            method (str; optional): how to update the particles
+
+        Returns:
+            SequentialMC
+
+        """
+        super().__init__(model, method=method)
 
     #TODO: use State
     # should use hidden.State object
     def update_state(self, steps):
+        """
+        Update the state of the particles.
+
+        Notes:
+            Modifies the state attribute in place.
+
+        Args:
+            steps (int): the number of Monte Carlo steps
+
+        Returns:
+            None
+
+        """
         if not self.has_state:
             raise AttributeError(
                   'You must set the initial state of the Markov Chain')
@@ -119,6 +139,16 @@ class SequentialMC(Sampler):
     #TODO: use State
     # should use hidden.State object
     def get_state(self):
+        """
+        Return the state attribute.
+
+        Args:
+            None
+
+        Returns:
+            state (tensor)
+
+        """
         return self.state
 
 
