@@ -247,9 +247,25 @@ class DrivenSequentialMC(Sampler):
 
 
 class TrainingMethod(object):
-
+    """Base training method class"""
     def __init__(self, model, batch, optimizer, sampler, epochs, skip=100,
                  metrics=['ReconstructionError', 'EnergyDistance']):
+        """
+        Create a training method object.
+
+        Args:
+            model: a model object
+            batch: a batch object
+            optimizer: an optimizer object
+            sampler: a sampler object
+            epochs (int): the number of epochs
+            skip (int): the number of minibatches between metric calculations
+            metrics (list[str]): list of metrics to compute
+
+        Returns:
+            TrainingMethod
+
+        """
         self.model = model
         self.batch = batch
         self.epochs = epochs
@@ -271,12 +287,25 @@ class ContrastiveDivergence(TrainingMethod):
     AISTATS. Vol. 10. 2005.
 
     """
-    def __init__(self, model, abatch, optimizer, sampler, epochs,
-                 mcsteps=1,
-                 skip=100,
-                 metrics=['ReconstructionError', 'EnergyDistance']):
-        super().__init__(model, abatch, optimizer, sampler, epochs,
-                        skip=skip,
+    def __init__(self, model, batch, optimizer, sampler, epochs, mcsteps=1,
+                 skip=100, metrics=['ReconstructionError', 'EnergyDistance']):
+        """
+        Create a contrastive divergence object.
+
+        Args:
+            model: a model object
+            batch: a batch object
+            optimizer: an optimizer object
+            sampler: a sampler object
+            epochs (int): the number of epochs
+            skip (int): the number of minibatches between metric calculations
+            metrics (list[str]): list of metrics to compute
+
+        Returns:
+            ContrastiveDivergence
+
+        """
+        super().__init__(model, batch, optimizer, sampler, epochs, skip=skip,
                         metrics=metrics)
         self.mcsteps = mcsteps
 
@@ -383,14 +412,10 @@ class PersistentContrastiveDivergence(TrainingMethod):
         return None
 
 class StochasticGradientDescent(TrainingMethod):
-    """
-    Stochastic gradient descent with minibatches
-    """
-    def __init__(self, model, abatch, optimizer, epochs,
-                 skip=100,
+    """Stochastic gradient descent with minibatches"""
+    def __init__(self, model, batch, optimizer, epochs, skip=100,
                  metrics=['ReconstructionError', 'EnergyDistance']):
-        super().__init__(model, abatch, optimizer, None, epochs,
-                        skip=skip,
+        super().__init__(model, batch, optimizer, None, epochs, skip=skip,
                         metrics=metrics)
 
     def train(self):
@@ -438,7 +463,10 @@ class ProgressMonitor(object):
         Args:
             skip (int): how often to compute the updates
             batch (int): the
+            metrics (list[str]): list of metrics to compute
 
+        Returns:
+            ProgressMonitor
 
         """
         self.skip = skip
@@ -447,9 +475,20 @@ class ProgressMonitor(object):
         self.metrics = [M.__getattribute__(m)() for m in metrics]
         self.memory = []
 
-    def check_progress(self, model, t,
-                       store=False,
-                       show=False):
+    def check_progress(self, model, t, store=False, show=False):
+        """
+        Compute the metrics from a model on the validaiton set.
+
+        Args:
+            model: a model object
+            t (int): the iteration number
+            store (bool): if true, store the metrics in a list
+            show (bool): if true, print the metrics to the screen
+
+        Returns:
+            metdict (dict): an ordered dictionary with the metrics
+
+        """
         if not self.skip or not (t % self.skip):
 
             sampler = SequentialMC(model)
