@@ -43,10 +43,7 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 30, show_plot=True
                               ascent=True)
 
 
-    sgd = fit.SGD(rbm,
-                  data,
-                  opt,
-                  num_epochs)
+    sgd = fit.SGD(rbm, data, opt, num_epochs)
 
     # fit the model
     print('training with stochastic gradient ascent ')

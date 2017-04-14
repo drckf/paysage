@@ -344,7 +344,8 @@ class ContrastiveDivergence(TrainingMethod):
 
                 # compute the gradient and update the model parameters
                 v_model = self.sampler.get_state()
-                self.optimizer.update(self.model, v_data, v_model, epoch)
+                grad = self.model.gradient(v_data, v_model)
+                self.optimizer.update(self.model, grad, epoch)
                 t += 1
 
             # end of epoch processing
@@ -430,8 +431,9 @@ class PersistentContrastiveDivergence(TrainingMethod):
                 self.sampler.update_state(self.mcsteps)
 
                 # compute the gradient and update the model parameters
-                self.optimizer.update(self.model, v_data, self.sampler.state,
-                                      epoch)
+                v_model = self.sampler.get_state()
+                grad = self.model.gradient(v_data, v_model)
+                self.optimizer.update(self.model, grad, epoch)
                 t += 1
 
             # end of epoch processing
@@ -497,7 +499,9 @@ class StochasticGradientDescent(TrainingMethod):
                     break
 
                 # compute the gradient and update the model parameters
-                self.optimizer.update(self.model, v_data, None, epoch)
+                v_model = None
+                grad = self.model.gradient(v_data, v_model)
+                self.optimizer.update(self.model, grad, epoch)
                 t += 1
 
             # end of epoch processing
