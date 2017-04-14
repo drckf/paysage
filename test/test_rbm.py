@@ -53,11 +53,10 @@ def test_rbm(paysage_path=None):
     rbm.initialize(data)
 
     # obtain initial estimate of the reconstruction error
-    perf  = fit.ProgressMonitor(0,
-                                data,
+    perf  = fit.ProgressMonitor(data,
                                 metrics=[
                                 'ReconstructionError'])
-    untrained_performance = perf.check_progress(rbm, 0)
+    untrained_performance = perf.check_progress(rbm)
 
 
     # set up the optimizer and the fit method
@@ -68,15 +67,15 @@ def test_rbm(paysage_path=None):
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')
 
-    cd = fit.PCD(rbm, data, opt, sampler, num_epochs, mcsteps=mc_steps,
-                 skip=200, metrics=['ReconstructionError'])
+    cd = fit.SGD(rbm, data, opt, num_epochs, method = fit.pcd, sampler=sampler,
+                 mcsteps=mc_steps, monitor=perf)
 
     # fit the model
     print('training with contrastive divergence')
     cd.train()
 
     # obtain an estimate of the reconstruction error after 1 epoch
-    trained_performance = perf.check_progress(rbm, 0)
+    trained_performance = perf.check_progress(rbm)
 
     assert (trained_performance['ReconstructionError'] <
             untrained_performance['ReconstructionError']), \

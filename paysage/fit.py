@@ -246,37 +246,96 @@ class DrivenSequentialMC(Sampler):
         return self.state
 
 
-class TrainingMethod(object):
-    """Base training method class"""
-    def __init__(self, model, batch, optimizer, sampler, epochs, skip=100,
-                 metrics=['ReconstructionError', 'EnergyDistance']):
+class ProgressMonitor(object):
+    """
+    Monitor the progress of training by computing statistics on the
+    validation set.
+
+    """
+    def __init__(self, batch, metrics=['ReconstructionError']):
         """
-        Create a training method object.
+        Create a progress monitor.
 
         Args:
-            model: a model object
-            batch: a batch object
-            optimizer: an optimizer object
-            sampler: a sampler object
-            epochs (int): the number of epochs
-            skip (int): the number of minibatches between metric calculations
+            batch (int): the
             metrics (list[str]): list of metrics to compute
 
         Returns:
-            TrainingMethod
+            ProgressMonitor
 
         """
-        self.model = model
         self.batch = batch
-        self.epochs = epochs
-        self.sampler = sampler
-        self.optimizer = optimizer
-        self.monitor = ProgressMonitor(skip, batch, metrics=metrics)
+        self.update_steps = 10
+        self.metrics = [M.__getattribute__(m)() for m in metrics]
+        self.memory = []
+
+    def check_progress(self, model, store=False, show=False):
+        """
+        Compute the metrics from a model on the validaiton set.
+
+        Args:
+            model: a model object
+            store (bool): if true, store the metrics in a list
+            show (bool): if true, print the metrics to the screen
+
+        Returns:
+            metdict (dict): an ordered dictionary with the metrics
+
+        """
+        sampler = SequentialMC(model)
+
+        for m in self.metrics:
+            m.reset()
+
+        while True:
+            try:
+                v_data = self.batch.get(mode='validate')
+            except StopIteration:
+                break
+
+            #TODO: use State
+            # should use hidden.State objects
+            # note that we will need two states
+            # one for the positive phase (with visible units as observed)
+            # one for the fantasy particles (with visible units sampled from the model)
+
+            # compute the reconstructions
+            sampler.set_state(v_data)
+            sampler.update_state(1)
+            reconstructions = sampler.state
+
+            # compute the fantasy particles
+            random_samples = model.random(v_data)
+            sampler.set_state(random_samples)
+            sampler.update_state(self.update_steps)
+            fantasy_particles = sampler.state
+
+            metric_state = M.MetricState(minibatch=v_data,
+                                         reconstructions=reconstructions,
+                                         random_samples=random_samples,
+                                         samples=fantasy_particles,
+                                         amodel=model)
+
+            # update metrics
+            for m in self.metrics:
+                m.update(metric_state)
+
+        # compute metric dictionary
+        metdict = OrderedDict([(m.name, m.value()) for m in self.metrics])
+        if show:
+            for m in metdict:
+                print("-{0}: {1:.6f}".format(m, metdict[m]))
+
+        if store:
+            self.memory.append(metdict)
+
+        return metdict
 
 
-class ContrastiveDivergence(TrainingMethod):
+def contrastive_divergence(vdata, model, sampler, steps=1):
     """
-    CD-k algorithm for approximate maximum likelihood inference.
+    Compute an approximation to the likelihood gradient using the CD-k
+    algorithm for approximate maximum likelihood inference.
 
     Hinton, Geoffrey E.
     "Training products of experts by minimizing contrastive divergence."
@@ -286,86 +345,29 @@ class ContrastiveDivergence(TrainingMethod):
     "On Contrastive Divergence Learning."
     AISTATS. Vol. 10. 2005.
 
+    Notes:
+        Modifies the state of the sampler.
+
+    Args:
+        vdata (tensor): observed visible units
+        model: a model object
+        sampler: a sampler object
+        steps (int): the number of Monte Carlo steps
+
+    Returns:
+        gradient
+
     """
-    def __init__(self, model, batch, optimizer, sampler, epochs, mcsteps=1,
-                 skip=100, metrics=['ReconstructionError', 'EnergyDistance']):
-        """
-        Create a contrastive divergence object.
+    # contrastive divergence resets the state of the sampler to the observed
+    # configurations for every gradient calculation
+    sampler.set_state(vdata)
+    sampler.update_state(steps)
+    return model.gradient(vdata, sampler.get_state())
 
-        Args:
-            model: a model object
-            batch: a batch object
-            optimizer: an optimizer object
-            sampler: a sampler object
-            epochs (int): the number of epochs
-            skip (int): the number of minibatches between metric calculations
-            metrics (list[str]): list of metrics to compute
+# alias
+cd = contrastive_divergence
 
-        Returns:
-            ContrastiveDivergence
-
-        """
-        super().__init__(model, batch, optimizer, sampler, epochs, skip=skip,
-                        metrics=metrics)
-        self.mcsteps = mcsteps
-
-    def train(self):
-        """
-        Train the model.
-
-        Notes:
-            Updates the model parameters in place.
-
-        Args:
-            None
-
-        Returns:
-            None
-
-        """
-        for epoch in range(self.epochs):
-            t = 0
-            start_time = time.time()
-            while True:
-                try:
-                    v_data = self.batch.get(mode='train')
-                except StopIteration:
-                    break
-
-                #TODO: use State
-                # should use hidden.State objects
-                # note that we will need two states
-                # one for the positive phase (with visible units as observed)
-                # one for the negative phase (with visible units sampled from the model)
-
-                # CD resets the sampler from the visible data at each iteration
-                self.sampler.set_state(v_data)
-                self.sampler.update_state(self.mcsteps)
-
-                # compute the gradient and update the model parameters
-                v_model = self.sampler.get_state()
-                grad = self.model.gradient(v_data, v_model)
-                self.optimizer.update(self.model, grad, epoch)
-                t += 1
-
-            # end of epoch processing
-            print('End of epoch {}: '.format(epoch))
-            self.monitor.check_progress(self.model, 0, store=True, show=True)
-
-            end_time = time.time()
-            print('Epoch took {0:.2f} seconds'.format(end_time - start_time),
-                  end='\n\n')
-
-            # convergence check should be part of optimizer
-            is_converged = self.optimizer.check_convergence()
-            if is_converged:
-                print('Convergence criterion reached')
-                break
-
-        return None
-
-
-class PersistentContrastiveDivergence(TrainingMethod):
+def peristent_contrastive_divergence(vdata, model, sampler, steps=1):
     """
     PCD-k algorithm for approximate maximum likelihood inference.
 
@@ -375,87 +377,54 @@ class PersistentContrastiveDivergence(TrainingMethod):
     Proceedings of the 25th international conference on Machine learning.
     ACM, 2008.
 
+    Notes:
+        Modifies the state of the sampler.
+
+    Args:
+        vdata (tensor): observed visible units
+        model: a model object
+        sampler: a sampler object
+        steps (int): the number of Monte Carlo steps
+
+    Returns:
+        gradient
+
     """
-    def __init__(self, model, abatch, optimizer, sampler, epochs, mcsteps=1,
-                 skip=100, metrics=['ReconstructionError', 'EnergyDistance']):
-        """
-        Create a persistent contrastive divergence object.
+    # PCD persists the state of the sampler from the previous iteration
+    sampler.update_state(steps)
+    return model.gradient(vdata, sampler.get_state())
 
-        Args:
-            model: a model object
-            batch: a batch object
-            optimizer: an optimizer object
-            sampler: a sampler object
-            epochs (int): the number of epochs
-            skip (int): the number of minibatches between metric calculations
-            metrics (list[str]): list of metrics to compute
+# alias
+pcd = peristent_contrastive_divergence
 
-        Returns:
-            PeristentContrastiveDivergence
+def tap(vdata, model, sampler=None, steps=None):
+    """
+    Compute the gradient using the Thouless-Anderson-Palmer (TAP)
+    mean field approximation.
 
-        """
-        super().__init__(model, abatch, optimizer, sampler, epochs, skip=skip,
-                        metrics=metrics)
-        self.mcsteps = mcsteps
+    Eric W Tramel, Marylou Gabrie, Andre Manoel, Francesco Caltagirone,
+    and Florent Krzakala
+    "A Deterministic and Generalized Framework for Unsupervised Learning
+    with Restricted Boltzmann Machines"
 
-    def train(self):
-        """
-        Train the model.
 
-        Notes:
-            Updates the model parameters in place.
+    Args:
+        vdata (tensor): observed visible units
+        model: a model object
+        sampler (default to None): not required
+        steps (default to None): not requires
 
-        Args:
-            None
+    Returns:
+        gradient
 
-        Returns:
-            None
+    """
+    return model.gradient(vdata, None)
 
-        """
-        for epoch in range(self.epochs):
-            t = 0
-            start_time = time.time()
-            while True:
-                try:
-                    v_data = self.batch.get(mode='train')
-                except StopIteration:
-                    break
 
-                #TODO: use State
-                # should use hidden.State objects
-                # note that we will need two states
-                # one for the positive phase (with visible units as observed)
-                # one for the negative phase (with visible units sampled from the model)
-
-                # PCD keeps the sampler from the previous iteration
-                self.sampler.update_state(self.mcsteps)
-
-                # compute the gradient and update the model parameters
-                v_model = self.sampler.get_state()
-                grad = self.model.gradient(v_data, v_model)
-                self.optimizer.update(self.model, grad, epoch)
-                t += 1
-
-            # end of epoch processing
-            print('End of epoch {}: '.format(epoch))
-            self.monitor.check_progress(self.model, 0, store=True, show=True)
-
-            end_time = time.time()
-            print('Epoch took {0:.2f} seconds'.format(end_time - start_time),
-                  end='\n\n')
-
-            # convergence check should be part of optimizer
-            is_converged = self.optimizer.check_convergence()
-            if is_converged:
-                print('Convergence criterion reached')
-                break
-
-        return None
-
-class StochasticGradientDescent(TrainingMethod):
+class StochasticGradientDescent(object):
     """Stochastic gradient descent with minibatches"""
-    def __init__(self, model, batch, optimizer, epochs, skip=100,
-                 metrics=['ReconstructionError', 'EnergyDistance']):
+    def __init__(self, model, batch, optimizer, epochs, method=pcd,
+                 sampler=SequentialMC, mcsteps=1, monitor=None):
         """
         Create a StochasticGradientDescent object.
 
@@ -463,17 +432,25 @@ class StochasticGradientDescent(TrainingMethod):
             model: a model object
             batch: a batch object
             optimizer: an optimizer object
-            sampler: a sampler object
             epochs (int): the number of epochs
-            skip (int): the number of minibatches between metric calculations
-            metrics (list[str]): list of metrics to compute
+            method (optional): the method used to approximate the likelihood
+                               gradient [cd, pcd, ortap]
+            sampler (optional): a sampler object
+            mcsteps (int, optional): the number of Monte Carlo steps per gradient
+            monitor (optional): a progress monitor
 
         Returns:
             StochasticGradientDescent
 
         """
-        super().__init__(model, batch, optimizer, None, epochs, skip=skip,
-                        metrics=metrics)
+        self.model = model
+        self.batch = batch
+        self.epochs = epochs
+        self.grad_approx = method
+        self.sampler = sampler
+        self.mcsteps = mcsteps
+        self.optimizer = optimizer
+        self.monitor = monitor
 
     def train(self):
         """
@@ -498,15 +475,16 @@ class StochasticGradientDescent(TrainingMethod):
                 except StopIteration:
                     break
 
-                # compute the gradient and update the model parameters
-                v_model = None
-                grad = self.model.gradient(v_data, v_model)
-                self.optimizer.update(self.model, grad, epoch)
+                self.optimizer.update(self.model,
+                self.grad_approx(v_data, self.model, self.sampler, self.mcsteps),
+                epoch)
+
                 t += 1
 
             # end of epoch processing
             print('End of epoch {}: '.format(epoch))
-            self.monitor.check_progress(self.model, 0, store=True, show=True)
+            if self.monitor is not None:
+                self.monitor.check_progress(self.model, store=True, show=True)
 
             end_time = time.time()
             print('Epoch took {0:.2f} seconds'.format(end_time - start_time),
@@ -520,100 +498,5 @@ class StochasticGradientDescent(TrainingMethod):
 
         return None
 
-
-class ProgressMonitor(object):
-    """
-    Monitor the progress of training by computing statistics on the
-    validation set.
-
-    """
-    def __init__(self, skip, batch,
-                 metrics=['ReconstructionError', 'EnergyDistance']):
-        """
-        Create a progress monitor.
-
-        Args:
-            skip (int): how often to compute the updates
-            batch (int): the
-            metrics (list[str]): list of metrics to compute
-
-        Returns:
-            ProgressMonitor
-
-        """
-        self.skip = skip
-        self.batch = batch
-        self.update_steps = 10
-        self.metrics = [M.__getattribute__(m)() for m in metrics]
-        self.memory = []
-
-    def check_progress(self, model, t, store=False, show=False):
-        """
-        Compute the metrics from a model on the validaiton set.
-
-        Args:
-            model: a model object
-            t (int): the iteration number
-            store (bool): if true, store the metrics in a list
-            show (bool): if true, print the metrics to the screen
-
-        Returns:
-            metdict (dict): an ordered dictionary with the metrics
-
-        """
-        if not self.skip or not (t % self.skip):
-
-            sampler = SequentialMC(model)
-
-            for m in self.metrics:
-                m.reset()
-
-            while True:
-                try:
-                    v_data = self.batch.get(mode='validate')
-                except StopIteration:
-                    break
-
-                #TODO: use State
-                # should use hidden.State objects
-                # note that we will need two states
-                # one for the positive phase (with visible units as observed)
-                # one for the fantasy particles (with visible units sampled from the model)
-
-                # compute the reconstructions
-                sampler.set_state(v_data)
-                sampler.update_state(1)
-                reconstructions = sampler.state
-
-                # compute the fantasy particles
-                random_samples = model.random(v_data)
-                sampler.set_state(random_samples)
-                sampler.update_state(self.update_steps)
-                fantasy_particles = sampler.state
-
-                metric_state = M.MetricState(minibatch=v_data,
-                                             reconstructions=reconstructions,
-                                             random_samples=random_samples,
-                                             samples=fantasy_particles,
-                                             amodel=model)
-
-                # update metrics
-                for m in self.metrics:
-                    m.update(metric_state)
-
-            # compute metric dictionary
-            metdict = OrderedDict([(m.name, m.value()) for m in self.metrics])
-            if show:
-                for m in metdict:
-                    print("-{0}: {1:.6f}".format(m, metdict[m]))
-
-            if store:
-                self.memory.append(metdict)
-
-            return metdict
-
-# ----- ALIASES ----- #
-
-CD = ContrastiveDivergence
-PCD = PersistentContrastiveDivergence
+# alias
 sgd = SGD = StochasticGradientDescent
