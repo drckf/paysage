@@ -1,33 +1,17 @@
-# Documentation for Tap_Machine (tap_machine.py)
+# Documentation for Model (model.py)
 
-## class Magnetization
-Magnetization(m_v, m_h)
-
-
-## class TAP_rbm
-RBM with TAP formula-based gradient which supports deterministic training<br /><br />Example usage:<br />'''<br />vis = BernoulliLayer(nvis)<br />hid = BernoulliLayer(nhid)<br />rbm = TAP_rbm([vis, hid])<br />'''
+## class Model
+General model class.<br />Currently only supports models with 2 layers,<br />(i.e., Restricted Boltzmann Machines).<br /><br />Example usage:<br />'''<br />vis = BernoulliLayer(nvis)<br />hid = BernoulliLayer(nhid)<br />rbm = Model([vis, hid])<br />'''
 ### \_\_init\_\_
 ```py
 
-def __init__(self, layer_list, init_lr_EMF=0.1, tolerance_EMF=0.01, max_iters_EMF=100, num_persistent_samples=0)
+def __init__(self, layer_list)
 
 ```
 
 
 
-Create a TAP rbm model.<br /><br />Notes:<br /> ~ Only 2-layer models currently supported.<br /><br />Args:<br /> ~ layer_list: A list of layers objects.<br /><br /> ~ EMF computation parameters:<br /> ~  ~ init_lr float: initial learning rate which is halved whenever necessary to enforce descent.<br /> ~  ~ tol float: tolerance for quitting minimization.<br /> ~  ~ max_iters: maximum gradient decsent steps<br /> ~  ~ number of persistent magnetization parameters to keep as seeds for gradient descent.<br /> ~  ~  ~ 0 implies we use a random seed each iteration<br /><br />Returns:<br /> ~ model: A TAP rbm model.
-
-
-### clamped\_free\_energy
-```py
-
-def clamped_free_energy(self, v, w, a, b)
-
-```
-
-
-
-'''<br />-\log \sum_h \exp{-E(v,h)}<br />'''
+Create a model.<br /><br />Notes:<br /> ~ Only 2-layer models currently supported.<br /><br />Args:<br /> ~ layer_list: A list of layers objects.<br /><br />Returns:<br /> ~ model: A model.
 
 
 ### deterministic\_iteration
@@ -66,18 +50,6 @@ def get_config(self) -> dict
 Get a configuration for the model.<br /><br />Notes:<br /> ~ Includes metadata on the layers.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ A dictionary configuration for the model.
 
 
-### gibbs\_free\_energy\_TAP2
-```py
-
-def gibbs_free_energy_TAP2(self, seed=None, init_lr=0.1, tol=0.0001, max_iters=500)
-
-```
-
-
-
-Compute the Gibbs free engergy of the model according to the TAP<br />expansion around infinite temperature to second order.<br /><br />If the energy is:<br />'''<br /> ~ E(v, h) := -\langle a,v angle - \langle b,h angle - \langle v,W \cdot h angle, with state probability distribution:<br /> ~ P(v,h)  := 1/\sum_{v,h} \exp{-E(v,h)} * \exp{-E(v,h)}, and the marginal<br /> ~ P(v) ~ := \sum_{h} P(v,h)<br />'''<br />Then the Gibbs free energy is:<br />'''<br /> ~ F(v) := -log\sum_{v,h} \exp{-E(v,h)}<br />'''<br />We add an auxiliary local field q, and introduce the inverse temperature variable eta to define<br />'''<br /> ~ eta F(v;q) := -log\sum_{v,h} \exp{-eta E(v,h) + eta \langle q, v angle}<br />'''<br />Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q<br />The TAP formula is Taylor series of \Gamma in eta, around eta=0.<br />Setting eta=1 and regarding the first two terms of the series as an approximation of \Gamma[m],<br />we can minimize \Gamma in m to obtain an approximation of F(v;q=0) = F(v)<br /><br />This implementation uses gradient descent from a random starting location to minimize the function<br /><br />Args:<br /> ~ seed 'None' or Magnetization: initial seed for the minimization routine.<br /> ~  ~  ~  ~  ~  ~  ~  ~   Chosing 'None' will result in a random seed<br /> ~ init_lr float: initial learning rate which is halved whenever necessary to enforce descent.<br /> ~ tol float: tolerance for quitting minimization.<br /> ~ max_iters: maximum gradient decsent steps<br /><br />Returns:<br /> ~ tuple (visible magnetization, hidden magnetization, TAP2-approximated Gibbs free energy)<br /> ~ (num_visible_neurons, num_hidden_neurons, 1)
-
-
 ### gradient
 ```py
 
@@ -87,7 +59,7 @@ def gradient(self, vdata, vmodel)
 
 
 
-Gradient of -\ln P(v) with respect to the weights and biases
+Compute the gradient of the model parameters.<br /><br />For vis \in {vdata, vmodel}, we:<br /><br />1. Scale the visible data.<br />vis_scaled = self.layers[i].rescale(vis)<br /><br />2. Update the hidden layer.<br />self.layers[i+1].update(vis_scaled, self.weights[i].W())<br /><br />3. Compute the mean of the hidden layer.<br />hid = self.layers[i].mean()<br /><br />4. Scale the mean of the hidden layer.<br />hid_scaled = self.layers[i+1].rescale(hid)<br /><br />5. Compute the derivatives.<br />vis_derivs = self.layers[i].derivatives(vis, hid_scaled,<br /> ~  ~  ~  ~  ~  ~  ~  ~  ~  ~ self.weights[i].W())<br />hid_derivs = self.layers[i+1].derivatives(hid, vis_scaled,<br /> ~  ~  ~  ~  ~  ~  ~   be.transpose(self.weights[i+1].W())<br />weight_derivs = self.weights[i].derivatives(vis_scaled, hid_scaled)<br /><br />The gradient is obtained by subtracting the vmodel contribution<br />from the vdata contribution.<br /><br />Args:<br /> ~ vdata: The observed visible units.<br /> ~ vmodel: The sampled visible units.<br /><br />Returns:<br /> ~ dict: Gradients of the model parameters.
 
 
 ### initialize
@@ -212,16 +184,30 @@ Save a model to an open HDFStore.<br /><br />Notes:<br /> ~ Performs an IO opera
 
 
 
-## functions
-
-### namedtuple
+## class State
+A State is a list of tensors that contains the states of the units<br />described by a model.<br /><br />For a model with L hidden layers, the tensors have shapes<br /><br />shapes = [<br />(num_samples, num_visible),<br />(num_samples, num_hidden_1),<br />            .<br />            .<br />            .<br />(num_samples, num_hidden_L)<br />]
+### \_\_init\_\_
 ```py
 
-def namedtuple(typename, field_names, verbose=False, rename=False)
+def __init__(self, batch_size: int, model)
 
 ```
 
 
 
-Returns a new subclass of tuple with named fields.<br /><br />>>> Point = namedtuple('Point', ['x', 'y'])<br />>>> Point.__doc__ ~  ~  ~  ~    # docstring for the new class<br />'Point(x, y)'<br />>>> p = Point(11, y=22) ~  ~  ~  # instantiate with positional args or keywords<br />>>> p[0] + p[1] ~  ~  ~  ~  ~  # indexable like a plain tuple<br />33<br />>>> x, y = p ~  ~  ~  ~  ~  ~ # unpack like a regular tuple<br />>>> x, y<br />(11, 22)<br />>>> p.x + p.y ~  ~  ~  ~  ~    # fields also accessible by name<br />33<br />>>> d = p._asdict() ~  ~  ~  ~  # convert to a dictionary<br />>>> d['x']<br />11<br />>>> Point(**d) ~  ~  ~  ~  ~   # convert from a dictionary<br />Point(x=11, y=22)<br />>>> p._replace(x=100) ~  ~  ~    # _replace() is like str.replace() but targets named fields<br />Point(x=100, y=22)
+Create a randomly initialized State object.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_visible)): observed visible units<br /> ~ model (Model): a model object<br /><br />Returns:<br /> ~ state object
+
+
+### set\_layer
+```py
+
+def set_layer(self, values, i)
+
+```
+
+
+
+Set the units of layer i to values.<br /><br />Notes:<br /> ~ Updates layer.units[i] in place.<br /><br />Args:<br /> ~ values (tensor (num_samples, num_units))<br /><br />Returns:<br /> ~ None
+
+
 

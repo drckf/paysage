@@ -97,7 +97,7 @@ Serves up minibatches from an HDFStore.<br />The validation set is taken as the 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, filename, key, batch_size, train_fraction=0.9, transform=<function float_tensor at 0x10e51d598>)
+def __init__(self, filename, key, batch_size, train_fraction=0.9, transform=<function float_tensor at 0x121150950>)
 
 ```
 

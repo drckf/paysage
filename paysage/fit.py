@@ -6,8 +6,6 @@ from . import metrics as M
 
 #TODO: should import the State class from model.py
 
-# -----  CLASSES ----- #
-
 class Sampler(object):
     """Base class for the sequential Monte Carlo samplers"""
     def __init__(self, model, method='stochastic', **kwargs):
