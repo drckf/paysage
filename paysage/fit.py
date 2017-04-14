@@ -310,6 +310,19 @@ class ContrastiveDivergence(TrainingMethod):
         self.mcsteps = mcsteps
 
     def train(self):
+        """
+        Train the model.
+
+        Notes:
+            Updates the model parameters in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
         for epoch in range(self.epochs):
             t = 0
             start_time = time.time()
@@ -352,26 +365,52 @@ class ContrastiveDivergence(TrainingMethod):
 
 
 class PersistentContrastiveDivergence(TrainingMethod):
-    """PersistentContrastiveDivergence
-       PCD-k algorithm for approximate maximum likelihood inference.
+    """
+    PCD-k algorithm for approximate maximum likelihood inference.
 
-       Tieleman, Tijmen.
-       "Training restricted Boltzmann machines using approximations to the
-       likelihood gradient."
-       Proceedings of the 25th international conference on Machine learning.
-       ACM, 2008.
+    Tieleman, Tijmen.
+    "Training restricted Boltzmann machines using approximations to the
+    likelihood gradient."
+    Proceedings of the 25th international conference on Machine learning.
+    ACM, 2008.
 
     """
-    def __init__(self, model, abatch, optimizer, sampler, epochs,
-                 mcsteps=1,
-                 skip=100,
-                 metrics=['ReconstructionError', 'EnergyDistance']):
-       super().__init__(model, abatch, optimizer, sampler, epochs,
-                        skip=skip,
+    def __init__(self, model, abatch, optimizer, sampler, epochs, mcsteps=1,
+                 skip=100, metrics=['ReconstructionError', 'EnergyDistance']):
+        """
+        Create a persistent contrastive divergence object.
+
+        Args:
+            model: a model object
+            batch: a batch object
+            optimizer: an optimizer object
+            sampler: a sampler object
+            epochs (int): the number of epochs
+            skip (int): the number of minibatches between metric calculations
+            metrics (list[str]): list of metrics to compute
+
+        Returns:
+            PeristentContrastiveDivergence
+
+        """
+        super().__init__(model, abatch, optimizer, sampler, epochs, skip=skip,
                         metrics=metrics)
-       self.mcsteps = mcsteps
+        self.mcsteps = mcsteps
 
     def train(self):
+        """
+        Train the model.
+
+        Notes:
+            Updates the model parameters in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
         for epoch in range(self.epochs):
             t = 0
             start_time = time.time()
@@ -415,10 +454,39 @@ class StochasticGradientDescent(TrainingMethod):
     """Stochastic gradient descent with minibatches"""
     def __init__(self, model, batch, optimizer, epochs, skip=100,
                  metrics=['ReconstructionError', 'EnergyDistance']):
+        """
+        Create a StochasticGradientDescent object.
+
+        Args:
+            model: a model object
+            batch: a batch object
+            optimizer: an optimizer object
+            sampler: a sampler object
+            epochs (int): the number of epochs
+            skip (int): the number of minibatches between metric calculations
+            metrics (list[str]): list of metrics to compute
+
+        Returns:
+            StochasticGradientDescent
+
+        """
         super().__init__(model, batch, optimizer, None, epochs, skip=skip,
                         metrics=metrics)
 
     def train(self):
+        """
+        Train the model.
+
+        Notes:
+            Updates the model parameters in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
         for epoch in range(self.epochs):
             t = 0
             start_time = time.time()
