@@ -37,8 +37,7 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 30, show_plot=True
     #opt = optimizers.ADAM(rbm,
     #                      stepsize=learning_rate,
     #                      scheduler=optimizers.PowerLawDecay(0.1))
-    opt = optimizers.Gradient(rbm,
-                              stepsize=learning_rate,
+    opt = optimizers.Gradient(stepsize=learning_rate,
                               scheduler=optimizers.PowerLawDecay(0.1),
                               tolerance=1e-3,
                               ascent=True)
