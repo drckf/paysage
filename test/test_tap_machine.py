@@ -60,13 +60,12 @@ def test_tap_machine(paysage_path=None):
 
 
     # set up the optimizer and the fit method
-    opt = optimizers.Gradient(rbm,
-                              stepsize=learning_rate,
+    opt = optimizers.Gradient(stepsize=learning_rate,
                               scheduler=optimizers.PowerLawDecay(0.1),
                               tolerance=1e-3,
                               ascent=True)
 
-    solver = fit.SGD(rbm, data, opt, num_epochs, 
+    solver = fit.SGD(rbm, data, opt, num_epochs,
                  metrics=['ReconstructionError'])
 
     # fit the model

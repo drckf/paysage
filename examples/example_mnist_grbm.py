@@ -38,8 +38,7 @@ def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
     rbm.initialize(data)
 
     # set up the optimizer, sampler, and fit method
-    opt = optimizers.ADAM(rbm,
-                          stepsize=learning_rate,
+    opt = optimizers.ADAM(stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
 
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,

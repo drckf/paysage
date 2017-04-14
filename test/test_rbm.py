@@ -61,9 +61,8 @@ def test_rbm(paysage_path=None):
 
 
     # set up the optimizer and the fit method
-    opt = optimizers.RMSProp(rbm,
-                          stepsize=learning_rate,
-                          scheduler=optimizers.PowerLawDecay(0.1))
+    opt = optimizers.RMSProp(stepsize=learning_rate,
+                             scheduler=optimizers.PowerLawDecay(0.1))
 
 
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
