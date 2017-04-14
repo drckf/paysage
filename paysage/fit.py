@@ -153,30 +153,53 @@ class SequentialMC(Sampler):
 
 
 class DrivenSequentialMC(Sampler):
-
-    def __init__(self, amodel,
-                 beta_momentum=0.9,
-                 beta_scale=0.2,
+    """An accelerated sequential Monte Carlo sampler"""
+    def __init__(self, model, beta_momentum=0.9, beta_std=0.2,
                  method='stochastic'):
-        super().__init__(amodel, method=method)
+        """
+        Create a sequential Monte Carlo sampler.
+
+        Args:
+            model: a model object
+            beta_momentum (float in [0,1]): autoregressive coefficient of beta
+            beta_std (float > 0): the standard deviation of beta
+            method (str; optional): how to update the particles
+
+        Returns:
+            SequentialMC
+
+        """
+        super().__init__(model, method=method)
         self.beta_momentum = beta_momentum
-        self.beta_scale = beta_scale
+        self.beta_std = beta_std
         self.has_beta = False
 
-    def update_beta(self):
-        """ update beta with an AR(1) process
+    def _update_beta(self):
+        """
+        Update beta with an AR(1) process.
+
+        AR(1) process: X_t = momentum * X_(t-1) + loc + scale * noise
+        E[X] = loc / (1 - momentum)
+             -> loc = E[X] * (1 - momentum)
+        Var[X] = scale ** 2 / (1 - momentum**2)
+               -> scale = sqrt(Var[X] * (1 - momentum**2))
+
+        Notes:
+            Modifies the folling attributes in place:
+                has_beta, beta_shape, beta_loc, beta_scale, beta
+
+        Args:
+            None
+
+        Returns:
+            None
 
         """
         if not self.has_beta:
             self.has_beta = True
-            # AR(1) process: X_t = momentum * X_(t-1) + loc + scale * noise
-            # E[X] = loc / (1 - momentum)
-            #     -> loc = E[X] * (1 - momentum)
-            # Var[X] = scale ** 2 / (1 - momentum**2)
-            #        -> scale = sqrt(Var[X] * (1 - momentum**2))
             self.beta_shape = (len(self.state), 1)
             self.beta_loc = (1-self.beta_momentum) * be.ones(self.beta_shape)
-            self.beta_scale *= math.sqrt(1-self.beta_momentum**2)
+            self.beta_scale = self.beta_std * math.sqrt(1-self.beta_momentum**2)
             self.beta = be.ones(self.beta_shape)
 
         self.beta *= self.beta_momentum
@@ -186,36 +209,57 @@ class DrivenSequentialMC(Sampler):
     #TODO: use State
     # should use hidden.State object
     def update_state(self, steps):
+        """
+        Update the state of the particles.
+
+        Notes:
+            Modifies the state attribute in place.
+            Calls _update_beta() method.
+
+        Args:
+            steps (int): the number of Monte Carlo steps
+
+        Returns:
+            None
+
+        """
         if not self.has_state:
             raise AttributeError(
                   'You must call the initialize(self, array_or_shape)'
                   +' method to set the initial state of the Markov Chain')
-        self.update_beta()
+        self._update_beta()
         self.state = self.updater(self.state, steps, self.beta)
 
     #TODO: use State
     # should use hidden.State object
     def get_state(self):
+        """
+        Return the state attribute.
+
+        Args:
+            None
+
+        Returns:
+            state (tensor)
+
+        """
         return self.state
 
 
 class TrainingMethod(object):
 
-    def __init__(self, model, abatch, optimizer, sampler, epochs,
-                 skip=100,
+    def __init__(self, model, batch, optimizer, sampler, epochs, skip=100,
                  metrics=['ReconstructionError', 'EnergyDistance']):
         self.model = model
-        self.batch = abatch
+        self.batch = batch
         self.epochs = epochs
         self.sampler = sampler
         self.optimizer = optimizer
-        self.monitor = ProgressMonitor(skip, abatch,
-                                       metrics=metrics)
+        self.monitor = ProgressMonitor(skip, batch, metrics=metrics)
 
 
 class ContrastiveDivergence(TrainingMethod):
     """
-    ContrastiveDivergence
     CD-k algorithm for approximate maximum likelihood inference.
 
     Hinton, Geoffrey E.
