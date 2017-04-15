@@ -328,8 +328,8 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
 
     """
     # build the states
-    data_state = State.from_visible(v_data, model)
-    model_state = State.from_visible(v_data, model)
+    data_state = State.from_visible(vdata, model)
+    model_state = State.from_visible(vdata, model)
 
     # CD resets the sampler from the visible data at each iteration
     sampler.set_positive_state(data_state)
@@ -394,7 +394,7 @@ def tap(vdata, model, sampler=None, steps=None):
         gradient
 
     """
-    data_state = State.from_visible(v_data, model)
+    data_state = State.from_visible(vdata, model)
     return model.gradient(data_state, None)
 
 
