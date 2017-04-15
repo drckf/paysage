@@ -114,9 +114,9 @@ class SequentialMC(Sampler):
         """
         super().__init__(model, method=method)
 
-    def update_state(self, steps):
+    def update_positive_state(self, steps):
         """
-        Update the state of the particles.
+        Update the positive state of the particles.
 
         Notes:
             Modifies the state attribute in place.
@@ -128,13 +128,31 @@ class SequentialMC(Sampler):
             None
 
         """
-        if not (self.pos_state and self.neg_state):
+        if not self.pos_state:
             raise AttributeError(
                   'You must call the initialize(self, array_or_shape)'
                   +' method to set the initial state of the Markov Chain')
         self.pos_state = self.updater(steps, self.pos_state)
-        self.neg_state = self.updater(steps, self.neg_state)
 
+    def update_negative_state(self, steps):
+        """
+        Update the negative state of the particles.
+
+        Notes:
+            Modifies the state attribute in place.
+
+        Args:
+            steps (int): the number of Monte Carlo steps
+
+        Returns:
+            None
+
+        """
+        if not self.neg_state:
+            raise AttributeError(
+                  'You must call the initialize(self, array_or_shape)'
+                  +' method to set the initial state of the Markov Chain')
+        self.neg_state = self.updater(steps, self.neg_state)
 
 class DrivenSequentialMC(Sampler):
     """An accelerated sequential Monte Carlo sampler"""
@@ -181,7 +199,10 @@ class DrivenSequentialMC(Sampler):
         """
         if not self.has_beta:
             self.has_beta = True
-            self.beta_shape = (len(self.pos_state.units[0]), 1)
+            if self.pos_state:
+                self.beta_shape = (len(self.pos_state.units[0]), 1)
+            else:
+                self.beta_shape = (len(self.neg_state.units[0]), 1)
             self.beta_loc = (1-self.beta_momentum) * be.ones(self.beta_shape)
             self.beta_scale = self.beta_std * math.sqrt(1-self.beta_momentum**2)
             self.beta = be.ones(self.beta_shape)
@@ -190,7 +211,7 @@ class DrivenSequentialMC(Sampler):
         self.beta += self.beta_loc
         self.beta += self.beta_scale * be.randn(self.beta_shape)
 
-    def update_state(self, steps):
+    def update_positive_state(self, steps):
         """
         Update the state of the particles.
 
@@ -205,12 +226,33 @@ class DrivenSequentialMC(Sampler):
             None
 
         """
-        if not (self.pos_state and self.neg_state):
+        if not self.pos_state:
             raise AttributeError(
                   'You must call the initialize(self, array_or_shape)'
                   +' method to set the initial state of the Markov Chain')
         self._update_beta()
         self.pos_state = self.updater(steps, self.pos_state, self.beta)
+
+    def update_negative_state(self, steps):
+        """
+        Update the negative state of the particles.
+
+        Notes:
+            Modifies the state attribute in place.
+            Calls _update_beta() method.
+
+        Args:
+            steps (int): the number of Monte Carlo steps
+
+        Returns:
+            None
+
+        """
+        if not self.neg_state:
+            raise AttributeError(
+                  'You must call the initialize(self, array_or_shape)'
+                  +' method to set the initial state of the Markov Chain')
+        self._update_beta()
         self.neg_state = self.updater(steps, self.neg_state, self.beta)
 
 
@@ -261,22 +303,22 @@ class ProgressMonitor(object):
             except StopIteration:
                 break
 
-            # set up the states
+            # set up the positive state
             data_state = State.from_visible(v_data, model)
             sampler.set_positive_state(data_state)
+            # set up the negative state
             random_samples = model.random(v_data)
             model_state = State.from_visible(random_samples, model)
             sampler.set_negative_state(model_state)
 
+            # update the states
+            sampler.update_positive_state(1)
+            sampler.update_negative_state(self.update_steps)
+
             # compute the reconstructions
-            sampler.update_state(1)
             reconstructions = sampler.pos_state.units[0]
 
             # compute the fantasy particles
-            random_samples = model.random(v_data)
-            model_state = State.from_visible(random_samples, model)
-            sampler.set_negative_state(model_state)
-            sampler.update_state(self.update_steps)
             fantasy_particles = sampler.neg_state.units[0]
 
 
@@ -335,9 +377,10 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
     # CD resets the sampler from the visible data at each iteration
     sampler.set_positive_state(data_state)
     sampler.set_negative_state(model_state)
-    sampler.update_state(steps)
+    sampler.update_positive_state(steps)
+    sampler.update_negative_state(steps)
 
-    # compute the gradient and update the model parameters
+    # compute the gradient
     return model.gradient(*sampler.get_states())
 
 # alias
@@ -368,7 +411,11 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
 
     """
     # PCD persists the state of the sampler from the previous iteration
-    sampler.update_state(steps)
+    data_state = State.from_visible(vdata, model)
+    sampler.set_positive_state(data_state)
+    sampler.update_negative_state(steps)
+
+    # compute the gradient
     return model.gradient(*sampler.get_states())
 
 # alias
