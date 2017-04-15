@@ -1,7 +1,7 @@
 # Documentation for Batch (batch.py)
 
 ## class TableStatistics
-TableStatistics<br />Stores basic statistics about a table.
+Stores basic statistics about a table.
 ### \_\_init\_\_
 ```py
 
@@ -23,13 +23,13 @@ def chunksize(self, allowed_mem)
 
 
 
-chunksize<br />Returns the sample count that will fit in allowed_mem,<br />given the shape of the table.
+Returns the sample count that will fit in allowed_mem,<br />given the shape of the table.
 
 
 
 
 ## class DataShuffler
-DataShuffler<br />Shuffles data in an HDF5 file.<br />Synchronized shuffling between tables (with matching numbers of rows).
+Shuffles data in an HDF5 file.<br />Synchronized shuffling between tables (with matching numbers of rows).
 ### \_\_init\_\_
 ```py
 
@@ -51,7 +51,7 @@ def divide_table_into_chunks(self, key)
 
 
 
-divide_table_into_chunks<br />Divides a table into chunks, each with their own table.<br />Shuffles the chunked tables.
+Divides a table into chunks, each with their own table.<br />Shuffles the chunked tables.
 
 
 ### reassemble\_table
@@ -63,7 +63,7 @@ def reassemble_table(self, key, num_chunks, chunk_keys, chunk_counts)
 
 
 
-reassemble_table<br />Takes a set of chunked tables and rebuilds the shuffled table.
+Takes a set of chunked tables and rebuilds the shuffled table.
 
 
 ### shuffle
@@ -75,7 +75,7 @@ def shuffle(self)
 
 
 
-shuffle<br />Shuffles all the tables in the HDFStore.
+Shuffles all the tables in the HDFStore.
 
 
 ### shuffle\_table
@@ -87,17 +87,17 @@ def shuffle_table(self, key)
 
 
 
-shuffle_table<br />Shuffle a table in the HDFStore, write to a new file.
+Shuffle a table in the HDFStore, write to a new file.
 
 
 
 
 ## class Batch
-Batch<br />Serves up minibatches from an HDFStore.<br />The validation set is taken as the last (1 - train_fraction)<br />samples in the store.<br />The data should probably be randomly shuffled if being used to<br />train a non-recurrent model.
+Serves up minibatches from an HDFStore.<br />The validation set is taken as the last (1 - train_fraction)<br />samples in the store.<br />The data should probably be randomly shuffled if being used to<br />train a non-recurrent model.
 ### \_\_init\_\_
 ```py
 
-def __init__(self, filename, key, batch_size, train_fraction=0.9, transform=<function float_tensor at 0x1191a5158>)
+def __init__(self, filename, key, batch_size, train_fraction=0.9, transform=<function float_tensor at 0x10e51d598>)
 
 ```
 
@@ -109,7 +109,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 ### close
 ```py
 
-def close(self)
+def close(self) -> None
 
 ```
 
@@ -118,7 +118,16 @@ def close(self)
 ### get
 ```py
 
-def get(self, mode)
+def get(self, mode: str)
+
+```
+
+
+
+### num\_training\_batches
+```py
+
+def num_training_batches(self)
 
 ```
 
@@ -127,7 +136,7 @@ def get(self, mode)
 ### num\_validation\_samples
 ```py
 
-def num_validation_samples(self)
+def num_validation_samples(self) -> int
 
 ```
 
@@ -136,7 +145,7 @@ def num_validation_samples(self)
 ### reset\_generator
 ```py
 
-def reset_generator(self, mode)
+def reset_generator(self, mode: str) -> None
 
 ```
 
@@ -155,7 +164,7 @@ def binarize_color(tensor)
 
 
 
-binarize_color<br />Scales an int8 "color" value to [0, 1].  Converts to float32.
+Scales an int8 "color" value to [0, 1].  Converts to float32.
 
 
 ### binary\_to\_ising
@@ -167,7 +176,7 @@ def binary_to_ising(tensor)
 
 
 
-binary_to_ising<br />Scales a [0, 1] value to [-1, 1].  Converts to float32.
+Scales a [0, 1] value to [-1, 1].  Converts to float32.
 
 
 ### color\_to\_ising

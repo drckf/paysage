@@ -1,5 +1,41 @@
 # Documentation for Layers (layers.py)
 
+## class ExtrinsicParamsExponential
+ExtrinsicParamsExponential(rate,)
+
+
+## class IntrinsicParamsExponential
+IntrinsicParamsExponential(loc,)
+
+
+## class ExtrinsicParamsBernoulli
+ExtrinsicParamsBernoulli(field,)
+
+
+## class IntrinsicParamsBernoulli
+IntrinsicParamsBernoulli(loc,)
+
+
+## class ExtrinsicParamsGaussian
+ExtrinsicParamsGaussian(mean, variance)
+
+
+## class IntrinsicParamsGaussian
+IntrinsicParamsGaussian(loc, log_var)
+
+
+## class IntrinsicParamsWeights
+IntrinsicParamsWeights(matrix,)
+
+
+## class ExtrinsicParamsIsing
+ExtrinsicParamsIsing(field,)
+
+
+## class IntrinsicParamsIsing
+IntrinsicParamsIsing(loc,)
+
+
 ## class ExponentialLayer
 Layer with Exponential units (non-negative).
 ### \_\_init\_\_
@@ -240,18 +276,6 @@ def update(self, scaled_units, weights, beta=None)
 
 
 Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
-
-
-## class ExtrinsicParams
-ExtrinsicParams(rate,)
-
-
-## class IntrinsicParams
-IntrinsicParams(loc,)
-
-
-## class Params
-Params()
 
 
 
@@ -498,18 +522,6 @@ def update(self, scaled_units, weights, beta=None)
 Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
 
 
-## class ExtrinsicParams
-ExtrinsicParams(field,)
-
-
-## class IntrinsicParams
-IntrinsicParams(loc,)
-
-
-## class Params
-Params()
-
-
 
 
 ## class GaussianLayer
@@ -754,22 +766,14 @@ def update(self, scaled_units, weights, beta=None)
 Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
 
 
-## class ExtrinsicParams
-ExtrinsicParams(mean, variance)
-
-
-## class IntrinsicParams
-IntrinsicParams(loc, log_var)
-
-
-## class Params
-Params()
-
-
 
 
 ## class OrderedDict
 Dictionary that remembers insertion order
+
+
+## class ParamsLayer
+Params()
 
 
 ## class IsingLayer
@@ -1014,18 +1018,6 @@ def update(self, scaled_units, weights, beta=None)
 Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
 
 
-## class ExtrinsicParams
-ExtrinsicParams(field,)
-
-
-## class IntrinsicParams
-IntrinsicParams(loc,)
-
-
-## class Params
-Params()
-
-
 
 
 ## class Weights
@@ -1186,14 +1178,6 @@ def parameter_step(self, deltas)
 Update the values of the intrinsic parameters:<br /><br />layer.int_params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.int_params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
 
 
-## class IntrinsicParams
-IntrinsicParams(matrix,)
-
-
-## class Params
-Params()
-
-
 
 
 ## class Layer
@@ -1318,10 +1302,6 @@ def parameter_step(self, deltas)
 Update the values of the intrinsic parameters:<br /><br />layer.int_params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.int_params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
 
 
-## class Params
-Params()
-
-
 
 
 ## functions
@@ -1338,7 +1318,7 @@ def get(key)
 ### namedtuple
 ```py
 
-def namedtuple(typename, field_names, verbose=False, rename=False)
+def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
 
 ```
 

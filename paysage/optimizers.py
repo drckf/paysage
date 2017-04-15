@@ -1,6 +1,6 @@
 from . import backends as be
 from cytoolz import identity, partial
-from .models import hidden
+from .models import gradient_util as gu
 
 # ----- CLASSES ----- #
 
@@ -48,9 +48,9 @@ class GradientMemory(object):
 
         """
         if self.mean_gradient is None:
-            self.mean_gradient = hidden.grad_apply(identity, grad)
+            self.mean_gradient = gu.grad_apply(identity, grad)
         else:
-            hidden.grad_mapzip_(self.mixer_, self.mean_gradient, grad)
+            gu.grad_mapzip_(self.mixer_, self.mean_gradient, grad)
 
     def update_mean_square(self, grad):
         """
@@ -64,9 +64,9 @@ class GradientMemory(object):
 
         """
         if self.mean_square_gradient is None:
-            self.mean_square_gradient = hidden.grad_apply(be.square, grad)
+            self.mean_square_gradient = gu.grad_apply(be.square, grad)
         else:
-            hidden.grad_mapzip_(self.square_mixer_, self.mean_square_gradient, grad)
+            gu.grad_mapzip_(self.square_mixer_, self.mean_square_gradient, grad)
 
     def update(self, grad):
         """
@@ -121,7 +121,7 @@ class GradientMemory(object):
             def normalizer(mean, mean_square):
                 return be.sqrt_div(mean, mean_square)
 
-        return hidden.grad_mapzip(normalizer, grad, self.mean_square_gradient)
+        return gu.grad_mapzip(normalizer, grad, self.mean_square_gradient)
 
 
 
@@ -254,24 +254,24 @@ class Optimizer(object):
             None
 
         Returns:
-            bool: True if convergenced, False if not
-
+            bool: True if converged, False if not
         """
-        mag = hidden.grad_magnitude(self.delta)
+        mag = gu.grad_magnitude(self.delta)
         return mag <= self.tolerance
 
 
-class StochasticGradientDescent(Optimizer):
-    """Basic algorithm of gradient descent with minibatches."""
+class Gradient(Optimizer):
+    """Vanilla gradient optimizer"""
     def __init__(self, model,
                  stepsize=0.001,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-7):
+                 tolerance=1e-7,
+                 ascent=False):
         """
-        Create a stochastic gradient descent optimizer.
+        Create a gradient ascent/descent optimizer.
 
         Aliases:
-            SGD, sgd
+            gradient
 
         Args:
             model: a Model object to optimize
@@ -286,6 +286,10 @@ class StochasticGradientDescent(Optimizer):
         """
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
+        if (ascent):
+            self.grad_multiplier = -1.0
+        else:
+            self.grad_multiplier = 1.0
 
     def update(self, model, v_data, v_model, epoch):
         """
@@ -306,12 +310,11 @@ class StochasticGradientDescent(Optimizer):
         """
         self.scheduler.increment(epoch)
         lr_ = partial(be.tmul_,
-                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
+                      be.float_scalar(self.grad_multiplier * self.scheduler.get_lr() * self.stepsize))
 
         self.delta = model.gradient(v_data, v_model)
-        hidden.grad_apply_(lr_, self.delta)
+        gu.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
-
 
 class Momentum(Optimizer):
     """Stochastic gradient descent with momentum.
@@ -324,7 +327,8 @@ class Momentum(Optimizer):
                  stepsize=0.001,
                  momentum=0.9,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-7):
+                 tolerance=1e-7,
+                 ascent=False):
         """
         Create a stochastic gradient descent with momentum optimizer.
 
@@ -347,6 +351,10 @@ class Momentum(Optimizer):
         self.stepsize = stepsize
         self.memory = GradientMemory(mean_weight=momentum,
                                      mean_square_weight=0)
+        if (ascent):
+            self.grad_multiplier = -1.0
+        else:
+            self.grad_multiplier = 1.0
 
     def update(self, model, v_data, v_model, epoch):
         """
@@ -367,11 +375,11 @@ class Momentum(Optimizer):
         """
         self.scheduler.increment(epoch)
         lr = partial(be.tmul,
-                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
+                      be.float_scalar(self.grad_multiplier * self.scheduler.get_lr() * self.stepsize))
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
-        self.delta = hidden.grad_apply(lr, self.memory.mean_gradient)
+        self.delta = gu.grad_apply(lr, self.memory.mean_gradient)
         model.parameter_update(self.delta)
 
 
@@ -384,7 +392,8 @@ class RMSProp(Optimizer):
                  stepsize=0.001,
                  mean_square_weight=0.9,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-7):
+                 tolerance=1e-7,
+                 ascent=False):
         """
         Create a stochastic gradient descent with RMSProp optimizer.
 
@@ -409,6 +418,10 @@ class RMSProp(Optimizer):
 
         self.memory = GradientMemory(mean_weight=0,
                                      mean_square_weight=mean_square_weight)
+        if (ascent):
+            self.grad_multiplier = -1.0
+        else:
+            self.grad_multiplier = 1.0
 
     def update(self, model, v_data, v_model, epoch):
         """
@@ -429,12 +442,12 @@ class RMSProp(Optimizer):
         """
         self.scheduler.increment(epoch)
         lr_ = partial(be.tmul_,
-                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
+                      be.float_scalar(self.grad_multiplier * self.scheduler.get_lr() * self.stepsize))
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
         self.delta = self.memory.normalize(grad, unbiased=True)
-        hidden.grad_apply_(lr_, self.delta)
+        gu.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
 
 
@@ -451,7 +464,8 @@ class ADAM(Optimizer):
                  mean_weight=0.9,
                  mean_square_weight=0.999,
                  scheduler=PowerLawDecay(),
-                 tolerance=1e-7):
+                 tolerance=1e-7,
+                 ascent=False):
         """
         Create a stochastic gradient descent with ADAM optimizer.
 
@@ -478,6 +492,10 @@ class ADAM(Optimizer):
 
         self.memory = GradientMemory(mean_weight=mean_weight,
                                      mean_square_weight=mean_square_weight)
+        if (ascent):
+            self.grad_multiplier = -1.0
+        else:
+            self.grad_multiplier = 1.0
 
     def update(self, model, v_data, v_model, epoch):
         """
@@ -498,19 +516,19 @@ class ADAM(Optimizer):
         """
         self.scheduler.increment(epoch)
         lr_ = partial(be.tmul_,
-                      be.float_scalar(self.scheduler.get_lr() * self.stepsize))
+                      be.float_scalar(self.grad_multiplier * self.scheduler.get_lr() * self.stepsize))
 
         grad = model.gradient(v_data, v_model)
         self.memory.update(grad)
         self.delta = self.memory.normalize(self.memory.mean_gradient,
                                            unbiased=True)
-        hidden.grad_apply_(lr_, self.delta)
+        gu.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
 
 
 # ----- ALIASES ----- #
 
-sgd = SGD = StochasticGradientDescent
+gradient = Gradient
 momentum = Momentum
 rmsprop = RMSProp
 adam = ADAM
