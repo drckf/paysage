@@ -1,45 +1,5 @@
 # Documentation for Optimizers (optimizers.py)
 
-## class StochasticGradientDescent
-Basic algorithm of gradient descent with minibatches.
-### \_\_init\_\_
-```py
-
-def __init__(self, model, stepsize=0.001, scheduler=<paysage.optimizers.PowerLawDecay object at 0x111245748>, tolerance=1e-07, ascent=False)
-
-```
-
-
-
-Create a stochastic gradient descent optimizer.<br /><br />Aliases:<br /> ~ SGD, sgd<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (float; optional): the initial stepsize<br /> ~ scheduler (a learning rate scheduler object; optional)<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ StochasticGradientDescent
-
-
-### check\_convergence
-```py
-
-def check_convergence(self)
-
-```
-
-
-
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not<br /> ~
-
-
-### update
-```py
-
-def update(self, model, v_data, v_model, epoch)
-
-```
-
-
-
-Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ v_data (tensor): observations<br /> ~ v_mdoel (tensor): samples from the model<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
-
-
-
-
 ## class ExponentialDecay
 Learning rate that decays exponentially per epoch
 ### \_\_init\_\_
@@ -189,7 +149,7 @@ Base class for the optimizer methods.
 ### \_\_init\_\_
 ```py
 
-def __init__(self, scheduler=<paysage.optimizers.PowerLawDecay object at 0x1112455c0>, tolerance=1e-07)
+def __init__(self, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11ff48860>, tolerance=1e-07)
 
 ```
 
@@ -207,7 +167,7 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not<br /> ~
+Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
 
 
 
@@ -240,12 +200,52 @@ Update the iter and epoch attributes.<br /><br />Notes:<br /> ~ Modifies iter an
 
 
 
+## class Gradient
+Vanilla gradient optimizer
+### \_\_init\_\_
+```py
+
+def __init__(self, stepsize=0.001, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127ac2048>, tolerance=1e-07, ascent=False)
+
+```
+
+
+
+Create a gradient ascent/descent optimizer.<br /><br />Aliases:<br /> ~ gradient<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (float; optional): the initial stepsize<br /> ~ scheduler (a learning rate scheduler object; optional)<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ StochasticGradientDescent
+
+
+### check\_convergence
+```py
+
+def check_convergence(self)
+
+```
+
+
+
+Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
+
+
+### update
+```py
+
+def update(self, model, grad, epoch)
+
+```
+
+
+
+Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+
+
+
+
 ## class Momentum
 Stochastic gradient descent with momentum.<br />Qian, N. (1999).<br />On the momentum term in gradient descent learning algorithms.<br />Neural Networks, 12(1), 145–151
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, momentum=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11138c438>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=0.001, momentum=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127ac2080>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -263,19 +263,19 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not<br /> ~
+Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
 
 
 ### update
 ```py
 
-def update(self, model, v_data, v_model, epoch)
+def update(self, model, grad, epoch)
 
 ```
 
 
 
-Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ v_data (tensor): observations<br /> ~ v_mdoel (tensor): samples from the model<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
 
 
 
@@ -285,7 +285,7 @@ Stochastic gradient descent with RMSProp.<br />Geoffrey Hinton's Coursera Course
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, mean_square_weight=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11138c588>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=0.001, mean_square_weight=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127ac3668>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -303,19 +303,19 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not<br /> ~
+Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
 
 
 ### update
 ```py
 
-def update(self, model, v_data, v_model, epoch)
+def update(self, model, grad, epoch)
 
 ```
 
 
 
-Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ v_data (tensor): observations<br /> ~ v_mdoel (tensor): samples from the model<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
 
 
 
@@ -329,7 +329,7 @@ Stochastic gradient descent with Adaptive Moment Estimation algorithm.<br /><br 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11138c940>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127ac3710>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -347,19 +347,19 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not<br /> ~
+Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
 
 
 ### update
 ```py
 
-def update(self, model, v_data, v_model, epoch)
+def update(self, model, grad, epoch)
 
 ```
 
 
 
-Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ v_data (tensor): observations<br /> ~ v_mdoel (tensor): samples from the model<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
 
 
 

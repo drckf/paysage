@@ -33,30 +33,25 @@ def example_mnist_hopfield(paysage_path=None, num_epochs=10, show_plot=False):
     rbm = model.Model([vis_layer, hid_layer])
     rbm.initialize(data)
 
+    metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore']
+    perf = fit.ProgressMonitor(data, metrics=metrics)
+
     # set up the optimizer and the fit method
-    opt = optimizers.ADAM(rbm,
-                          stepsize=learning_rate,
+    opt = optimizers.ADAM(stepsize=learning_rate,
                           scheduler=optimizers.PowerLawDecay(0.1))
 
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')
 
-    cd = fit.PCD(rbm, data, opt, sampler, num_epochs, mcsteps=mc_steps, skip=200,
-                 metrics=['ReconstructionError',
-                          'EnergyDistance',
-                          'EnergyGap',
-                          'EnergyZscore'])
+    cd = fit.SGD(rbm, data, opt, num_epochs, method=fit.pcd, sampler=sampler,
+                 mcsteps=mc_steps, monitor=perf)
 
     # fit the model
     print('training with contrastive divergence')
     cd.train()
 
     # evaluate the model
-    # this will be the same as the final epoch results
-    metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore']
-    performance = fit.ProgressMonitor(0, data, metrics=metrics)
-
-    util.show_metrics(rbm, performance)
+    util.show_metrics(rbm, perf)
     util.show_reconstructions(rbm, data.get('validate'), fit, show_plot)
     util.show_fantasy_particles(rbm, data.get('validate'), fit, show_plot)
     util.show_weights(rbm, show_plot)
