@@ -18,7 +18,6 @@ class Sampler(object):
         self.model = amodel
         self.pos_state = None
         self.neg_state = None
-        self.has_state = False
 
         self.method = method
         if self.method == 'stochastic':
@@ -55,6 +54,18 @@ class Sampler(object):
     def from_batch(cls, amodel, abatch,
                    method='stochastic',
                    **kwargs):
+        """
+        Build a Sampler object from a Model, Batch object, and update method.
+
+        Args:
+            amodel (Model): a model
+            abatch (Batch): a data batcher
+            method (str): an update method
+
+        Returns:
+            A Sampler object
+
+        """
         tmp = cls(amodel, method=method, **kwargs)
 #        tmp.set_state(abatch.get('train')) # TODO: fix
         abatch.reset_generator('all')
@@ -171,12 +182,6 @@ class ContrastiveDivergence(TrainingMethod):
                 # build the states
                 data_state = State.from_visible(v_data, self.model)
                 model_state = State.from_visible(v_data, self.model)
-
-                #TODO: use State
-                # should use hidden.State objects
-                # note that we will need two states
-                # one for the positive phase (with visible units as observed)
-                # one for the negative phase (with visible units sampled from the model)
 
                 # CD resets the sampler from the visible data at each iteration
                 self.sampler.set_positive_state(data_state)
