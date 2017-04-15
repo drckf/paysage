@@ -276,6 +276,49 @@ class PersistentContrastiveDivergence(TrainingMethod):
 
         return None
 
+class StochasticGradientDescent(TrainingMethod):
+    """
+    Stochastic gradient descent with minibatches
+    """
+    def __init__(self, model, abatch, optimizer, epochs,
+                 skip=100,
+                 metrics=['ReconstructionError', 'EnergyDistance']):
+        super().__init__(model, abatch, optimizer, None, epochs,
+                        skip=skip,
+                        metrics=metrics)
+
+    def train(self):
+        for epoch in range(self.epochs):
+            t = 0
+            start_time = time.time()
+            while True:
+                try:
+                    v_data = self.batch.get(mode='train')
+                except StopIteration:
+                    break
+
+                # compute the gradient and update the model parameters
+                self.optimizer.update(self.model, v_data, None, epoch)
+                t += 1
+
+            # end of epoch processing
+            print('End of epoch {}: '.format(epoch))
+            prog = self.monitor.check_progress(self.model, 0,
+                                               store=True,
+                                               show=True)
+
+            end_time = time.time()
+            print('Epoch took {0:.2f} seconds'.format(end_time - start_time),
+                  end='\n\n')
+
+            # convergence check should be part of optimizer
+            is_converged = self.optimizer.check_convergence()
+            if is_converged:
+                print('Convergence criterion reached')
+                break
+
+        return None
+
 
 class ProgressMonitor(object):
 
@@ -352,3 +395,4 @@ class ProgressMonitor(object):
 
 CD = ContrastiveDivergence
 PCD = PersistentContrastiveDivergence
+sgd = SGD = StochasticGradientDescent

@@ -199,4 +199,6 @@ def getfunctions(item):
 
 if __name__ == "__main__":
     import paysage
+    # TODO: define this to run recursively
     savedocs(walk_through_package(paysage))
+    savedocs(walk_through_package(paysage.models))

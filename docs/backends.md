@@ -243,7 +243,7 @@ def divide(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
 
 
 
-Divide tensor b by tensor a using broadcasting.<br /><br />Args:<br /> ~ a: A tensor (non-zero)<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: a * b
+Divide tensor b by tensor a using broadcasting.<br /><br />Args:<br /> ~ a: A tensor (non-zero)<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: b / a
 
 
 ### dot

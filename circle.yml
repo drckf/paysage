@@ -31,7 +31,9 @@ test:
     - pytest test/test_backends.py
     - pytest test/test_rbm.py
     - pytest test/test_derivatives.py
+    - pytest test/test_tap_machine.py
     - pytest test/paysage/test_layers.py
+    - pytest test/paysage/models/test_save_read.py
     # Test docker container
     # - docker run paysage
 
@@ -42,4 +44,4 @@ test:
     - >
       if [ -n "${RUN_NIGHTLY_BUILD}" ]; then
         python -m cProfile -o ${CIRCLE_ARTIFACTS}/paysage_profiling.cprof examples/profile_paysage.py
-      fi   
+      fi

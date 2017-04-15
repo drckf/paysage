@@ -2,7 +2,7 @@ from functools import partial
 
 from paysage import batch
 from paysage import layers
-from paysage.models import hidden
+from paysage.models import model
 from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
@@ -34,7 +34,7 @@ def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
     vis_layer = layers.GaussianLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = hidden.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_layer])
     rbm.initialize(data)
 
     # set up the optimizer, sampler, and fit method

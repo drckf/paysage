@@ -76,6 +76,9 @@ class Batch(object):
     def close(self) -> None:
         self.store.close()
 
+    def num_training_batches(self):
+        return int(numpy.floor(self.split / self.batch_size))
+
     def reset_generator(self, mode: str) -> None:
         if mode == 'train':
             self.generators['train'] = self.iterators['train'].__iter__()
