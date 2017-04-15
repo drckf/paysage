@@ -344,7 +344,7 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
 cd = contrastive_divergence
 
 
-def peristent_contrastive_divergence(vdata, model, sampler, steps=1):
+def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
     """
     PCD-k algorithm for approximate maximum likelihood inference.
 
@@ -372,7 +372,7 @@ def peristent_contrastive_divergence(vdata, model, sampler, steps=1):
     return model.gradient(*sampler.get_states())
 
 # alias
-pcd = peristent_contrastive_divergence
+pcd = persistent_contrastive_divergence
 
 def tap(vdata, model, sampler=None, steps=None):
     """
