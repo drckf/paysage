@@ -3,6 +3,7 @@ import numpy
 
 import plotting
 from paysage import batch
+from paysage.models.hidden import State
 from paysage import backends as be
 
 # ----- DEFAULT PATHS ----- #
@@ -51,9 +52,12 @@ def show_metrics(rbm, performance):
 
 def compute_reconstructions(rbm, v_data, fit):
     sampler = fit.DrivenSequentialMC(rbm)
-    sampler.set_state(v_data)
+    data_state = State.from_visible(v_data, rbm)
+    model_state = State.from_visible(v_data, rbm)
+    sampler.set_positive_state(data_state)
+    sampler.set_negative_state(model_state)
     sampler.update_state(1)
-    v_model = rbm.deterministic_step(sampler.state)
+    v_model = rbm.deterministic_step(sampler.pos_state).units[0]
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     return numpy.array([[be.to_numpy_array(v_data[i]),
@@ -66,10 +70,13 @@ def show_reconstructions(rbm, v_data, fit, show_plot):
 
 def compute_fantasy_particles(rbm, v_data, fit):
     random_samples = rbm.random(v_data)
+    data_state = State.from_visible(v_data, rbm)
+    model_state = State.from_visible(v_data, rbm)
     sampler = fit.DrivenSequentialMC(rbm)
-    sampler.set_state(random_samples)
+    sampler.set_positive_state(data_state)
+    sampler.set_negative_state(model_state)
     sampler.update_state(1000)
-    v_model = rbm.deterministic_step(sampler.state)
+    v_model = rbm.deterministic_step(sampler.neg_state).units[0]
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     return numpy.array([[be.to_numpy_array(v_model[i])] for i in idx])

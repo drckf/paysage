@@ -249,10 +249,10 @@ class EnergyGap(object):
 
         """
         self.norm += 1
-        self.energy_gap += be.mean(update_args.amodel
-                                   .marginal_free_energy(update_args.minibatch))
-        self.energy_gap -= be.mean(update_args.amodel
-                                   .marginal_free_energy(update_args.random_samples))
+        # self.energy_gap += be.mean(update_args.amodel
+        #                            .marginal_free_energy(update_args.minibatch))
+        # self.energy_gap -= be.mean(update_args.amodel
+        #                            .marginal_free_energy(update_args.random_samples))
 
     def value(self):
         """
@@ -338,12 +338,12 @@ class EnergyZscore(object):
             None
 
         """
-        self.data_mean += be.mean(update_args.amodel
-                                  .marginal_free_energy(update_args.minibatch))
-        self.random_mean += be.mean(update_args.amodel
-                                     .marginal_free_energy(update_args.random_samples))
-        self.random_mean_square += be.mean(update_args.amodel
-                                           .marginal_free_energy(update_args.random_samples)**2)
+        # self.data_mean += be.mean(update_args.amodel
+        #                           .marginal_free_energy(update_args.minibatch))
+        # self.random_mean += be.mean(update_args.amodel
+        #                              .marginal_free_energy(update_args.random_samples))
+        # self.random_mean_square += be.mean(update_args.amodel
+        #                                    .marginal_free_energy(update_args.random_samples)**2)
 
     def value(self) -> float:
         """
@@ -359,4 +359,4 @@ class EnergyZscore(object):
         if self.random_mean_square:
             return (self.data_mean - self.random_mean) / math.sqrt(self.random_mean_square)
         else:
-            return None
+            return 0

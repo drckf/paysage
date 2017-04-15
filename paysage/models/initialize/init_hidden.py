@@ -24,7 +24,7 @@ def hinton(batch, model):
 
     Args:
         batch: A batch object that provides minibatches of data.
-        model: A model to inialize.
+        model: A model to initialize.
 
     Returns:
         None

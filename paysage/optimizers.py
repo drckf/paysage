@@ -287,7 +287,7 @@ class StochasticGradientDescent(Optimizer):
         super().__init__(scheduler, tolerance)
         self.stepsize = stepsize
 
-    def update(self, model, v_data, v_model, epoch):
+    def update(self, model, data_state, model_state, epoch):
         """
         Update the model parameters with a gradient step.
 
@@ -296,8 +296,8 @@ class StochasticGradientDescent(Optimizer):
 
         Args:
             model: a Model object to optimize
-            v_data (tensor): observations
-            v_mdoel (tensor): samples from the model
+            data_state (State object): observations
+            model_state (State object): samples from the model
             epoch (int): the current epoch
 
         Returns:
@@ -308,7 +308,7 @@ class StochasticGradientDescent(Optimizer):
         lr_ = partial(be.tmul_,
                       be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
-        self.delta = model.gradient(v_data, v_model)
+        self.delta = model.gradient(data_state, model_state)
         hidden.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
 
@@ -348,7 +348,7 @@ class Momentum(Optimizer):
         self.memory = GradientMemory(mean_weight=momentum,
                                      mean_square_weight=0)
 
-    def update(self, model, v_data, v_model, epoch):
+    def update(self, model, data_state, model_state, epoch):
         """
         Update the model parameters with a gradient step.
 
@@ -357,8 +357,8 @@ class Momentum(Optimizer):
 
         Args:
             model: a Model object to optimize
-            v_data (tensor): observations
-            v_mdoel (tensor): samples from the model
+            data_state (State object): observations
+            model_state (State object): samples from the model
             epoch (int): the current epoch
 
         Returns:
@@ -369,7 +369,7 @@ class Momentum(Optimizer):
         lr = partial(be.tmul,
                       be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
-        grad = model.gradient(v_data, v_model)
+        grad = model.gradient(data_state, model_state)
         self.memory.update(grad)
         self.delta = hidden.grad_apply(lr, self.memory.mean_gradient)
         model.parameter_update(self.delta)
@@ -410,7 +410,7 @@ class RMSProp(Optimizer):
         self.memory = GradientMemory(mean_weight=0,
                                      mean_square_weight=mean_square_weight)
 
-    def update(self, model, v_data, v_model, epoch):
+    def update(self, model, data_state, model_state, epoch):
         """
         Update the model parameters with a gradient step.
 
@@ -419,8 +419,8 @@ class RMSProp(Optimizer):
 
         Args:
             model: a Model object to optimize
-            v_data (tensor): observations
-            v_mdoel (tensor): samples from the model
+            data_state (State object): observations
+            model_state (State object): samples from the model
             epoch (int): the current epoch
 
         Returns:
@@ -431,7 +431,7 @@ class RMSProp(Optimizer):
         lr_ = partial(be.tmul_,
                       be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
-        grad = model.gradient(v_data, v_model)
+        grad = model.gradient(data_state, model_state)
         self.memory.update(grad)
         self.delta = self.memory.normalize(grad, unbiased=True)
         hidden.grad_apply_(lr_, self.delta)
@@ -479,7 +479,7 @@ class ADAM(Optimizer):
         self.memory = GradientMemory(mean_weight=mean_weight,
                                      mean_square_weight=mean_square_weight)
 
-    def update(self, model, v_data, v_model, epoch):
+    def update(self, model, data_state, model_state, epoch):
         """
         Update the model parameters with a gradient step.
 
@@ -488,8 +488,8 @@ class ADAM(Optimizer):
 
         Args:
             model: a Model object to optimize
-            v_data (tensor): observations
-            v_mdoel (tensor): samples from the model
+            data_state (State object): observations
+            model_state (State object): samples from the model
             epoch (int): the current epoch
 
         Returns:
@@ -500,7 +500,7 @@ class ADAM(Optimizer):
         lr_ = partial(be.tmul_,
                       be.float_scalar(self.scheduler.get_lr() * self.stepsize))
 
-        grad = model.gradient(v_data, v_model)
+        grad = model.gradient(data_state, model_state)
         self.memory.update(grad)
         self.delta = self.memory.normalize(self.memory.mean_gradient,
                                            unbiased=True)
