@@ -91,7 +91,8 @@ class Sampler(object):
 
         """
         tmp = cls(model, method=method, **kwargs)
-        # tmp.set_state(batch.get('train')) # TODO: fix
+        tmp.set_positive_state(State.from_model(batch.batch_size, model))
+        tmp.set_negative_state(State.from_model(batch.batch_size, model))
         batch.reset_generator('all')
         return tmp
 
@@ -179,7 +180,7 @@ class DrivenSequentialMC(Sampler):
         """
         if not self.has_beta:
             self.has_beta = True
-            self.beta_shape = (len(self.state), 1)
+            self.beta_shape = (len(self.pos_state.units[0]), 1)
             self.beta_loc = (1-self.beta_momentum) * be.ones(self.beta_shape)
             self.beta_scale = self.beta_std * math.sqrt(1-self.beta_momentum**2)
             self.beta = be.ones(self.beta_shape)
@@ -327,16 +328,16 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
 
     """
     # build the states
-    data_state = State.from_visible(v_data, self.model)
-    model_state = State.from_visible(v_data, self.model)
+    data_state = State.from_visible(v_data, model)
+    model_state = State.from_visible(v_data, model)
 
     # CD resets the sampler from the visible data at each iteration
-    self.sampler.set_positive_state(data_state)
-    self.sampler.set_negative_state(model_state)
-    self.sampler.update_state(self.mcsteps)
+    sampler.set_positive_state(data_state)
+    sampler.set_negative_state(model_state)
+    sampler.update_state(steps)
 
     # compute the gradient and update the model parameters
-    return model.gradient(*self.sampler.get_states())
+    return model.gradient(*sampler.get_states())
 
 # alias
 cd = contrastive_divergence
@@ -367,7 +368,7 @@ def peristent_contrastive_divergence(vdata, model, sampler, steps=1):
     """
     # PCD persists the state of the sampler from the previous iteration
     sampler.update_state(steps)
-    return model.gradient(*self.sampler.get_states())
+    return model.gradient(*sampler.get_states())
 
 # alias
 pcd = peristent_contrastive_divergence
@@ -393,7 +394,7 @@ def tap(vdata, model, sampler=None, steps=None):
         gradient
 
     """
-    data_state = State.from_visible(v_data, self.model)
+    data_state = State.from_visible(v_data, model)
     return model.gradient(data_state, None)
 
 
