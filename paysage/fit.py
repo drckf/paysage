@@ -81,8 +81,8 @@ class Sampler(object):
         Create a sampler from a batch object.
 
         Args:
-            model: a model object
-            batch: a batch object
+            model: a Model object
+            batch: a Batch object
             method (str; optional): how to update the particles
             kwargs (optional)
 
@@ -91,8 +91,9 @@ class Sampler(object):
 
         """
         tmp = cls(model, method=method, **kwargs)
-        tmp.set_positive_state(State.from_model(batch.batch_size, model))
-        tmp.set_negative_state(State.from_model(batch.batch_size, model))
+        vdata = batch.get('train')
+        tmp.set_positive_state(State.from_visible(vdata, model))
+        tmp.set_negative_state(State.from_visible(vdata, model))
         batch.reset_generator('all')
         return tmp
 
