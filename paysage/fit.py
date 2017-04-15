@@ -2,7 +2,7 @@ import time, math
 from collections import OrderedDict
 from . import backends as be
 from . import metrics as M
-from paysage.models.hidden import State
+from paysage.models.model import State
 
 
 # -----  CLASSES ----- #
@@ -345,12 +345,6 @@ class ProgressMonitor(object):
                     v_data = self.batch.get(mode='validate')
                 except StopIteration:
                     break
-
-                #TODO: use State
-                # should use hidden.State objects
-                # note that we will need two states
-                # one for the positive phase (with visible units as observed)
-                # one for the fantasy particles (with visible units sampled from the model)
 
                 # set up the states
                 data_state = State.from_visible(v_data, model)

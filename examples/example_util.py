@@ -3,7 +3,7 @@ import numpy
 
 import plotting
 from paysage import batch
-from paysage.models.hidden import State
+from paysage.models.model import State
 from paysage import backends as be
 
 # ----- DEFAULT PATHS ----- #
