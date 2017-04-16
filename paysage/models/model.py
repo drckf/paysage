@@ -262,7 +262,7 @@ class Model(object):
                     continue
                 else:
                     self.layers[i].update(
-                        [self.layers[j].rescale(state.units[j]) for j in self.layer_connections[i]],
+                        [self.layers[j].rescale(updated_state.units[j]) for j in self.layer_connections[i]],
                         [self.weights[j].W() if j < i else self.weights[j].W_T()
                             for j in self.weight_connections[i]],
                         beta)
