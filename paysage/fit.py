@@ -200,9 +200,9 @@ class DrivenSequentialMC(Sampler):
         if not self.has_beta:
             self.has_beta = True
             if self.pos_state:
-                self.beta_shape = (len(self.pos_state.units[0]), 1)
+                self.beta_shape = (be.shape(self.pos_state.units[0])[0], 1)
             else:
-                self.beta_shape = (len(self.neg_state.units[0]), 1)
+                self.beta_shape = (be.shape(self.neg_state.units[0])[0], 1)
             self.beta_loc = (1-self.beta_momentum) * be.ones(self.beta_shape)
             self.beta_scale = self.beta_std * math.sqrt(1-self.beta_momentum**2)
             self.beta = be.ones(self.beta_shape)
