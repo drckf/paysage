@@ -60,4 +60,4 @@ def example_mnist_rbm(paysage_path=None, num_epochs=10, show_plot=False):
     print("Done")
 
 if __name__ == "__main__":
-    example_mnist_rbm(show_plot = True)
+    example_mnist_rbm(show_plot = False)
