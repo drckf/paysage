@@ -379,7 +379,6 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
 # alias
 cd = contrastive_divergence
 
-
 def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
     """
     PCD-k algorithm for approximate maximum likelihood inference.
