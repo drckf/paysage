@@ -11,6 +11,9 @@ from . import backends as be
 
 # ----- CLASSES ----- #
 
+"""
+A namedtuple of states
+"""
 MetricState = namedtuple('MetricState', [
     'minibatch',
     'reconstructions',
@@ -59,7 +62,6 @@ class ReconstructionError(object):
         self.mean_square_error = 0
         self.norm = 0
 
-    #TODO: use State objects instead of tensors
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the reconstruction error using a batch
@@ -78,9 +80,10 @@ class ReconstructionError(object):
             None
 
         """
-        self.norm += len(update_args.minibatch)
+        self.norm += len(update_args.minibatch.units[0])
         self.mean_square_error += be.tsum(
-            (update_args.minibatch - update_args.reconstructions)**2)
+            (update_args.minibatch.units[0] -
+             update_args.reconstructions.units[0])**2)
 
     def value(self) -> float:
         """
@@ -144,7 +147,6 @@ class EnergyDistance(object):
         self.energy_distance = 0
         self.norm = 0
 
-    #TODO: use State objects instead of tensors
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the energy distance using a batch
@@ -165,7 +167,8 @@ class EnergyDistance(object):
         """
         self.norm += 1
         self.energy_distance += \
-            be.fast_energy_distance(update_args.minibatch, update_args.samples,
+            be.fast_energy_distance(update_args.minibatch.units[0],
+                                    update_args.samples.units[0],
                                     self.downsample)
 
     def value(self) -> float:
@@ -227,7 +230,6 @@ class EnergyGap(object):
         self.energy_gap = 0
         self.norm = 0
 
-    #TODO: use State objects instead of tensors
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the energy gap using a batch
@@ -249,10 +251,10 @@ class EnergyGap(object):
 
         """
         self.norm += 1
-        # self.energy_gap += be.mean(update_args.amodel
-        #                            .marginal_free_energy(update_args.minibatch))
-        # self.energy_gap -= be.mean(update_args.amodel
-        #                            .marginal_free_energy(update_args.random_samples))
+        self.energy_gap += be.mean(update_args.amodel
+                                   .marginal_free_energy(update_args.minibatch))
+        self.energy_gap -= be.mean(update_args.amodel
+                                   .marginal_free_energy(update_args.random_samples))
 
     def value(self):
         """
@@ -317,7 +319,6 @@ class EnergyZscore(object):
         self.random_mean = 0
         self.random_mean_square = 0
 
-    #TODO: use State objects instead of tensors
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the energy z-score using a batch
@@ -338,12 +339,12 @@ class EnergyZscore(object):
             None
 
         """
-        # self.data_mean += be.mean(update_args.amodel
-        #                           .marginal_free_energy(update_args.minibatch))
-        # self.random_mean += be.mean(update_args.amodel
-        #                              .marginal_free_energy(update_args.random_samples))
-        # self.random_mean_square += be.mean(update_args.amodel
-        #                                    .marginal_free_energy(update_args.random_samples)**2)
+        self.data_mean += be.mean(update_args.amodel
+                                  .marginal_free_energy(update_args.minibatch))
+        self.random_mean += be.mean(update_args.amodel
+                                     .marginal_free_energy(update_args.random_samples))
+        self.random_mean_square += be.mean(update_args.amodel
+                                           .marginal_free_energy(update_args.random_samples)**2)
 
     def value(self) -> float:
         """
@@ -359,4 +360,4 @@ class EnergyZscore(object):
         if self.random_mean_square:
             return (self.data_mean - self.random_mean) / math.sqrt(self.random_mean_square)
         else:
-            return 0
+            return None

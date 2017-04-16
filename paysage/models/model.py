@@ -271,7 +271,6 @@ class Model(object):
 
         return updated_state
 
-
     def mcstep(self, state, beta=None, clamped=[]):
         """
         Perform a single Gibbs sampling update in alternating layers.
@@ -550,6 +549,7 @@ class Model(object):
         E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j
         Then the marginal free energy is:
         F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)
+        This can be extended to a deep model by a sum over all hidden states
 
         Args:
             data (State object): The current state of each layer.

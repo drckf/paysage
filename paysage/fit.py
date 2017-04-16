@@ -174,6 +174,7 @@ class DrivenSequentialMC(Sampler):
         super().__init__(model, method=method)
         self.beta_momentum = beta_momentum
         self.beta_std = beta_std
+        self.beta = None
         self.has_beta = False
 
     def _update_beta(self):
@@ -230,7 +231,6 @@ class DrivenSequentialMC(Sampler):
             raise AttributeError(
                   'You must call the initialize(self, array_or_shape)'
                   +' method to set the initial state of the Markov Chain')
-        self._update_beta()
         self.pos_state = self.updater(steps, self.pos_state, self.beta)
 
     def update_negative_state(self, steps):
@@ -315,17 +315,10 @@ class ProgressMonitor(object):
             sampler.update_positive_state(1)
             sampler.update_negative_state(self.update_steps)
 
-            # compute the reconstructions
-            reconstructions = sampler.pos_state.units[0]
-
-            # compute the fantasy particles
-            fantasy_particles = sampler.neg_state.units[0]
-
-
-            metric_state = M.MetricState(minibatch=v_data,
-                                         reconstructions=reconstructions,
-                                         random_samples=random_samples,
-                                         samples=fantasy_particles,
+            metric_state = M.MetricState(minibatch=data_state,
+                                         reconstructions=sampler.pos_state,
+                                         random_samples=model_state,
+                                         samples=sampler.neg_state,
                                          amodel=model)
 
             # update metrics
