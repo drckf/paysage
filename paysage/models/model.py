@@ -224,6 +224,7 @@ class Model(object):
         return [[j for j in [i-1,i] if 0<=j<self.num_layers-1]
                    for i in range(self.num_layers)]
 
+    # it might be more clear to rename skip_layers to clamped
     def _alternating_update(self, func_name, state, beta=None, skip_layers=[]):
         """
         Performs a single Gibbs sampling update in alternating layers.
@@ -239,6 +240,24 @@ class Model(object):
             new state
 
         """
+
+        #
+        # i'm not sure this function is correct
+        # it looks like the states corresponding to a layer in skip_layers
+        # would still be modified by this function (i checked this, they are)
+        # only the connections to layers in skip_layers are ignored
+        # so it is as if these layers are invisible to their neighors
+        #
+        # consider what we want when we do a positive phase update
+        # we an inital state object with units [v, h] where v are the observed data points
+        # we want to sample a new state with units [v, h']
+        # where h -> h' but v stayes the same
+        # thus, we want to sample h' ~ p(h | v) = Z^{-1} exp( b(h) + W v h )
+        # it is important that the effective field on h includes the state of v
+        # so that we are sampling from the conditional distribution
+        # some more comments on this below
+        #
+
         layer_ix = [[x for x in x if x not in skip_layers]
                        for x in self.layer_connections]
         weight_ix = [[x for x in x if x not in skip_layers]
@@ -247,14 +266,33 @@ class Model(object):
         # update the odd then the even layers
         for ll in [range(1, self.num_layers, 2), range(0, self.num_layers, 2)]:
             for i in ll:
-                # update
+
+                #
+                # here i is the index of a layer to be sampled from
+                # the functions below modify the state of the units corresponding to that layer
+                # we don't want to modify the units for the layers in skip_layers
+                # here is one approach:
+                #
+                # if i in skip_layers:
+                #   continue
+                # else:
+                #   update the extrinsic parameters of layer i
+                #   draw a random sample layer from i
+                #
+
                 self.layers[i].update(
                     [self.layers[j].rescale(state.units[j]) for j in layer_ix[i]],
                     [self.weights[j].W() if j < i else self.weights[j].W_T()
                         for j in weight_ix[i]],
                     beta)
 
-                # sample
+                #
+                # THIS MODIFIES THE INPUT OBJECT DIRECTLY
+                # EITHER THIS SHOULD BE AN EXPLICIT IN-PLACE UPDATE
+                # CLEARLY ANNOTATED IN THE FUNCTION DOCS
+                # OR NEED TO FIX SO FUNCTION DOESN'T HAVE SIDE EFFECTS
+                #
+
                 state.units[i] = getattr(self.layers[i], func_name)()
 
         return state
