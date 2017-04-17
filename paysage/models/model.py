@@ -271,22 +271,6 @@ class Model(object):
 
         return updated_state
 
-    def mcstep(self, state, beta=None, clamped=[]):
-        """
-        Perform a single Gibbs sampling update in alternating layers.
-        state -> new state
-
-        Args:
-            state (State object): the current state of each layer
-            beta (optional, tensor (batch_size, 1)): Inverse temperatures
-            clamped (list): list of layer indices to clamp
-
-        Returns:
-            new state
-
-        """
-        return self._alternating_update('sample_state', state, beta, clamped)
-
     def markov_chain(self, n, state, beta=None, clamped=[]):
         """
         Perform multiple Gibbs sampling steps in alternating layers.
@@ -302,25 +286,13 @@ class Model(object):
             new state
 
         """
+        new_state = State.from_state(state)
         for _ in range(n):
-            state = self.mcstep(state, beta, clamped)
-        return state
-
-    def mean_field_step(self, state, beta=None, clamped=[]):
-        """
-        Perform a single mean-field update in alternating layers.
-        state -> new state
-
-        Args:
-            state (State object): the current state of each layer
-            beta (optional, tensor (batch_size, 1)): Inverse temperatures
-            clamped (list): list of layer indices to clamp
-
-        Returns:
-            new state
-
-        """
-        return self._alternating_update('mean', state, beta, clamped)
+            new_state = self._alternating_update('sample_state',
+                                                 new_state,
+                                                 beta,
+                                                 clamped)
+        return new_state
 
     def mean_field_iteration(self, n, state, beta=None, clamped=[]):
         """
@@ -337,26 +309,13 @@ class Model(object):
             new state
 
         """
+        new_state = State.from_state(state)
         for _ in range(n):
-            state = self.mean_field_step(state, beta, clamped)
-        return state
-
-    def deterministic_step(self, state, beta=None, clamped=[]):
-        """
-        Perform a single deterministic (maximum probability) update
-        in alternating layers.
-        state -> new state
-
-        Args:
-            state (State object): the current state of each layer
-            beta (optional, tensor (batch_size, 1)): Inverse temperatures
-            clamped (list): list of layer indices to clamp
-
-        Returns:
-            new state
-
-        """
-        return self._alternating_update('mode', state, beta, clamped)
+            new_state = self._alternating_update('mean',
+                                                 new_state,
+                                                 beta,
+                                                 clamped)
+        return new_state
 
     def deterministic_iteration(self, n, state, beta=None, clamped=[]):
         """
@@ -374,9 +333,13 @@ class Model(object):
             new state
 
         """
+        new_state = State.from_state(state)
         for _ in range(n):
-            state = self.deterministic_step(state, beta, clamped)
-        return state
+            new_state = self._alternating_update('mode',
+                                                 new_state,
+                                                 beta,
+                                                 clamped)
+        return new_state
 
     #TODO: use State
     # currently, gradients are computed using the mean of the hidden units
