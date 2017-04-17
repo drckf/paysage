@@ -11,7 +11,7 @@ import example_util as util
 
 def example_mnist_tap_machine(paysage_path=None, num_epochs = 30, show_plot=True):
 
-    num_hidden_units = 500
+    num_hidden_units = 256
     batch_size = 100
     learning_rate = 0.1
 
@@ -30,8 +30,8 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 30, show_plot=True
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
     rbm = tap_machine.TAP_rbm([vis_layer, hid_layer], num_persistent_samples=0,
-                              tolerance_EMF=1e-2, max_iters_EMF=100)
-    rbm.initialize(data, 'hinton')
+                              tolerance_EMF=1e-2, max_iters_EMF=50)
+    rbm.initialize(data, 'glorot_normal')
 
     perf  = fit.ProgressMonitor(data,
                                 metrics=['ReconstructionError',
@@ -39,7 +39,7 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 30, show_plot=True
 
     opt = optimizers.Gradient(stepsize=learning_rate,
                               scheduler=optimizers.PowerLawDecay(0.1),
-                              tolerance=1e-3,
+                              tolerance=1e-4,
                               ascent=True)
 
     sgd = fit.SGD(rbm, data, opt, num_epochs, method=fit.tap, monitor=perf)
