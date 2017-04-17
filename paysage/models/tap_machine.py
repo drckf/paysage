@@ -208,7 +208,6 @@ class TAP_rbm(model.Model):
         Gradient of -\ln P(v) with respect to the weights and biases
         """
 
-        batch_size = be.shape(vdata)[0]
         # alias weights and biases
         w = self.weights[0].int_params.matrix
         a = self.layers[0].int_params.loc
@@ -242,26 +241,23 @@ class TAP_rbm(model.Model):
         db_EMF = -m.h
 
         # compute average grad_F_marginal over the minibatch
-        #score = 0.0
-        dw = be.zeros_like(w)
-        da = be.zeros_like(a)
-        db = be.zeros_like(b)
+        intermediate = be.expit(be.dot(vdata,w) + b)
 
-        #TODO: vectorize
-        for v in vdata:
-            #score -= self.marginal_free_energy(v)
-            dw += be.outer(v,be.expit(be.dot(v,w) + b))
-            da += v
-            db += be.expit(b + be.dot(v,w))
+        da = be.mean(vdata, axis=0)
+        db = be.mean(intermediate, axis=0)
+        batch_size = be.shape(vdata)[0]
+        # This is the same as \sum_{i} vdata[i] \outer intermediate[i]
+        # TODO: is this efficient?
+        dw = be.dot(be.transpose(vdata), intermediate) / batch_size
 
         grad = gu.Gradient(
             [None for l in self.layers],
             [None for w in self.weights]
         )
 
-        grad.weights[0] = layers.IntrinsicParamsWeights(dw/batch_size + dw_EMF)
-        grad.layers[0] = layers.IntrinsicParamsBernoulli(da/batch_size + da_EMF)
-        grad.layers[1] = layers.IntrinsicParamsBernoulli(db/batch_size + db_EMF)
+        grad.weights[0] = layers.IntrinsicParamsWeights(dw + dw_EMF)
+        grad.layers[0] = layers.IntrinsicParamsBernoulli(da + da_EMF)
+        grad.layers[1] = layers.IntrinsicParamsBernoulli(db + db_EMF)
 
         #print(score / batch_size + EMF)
         return grad
