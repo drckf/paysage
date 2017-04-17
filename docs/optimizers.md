@@ -149,7 +149,7 @@ Base class for the optimizer methods.
 ### \_\_init\_\_
 ```py
 
-def __init__(self, scheduler=<paysage.optimizers.PowerLawDecay object at 0x11ff48860>, tolerance=1e-07)
+def __init__(self, scheduler=<paysage.optimizers.PowerLawDecay object at 0x105d865c0>, tolerance=1e-07)
 
 ```
 
@@ -205,7 +205,7 @@ Vanilla gradient optimizer
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=0.001, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127ac2048>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=0.001, scheduler=<paysage.optimizers.PowerLawDecay object at 0x105d86630>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -245,7 +245,7 @@ Stochastic gradient descent with momentum.<br />Qian, N. (1999).<br />On the mom
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=0.001, momentum=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127ac2080>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=0.001, momentum=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x105d866d8>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -285,7 +285,7 @@ Stochastic gradient descent with RMSProp.<br />Geoffrey Hinton's Coursera Course
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=0.001, mean_square_weight=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127ac3668>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=0.001, mean_square_weight=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x105d86780>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -329,7 +329,7 @@ Stochastic gradient descent with Adaptive Moment Estimation algorithm.<br /><br 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, scheduler=<paysage.optimizers.PowerLawDecay object at 0x127ac3710>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, scheduler=<paysage.optimizers.PowerLawDecay object at 0x105d86828>, tolerance=1e-07, ascent=False)
 
 ```
 
