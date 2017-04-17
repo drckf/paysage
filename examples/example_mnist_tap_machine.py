@@ -9,7 +9,7 @@ be.set_seed(137) # for determinism
 
 import example_util as util
 
-def example_mnist_tap_machine(paysage_path=None, num_epochs = 30, show_plot=True):
+def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True):
 
     num_hidden_units = 256
     batch_size = 100
@@ -30,7 +30,7 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 30, show_plot=True
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
     rbm = tap_machine.TAP_rbm([vis_layer, hid_layer], num_persistent_samples=0,
-                              tolerance_EMF=1e-2, max_iters_EMF=50)
+                              tolerance_EMF=1e-4, max_iters_EMF=25)
     rbm.initialize(data, 'glorot_normal')
 
     perf  = fit.ProgressMonitor(data,
