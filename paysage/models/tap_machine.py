@@ -22,7 +22,8 @@ class TAP_rbm(model.Model):
 
     """
 
-    def __init__(self, layer_list, init_lr_EMF=0.1, tolerance_EMF=1e-2, max_iters_EMF=100, num_persistent_samples=0):
+    def __init__(self, layer_list, init_lr_EMF=0.1, tolerance_EMF=1e-2,
+                 max_iters_EMF=100, num_persistent_samples=0):
         """
         Create a TAP RBM model.
 

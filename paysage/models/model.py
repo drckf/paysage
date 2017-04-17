@@ -52,13 +52,14 @@ class State(object):
 
         """
         shapes = [(batch_size, l.len) for l in model.layers]
-        units = [model.layers[i].random(shapes[i]) for i in range(model.num_layers)]
+        units = [model.layers[i].random(shapes[i])
+                 for i in range(model.num_layers)]
         return cls(units)
 
     @classmethod
     def from_visible(cls, vis, model):
         """
-        Create a state object with given visible unit values.
+        Create a state object with given visible unit vaonlues.
 
         Args:
             vis (tensor (num_samples, num_visible)): visible unit values.
@@ -256,15 +257,16 @@ class Model(object):
         updated_state = State.from_state(state)
 
         # update the odd then the even layers
-        for ll in [range(1, self.num_layers, 2), range(0, self.num_layers, 2)]:
-            for i in ll:
+        for layer_set in [range(1, self.num_layers, 2), range(0, self.num_layers, 2)]:
+            for i in layer_set:
                 if i in clamped:
                     continue
                 else:
                     self.layers[i].update(
-                        [self.layers[j].rescale(updated_state.units[j]) for j in self.layer_connections[i]],
+                        [self.layers[j].rescale(updated_state.units[j])
+                         for j in self.layer_connections[i]],
                         [self.weights[j].W() if j < i else self.weights[j].W_T()
-                            for j in self.weight_connections[i]],
+                         for j in self.weight_connections[i]],
                         beta)
 
                     updated_state.units[i] = getattr(self.layers[i], func_name)()
@@ -428,8 +430,10 @@ class Model(object):
         i = 0
 
         grad = gu.Gradient(
-            [None for l in self.layers],
-            [None for w in self.weights]
+            [None] * len(self.layers),
+            [None] * len(self.weights)
+            # [None for l in self.layers],
+            # [None for w in self.weights]
         )
 
         # POSITIVE PHASE (using observed)
@@ -469,10 +473,7 @@ class Model(object):
         vmodel_scaled = self.layers[i].rescale(model_state.units[i])
 
         # 2. Update the hidden layer
-        self.layers[i+1].update(
-            [vmodel_scaled],
-            [self.weights[0].W()]
-        )
+        self.layers[i+1].update([vmodel_scaled], [self.weights[0].W()])
 
         # 3. Compute the mean of the hidden layer
         model_state.units[i+1] = self.layers[i+1].mean()

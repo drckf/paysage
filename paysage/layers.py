@@ -374,8 +374,10 @@ class Weights(Layer):
         return -be.batch_dot(vis, self.W(), hid)
 
 
-IntrinsicParamsGaussian = namedtuple("IntrinsicParamsGaussian", ["loc", "log_var"])
-ExtrinsicParamsGaussian = namedtuple("ExtrinsicParamsGaussian", ["mean", "variance"])
+IntrinsicParamsGaussian = namedtuple("IntrinsicParamsGaussian",
+                                     ["loc", "log_var"])
+ExtrinsicParamsGaussian = namedtuple("ExtrinsicParamsGaussian",
+                                     ["mean", "variance"])
 
 class GaussianLayer(Layer):
     """Layer with Gaussian units"""
