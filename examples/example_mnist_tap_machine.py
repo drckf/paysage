@@ -33,33 +33,22 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 30, show_plot=True
                               tolerance_EMF=1e-2, max_iters_EMF=100)
     rbm.initialize(data, 'hinton')
 
-    # set up the optimizer and the fit method
-    #opt = optimizers.ADAM(rbm,
-    #                      stepsize=learning_rate,
-    #                      scheduler=optimizers.PowerLawDecay(0.1))
-    opt = optimizers.Gradient(rbm,
-                              stepsize=learning_rate,
+    perf  = fit.ProgressMonitor(data,
+                                metrics=['ReconstructionError',
+                                         'EnergyDistance'])
+
+    opt = optimizers.Gradient(stepsize=learning_rate,
                               scheduler=optimizers.PowerLawDecay(0.1),
                               tolerance=1e-3,
                               ascent=True)
 
-
-    sgd = fit.SGD(rbm,
-                  data,
-                  opt,
-                  num_epochs)
+    sgd = fit.SGD(rbm, data, opt, num_epochs, method=fit.tap, monitor=perf)
 
     # fit the model
     print('training with stochastic gradient ascent ')
     sgd.train()
 
-    # evaluate the model
-    # this will be the same as the final epoch results
-    # it is repeated here to be consistent with the sklearn rbm example
-    metrics = ['ReconstructionError', 'EnergyDistance']
-    performance = fit.ProgressMonitor(0, data, metrics=metrics)
-
-    util.show_metrics(rbm, performance)
+    util.show_metrics(rbm, perf)
     util.show_reconstructions(rbm, data.get('validate'), fit, show_plot)
     util.show_fantasy_particles(rbm, data.get('validate'), fit, show_plot)
     util.show_weights(rbm, show_plot)

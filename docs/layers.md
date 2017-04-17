@@ -158,6 +158,18 @@ def get_penalty_grad(self, deriv, param_name)
 Get the gradient of the penalties on a parameter.<br /><br />E.g., L2 penalty gradient = penalty * parameter_i<br /><br />Args:<br /> ~ deriv (tensor): derivative of the parameter<br /> ~ param_name: name of the parameter<br /><br />Returns:<br /> ~ tensor: derivative including penalty
 
 
+### load\_params
+```py
+
+def load_params(self, store, key)
+
+```
+
+
+
+Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+
+
 ### log\_partition\_function
 ```py
 
@@ -252,6 +264,18 @@ def sample_state(self)
 
 
 Draw a random sample from the disribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
+
+
+### save\_params
+```py
+
+def save_params(self, store, key)
+
+```
+
+
+
+Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### shrink\_parameters
@@ -402,6 +426,18 @@ def get_penalty_grad(self, deriv, param_name)
 Get the gradient of the penalties on a parameter.<br /><br />E.g., L2 penalty gradient = penalty * parameter_i<br /><br />Args:<br /> ~ deriv (tensor): derivative of the parameter<br /> ~ param_name: name of the parameter<br /><br />Returns:<br /> ~ tensor: derivative including penalty
 
 
+### load\_params
+```py
+
+def load_params(self, store, key)
+
+```
+
+
+
+Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+
+
 ### log\_partition\_function
 ```py
 
@@ -496,6 +532,18 @@ def sample_state(self)
 
 
 Draw a random sample from the disribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
+
+
+### save\_params
+```py
+
+def save_params(self, store, key)
+
+```
+
+
+
+Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### shrink\_parameters
@@ -646,6 +694,18 @@ def get_penalty_grad(self, deriv, param_name)
 Get the gradient of the penalties on a parameter.<br /><br />E.g., L2 penalty gradient = penalty * parameter_i<br /><br />Args:<br /> ~ deriv (tensor): derivative of the parameter<br /> ~ param_name: name of the parameter<br /><br />Returns:<br /> ~ tensor: derivative including penalty
 
 
+### load\_params
+```py
+
+def load_params(self, store, key)
+
+```
+
+
+
+Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+
+
 ### log\_partition\_function
 ```py
 
@@ -740,6 +800,18 @@ def sample_state(self)
 
 
 Draw a random sample from the disribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
+
+
+### save\_params
+```py
+
+def save_params(self, store, key)
+
+```
+
+
+
+Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### shrink\_parameters
@@ -898,6 +970,18 @@ def get_penalty_grad(self, deriv, param_name)
 Get the gradient of the penalties on a parameter.<br /><br />E.g., L2 penalty gradient = penalty * parameter_i<br /><br />Args:<br /> ~ deriv (tensor): derivative of the parameter<br /> ~ param_name: name of the parameter<br /><br />Returns:<br /> ~ tensor: derivative including penalty
 
 
+### load\_params
+```py
+
+def load_params(self, store, key)
+
+```
+
+
+
+Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+
+
 ### log\_partition\_function
 ```py
 
@@ -992,6 +1076,18 @@ def sample_state(self)
 
 
 Draw a random sample from the disribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
+
+
+### save\_params
+```py
+
+def save_params(self, store, key)
+
+```
+
+
+
+Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### shrink\_parameters
@@ -1166,6 +1262,18 @@ def get_penalty_grad(self, deriv, param_name)
 Get the gradient of the penalties on a parameter.<br /><br />E.g., L2 penalty gradient = penalty * parameter_i<br /><br />Args:<br /> ~ deriv (tensor): derivative of the parameter<br /> ~ param_name: name of the parameter<br /><br />Returns:<br /> ~ tensor: derivative including penalty
 
 
+### load\_params
+```py
+
+def load_params(self, store, key)
+
+```
+
+
+
+Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+
+
 ### parameter\_step
 ```py
 
@@ -1176,6 +1284,18 @@ def parameter_step(self, deltas)
 
 
 Update the values of the intrinsic parameters:<br /><br />layer.int_params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.int_params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
+
+
+### save\_params
+```py
+
+def save_params(self, store, key)
+
+```
+
+
+
+Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 
@@ -1290,6 +1410,18 @@ def get_penalty_grad(self, deriv, param_name)
 Get the gradient of the penalties on a parameter.<br /><br />E.g., L2 penalty gradient = penalty * parameter_i<br /><br />Args:<br /> ~ deriv (tensor): derivative of the parameter<br /> ~ param_name: name of the parameter<br /><br />Returns:<br /> ~ tensor: derivative including penalty
 
 
+### load\_params
+```py
+
+def load_params(self, store, key)
+
+```
+
+
+
+Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+
+
 ### parameter\_step
 ```py
 
@@ -1300,6 +1432,18 @@ def parameter_step(self, deltas)
 
 
 Update the values of the intrinsic parameters:<br /><br />layer.int_params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.int_params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
+
+
+### save\_params
+```py
+
+def save_params(self, store, key)
+
+```
+
+
+
+Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 
@@ -1318,7 +1462,7 @@ def get(key)
 ### namedtuple
 ```py
 
-def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
+def namedtuple(typename, field_names, verbose=False, rename=False)
 
 ```
 

@@ -10,11 +10,6 @@ from paysage import optimizers
 import pytest
 
 def test_tap_machine(paysage_path=None):
-    """
-    TODO : this is just a placeholder, need to clean up & simplifiy setup. Also
-    need to figure how to deal with consistent random seeding throughout the
-    codebase to obtain deterministic checkable results.
-    """
     num_hidden_units = 10
     batch_size = 50
     num_epochs = 1
@@ -52,29 +47,26 @@ def test_tap_machine(paysage_path=None):
     rbm.initialize(data)
 
     # obtain initial estimate of the reconstruction error
-    perf  = fit.ProgressMonitor(0,
-                                data,
+    perf  = fit.ProgressMonitor(data,
                                 metrics=[
                                 'ReconstructionError'])
-    untrained_performance = perf.check_progress(rbm, 0)
+    untrained_performance = perf.check_progress(rbm)
 
 
     # set up the optimizer and the fit method
-    opt = optimizers.Gradient(rbm,
-                              stepsize=learning_rate,
+    opt = optimizers.Gradient(stepsize=learning_rate,
                               scheduler=optimizers.PowerLawDecay(0.1),
                               tolerance=1e-3,
                               ascent=True)
 
-    solver = fit.SGD(rbm, data, opt, num_epochs, 
-                 metrics=['ReconstructionError'])
+    solver = fit.SGD(rbm, data, opt, num_epochs, method=fit.tap, monitor=perf)
 
     # fit the model
     print('training with stochastic gradient ascent')
     solver.train()
 
     # obtain an estimate of the reconstruction error after 1 epoch
-    trained_performance = perf.check_progress(rbm, 0)
+    trained_performance = perf.check_progress(rbm)
 
     assert (trained_performance['ReconstructionError'] <
             untrained_performance['ReconstructionError']), \

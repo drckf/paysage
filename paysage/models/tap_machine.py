@@ -217,6 +217,7 @@ class TAP_rbm(model.Model):
         da = be.zeros_like(a)
         db = be.zeros_like(b)
 
+        #TODO: vectorize
         for v in vdata:
             #score -= self.clamped_free_energy(v,w,a,b)
             dw += be.outer(v,be.expit(be.dot(v,w) + b))
