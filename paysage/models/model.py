@@ -262,7 +262,8 @@ class Model(object):
                     continue
                 else:
                     self.layers[i].update(
-                        [self.layers[j].rescale(updated_state.units[j]) for j in self.layer_connections[i]],
+                        [self.layers[j].rescale(updated_state.units[j])
+                            for j in self.layer_connections[i]],
                         [self.weights[j].W() if j < i else self.weights[j].W_T()
                             for j in self.weight_connections[i]],
                         beta)
@@ -388,8 +389,6 @@ class Model(object):
             dict: Gradients of the model parameters.
 
         """
-        i = 0
-
         grad = gu.Gradient(
             [None for l in self.layers],
             [None for w in self.weights]
@@ -397,74 +396,46 @@ class Model(object):
 
         # POSITIVE PHASE (using observed)
 
-        # 1. Scale vdata
-        vdata_scaled = self.layers[i].rescale(data_state.units[i])
-
-        # 2. Update the hidden layer
-        self.layers[i+1].update(
-            [vdata_scaled],
-            [self.weights[0].W()]
-        )
-
-        # 3. Compute the mean of the hidden layer
-        data_state.units[i+1] = self.layers[i+1].mean()
-
-        # 4. Scale the hidden mean
-        hid_scaled = self.layers[i+1].rescale(data_state.units[i+1])
-
-        # 5. Compute the gradients
-        grad.layers[i] = self.layers[i].derivatives(data_state.units[i],
-                                                    [hid_scaled],
-                                                    [self.weights[0].W()]
-        )
-
-        grad.layers[i+1] = self.layers[i+1].derivatives(data_state.units[i+1],
-                                                        [vdata_scaled],
-                                                        [self.weights[0].W_T()]
-        )
-
-        grad.weights[i] = self.weights[i].derivatives(vdata_scaled,
-                                                      hid_scaled)
+        # update the hidden layers
+        new_data_state = self.mean_field_iteration(1, data_state, clamped=[0])
+        # compute the gradients
+        for i in range(self.num_layers):
+            grad.layers[i] = self.layers[i].derivatives(
+                new_data_state.units[i],
+                [self.layers[j].rescale(new_data_state.units[j])
+                    for j in self.layer_connections[i]],
+                [self.weights[j].W() if j < i else self.weights[j].W_T()
+                    for j in self.weight_connections[i]],
+            )
+        for i in range(self.num_layers - 1):
+            grad.weights[i] = self.weights[i].derivatives(
+                self.layers[i].rescale(new_data_state.units[i]),
+                self.layers[i+1].rescale(new_data_state.units[i+1]),
+            )
 
         # NEGATIVE PHASE (using sampled)
 
-        # 1. Scale vdata
-        vmodel_scaled = self.layers[i].rescale(model_state.units[i])
+        # update the hidden layers
+        new_model_state = self.mean_field_iteration(1, model_state, clamped=[0])
+        # compute the gradients
+        for i in range(self.num_layers):
+            grad.layers[i] = be.mapzip(be.subtract,
+                self.layers[i].derivatives(
+                    new_model_state.units[i],
+                    [self.layers[j].rescale(new_model_state.units[j])
+                        for j in self.layer_connections[i]],
+                    [self.weights[j].W() if j < i else self.weights[j].W_T()
+                        for j in self.weight_connections[i]],
+                ),
+            grad.layers[i])
+        for i in range(self.num_layers - 1):
+            grad.weights[i] = be.mapzip(be.subtract,
+                self.weights[i].derivatives(
+                    self.layers[i].rescale(new_model_state.units[i]),
+                    self.layers[i+1].rescale(new_model_state.units[i+1]),
+                ),
+            grad.weights[i])
 
-        # 2. Update the hidden layer
-        self.layers[i+1].update(
-            [vmodel_scaled],
-            [self.weights[0].W()]
-        )
-
-        # 3. Compute the mean of the hidden layer
-        model_state.units[i+1] = self.layers[i+1].mean()
-
-        # 4. Scale hidden mean
-        hid_scaled = self.layers[i+1].rescale(model_state.units[i+1])
-
-        # 5. Compute the gradients
-        grad.layers[i] = be.mapzip(be.subtract,
-                                   self.layers[i].derivatives(
-                                       model_state.units[i],
-                                       [hid_scaled],
-                                       [self.weights[0].W()]
-                                   ),
-                                   grad.layers[i])
-
-        grad.layers[i+1] = be.mapzip(be.subtract,
-                                     self.layers[i+1].derivatives(
-                                         model_state.units[i+1],
-                                         [vmodel_scaled],
-                                         [self.weights[0].W_T()]
-                                     ),
-                                     grad.layers[i+1])
-
-        grad.weights[i] = be.mapzip(be.subtract,
-                                    self.weights[i].derivatives(
-                                        vmodel_scaled,
-                                        hid_scaled),
-                                    grad.weights[i])
         return grad
 
     def parameter_update(self, deltas):
