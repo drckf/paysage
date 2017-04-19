@@ -125,7 +125,7 @@ class TAP_rbm(model.Model):
             www = be.multiply(ww,w)
             return be.log(be.divide(1.0 - m.h, m.h)) - b - be.dot(m.v,w) - \
                    be.multiply(be.dot(m_v_quad,ww),0.5 - m.h) - \
-                   (4.0/3.0)*be.multiply(be.dot(be.multiply(0.5 - m.h, m_h_quad),www),0.5 - 3.0*m.h + 3.0*be.square(m.h))
+                   (4.0/3.0)*be.multiply(be.dot(be.multiply(0.5 - m.v, m_v_quad),www),0.5 - 3.0*m.h + 3.0*be.square(m.h))
 
         def minimize_gamma_GD(w, a, b, m, init_lr, tol, max_iters):
             """
@@ -222,13 +222,14 @@ class TAP_rbm(model.Model):
         m_h_quad = m.h - be.square(m.h)
         ww = be.square(w)
         www = be.multiply(ww,w)
-        temp = be.multiply(www, be.multiply(0.5 - m.v,m_v_quad))
+        alias1 = be.unsqueeze(be.multiply(0.5 - m.v, m_v_quad),1)
+        alias2 = be.unsqueeze(be.multiply(0.5 - m.h, m_h_quad),0)
         return \
             be.tsum(be.multiply(m.v, be.log(m.v)) + be.multiply(1.0 - m.v, be.log(1.0 - m.v))) + \
             be.tsum(be.multiply(m.h, be.log(m.h)) + be.multiply(1.0 - m.h, be.log(1.0 - m.h))) - \
             be.dot(a,m.v) - be.dot(b,m.h) - be.dot(m.v, a + be.dot(w,m.h)) - \
             0.5 * be.dot(m_v_quad, be.dot(ww, m_h_quad)) - \
-            (4.0/3.0) * be.tsum(be.multiply(temp,be.multiply(0.5-m_h, m_h_quad)))
+            (4.0/3.0) * be.tsum(be.multiply(alias2, be.multiply(alias1, www)))
 
     def marginal_free_energy(self, v, w, a, b):
         """
