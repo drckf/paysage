@@ -397,19 +397,32 @@ def normalize(x: T.FloatTensor) -> T.FloatTensor:
     """
     return x.div(torch.sum(EPSILON + x))
 
-def norm(x: T.FloatTensor) -> float:
+def norm(x: T.FloatTensor,  axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
     Return the L2 norm of a tensor.
 
     Args:
         x: A tensor.
+        axis (optional): the axis for taking the norm
+        keepdims (optional): If this is set to true, the dimension of the tensor
+                             is unchanged. Otherwise, the reduced axis is removed
+                             and the dimension of the array is 1 less.
 
     Returns:
-        float: The L2 norm of the tensor
+        if axis is none:
+            float: The L2 norm of the tensor
                (i.e., the sqrt of the sum of the squared elements).
+        else:
+            tensor: The L2 norm along the specified axis.
 
     """
-    return x.norm()
+    if axis is None:
+        return x.norm()
+    else:
+        if keepdims:
+            return x.norm(2, axis)
+        else:
+            return flatten(x.norm(2, axis))
 
 def tmax(x: T.FloatTensor,
          axis: int = None,
