@@ -299,6 +299,20 @@ def reshape(tensor: T.Tensor, newshape: T.Tuple[int]) -> T.Tensor:
     """
     return numpy.reshape(tensor, newshape)
 
+def unsqueeze(tensor: T.Tensor, axis: int) -> T.Tensor:
+    """
+    Return tensor with a new axis inserted.
+
+    Args:
+        tensor: A tensor.
+        axis: The desired axis.
+
+    Returns:
+        tensor: A tensor with the new axis inserted.
+
+    """
+    return numpy.expand_dims(tensor, axis)
+
 def dtype(tensor: T.Tensor) -> type:
     """
     Return the type of the tensor.

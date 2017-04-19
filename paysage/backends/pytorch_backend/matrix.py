@@ -309,6 +309,20 @@ def reshape(tensor: T.FloatTensor,
     """
     return tensor.view(*newshape)
 
+def unsqueeze(tensor: T.Tensor, axis: int) -> T.Tensor:
+    """
+    Return tensor with a new axis inserted.
+
+    Args:
+        tensor: A tensor.
+        axis: The desired axis.
+
+    Returns:
+        tensor: A tensor with the new axis inserted.
+
+    """
+    return torch.unsqueeze(tensor, axis)
+
 def dtype(tensor: T.FloatTensor) -> type:
     """
     Return the type of the tensor.
