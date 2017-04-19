@@ -56,7 +56,7 @@ class TAP_rbm(model.Model):
         self.tap_seed = None
 
 
-    def gibbs_free_energy_TAP2(self, seed=None, init_lr=0.1, tol=1e-4, max_iters=500):
+    def gibbs_free_energy_TAP3(self, seed=None, init_lr=0.1, tol=1e-4, max_iters=500):
         """
         Compute the Gibbs free engergy of the model according to the TAP
         expansion around infinite temperature to second order.
@@ -90,7 +90,7 @@ class TAP_rbm(model.Model):
             max_iters: maximum gradient decsent steps
 
         Returns:
-            tuple (magnetization, TAP2-approximated Gibbs free energy)
+            tuple (magnetization, TAP3-approximated Gibbs free energy)
                   (Magnetization, float)
 
         """
@@ -102,13 +102,30 @@ class TAP_rbm(model.Model):
         def grad_v_gamma_TAP2(m, w, a):
             m_h_quad = m.h - be.square(m.h)
             ww = be.square(w)
-            return be.log(be.divide(1.0 - m.v, m.v)) - a - be.dot(w, m.h) - be.multiply(0.5 - m.v,be.dot(ww, m_h_quad))
+            return be.log(be.divide(1.0 - m.v, m.v)) - a - be.dot(w, m.h) - \
+                   be.multiply(0.5 - m.v,be.dot(ww, m_h_quad))
 
         def grad_h_gamma_TAP2(m, w, b):
             m_v_quad = m.v - be.square(m.v)
             ww = be.square(w)
             return be.log(be.divide(1.0 - m.h, m.h)) - b - be.dot(m.v,w) - \
                    be.multiply(be.dot(m_v_quad,ww),0.5 - m.h)
+
+        def grad_v_gamma_TAP3(m, w, a):
+            m_h_quad = m.h - be.square(m.h)
+            ww = be.square(w)
+            www = be.multiply(ww,w)
+            return be.log(be.divide(1.0 - m.v, m.v)) - a - be.dot(w, m.h) - \
+                   be.multiply(0.5 - m.v,be.dot(ww, m_h_quad)) - \
+                   (4.0/3.0)*be.multiply(0.5 - 3.0*m.v + 3.0*be.square(m.v), be.dot(www,be.multiply(0.5 - m.h, m_h_quad)))
+
+        def grad_h_gamma_TAP3(m, w, b):
+            m_v_quad = m.v - be.square(m.v)
+            ww = be.square(w)
+            www = be.multiply(ww,w)
+            return be.log(be.divide(1.0 - m.h, m.h)) - b - be.dot(m.v,w) - \
+                   be.multiply(be.dot(m_v_quad,ww),0.5 - m.h) - \
+                   (4.0/3.0)*be.multiply(be.dot(be.multiply(0.5 - m.h, m_h_quad),www),0.5 - 3.0*m.h + 3.0*be.square(m.h))
 
         def minimize_gamma_GD(w, a, b, m, init_lr, tol, max_iters):
             """
@@ -120,17 +137,17 @@ class TAP_rbm(model.Model):
             eps = 1e-6
             its = 0
             lr = init_lr
-            gam = self.gamma_TAP2(m, w, a, b)
+            gam = self.gamma_TAP3(m, w, a, b)
 
             while (its < max_iters):
                 its += 1
-                m_provisional = Magnetization(m.v - lr*grad_v_gamma_TAP2(m, w, a),
-                                              m.h - lr*grad_h_gamma_TAP2(m, w, b))
+                m_provisional = Magnetization(m.v - lr*grad_v_gamma_TAP3(m, w, a),
+                                              m.h - lr*grad_h_gamma_TAP3(m, w, b))
                 # Warning: in general a lot of clipping gets done here
                 be.clip_inplace(m_provisional.v, eps, 1.0-eps)
                 be.clip_inplace(m_provisional.h, eps, 1.0-eps)
 
-                gam_provisional = self.gamma_TAP2(m_provisional, w, a, b)
+                gam_provisional = self.gamma_TAP3(m_provisional, w, a, b)
                 if (gam - gam_provisional < 0):
                     lr *= 0.5
                     if (lr < 1e-10):
@@ -186,15 +203,33 @@ class TAP_rbm(model.Model):
         #return minimize_gamma_constraint_sat(w, a, b, seed, tol, max_iters)
 
     # The Legendre transform of F(v;q) as a function of q according to TAP expansion 2 terms
+    # specialized to the RBM case
     def gamma_TAP2(self, m, w, a, b):
         m_v_quad = m.v - be.square(m.v)
         m_h_quad = m.h - be.square(m.h)
         ww = be.square(w)
+
         return \
             be.tsum(be.multiply(m.v, be.log(m.v)) + be.multiply(1.0 - m.v, be.log(1.0 - m.v))) + \
             be.tsum(be.multiply(m.h, be.log(m.h)) + be.multiply(1.0 - m.h, be.log(1.0 - m.h))) - \
-            be.dot(a,m.v) - be.dot(b,m.h) - be.dot(m.v, be.dot(w,m.h)) - \
-            0.5*be.dot(m_v_quad, be.dot(ww, m_h_quad))
+            be.dot(a,m.v) - be.dot(b,m.h) - be.dot(m.v, a + be.dot(w,m.h)) - \
+            0.5 * be.dot(m_v_quad, be.dot(ww, m_h_quad))
+
+    # The Legendre transform of F(v;q) as a function of q according to TAP expansion 3 terms
+    # specialized to the RBM case
+    def gamma_TAP3(self, m, w, a, b):
+        m_v_quad = m.v - be.square(m.v)
+        m_h_quad = m.h - be.square(m.h)
+        ww = be.square(w)
+        www = be.multiply(ww,w)
+        temp = be.multiply(www, be.multiply(0.5 - m.v,m_v_quad))
+        return \
+            be.tsum(be.multiply(m.v, be.log(m.v)) + be.multiply(1.0 - m.v, be.log(1.0 - m.v))) + \
+            be.tsum(be.multiply(m.h, be.log(m.h)) + be.multiply(1.0 - m.h, be.log(1.0 - m.h))) - \
+            be.dot(a,m.v) - be.dot(b,m.h) - be.dot(m.v, a + be.dot(w,m.h)) - \
+            0.5 * be.dot(m_v_quad, be.dot(ww, m_h_quad)) - \
+            (4.0/3.0) * be.tsum(be.multiply(temp,be.multiply(0.5-m_h, m_h_quad)))
+
     def marginal_free_energy(self, v, w, a, b):
         """
         '''
@@ -213,18 +248,18 @@ class TAP_rbm(model.Model):
         a = self.layers[0].int_params.loc
         b = self.layers[1].int_params.loc
 
-        # compute the TAP2 approximation to the Gibbs free energy:
+        # compute the TAP3 approximation to the Gibbs free energy:
         EMF = 1e6
         m = None
         if len(self.persistent_samples) == 0: # random seed
-                (m,EMF) = self.gibbs_free_energy_TAP2(m,
+                (m,EMF) = self.gibbs_free_energy_TAP3(m,
                                                       self.init_lr_EMF,
                                                       self.tolerance_EMF,
                                                       self.max_iters_EMF)
         else:
             best_EMF = 1e7
             for s in range(len(self.persistent_samples)): # persistent seeds
-                (self.persistent_samples[s],EMF) = self.gibbs_free_energy_TAP2(self.persistent_samples[s],
+                (self.persistent_samples[s],EMF) = self.gibbs_free_energy_TAP3(self.persistent_samples[s],
                                                                                self.init_lr_EMF,
                                                                                self.tolerance_EMF,
                                                                                self.max_iters_EMF)
