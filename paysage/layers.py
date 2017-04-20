@@ -599,7 +599,7 @@ class GaussianLayer(Layer):
         loc = -be.mean(v_scaled, axis=0)
         loc = self.get_penalty_grad(loc, 'loc')
 
-        # compute the derivative with respect to the cale parameter
+        # compute the derivative with respect to the scale parameter
         log_var = -0.5 * be.mean(be.square(be.subtract(
             self.int_params.loc, vis)), axis=0)
         for i in range(len(hid)):
