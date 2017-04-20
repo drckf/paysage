@@ -390,11 +390,7 @@ class GaussianLayer(Layer):
         self.len = num_units
         self.sample_size = 0
         self.rand = be.randn
-
-        self.params = ParamsGaussian(
-            be.zeros(self.len),
-            be.zeros(self.len)
-        )
+        self.params = ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
 
     def get_config(self):
         """
@@ -582,12 +578,7 @@ class GaussianLayer(Layer):
         log_var = -0.5 * be.mean(be.square(be.subtract(
             self.int_params.loc, vis)), axis=0)
         for i in range(len(hid)):
-            log_var += be.batch_dot(
-                hid[i],
-                weights[i],
-                vis,
-                axis=0
-            ) / len(vis)
+            log_var += be.batch_dot(hid[i], weights[i],vis, axis=0) / len(vis)
         log_var = self.rescale(log_var)
         log_var = self.get_penalty_grad(log_var, 'log_var')
 
@@ -608,7 +599,7 @@ class GaussianLayer(Layer):
                 Inverse temperatures.
 
         Returns:
-            tuple (tensor): conditional parameters
+            tuple (tensor, tensor): conditional parameters
 
         """
         mean = be.dot(scaled_units[0], weights[0])
@@ -618,7 +609,7 @@ class GaussianLayer(Layer):
             mean *= be.broadcast(beta, mean)
         mean += be.broadcast(self.params.loc, mean)
         var = be.broadcast(be.exp(self.params.log_var), mean)
-        return (mean, var)
+        return mean, var
 
     def conditional_mode(self, scaled_units, weights, beta=None):
         """
@@ -897,7 +888,7 @@ class IsingLayer(Layer):
                 Inverse temperatures.
 
         Returns:
-            tuple (tensor): conditional parameters
+            tensor: conditional parameters
 
         """
         field = be.dot(scaled_units[0], weights[0])
@@ -906,7 +897,7 @@ class IsingLayer(Layer):
         if beta is not None:
             field *= be.broadcast(beta,field)
         field += be.broadcast(self.params.loc, field)
-        return (field,)
+        return field
 
     def conditional_mode(self, scaled_units, weights, beta=None):
         """
@@ -993,8 +984,7 @@ class IsingLayer(Layer):
         return 2 * be.float_tensor(r < 0.5) - 1
 
 
-IntrinsicParamsBernoulli = namedtuple("IntrinsicParamsBernoulli", ["loc"])
-ExtrinsicParamsBernoulli = namedtuple("ExtrinsicParamsBernoulli", ["field"])
+ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
 
 class BernoulliLayer(Layer):
     """Layer with Bernoulli units (i.e., 0 or +1)."""
@@ -1015,9 +1005,7 @@ class BernoulliLayer(Layer):
         self.len = num_units
         self.sample_size = 0
         self.rand = be.rand
-
-        self.int_params = IntrinsicParamsBernoulli(be.zeros(self.len))
-        self.ext_params = ExtrinsicParamsBernoulli(None)
+        self.params = ParamsBernoulli(be.zeros(self.len))
 
     def get_config(self):
         """
@@ -1031,7 +1019,6 @@ class BernoulliLayer(Layer):
 
         """
         base_config = self.get_base_config()
-        base_config["extrinsic"] = list(self.ext_params._fields)
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -1071,7 +1058,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        return -be.dot(data, self.int_params.loc)
+        return -be.dot(data, self.params.loc)
 
     def log_partition_function(self, phi):
         """
@@ -1093,15 +1080,15 @@ class BernoulliLayer(Layer):
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        return be.softplus(be.add(self.int_params.loc, phi))
+        return be.softplus(be.add(self.params.loc, phi))
 
     def online_param_update(self, data):
         """
-        Update the intrinsic parameters using an observed batch of data.
+        Update the parameters using an observed batch of data.
         Used for initializing the layer parameters.
 
         Notes:
-            Modifies layer.sample_size and layer.int_params in place.
+            Modifies layer.sample_size and layer.params in place.
 
         Args:
             data (tensor (num_samples, num_units)): observed values for units
@@ -1111,7 +1098,7 @@ class BernoulliLayer(Layer):
 
         """
         # get the current value of the first moment
-        x = be.expit(self.int_params.loc)
+        x = be.expit(self.params.loc)
 
         # update the sample size
         n = len(data)
@@ -1122,12 +1109,12 @@ class BernoulliLayer(Layer):
         x += n * be.mean(data, axis=0) / new_sample_size
 
         # update the class attributes
-        self.int_params = IntrinsicParamsBernoulli(be.logit(x))
+        self.params = ParamsBernoulli(be.logit(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
         """
-        Apply shrinkage to the intrinsic parameters of the layer.
+        Apply shrinkage to the parameters of the layer.
         Does nothing for the Bernoulli layer.
 
         Args:
@@ -1139,36 +1126,23 @@ class BernoulliLayer(Layer):
         """
         pass
 
-    def update(self, scaled_units, weights, beta=None):
+    def rescale(self, observations):
         """
-        Update the extrinsic parameters of the layer.
-
-        Notes:
-            Modfies layer.ext_params in place.
+        Rescale is equivalent to the identity function for the Bernoulli layer.
 
         Args:
-            scaled_units list[tensor (num_samples, num_connected_units)]:
-                The rescaled values of the connected units.
-            weights list[tensor, (num_connected_units, num_units)]:
-                The weights connecting the layers.
-            beta (tensor (num_samples, 1), optional):
-                Inverse temperatures.
+            observations (tensor (num_samples, num_units)):
+                Values of the observed units.
 
         Returns:
-            None
+            tensor: observations
 
         """
-        field = be.dot(scaled_units[0], weights[0])
-        for i in range(1, len(weights)):
-            field += be.dot(scaled_units[i], weights[i])
-        if beta is not None:
-            field *= be.broadcast(beta, field)
-        field += be.broadcast(self.int_params.loc, field)
-        self.ext_params = ExtrinsicParamsBernoulli(field)
+        return observations
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
-        Compute the derivatives of the intrinsic layer parameters.
+        Compute the derivatives of the layer parameters.
 
         Args:
             vis (tensor (num_samples, num_units)):
@@ -1186,66 +1160,92 @@ class BernoulliLayer(Layer):
         """
         loc = -be.mean(vis, axis=0)
         loc = self.get_penalty_grad(loc, 'loc')
-        return IntrinsicParamsBernoulli(loc)
+        return ParamsBernoulli(loc)
 
-    def rescale(self, observations):
+    def _conditional_parameters(self, scaled_units, weights, beta=None):
         """
-        Rescale is equivalent to the identity function for the Bernoulli layer.
+        Compute the parameters of the layer conditioned on the state
+        of the connected layers.
 
         Args:
-            observations (tensor (num_samples, num_units)):
-                Values of the observed units.
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor, (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
 
         Returns:
-            tensor: observations
+            tensor: conditional parameters
 
         """
-        return observations
+        field = be.dot(scaled_units[0], weights[0])
+        for i in range(1, len(weights)):
+            field += be.dot(scaled_units[i], weights[i])
+        if beta is not None:
+            field *= be.broadcast(beta, field)
+        field += be.broadcast(self.int_params.loc, field)
+        return field
 
-    def mode(self):
+    def conditional_mode(self, scaled_units, weights, beta=None):
         """
-        Compute the mode of the distribution.
-
-        Determined from the extrinsic parameters (layer.ext_params).
+        Compute the mode of the distribution conditioned on the state
+        of the connected layers.
 
         Args:
-            None
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
 
         Returns:
             tensor (num_samples, num_units): The mode of the distribution
 
         """
-        return be.float_tensor(self.ext_params.field > 0.0)
+        field = self._conditional_parameters(scaled_units, weights, beta)
+        return be.float_tensor(field > 0.0)
 
-    def mean(self):
+    def conditional_mean(self, scaled_units, weights, beta=None):
         """
-        Compute the mean of the distribution.
-
-        Determined from the extrinsic parameters (layer.ext_params).
+        Compute the mean of the distribution conditioned on the state
+        of the connected layers.
 
         Args:
-            None
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
 
         Returns:
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        return be.expit(self.ext_params.field)
+        field = self._conditional_parameters(scaled_units, weights, beta)
+        return be.expit(field)
 
-    def sample_state(self):
+    def conditional_sample(self, scaled_units, weights, beta=None):
         """
-        Draw a random sample from the disribution.
-
-        Determined from the extrinsic parameters (layer.ext_params).
+        Draw a random sample from the disribution conditioned on the state
+        of the connected layers.
 
         Args:
-            None
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
 
         Returns:
             tensor (num_samples, num_units): Sampled units.
 
         """
-        p = be.expit(self.ext_params.field)
+        field = self._conditional_parameters(scaled_units, weights, beta)
+        p = be.expit(field)
         r = self.rand(be.shape(p))
         return be.float_tensor(r < p)
 
@@ -1272,9 +1272,7 @@ class BernoulliLayer(Layer):
         return be.float_tensor(r < 0.5)
 
 
-IntrinsicParamsExponential = namedtuple("IntrinsicParamsExponential", ["loc"])
-ExtrinsicParamsExponential = namedtuple("ExtrinsicParamsExponential", ["rate"])
-
+ParamsExponential = namedtuple("ParamsExponential", ["loc"])
 
 class ExponentialLayer(Layer):
     """Layer with Exponential units (non-negative)."""
@@ -1295,9 +1293,7 @@ class ExponentialLayer(Layer):
         self.len = num_units
         self.sample_size = 0
         self.rand = be.rand
-
-        self.int_params = IntrinsicParamsExponential(be.zeros(self.len))
-        self.ext_params = ExtrinsicParamsExponential(None)
+        self.int_params = ParamsExponential(be.zeros(self.len))
 
 
     def get_config(self):
@@ -1312,7 +1308,6 @@ class ExponentialLayer(Layer):
 
         """
         base_config = self.get_base_config()
-        base_config["extrinsic"] = list(self.ext_params._fields)
         base_config["num_units"] = self.len
         base_config["sample_size"] = self.sample_size
         return base_config
@@ -1420,32 +1415,19 @@ class ExponentialLayer(Layer):
         """
         pass
 
-    def update(self, scaled_units, weights, beta=None):
+    def rescale(self, observations):
         """
-        Update the extrinsic parameters of the layer.
-
-        Notes:
-            Modfies layer.ext_params in place.
+        Rescale is equivalent to the identity function for the Exponential layer.
 
         Args:
-            scaled_units list[tensor (num_samples, num_connected_units)]:
-                The rescaled values of the connected units.
-            weights list[tensor, (num_connected_units, num_units)]:
-                The weights connecting the layers.
-            beta (tensor (num_samples, 1), optional):
-                Inverse temperatures.
+            observations (tensor (num_samples, num_units)):
+                Values of the observed units.
 
         Returns:
-            None
+            tensor: observations
 
         """
-        rate = -be.dot(scaled_units[0], weights[0])
-        for i in range(1, len(weights)):
-            rate -= be.dot(scaled_units[i], weights[i])
-        if beta is not None:
-            rate *= be.broadcast(beta,rate)
-        rate += be.broadcast(self.int_params.loc, rate)
-        self.ext_params = ExtrinsicParamsExponential(rate)
+        return observations
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -1467,31 +1449,48 @@ class ExponentialLayer(Layer):
         """
         loc = be.mean(vis, axis=0)
         loc = self.get_penalty_grad(loc, 'loc')
-        return IntrinsicParamsExponential(loc)
+        return ParamsExponential(loc)
 
-    def rescale(self, observations):
+    def _conditional_parameters(self, scaled_units, weights, beta=None):
         """
-        Rescale is equivalent to the identity function for the Exponential layer.
+        Compute the parameters of the layer conditioned on the state
+        of the connected layers.
 
         Args:
-            observations (tensor (num_samples, num_units)):
-                Values of the observed units.
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor, (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
 
         Returns:
-            tensor: observations
+            tuple (tensor): conditional parameters
 
         """
-        return observations
+        rate = -be.dot(scaled_units[0], weights[0])
+        for i in range(1, len(weights)):
+            rate -= be.dot(scaled_units[i], weights[i])
+        if beta is not None:
+            rate *= be.broadcast(beta,rate)
+        rate += be.broadcast(self.int_params.loc, rate)
+        self.ext_params = ExtrinsicParamsExponential(rate)
 
-    def mode(self):
+    def conditional_mode(self, scaled_units, weights, beta=None):
         """
-        The mode of the Exponential distribution is undefined.
+        Compute the mode of the distribution conditioned on the state
+        of the connected layers.
 
         Args:
-            None
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
 
-        Raises:
-            NotImplementedError
+        Returns:
+            tensor (num_samples, num_units): The mode of the distribution
 
         """
         raise NotImplementedError("Exponential distribution has no mode.")
