@@ -1149,7 +1149,7 @@ class BernoulliLayer(Layer):
                 The values of the visible units.
             hid list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the hidden units.
-            weights list[tensor, (num_units, num_connected_units)]:
+            weights list[tensor, (num_connected_units, num_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -1295,7 +1295,6 @@ class ExponentialLayer(Layer):
         self.rand = be.rand
         self.int_params = ParamsExponential(be.zeros(self.len))
 
-
     def get_config(self):
         """
         Get the configuration dictionary of the Exponential layer.
@@ -1347,7 +1346,7 @@ class ExponentialLayer(Layer):
             tensor (num_samples,): energy per sample
 
         """
-        return be.dot(data, self.int_params.loc)
+        return be.dot(data, self.params.loc)
 
     def log_partition_function(self, phi):
         """
@@ -1369,11 +1368,11 @@ class ExponentialLayer(Layer):
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        return -be.log(be.subtract(self.int_params.loc, phi))
+        return -be.log(be.subtract(self.params.loc, phi))
 
     def online_param_update(self, data):
         """
-        Update the intrinsic parameters using an observed batch of data.
+        Update the parameters using an observed batch of data.
         Used for initializing the layer parameters.
 
         Notes:
@@ -1387,7 +1386,7 @@ class ExponentialLayer(Layer):
 
         """
         # get the current value of the first moment
-        x = be.reciprocal(self.int_params.loc)
+        x = be.reciprocal(self.params.loc)
 
         # update the sample size
         n = len(data)
@@ -1398,12 +1397,12 @@ class ExponentialLayer(Layer):
         x += n * be.mean(data, axis=0) / new_sample_size
 
         # update the class attributes
-        self.int_params = IntrinsicParamsExponential(be.reciprocal(x))
+        self.int_params = ParamsExponential(be.reciprocal(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
         """
-        Apply shrinkage to the intrinsic parameters of the layer.
+        Apply shrinkage to the parameters of the layer.
         Does nothing for the Exponential layer.
 
         Args:
@@ -1431,14 +1430,14 @@ class ExponentialLayer(Layer):
 
     def derivatives(self, vis, hid, weights, beta=None):
         """
-        Compute the derivatives of the intrinsic layer parameters.
+        Compute the derivatives of the layer parameters.
 
         Args:
             vis (tensor (num_samples, num_units)):
                 The values of the visible units.
             hid list[tensor (num_samples, num_connected_units)]:
                 The rescaled values of the hidden units.
-            weights list[tensor, (num_units, num_connected_units)]:
+            weights list[tensor, (num_connected_units, num_units)]:
                 The weights connecting the layers.
             beta (tensor (num_samples, 1), optional):
                 Inverse temperatures.
@@ -1465,7 +1464,7 @@ class ExponentialLayer(Layer):
                 Inverse temperatures.
 
         Returns:
-            tuple (tensor): conditional parameters
+            tensor: conditional parameters
 
         """
         rate = -be.dot(scaled_units[0], weights[0])
@@ -1473,8 +1472,8 @@ class ExponentialLayer(Layer):
             rate -= be.dot(scaled_units[i], weights[i])
         if beta is not None:
             rate *= be.broadcast(beta,rate)
-        rate += be.broadcast(self.int_params.loc, rate)
-        self.ext_params = ExtrinsicParamsExponential(rate)
+        rate += be.broadcast(self.params.loc, rate)
+        return rate
 
     def conditional_mode(self, scaled_units, weights, beta=None):
         """
@@ -1495,35 +1494,45 @@ class ExponentialLayer(Layer):
         """
         raise NotImplementedError("Exponential distribution has no mode.")
 
-    def mean(self):
+    def conditional_mean(self, scaled_units, weights, beta=None):
         """
-        Compute the mean of the distribution.
-
-        Determined from the extrinsic parameters (layer.ext_params).
+        Compute the mean of the distribution conditioned on the state
+        of the connected layers.
 
         Args:
-            None
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
 
         Returns:
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        return be.reciprocal(self.ext_params.rate)
+        rate = self._conditional_parameters(scaled_units, weights, beta)
+        return be.reciprocal(rate)
 
-    def sample_state(self):
+    def conditional_sample(self, scaled_units, weights, beta=None):
         """
-        Draw a random sample from the disribution.
-
-        Determined from the extrinsic parameters (layer.ext_params).
+        Draw a random sample from the disribution conditioned on the state
+        of the connected layers.
 
         Args:
-            None
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
 
         Returns:
             tensor (num_samples, num_units): Sampled units.
 
         """
-        r = self.rand(be.shape(self.ext_params.rate))
+        rate = self._conditional_parameters(scaled_units, weights, beta)
+        r = self.rand(be.shape(rate))
         return -be.log(r) / self.ext_params.rate
 
     def random(self, array_or_shape):
