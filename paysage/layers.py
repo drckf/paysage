@@ -605,7 +605,7 @@ class GaussianLayer(Layer):
         for i in range(len(hid)):
             log_var += be.batch_dot(
                 hid[i],
-                be.transpose(weights[i]),
+                weights[i],
                 vis,
                 axis=0
             ) / len(vis)
