@@ -88,7 +88,7 @@ class Layer(object):
 
     def save_params(self, store, key):
         """
-        Save the intrinsic parameters to a HDFStore.
+        Save the parameters to a HDFStore.
 
         Notes:
             Performs an IO operation.
@@ -107,7 +107,7 @@ class Layer(object):
 
     def load_params(self, store, key):
         """
-        Load the intrinsic parameters from an HDFStore.
+        Load the parameters from an HDFStore.
 
         Notes:
             Performs an IO operation.
@@ -125,7 +125,7 @@ class Layer(object):
             params.append(be.float_tensor(
                 store.get(os.path.join(key, 'parameters', str(i))).as_matrix()
             ).squeeze()) # collapse trivial dimensions to a vector
-        self.int_params = self.int_params.__class__(*params)
+        self.params = self.params.__class__(*params)
 
     def add_constraint(self, constraint):
         """
@@ -148,7 +148,7 @@ class Layer(object):
         Apply the contraints to the layer parameters.
 
         Note:
-            Modifies the intrinsic parameters of the layer in place.
+            Modifies the parameters of the layer in place.
 
         Args:
             None
@@ -218,12 +218,12 @@ class Layer(object):
 
     def parameter_step(self, deltas):
         """
-        Update the values of the intrinsic parameters:
+        Update the values of the parameters:
 
-        layer.int_params.name -= deltas.name
+        layer.params.name -= deltas.name
 
         Notes:
-            Modifies the elements of the layer.int_params attribute in place.
+            Modifies the elements of the layer.params attribute in place.
 
         Args:
             deltas (dict): {param_name: tensor (update)}
@@ -246,10 +246,6 @@ class Weights(Layer):
         Create a weight layer.
 
         Notes:
-            Simple weight layers only have a single internal parameter matrix.
-            They have no external parameters because they do not depend
-            on the state of anything else.
-
             The shape is regarded as a dimensionality of
             the visible and hidden units for the layer,
             as `shape = (visible, hidden)`.
@@ -454,7 +450,7 @@ class GaussianLayer(Layer):
         Compute the logarithm of the partition function of the layer
         with external field phi.
 
-        Let u_i and s_i be the intrinsic loc and scale parameters of unit i.
+        Let u_i and s_i be the loc and scale parameters of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
         Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + \phi_i x_i)
@@ -576,7 +572,7 @@ class GaussianLayer(Layer):
 
         # compute the derivative with respect to the cale parameter
         log_var = -0.5 * be.mean(be.square(be.subtract(
-            self.int_params.loc, vis)), axis=0)
+            self.params.loc, vis)), axis=0)
         for i in range(len(hid)):
             log_var += be.batch_dot(hid[i], weights[i],vis, axis=0) / len(vis)
         log_var = self.rescale(log_var)
@@ -777,7 +773,7 @@ class IsingLayer(Layer):
         Compute the logarithm of the partition function of the layer
         with external field phi.
 
-        Let a_i be the intrinsic loc parameter of unit i.
+        Let a_i be the loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
         Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)
@@ -1065,7 +1061,7 @@ class BernoulliLayer(Layer):
         Compute the logarithm of the partition function of the layer
         with external field phi.
 
-        Let a_i be the intrinsic loc parameter of unit i.
+        Let a_i be the loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
         Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)
@@ -1184,7 +1180,7 @@ class BernoulliLayer(Layer):
             field += be.dot(scaled_units[i], weights[i])
         if beta is not None:
             field *= be.broadcast(beta, field)
-        field += be.broadcast(self.int_params.loc, field)
+        field += be.broadcast(self.params.loc, field)
         return field
 
     def conditional_mode(self, scaled_units, weights, beta=None):
@@ -1293,7 +1289,7 @@ class ExponentialLayer(Layer):
         self.len = num_units
         self.sample_size = 0
         self.rand = be.rand
-        self.int_params = ParamsExponential(be.zeros(self.len))
+        self.params = ParamsExponential(be.zeros(self.len))
 
     def get_config(self):
         """
@@ -1353,7 +1349,7 @@ class ExponentialLayer(Layer):
         Compute the logarithm of the partition function of the layer
         with external field phi.
 
-        Let a_i be the intrinsic loc parameter of unit i.
+        Let a_i be the loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
 
         Z_i = Tr_{x_i} exp( -a_i x_i + phi_i x_i)
@@ -1376,7 +1372,7 @@ class ExponentialLayer(Layer):
         Used for initializing the layer parameters.
 
         Notes:
-            Modifies layer.sample_size and layer.int_params in place.
+            Modifies layer.sample_size and layer.params in place.
 
         Args:
             data (tensor (num_samples, num_units)): observed values for units
@@ -1397,7 +1393,7 @@ class ExponentialLayer(Layer):
         x += n * be.mean(data, axis=0) / new_sample_size
 
         # update the class attributes
-        self.int_params = ParamsExponential(be.reciprocal(x))
+        self.params = ParamsExponential(be.reciprocal(x))
         self.sample_size = new_sample_size
 
     def shrink_parameters(self, shrinkage=1):
@@ -1533,7 +1529,7 @@ class ExponentialLayer(Layer):
         """
         rate = self._conditional_parameters(scaled_units, weights, beta)
         r = self.rand(be.shape(rate))
-        return -be.log(r) / self.ext_params.rate
+        return -be.log(r) / rate
 
     def random(self, array_or_shape):
         """
