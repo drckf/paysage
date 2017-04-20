@@ -277,6 +277,11 @@ class Model(object):
         Perform multiple Gibbs sampling steps in alternating layers.
         state -> new state
 
+        Notes:
+            Samples layers according to the conditional probability
+            on adjacent layers,
+            x_i ~ P(x_i | x_(i-1), x_(i+1) )
+
         Args:
             n (int): number of steps.
             state (State object): the current state of each layer
@@ -299,6 +304,11 @@ class Model(object):
         """
         Perform multiple mean-field updates in alternating layers
         states -> new state
+
+        Notes:
+            Returns the expectation of layer units
+            conditioned on adjacent layers,
+            x_i = E[x_i | x_(i-1), x_(i+1) ]
 
         Args:
             n (int): number of steps.
@@ -323,6 +333,11 @@ class Model(object):
         Perform multiple deterministic (maximum probability) updates
         in alternating layers.
         state -> new state
+
+        Notes:
+            Returns the layer units that maximize the probability
+            conditioned on adjacent layers,
+            x_i = argmax P(x_i | x_(i-1), x_(i+1))
 
         Args:
             n (int): number of steps.
