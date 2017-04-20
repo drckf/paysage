@@ -870,7 +870,7 @@ class IsingLayer(Layer):
         loc = self.get_penalty_grad(loc, 'loc')
         return ParamsIsing(loc)
 
-    def _conditional_parameters(self, scaled_units, weights, beta=None):
+    def _conditional_params(self, scaled_units, weights, beta=None):
         """
         Compute the parameters of the layer conditioned on the state
         of the connected layers.
@@ -912,7 +912,7 @@ class IsingLayer(Layer):
             tensor (num_samples, num_units): The mode of the distribution
 
         """
-        field = self._conditional_parameters(scaled_units, weights, beta)
+        field = self._conditional_params(scaled_units, weights, beta)
         return 2 * be.float_tensor(field > 0) - 1
 
     def conditional_mean(self, scaled_units, weights, beta=None):
@@ -932,7 +932,7 @@ class IsingLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        field = self._conditional_parameters(scaled_units, weights, beta)
+        field = self._conditional_params(scaled_units, weights, beta)
         return be.tanh(field)
 
     def conditional_sample(self, scaled_units, weights, beta=None):
@@ -952,7 +952,7 @@ class IsingLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        field = self._conditional_parameters(scaled_units, weights, beta)
+        field = self._conditional_params(scaled_units, weights, beta)
         p = be.expit(field)
         r = self.rand(be.shape(p))
         return 2 * be.float_tensor(r < p) - 1
@@ -1158,7 +1158,7 @@ class BernoulliLayer(Layer):
         loc = self.get_penalty_grad(loc, 'loc')
         return ParamsBernoulli(loc)
 
-    def _conditional_parameters(self, scaled_units, weights, beta=None):
+    def _conditional_params(self, scaled_units, weights, beta=None):
         """
         Compute the parameters of the layer conditioned on the state
         of the connected layers.
@@ -1200,7 +1200,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): The mode of the distribution
 
         """
-        field = self._conditional_parameters(scaled_units, weights, beta)
+        field = self._conditional_params(scaled_units, weights, beta)
         return be.float_tensor(field > 0.0)
 
     def conditional_mean(self, scaled_units, weights, beta=None):
@@ -1220,7 +1220,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        field = self._conditional_parameters(scaled_units, weights, beta)
+        field = self._conditional_params(scaled_units, weights, beta)
         return be.expit(field)
 
     def conditional_sample(self, scaled_units, weights, beta=None):
@@ -1240,7 +1240,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        field = self._conditional_parameters(scaled_units, weights, beta)
+        field = self._conditional_params(scaled_units, weights, beta)
         p = be.expit(field)
         r = self.rand(be.shape(p))
         return be.float_tensor(r < p)
@@ -1446,7 +1446,7 @@ class ExponentialLayer(Layer):
         loc = self.get_penalty_grad(loc, 'loc')
         return ParamsExponential(loc)
 
-    def _conditional_parameters(self, scaled_units, weights, beta=None):
+    def _conditional_params(self, scaled_units, weights, beta=None):
         """
         Compute the parameters of the layer conditioned on the state
         of the connected layers.
@@ -1507,7 +1507,7 @@ class ExponentialLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        rate = self._conditional_parameters(scaled_units, weights, beta)
+        rate = self._conditional_params(scaled_units, weights, beta)
         return be.reciprocal(rate)
 
     def conditional_sample(self, scaled_units, weights, beta=None):
@@ -1527,7 +1527,7 @@ class ExponentialLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        rate = self._conditional_parameters(scaled_units, weights, beta)
+        rate = self._conditional_params(scaled_units, weights, beta)
         r = self.rand(be.shape(rate))
         return -be.log(r) / rate
 
