@@ -32,7 +32,7 @@ def hinton(batch, model):
 
     """
     for i in range(len(model.weights)):
-        model.weights[i].int_params.matrix[:] = \
+        model.weights[i].params.matrix[:] = \
                         0.01 * be.randn(model.weights[i].shape)
     while True:
         try:
@@ -72,7 +72,7 @@ def glorot_normal(batch, model):
     """
     for i in range(len(model.weights)):
         sigma = math.sqrt(2/(model.weights[i].shape[0] + model.weights[i].shape[1]))
-        model.weights[i].int_params.matrix[:] = \
+        model.weights[i].params.matrix[:] = \
                         sigma * be.randn(model.weights[i].shape)
     while True:
         try:
