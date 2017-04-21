@@ -1247,7 +1247,7 @@ def __init__(self, *args, **kwargs)
 
 
 
-Basic layer initalization method.<br /><br />Args:<br /> ~ *args: any arguments<br /> ~ **kwargs: any keyword arguments<br /><br />Returns:<br /> ~ layer
+Basic layer initialization method.<br /><br />Args:<br /> ~ *args: any arguments<br /> ~ **kwargs: any keyword arguments<br /><br />Returns:<br /> ~ layer
 
 
 ### add\_constraint

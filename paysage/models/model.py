@@ -176,7 +176,7 @@ class Model(object):
 
         Args:
             data: A Batch object.
-            method (optional): The initalization method.
+            method (optional): The initialization method.
 
         Returns:
             None

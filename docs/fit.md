@@ -5,7 +5,7 @@ Stochastic gradient descent with minibatches
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, batch, optimizer, epochs, method=<function persistent_contrastive_divergence at 0x105d96950>, sampler=<class 'paysage.fit.SequentialMC'>, mcsteps=1, monitor=None)
+def __init__(self, model, batch, optimizer, epochs, method=<function persistent_contrastive_divergence at 0x1099db620>, sampler=<class 'paysage.fit.SequentialMC'>, mcsteps=1, monitor=None)
 
 ```
 
@@ -63,7 +63,7 @@ def set_negative_state(self, state)
 
 
 
-Set up the inital states for each of the Markov Chains.<br />The initial state is randomly initalized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
+Set up the initial states for each of the Markov Chains.<br />The initial state is randomly initialized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
 
 
 ### set\_positive\_state
@@ -75,7 +75,7 @@ def set_positive_state(self, state)
 
 
 
-Set up the positive state for each of the Markov Chains.<br />The initial state is randomly initalized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
+Set up the positive state for each of the Markov Chains.<br />The initial state is randomly initialized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
 
 
 ### update\_negative\_state
@@ -167,7 +167,7 @@ def set_negative_state(self, state)
 
 
 
-Set up the inital states for each of the Markov Chains.<br />The initial state is randomly initalized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
+Set up the initial states for each of the Markov Chains.<br />The initial state is randomly initialized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
 
 
 ### set\_positive\_state
@@ -179,7 +179,7 @@ def set_positive_state(self, state)
 
 
 
-Set up the positive state for each of the Markov Chains.<br />The initial state is randomly initalized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
+Set up the positive state for each of the Markov Chains.<br />The initial state is randomly initialized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
 
 
 ### update\_negative\_state
@@ -247,7 +247,7 @@ def set_negative_state(self, state)
 
 
 
-Set up the inital states for each of the Markov Chains.<br />The initial state is randomly initalized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
+Set up the initial states for each of the Markov Chains.<br />The initial state is randomly initialized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
 
 
 ### set\_positive\_state
@@ -259,7 +259,7 @@ def set_positive_state(self, state)
 
 
 
-Set up the positive state for each of the Markov Chains.<br />The initial state is randomly initalized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
+Set up the positive state for each of the Markov Chains.<br />The initial state is randomly initialized.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ shape (tuple): shape if the visible layer<br /><br />Returns:<br /> ~ None
 
 
 

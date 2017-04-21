@@ -13,7 +13,7 @@ class Layer(object):
 
     def __init__(self, *args, **kwargs):
         """
-        Basic layer initalization method.
+        Basic layer initialization method.
 
         Args:
             *args: any arguments
@@ -561,7 +561,7 @@ class GaussianLayer(Layer):
             grad (namedtuple): param_name: tensor (contains gradient)
 
         """
-        # initalize tensors for the location and scale derivatives
+        # initialize tensors for the location and scale derivatives
         loc = be.zeros(self.len),
         log_var = be.zeros(self.len)
 

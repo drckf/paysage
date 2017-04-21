@@ -95,7 +95,7 @@ def initialize(self, data, method: str='hinton')
 
 
 
-Inialize the parameters of the model.<br /><br />Args:<br /> ~ data: A Batch object.<br /> ~ method (optional): The initalization method.<br /><br />Returns:<br /> ~ None
+Initialize the parameters of the model.<br /><br />Args:<br /> ~ data: A Batch object.<br /> ~ method (optional): The initialization method.<br /><br />Returns:<br /> ~ None
 
 
 ### joint\_energy

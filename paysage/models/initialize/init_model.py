@@ -15,7 +15,7 @@ def hinton(batch, model):
     "A practical guide to training restricted Boltzmann machines."
     Momentum 9.1 (2010): 926.
 
-    Initalize the weights from N(0, \sigma)
+    Initialize the weights from N(0, \sigma)
     Set hidden_bias = 0
     Set visible_bias = inverse_mean( \< v_i \> )
     If visible_scale: set visible_scale = \< v_i^2 \> - \< v_i \>^2
@@ -52,7 +52,7 @@ def glorot_normal(batch, model):
 
     "Understanding the difficulty of training deep feedforward neural networks", 2010:
 
-    Initalize the weights from N(0, \sigma)
+    Initialize the weights from N(0, \sigma)
     with \sigma = \sqrt(2 / (num_vis_units + num_hidden_units)).
 
     Set hidden_bias = 0
