@@ -1,4 +1,5 @@
 import os
+import copy
 import pandas
 
 from .. import layers
@@ -23,37 +24,36 @@ class State(object):
     ]
 
     """
-    def __init__(self, batch_size: int, model):
+    def __init__(self, tensors):
         """
-        Create a randomly initialized State object.
+        Create a State object.
 
         Args:
-            vis (tensor (num_samples, num_visible)): observed visible units
+            tensors: a list of tensors
+
+        Returns:
+            state object
+
+        """
+        self.units = tensors
+        self.shapes = [be.shape(t) for t in self.units]
+
+    @classmethod
+    def from_model(cls, batch_size, model):
+        """
+        Create a State object.
+
+        Args:
+            batch_size (int): the number of samples per layer
             model (Model): a model object
 
         Returns:
             state object
 
         """
-        self.shapes = [(batch_size, l.len) for l in model.layers]
-        self.units = [layers[i].random(self.shapes[i])
-                      for i in range(model.num_layers)]
-
-    def set_layer(self, values, i):
-        """
-        Set the units of layer i to values.
-
-        Notes:
-            Updates layer.units[i] in place.
-
-        Args:
-            values (tensor (num_samples, num_units))
-
-        Returns:
-            None
-
-        """
-        self.units[i] = values
+        shapes = [(batch_size, l.len) for l in model.layers]
+        units = [model.layers[i].random(shapes[i]) for i in range(model.num_layers)]
+        return cls(units)
 
     @classmethod
     def from_visible(cls, vis, model):
@@ -61,7 +61,7 @@ class State(object):
         Create a state object with given visible unit values.
 
         Args:
-            vis (tensor (num_samples, num_visible))
+            vis (tensor (num_samples, num_visible)): visible unit values.
             model (Model): a model object
 
         Returns:
@@ -69,10 +69,23 @@ class State(object):
 
         """
         batch_size = be.shape(vis)[0]
-        state = cls(batch_size, model)
-        state.set_visible(vis, 0)
+        state = cls.from_model(batch_size, model)
+        state.units[0] = vis
         return state
 
+    @classmethod
+    def from_state(cls, state):
+        """
+        Create a State object from an existing State.
+
+        Args:
+            state (State): a State instance
+
+        Returns:
+            state object
+
+        """
+        return copy.deepcopy(state)
 
 
 class Model(object):
@@ -107,6 +120,8 @@ class Model(object):
         # as the zeroth element
         self.layers = layer_list
         self.num_layers = len(self.layers)
+        self.layer_connections = self._layer_connections()
+        self.weight_connections = self._weight_connections()
 
         assert self.num_layers == 2,\
         "Only models with 2 layers are currently supported"
@@ -160,7 +175,7 @@ class Model(object):
         Inialize the parameters of the model.
 
         Args:
-            data: A batch object.
+            data: A Batch object.
             method (optional): The initalization method.
 
         Returns:
@@ -191,244 +206,200 @@ class Model(object):
         """
         return self.layers[0].random(vis)
 
-    #TODO: use State
-    # currently, this method takes in a single tensor (vis)
-    # and outputs a single tensor (new vis)
-    # the hidden units are only treated implicitly
-    #
-    # this method should take in a State (with the units of all of the layers)
-    # and output a new State (with the updated units of all of the layers)
-    #
-    # this could be done in with the following steps:
-    # 1) update the extrinsic parameters of the odd layers
-    # 2) sample new configurations for the odd layers
-    # 3) update the extrinsic parameters of the even layers
-    # 4) sample new configurations for the even layers
-    #
-    # either, this could return a new State object (which involves a copy)
-    # or, it could mutate the values of the State tensors in place
-    def mcstep(self, vis, beta=None):
+    def _layer_connections(self):
         """
-        Perform a single Gibbs sampling update.
-        v -> update h distribution ~ h -> update v distribution ~ v'
+        Helper function to enumerate the connections between layers.
+        List of list of indices of each layer connected to the layer.
+        e.g. for a 4-layer model the connections are [[1], [0, 2], [1, 3], [2]].
 
         Args:
-            vis (batch_size, num_visible): Observed visible units.
-            beta (optional, (batch_size, 1)): Inverse temperatures.
+            None
 
         Returns:
-            tensor: New visible units (v').
+            list: Indices of connecting layers.
 
         """
-        i = 0
+        return [[j for j in [i-1,i+1] if 0<=j<self.num_layers]
+                   for i in range(self.num_layers)]
 
-        hid = self.layers[i+1].conditional_sample(
-                [self.layers[i].rescale(vis)],
-                [self.weights[i].W()],
-                beta)
-
-        return self.layers[i].conditional_sample(
-            [self.layers[i+1].rescale(hid)],
-            [self.weights[i].W_T()],
-            beta)
-
-    # TODO: use State
-    # this function is just a repeated application of mcstep
-    # so it should be changed to operate on State objects too
-    def markov_chain(self, vis, n, beta=None):
+    def _weight_connections(self):
         """
-        Perform multiple Gibbs sampling steps.
-        v ~ h ~ v_1 ~ h_1 ~ ... ~ v_n
+        Helper function to enumerate the connections between weights and layers.
+        List of list of indices of each weight layer connected to the layer.
+        e.g. for a 4-layer model the connections are [[0], [0, 1], [1, 2], [2]].
 
         Args:
-            vis (batch_size, num_visible): Observed visible units.
-            n: Number of steps.
-            beta (optional, (batch_size, 1)): Inverse temperatures.
+            None
 
         Returns:
-            tensor: New visible units (v').
+            list: Indices of connecting weight layers.
 
         """
-        new_vis = be.float_tensor(vis)
-        for t in range(n):
-            new_vis = self.mcstep(new_vis, beta)
-        return new_vis
+        return [[j for j in [i-1,i] if 0<=j<self.num_layers-1]
+                   for i in range(self.num_layers)]
 
-    #TODO: use State
-    # currently, this method takes in a single tensor (vis)
-    # and outputs a single tensor (new vis)
-    # the hidden units are only treated implicitly
-    #
-    # this method should take in a State (with the units of all of the layers)
-    # and output a new State (with the updated units of all of the layers)
-    #
-    # this could be done in with the following steps:
-    # 1) update the extrinsic parameters of the odd layers
-    # 2) compute the mean of the odd layers
-    # 3) update the extrinsic parameters of the even layers
-    # 4) compute the mean of the even layers
-    #
-    # either, this could return a new State object (which involves a copy)
-    # or, it could mutate the values of the State tensors in place
-    def mean_field_step(self, vis, beta=None):
+    def _connected_rescaled_units(self, i, state):
         """
-        Perform a single mean-field update.
-        v -> update h distribution -> h -> update v distribution -> v'
+        Helper function to retrieve the rescaled units connected to layer i.
 
         Args:
-            vis (batch_size, num_visible): Observed visible units.
-            beta (optional, (batch_size, 1)): Inverse temperatures.
+            i (int): the index of the layer of interest
+            state (State): the current state of the units
 
         Returns:
-            tensor: New visible units (v').
+            list[tensor]: the rescaled values of the connected units
 
         """
-        i = 0
+        return [self.layers[j].rescale(state.units[j])
+                            for j in self.layer_connections[i]]
 
-        hid = self.layers[i+1].conditional_mean(
-            [self.layers[i].rescale(vis)],
-            [self.weights[i].W()],
-            beta)
-
-        return self.layers[i].conditional_mean(
-            [self.layers[i+1].rescale(hid)],
-            [self.weights[i].W_T()],
-            beta)
-
-    # TODO: use State
-    # this function is just a repeated application of mean_field_step
-    # so it should be changed to operate on State objects too
-    def mean_field_iteration(self, vis, n, beta=None):
+    def _connected_weights(self, i):
         """
-        Perform multiple mean-field updates.
-        v -> h -> v_1 -> h_1 -> ... -> v_n
+        Helper function to retrieve the values of the weights connecting
+        layer i to its neighbors.
 
         Args:
-            vis (batch_size, num_visible): Observed visible units.
-            n: Number of steps.
-            beta (optional, (batch_size, 1)): Inverse temperatures.
+            i (int): the index of the layer of interest
 
         Returns:
-            tensor: New visible units (v').
+            list[tensor]: the weights connecting layer i to its neighbros
 
         """
-        new_vis = be.float_tensor(vis)
-        for t in range(n):
-            new_vis = self.mean_field_step(new_vis, beta)
-        return new_vis
+        return [self.weights[j].W() if j < i else self.weights[j].W_T()
+                            for j in self.weight_connections[i]]
 
-    #TODO: use State
-    # currently, this method takes in a single tensor (vis)
-    # and outputs a single tensor (new vis)
-    # the hidden units are only treated implicitly
-    #
-    # this method should take in a State (with the units of all of the layers)
-    # and output a new State (with the updated units of all of the layers)
-    #
-    # this could be done in with the following steps:
-    # 1) update the extrinsic parameters of the odd layers
-    # 2) compute the mode of the odd layers
-    # 3) update the extrinsic parameters of the even layers
-    # 4) compute the mode of the even layers
-    #
-    # either, this could return a new State object (which involves a copy)
-    # or, it could mutate the values of the State tensors in place
-    def deterministic_step(self, vis, beta=None):
+
+    def _alternating_update(self, func_name, state, beta=None, clamped=[]):
         """
-        Perform a single deterministic (maximum probability) update.
-        v -> update h distribution -> h -> update v distribution -> v'
+        Performs a single Gibbs sampling update in alternating layers.
+        state -> new state
 
         Args:
-            vis (batch_size, num_visible): Observed visible units.
-            beta (optional, (batch_size, 1)): Inverse temperatures.
+            func_name (str, function name): layer function name to apply to the units to sample
+            state (State object): the current state of each layer
+            beta (optional, tensor (batch_size, 1)): Inverse temperatures
+            clamped (list): list of layer indices to clamp (no update)
 
         Returns:
-            tensor: New visible units (v').
+            new state
 
         """
-        i = 0
+        updated_state = State.from_state(state)
 
-        hid = self.layers[i+1].conditional_mode(
-            [self.layers[i].rescale(vis)],
-            [self.weights[i].W()],
-            beta)
+        # update the odd then the even layers
+        for ll in [range(1, self.num_layers, 2), range(0, self.num_layers, 2)]:
+            for i in ll:
+                if i in clamped:
+                    continue
+                else:
+                    func = getattr(self.layers[i], func_name)
 
-        return self.layers[i].conditional_mode(
-            [self.layers[i+1].rescale(hid)],
-            [self.weights[i].W_T()],
-            beta)
+                    updated_state.units[i] = func(
+                        self._connected_rescaled_units(i, updated_state),
+                        self._connected_weights(i),
+                        beta)
 
-    # TODO: use State
-    # this function is just a repeated application of deterministic_step
-    # so it should be changed to operate on State objects too
-    def deterministic_iteration(self, vis, n: int, beta=None):
+        return updated_state
+
+    def markov_chain(self, n, state, beta=None, clamped=[]):
         """
-        Perform multiple deterministic (maximum probability) updates.
-        v -> h -> v_1 -> h_1 -> ... -> v_n
+        Perform multiple Gibbs sampling steps in alternating layers.
+        state -> new state
+
+        Notes:
+            Samples layers according to the conditional probability
+            on adjacent layers,
+            x_i ~ P(x_i | x_(i-1), x_(i+1) )
 
         Args:
-            vis (batch_size, num_visible): Observed visible units.
-            n: Number of steps.
-            beta (optional, (batch_size, 1)): Inverse temperatures.
+            n (int): number of steps.
+            state (State object): the current state of each layer
+            beta (optional, tensor (batch_size, 1)): Inverse temperatures
+            clamped (list): list of layer indices to clamp
 
         Returns:
-            tensor: New visible units (v').
+            new state
 
         """
-        new_vis = be.float_tensor(vis)
+        new_state = State.from_state(state)
         for _ in range(n):
-            new_vis = self.deterministic_step(new_vis, beta)
-        return new_vis
+            new_state = self._alternating_update('conditional_sample',
+                                                 new_state,
+                                                 beta,
+                                                 clamped)
+        return new_state
 
-    #TODO: use State
-    # currently, gradients are computed using the mean of the hidden units
-    # conditioned on the value of the visible units
-    # this will not work for deep models, because we cannot compute
-    # the means for models with more than 1 hidden layer
-    # therefore, the gradients need to be computed from samples
-    # of all of the visible and hidden layer units (i.e., States)
-    #
-    # Args should be:
-    # data (State): observed visible units and sampled hidden units
-    # model (State): visible and hidden units sampled from the model
-    def gradient(self, vdata, vmodel):
+    def mean_field_iteration(self, n, state, beta=None, clamped=[]):
+        """
+        Perform multiple mean-field updates in alternating layers
+        states -> new state
+
+        Notes:
+            Returns the expectation of layer units
+            conditioned on adjacent layers,
+            x_i = E[x_i | x_(i-1), x_(i+1) ]
+
+        Args:
+            n (int): number of steps.
+            state (State object): the current state of each layer
+            beta (optional, tensor (batch_size, 1)): Inverse temperatures
+            clamped (list): list of layer indices to clamp
+
+        Returns:
+            new state
+
+        """
+        new_state = State.from_state(state)
+        for _ in range(n):
+            new_state = self._alternating_update('conditional_mean',
+                                                 new_state,
+                                                 beta,
+                                                 clamped)
+        return new_state
+
+    def deterministic_iteration(self, n, state, beta=None, clamped=[]):
+        """
+        Perform multiple deterministic (maximum probability) updates
+        in alternating layers.
+        state -> new state
+
+        Notes:
+            Returns the layer units that maximize the probability
+            conditioned on adjacent layers,
+            x_i = argmax P(x_i | x_(i-1), x_(i+1))
+
+        Args:
+            n (int): number of steps.
+            state (State object): the current state of each layer
+            beta (optional, tensor (batch_size, 1)): Inverse temperatures
+            clamped (list): list of layer indices to clamp
+
+        Returns:
+            new state
+
+        """
+        new_state = State.from_state(state)
+        for _ in range(n):
+            new_state = self._alternating_update('conditional_mode',
+                                                 new_state,
+                                                 beta,
+                                                 clamped)
+        return new_state
+
+    def gradient(self, data_state, model_state):
         """
         Compute the gradient of the model parameters.
-
-        For vis \in {vdata, vmodel}, we:
-
-        1. Scale the visible data.
-        vis_scaled = self.layers[i].rescale(vis)
-
-        2. Update the hidden layer.
-        self.layers[i+1].update(vis_scaled, self.weights[i].W())
-
-        3. Compute the mean of the hidden layer.
-        hid = self.layers[i].mean()
-
-        4. Scale the mean of the hidden layer.
-        hid_scaled = self.layers[i+1].rescale(hid)
-
-        5. Compute the derivatives.
-        vis_derivs = self.layers[i].derivatives(vis, hid_scaled,
-                                                self.weights[i].W())
-        hid_derivs = self.layers[i+1].derivatives(hid, vis_scaled,
-                                      be.transpose(self.weights[i+1].W())
-        weight_derivs = self.weights[i].derivatives(vis_scaled, hid_scaled)
-
-        The gradient is obtained by subtracting the vmodel contribution
-        from the vdata contribution.
+        Updates the states for the positive and negative phases,
+        and computes the gradient from the unit values.
 
         Args:
-            vdata: The observed visible units.
-            vmodel: The sampled visible units.
+            data_state (State object): The observed visible units and sampled hidden units.
+            model_state (State objects): The visible and hidden units sampled from the model.
 
         Returns:
             dict: Gradients of the model parameters.
 
         """
-        i = 0
-
         grad = gu.Gradient(
             [None for l in self.layers],
             [None for w in self.weights]
@@ -436,67 +407,48 @@ class Model(object):
 
         # POSITIVE PHASE (using observed)
 
-        # 1. Scale vdata
-        vdata_scaled = self.layers[i].rescale(vdata)
+        # compute the conditional mean of the hidden layers
+        new_data_state = self.mean_field_iteration(1, data_state, clamped=[0])
 
-        # 2. Compute the mean of the hidden layer
-        hid = self.layers[i+1].conditional_mean(
-            [vdata_scaled],
-            [self.weights[0].W()]
-        )
+        # compute the postive phase of the gradients of the layer parameters
+        for i in range(self.num_layers):
+            grad.layers[i] = self.layers[i].derivatives(
+                new_data_state.units[i],
+                self._connected_rescaled_units(i, new_data_state),
+                self._connected_weights(i)
+            )
 
-        # 3. Scale the hidden mean
-        hid_scaled = self.layers[i+1].rescale(hid)
-
-        # 4. Compute the gradients
-        grad.layers[i] = self.layers[i].derivatives(vdata,
-                                                    [hid_scaled],
-                                                    [self.weights[0].W_T()]
-        )
-
-        grad.layers[i+1] = self.layers[i+1].derivatives(hid,
-                                                        [vdata_scaled],
-                                                        [self.weights[0].W()]
-        )
-
-        grad.weights[i] = self.weights[i].derivatives(vdata_scaled, hid_scaled)
+        # compute the positive phase of the gradients of the weights
+        for i in range(self.num_layers - 1):
+            grad.weights[i] = self.weights[i].derivatives(
+                self.layers[i].rescale(new_data_state.units[i]),
+                self.layers[i+1].rescale(new_data_state.units[i+1]),
+            )
 
         # NEGATIVE PHASE (using sampled)
 
-        # 1. Scale vdata
-        vmodel_scaled = self.layers[i].rescale(vmodel)
+        # compute the conditional mean of the hidden layers
+        new_model_state = self.mean_field_iteration(1, model_state, clamped=[0])
 
-        # 2. Compute the mean of the hidden layer
-        hid = self.layers[i+1].conditional_mean(
-            [vmodel_scaled],
-            [self.weights[0].W()]
-        )
+        # update the gradients of the layer parameters with the negative phase
+        for i in range(self.num_layers):
+            grad.layers[i] = be.mapzip(be.subtract,
+                self.layers[i].derivatives(
+                    new_model_state.units[i],
+                    self._connected_rescaled_units(i, new_model_state),
+                    self._connected_weights(i)
+                ),
+            grad.layers[i])
 
-        # 3. Scale hidden mean
-        hid_scaled = self.layers[i+1].rescale(hid)
+        # update the gradients of the weight parameters with the negative phase
+        for i in range(self.num_layers - 1):
+            grad.weights[i] = be.mapzip(be.subtract,
+                self.weights[i].derivatives(
+                    self.layers[i].rescale(new_model_state.units[i]),
+                    self.layers[i+1].rescale(new_model_state.units[i+1]),
+                ),
+            grad.weights[i])
 
-        # 4. Compute the gradients
-        grad.layers[i] = be.mapzip(be.subtract,
-                                   self.layers[i].derivatives(
-                                       vmodel,
-                                       [hid_scaled],
-                                       [self.weights[0].W_T()]
-                                   ),
-                                   grad.layers[i])
-
-        grad.layers[i+1] = be.mapzip(be.subtract,
-                                     self.layers[i+1].derivatives(
-                                         hid,
-                                         [vmodel_scaled],
-                                         [self.weights[0].W()]
-                                     ),
-                                     grad.layers[i+1])
-
-        grad.weights[i] = be.mapzip(be.subtract,
-                                    self.weights[i].derivatives(
-                                        vmodel_scaled,
-                                        hid_scaled),
-                                    grad.weights[i])
         return grad
 
     def parameter_update(self, deltas):
@@ -518,35 +470,25 @@ class Model(object):
         for i in range(self.num_layers - 1):
             self.weights[i].parameter_step(deltas.weights[i])
 
-    # TODO: use State
-    # Args should be:
-    # data (state): values of all the units
-    # this should be the easiest function to update
-    # also, it isn't really used anywhere right now
-    def joint_energy(self, vis, hid):
+    def joint_energy(self, data):
         """
-        Compute the joint energy of the model.
+        Compute the joint energy of the model based on a state.
 
         Args:
-            vis (batch_size, num_visible): Observed visible units.
-            hid (batch_size, num_hidden): Sampled hidden units:
+            data (State object): the current state of each layer
 
         Returns:
-            tensor (batch_size, ): Joint energies.
+            tensor (num_samples,): Joint energies.
 
         """
         energy = 0
-        for i in range(len(self.weights)):
-            energy += self.layers[i].energy(vis)
-            energy += self.layers[i+1].energy(vis)
-            energy += self.weights[i].energy(vis, hid)
+        for i in range(self.num_layers - 1):
+            energy += self.layers[i].energy(data.units[i])
+            energy += self.layers[i+1].energy(data.units[i+1])
+            energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
 
-    # TODO: not sure what to do about this function for deep models
-    # i think it should be implemented only for models with 1 hidden layer
-    # could still take in a State object
-    # but should assert self.num_layers == 2
-    def marginal_free_energy(self, vis):
+    def marginal_free_energy(self, data):
         """
         Compute the marginal free energy of the model.
 
@@ -554,19 +496,21 @@ class Model(object):
         E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j
         Then the marginal free energy is:
         F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)
+        This can be extended to a deep model by a sum over all hidden states
 
         Args:
-            vis (batch_size, num_visible): Observed visible units.
+            data (State object): The current state of each layer.
 
         Returns:
             tensor (batch_size, ): Marginal free energies.
 
         """
+        assert self.num_layers == 2 # supported for 2-layer models only
         i = 0
-        phi = be.dot(vis, self.weights[i].W())
+        phi = be.dot(data.units[i], self.weights[i].W())
         log_Z_hidden = self.layers[i+1].log_partition_function(phi)
         energy = 0
-        energy += self.layers[i].energy(vis)
+        energy += self.layers[i].energy(data.units[i])
         energy -= be.tsum(log_Z_hidden, axis=1)
         return energy
 

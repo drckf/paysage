@@ -10,11 +10,7 @@ from paysage import optimizers
 import pytest
 
 def test_rbm(paysage_path=None):
-    """
-    TODO : this is just a placeholder, need to clean up & simplifiy setup. Also
-    need to figure how to deal with consistent random seeding throughout the
-    codebase to obtain deterministic checkable results.
-    """
+
     num_hidden_units = 50
     batch_size = 50
     num_epochs = 1

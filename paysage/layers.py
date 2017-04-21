@@ -103,7 +103,7 @@ class Layer(object):
         """
         for i, ip in enumerate(self.params):
             df_params = pandas.DataFrame(be.to_numpy_array(ip))
-            store.put(os.path.join(key, 'parameters', str(i)), df_params)
+            store.put(os.path.join(key, 'parameters', 'key'+str(i)), df_params)
 
     def load_params(self, store, key):
         """
@@ -123,7 +123,7 @@ class Layer(object):
         params = []
         for i, ip in enumerate(self.params):
             params.append(be.float_tensor(
-                store.get(os.path.join(key, 'parameters', str(i))).as_matrix()
+                store.get(os.path.join(key, 'parameters', 'key'+str(i))).as_matrix()
             ).squeeze()) # collapse trivial dimensions to a vector
         self.params = self.params.__class__(*params)
 
@@ -570,11 +570,11 @@ class GaussianLayer(Layer):
         loc = -be.mean(v_scaled, axis=0)
         loc = self.get_penalty_grad(loc, 'loc')
 
-        # compute the derivative with respect to the cale parameter
+        # compute the derivative with respect to the scale parameter
         log_var = -0.5 * be.mean(be.square(be.subtract(
             self.params.loc, vis)), axis=0)
         for i in range(len(hid)):
-            log_var += be.batch_dot(hid[i], weights[i],vis, axis=0) / len(vis)
+            log_var += be.batch_dot(hid[i], weights[i], vis, axis=0) / len(vis)
         log_var = self.rescale(log_var)
         log_var = self.get_penalty_grad(log_var, 'log_var')
 
