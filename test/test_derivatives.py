@@ -378,7 +378,7 @@ def test_gaussian_conditional_params():
     assert be.allclose(hidden_mean, hid_mean_func),\
     "hidden mean wrong in gaussian-gaussian rbm"
 
-'''
+
 def test_gaussian_derivatives():
     num_visible_units = 100
     num_hidden_units = 50
@@ -399,11 +399,11 @@ def test_gaussian_derivatives():
     log_var_b = 0.1 * be.randn((num_hidden_units,))
     W = be.randn((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.layers[0].int_params.log_var[:] = log_var_a
-    rbm.layers[1].int_params.log_var[:] = log_var_b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.layers[0].params.log_var[:] = log_var_a
+    rbm.layers[1].params.log_var[:] = log_var_b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
@@ -411,9 +411,9 @@ def test_gaussian_derivatives():
     vdata_scaled = vdata / be.broadcast(visible_var, vdata)
 
     # compute the mean of the hidden layer
-    rbm.layers[1].update([vdata_scaled], [rbm.weights[0].W()])
+    hid_mean = rbm.layers[1].conditional_mean(
+        [vdata_scaled], [rbm.weights[0].W()])
     hidden_var = be.exp(log_var_b)
-    hid_mean = rbm.layers[1].mean()
     hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
 
     # compute the derivatives
@@ -433,14 +433,11 @@ def test_gaussian_derivatives():
     d_W = -be.batch_outer(vdata_scaled, hid_mean_scaled) / len(vdata_scaled)
 
     # compute the derivatives using the layer functions
-    rbm.layers[1].update([vdata_scaled], [rbm.weights[0].W()])
-    rbm.layers[0].update([hid_mean_scaled], [rbm.weights[0].W_T()])
-
     vis_derivs = rbm.layers[0].derivatives(vdata, [hid_mean_scaled],
-                                            [rbm.weights[0].W()])
+                                            [rbm.weights[0].W_T()])
 
     hid_derivs = rbm.layers[1].derivatives(hid_mean, [vdata_scaled],
-                                           [rbm.weights[0].W_T()])
+                                           [rbm.weights[0].W()])
 
     weight_derivs = rbm.weights[0].derivatives(vdata_scaled, hid_mean_scaled)
 
@@ -458,7 +455,7 @@ def test_gaussian_derivatives():
 
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in gaussian-gaussian rbm"
-'''
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
