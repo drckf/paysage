@@ -292,7 +292,9 @@ class TAP_rbm(model.Model):
     def grad_w_gamma_TAP3(self, m, w, a, b):
         m_v_quad = m.v - be.square(m.v)
         m_h_quad = m.h - be.square(m.h)
-        return -be.outer(m.v, m.h) - be.multiply(w, be.outer(m_v_quad, m_h_quad))
+        ww = be.square(w)
+        return -be.outer(m.v, m.h) - be.multiply(w, be.outer(m_v_quad, m_h_quad)) - \
+               4.0 * be.multiply(ww, be.outer(be.multiply(0.5 - m.v, m_v_quad), be.multiply(0.5 - m.h, m_h_quad)))
 
     def gradient(self, vdata, vmodel):
         """
