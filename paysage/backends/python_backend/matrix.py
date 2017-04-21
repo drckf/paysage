@@ -811,7 +811,6 @@ def outer(x: T.Tensor, y: T.Tensor) -> T.Tensor:
     """
     return numpy.outer(x,y)
 
-
 class BroadcastError(ValueError):
     """
     BroadcastError exception:
@@ -845,7 +844,7 @@ def broadcast(vec: T.Tensor, matrix: T.Tensor) -> T.Tensor:
         return numpy.broadcast_to(vec, shape(matrix))
     except ValueError:
         raise BroadcastError('cannot broadcast vector of dimension {} \
-onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
+        onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
 
 def add(a: T.Tensor, b: T.Tensor) -> T.Tensor:
     """

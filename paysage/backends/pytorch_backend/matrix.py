@@ -942,7 +942,7 @@ def broadcast(vec: T.FloatTensor, matrix: T.FloatTensor) -> T.FloatTensor:
             return vec.expand(matrix.size(0), matrix.size(1))
     except ValueError:
         raise BroadcastError('cannot broadcast vector of dimension {} \
-onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
+              onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
 
 def add(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
     """

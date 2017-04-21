@@ -345,7 +345,7 @@ class TAP_rbm(model.Model):
         db_EMF = self.grad_b_gamma(m,w,a,b)
 
         # compute average grad_F_marginal over the minibatch
-        intermediate = be.expit(be.dot(data_state.units[0],w) + b)
+        intermediate = be.expit(be.add(be.unsqueeze(b,0), be.dot(data_state.units[0], w)))
 
         da = be.mean(data_state.units[0], axis=0)
         db = be.mean(intermediate, axis=0)
