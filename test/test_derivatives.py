@@ -425,10 +425,10 @@ def test_gaussian_derivatives():
     rbm.layers[0].update([hid_mean_scaled], [rbm.weights[0].W_T()])
 
     vis_derivs = rbm.layers[0].derivatives(vdata, [hid_mean_scaled],
-                                            [rbm.weights[0].W()])
+                                            [rbm.weights[0].W_T()])
 
     hid_derivs = rbm.layers[1].derivatives(hid_mean, [vdata_scaled],
-                                           [rbm.weights[0].W_T()])
+                                           [rbm.weights[0].W()])
 
     weight_derivs = rbm.weights[0].derivatives(vdata_scaled, hid_mean_scaled)
 

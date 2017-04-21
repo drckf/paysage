@@ -86,9 +86,10 @@ def test_grbm_reload():
         grbm_reload = model.Model.from_saved(store)
         store.close()
     # check the two models are consistent
-    vis_state = vis_layer.sample_state()
-    vis_orig = grbm.deterministic_step(vis_state)
-    vis_reload = grbm_reload.deterministic_step(vis_state)
+    vis_data = vis_layer.sample_state()
+    data_state = model.State.from_visible(vis_data, grbm)
+    vis_orig = grbm.deterministic_iteration(1, data_state).units[0]
+    vis_reload = grbm_reload.deterministic_iteration(1, data_state).units[0]
     assert be.allclose(vis_orig, vis_reload)
 
 

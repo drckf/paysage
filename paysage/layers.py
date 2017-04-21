@@ -105,7 +105,7 @@ class Layer(object):
             df_params = pandas.DataFrame(
                 be.to_numpy_array(ip)
             )
-            store.put(os.path.join(key, 'intrinsic', str(i)), df_params)
+            store.put(os.path.join(key, 'intrinsic', 'key'+str(i)), df_params)
 
     def load_params(self, store, key):
         """
@@ -126,7 +126,7 @@ class Layer(object):
         int_params = []
         for i, ip in enumerate(self.int_params):
             int_params.append(be.float_tensor(
-                store.get(os.path.join(key, 'intrinsic', str(i))).as_matrix()
+                store.get(os.path.join(key, 'intrinsic', 'key'+str(i))).as_matrix()
             ).squeeze()) # collapse trivial dimensions to a vector
         self.int_params = self.int_params.__class__(*int_params)
 
@@ -599,13 +599,13 @@ class GaussianLayer(Layer):
         loc = -be.mean(v_scaled, axis=0)
         loc = self.get_penalty_grad(loc, 'loc')
 
-        # compute the derivative with respect to the cale parameter
+        # compute the derivative with respect to the scale parameter
         log_var = -0.5 * be.mean(be.square(be.subtract(
             self.int_params.loc, vis)), axis=0)
         for i in range(len(hid)):
             log_var += be.batch_dot(
                 hid[i],
-                be.transpose(weights[i]),
+                weights[i],
                 vis,
                 axis=0
             ) / len(vis)

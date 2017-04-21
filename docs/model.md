@@ -17,25 +17,13 @@ Create a model.<br /><br />Notes:<br /> ~ Only 2-layer models currently supporte
 ### deterministic\_iteration
 ```py
 
-def deterministic_iteration(self, vis, n: int, beta=None)
+def deterministic_iteration(self, n, state, beta=None, clamped=[])
 
 ```
 
 
 
-Perform multiple deterministic (maximum probability) updates.<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ n: Number of steps.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
-
-
-### deterministic\_step
-```py
-
-def deterministic_step(self, vis, beta=None)
-
-```
-
-
-
-Perform a single deterministic (maximum probability) update.<br />v -> update h distribution -> h -> update v distribution -> v'<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
+Perform multiple deterministic (maximum probability) updates<br />in alternating layers.<br />state -> new state<br /><br />Args:<br /> ~ n (int): number of steps.<br /> ~ state (State object): the current state of each layer<br /> ~ beta (optional, tensor (batch_size, 1)): Inverse temperatures<br /> ~ clamped (list): list of layer indices to clamp<br /><br />Returns:<br /> ~ new state
 
 
 ### get\_config
@@ -53,13 +41,13 @@ Get a configuration for the model.<br /><br />Notes:<br /> ~ Includes metadata o
 ### gradient
 ```py
 
-def gradient(self, vdata, vmodel)
+def gradient(self, data_state, model_state)
 
 ```
 
 
 
-Compute the gradient of the model parameters.<br /><br />For vis \in {vdata, vmodel}, we:<br /><br />1. Scale the visible data.<br />vis_scaled = self.layers[i].rescale(vis)<br /><br />2. Update the hidden layer.<br />self.layers[i+1].update(vis_scaled, self.weights[i].W())<br /><br />3. Compute the mean of the hidden layer.<br />hid = self.layers[i].mean()<br /><br />4. Scale the mean of the hidden layer.<br />hid_scaled = self.layers[i+1].rescale(hid)<br /><br />5. Compute the derivatives.<br />vis_derivs = self.layers[i].derivatives(vis, hid_scaled,<br /> ~  ~  ~  ~  ~  ~  ~  ~  ~  ~ self.weights[i].W())<br />hid_derivs = self.layers[i+1].derivatives(hid, vis_scaled,<br /> ~  ~  ~  ~  ~  ~  ~   be.transpose(self.weights[i+1].W())<br />weight_derivs = self.weights[i].derivatives(vis_scaled, hid_scaled)<br /><br />The gradient is obtained by subtracting the vmodel contribution<br />from the vdata contribution.<br /><br />Args:<br /> ~ vdata: The observed visible units.<br /> ~ vmodel: The sampled visible units.<br /><br />Returns:<br /> ~ dict: Gradients of the model parameters.
+Compute the gradient of the model parameters.<br /><br />For vis \in {vdata, vmodel}, we:<br /><br />1. Scale the visible data.<br />vis_scaled = self.layers[i].rescale(vis)<br /><br />2. Update the hidden layer.<br />self.layers[i+1].update(vis_scaled, self.weights[i].W())<br /><br />3. Compute the mean of the hidden layer.<br />hid = self.layers[i].mean()<br /><br />4. Scale the mean of the hidden layer.<br />hid_scaled = self.layers[i+1].rescale(hid)<br /><br />5. Compute the derivatives.<br />vis_derivs = self.layers[i].derivatives(vis, hid_scaled,<br /> ~  ~  ~  ~  ~  ~  ~  ~  ~  ~ self.weights[i].W())<br />hid_derivs = self.layers[i+1].derivatives(hid, vis_scaled,<br /> ~  ~  ~  ~  ~  ~  ~   be.transpose(self.weights[i+1].W())<br />weight_derivs = self.weights[i].derivatives(vis_scaled, hid_scaled)<br /><br />The gradient is obtained by subtracting the vmodel contribution<br />from the vdata contribution.<br /><br />Args:<br /> ~ data_state (State object): The observed visible units and sampled hidden units.<br /> ~ model_state (State objects): The visible and hidden units sampled from the model.<br /><br />Returns:<br /> ~ dict: Gradients of the model parameters.
 
 
 ### initialize
@@ -71,79 +59,55 @@ def initialize(self, data, method: str='hinton')
 
 
 
-Inialize the parameters of the model.<br /><br />Args:<br /> ~ data: A batch object.<br /> ~ method (optional): The initalization method.<br /><br />Returns:<br /> ~ None
+Inialize the parameters of the model.<br /><br />Args:<br /> ~ data: A Batch object.<br /> ~ method (optional): The initalization method.<br /><br />Returns:<br /> ~ None
 
 
 ### joint\_energy
 ```py
 
-def joint_energy(self, vis, hid)
+def joint_energy(self, data)
 
 ```
 
 
 
-Compute the joint energy of the model.<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ hid (batch_size, num_hidden): Sampled hidden units:<br /><br />Returns:<br /> ~ tensor (batch_size, ): Joint energies.
+Compute the joint energy of the model based on a state.<br /><br />Args:<br /> ~ data (State object): the current state of each layer<br /><br />Returns:<br /> ~ tensor (num_samples,): Joint energies.
 
 
 ### marginal\_free\_energy
 ```py
 
-def marginal_free_energy(self, vis)
+def marginal_free_energy(self, data)
 
 ```
 
 
 
-Compute the marginal free energy of the model.<br /><br />If the energy is:<br />E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j<br />Then the marginal free energy is:<br />F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /><br />Returns:<br /> ~ tensor (batch_size, ): Marginal free energies.
+Compute the marginal free energy of the model.<br /><br />If the energy is:<br />E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j<br />Then the marginal free energy is:<br />F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)<br />This can be extended to a deep model by a sum over all hidden states<br /><br />Args:<br /> ~ data (State object): The current state of each layer.<br /><br />Returns:<br /> ~ tensor (batch_size, ): Marginal free energies.
 
 
 ### markov\_chain
 ```py
 
-def markov_chain(self, vis, n, beta=None)
+def markov_chain(self, n, state, beta=None, clamped=[])
 
 ```
 
 
 
-Perform multiple Gibbs sampling steps.<br />v ~ h ~ v_1 ~ h_1 ~ ... ~ v_n<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ n: Number of steps.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
-
-
-### mcstep
-```py
-
-def mcstep(self, vis, beta=None)
-
-```
-
-
-
-Perform a single Gibbs sampling update.<br />v -> update h distribution ~ h -> update v distribution ~ v'<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
+Perform multiple Gibbs sampling steps in alternating layers.<br />state -> new state<br /><br />Args:<br /> ~ n (int): number of steps.<br /> ~ state (State object): the current state of each layer<br /> ~ beta (optional, tensor (batch_size, 1)): Inverse temperatures<br /> ~ clamped (list): list of layer indices to clamp<br /><br />Returns:<br /> ~ new state
 
 
 ### mean\_field\_iteration
 ```py
 
-def mean_field_iteration(self, vis, n, beta=None)
+def mean_field_iteration(self, n, state, beta=None, clamped=[])
 
 ```
 
 
 
-Perform multiple mean-field updates.<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ n: Number of steps.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
-
-
-### mean\_field\_step
-```py
-
-def mean_field_step(self, vis, beta=None)
-
-```
-
-
-
-Perform a single mean-field update.<br />v -> update h distribution -> h -> update v distribution -> v'<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
+Perform multiple mean-field updates in alternating layers<br />states -> new state<br /><br />Args:<br /> ~ n (int): number of steps.<br /> ~ state (State object): the current state of each layer<br /> ~ beta (optional, tensor (batch_size, 1)): Inverse temperatures<br /> ~ clamped (list): list of layer indices to clamp<br /><br />Returns:<br /> ~ new state
 
 
 ### parameter\_update
@@ -189,25 +153,13 @@ A State is a list of tensors that contains the states of the units<br />describe
 ### \_\_init\_\_
 ```py
 
-def __init__(self, batch_size: int, model)
+def __init__(self, tensors)
 
 ```
 
 
 
-Create a randomly initialized State object.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_visible)): observed visible units<br /> ~ model (Model): a model object<br /><br />Returns:<br /> ~ state object
-
-
-### set\_layer
-```py
-
-def set_layer(self, values, i)
-
-```
-
-
-
-Set the units of layer i to values.<br /><br />Notes:<br /> ~ Updates layer.units[i] in place.<br /><br />Args:<br /> ~ values (tensor (num_samples, num_units))<br /><br />Returns:<br /> ~ None
+Create a State object.<br /><br />Args:<br /> ~ tensors: a list of tensors<br /><br />Returns:<br /> ~ state object
 
 
 

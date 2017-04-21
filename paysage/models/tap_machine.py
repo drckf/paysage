@@ -27,7 +27,7 @@ class TAP_rbm(model.Model):
 
     def __init__(self, layer_list, init_lr_EMF=0.1, tolerance_EMF=1e-2, max_iters_EMF=100, num_persistent_samples=0):
         """
-        Create a TAP rbm model.
+        Create a TAP RBM model.
 
         Notes:
             Only 2-layer models currently supported.
@@ -43,7 +43,7 @@ class TAP_rbm(model.Model):
                     0 implies we use a random seed each iteration
 
         Returns:
-            model: A TAP rbm model.
+            model: A TAP RBM model.
 
         """
         super().__init__(layer_list)
@@ -203,11 +203,12 @@ class TAP_rbm(model.Model):
         """
         return -be.dot(a,v) - be.tsum(be.logaddexp((b + be.dot(v,w)), be.zeros_like(b)))
 
-    def gradient(self, vdata, vmodel):
+    def gradient(self, data_state, model_state):
         """
         Gradient of -\ln P(v) with respect to the weights and biases
         """
 
+        batch_size = be.shape(data_state.units[0])[0]
         # alias weights and biases
         w = self.weights[0].int_params.matrix
         a = self.layers[0].int_params.loc
@@ -241,14 +242,13 @@ class TAP_rbm(model.Model):
         db_EMF = -m.h
 
         # compute average grad_F_marginal over the minibatch
-        intermediate = be.expit(be.dot(vdata,w) + b)
+        intermediate = be.expit(be.dot(data_state.units[0],w) + b)
 
-        da = be.mean(vdata, axis=0)
+        da = be.mean(data_state.units[0], axis=0)
         db = be.mean(intermediate, axis=0)
-        batch_size = be.shape(vdata)[0]
-        # This is the same as \sum_{i} vdata[i] \outer intermediate[i]
+        # This is the same as \sum_{i} data_state.units[0][i] \outer intermediate[i]
         # TODO: is this efficient?
-        dw = be.dot(be.transpose(vdata), intermediate) / batch_size
+        dw = be.dot(be.transpose(data_state.units[0]), intermediate) / batch_size
 
         grad = gu.Gradient(
             [None for l in self.layers],
