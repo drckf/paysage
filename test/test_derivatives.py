@@ -205,8 +205,8 @@ def test_ising_derivatives():
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in ising-ising rbm"
 
-'''
-def test_exponential_update():
+
+def test_exponential_conditional_params():
     num_visible_units = 100
     num_hidden_units = 50
     batch_size = 25
@@ -225,31 +225,34 @@ def test_exponential_update():
     b = be.rand((num_hidden_units,))
     W = -be.rand((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     hdata = rbm.layers[1].random((batch_size, num_hidden_units))
 
-    # compute extrinsic parameters
+    # compute conditional parameters
     hidden_rate = -be.dot(vdata, W) # (batch_size, num_hidden_units)
     hidden_rate += be.broadcast(b, hidden_rate)
 
     visible_rate = -be.dot(hdata, be.transpose(W)) # (batch_size, num_visible_units)
     visible_rate += be.broadcast(a, visible_rate)
 
-    # update the extrinsic parameter using the layer functions
-    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
-    rbm.layers[0].update([hdata], [rbm.weights[0].W_T()])
+    # compute the conditional parameters using the layer functions
+    hidden_rate_func = rbm.layers[1]._conditional_params(
+        [vdata], [rbm.weights[0].W()])
+    visible_rate_func = rbm.layers[0]._conditional_params(
+        [hdata], [rbm.weights[0].W_T()])
 
-    assert be.allclose(hidden_rate, rbm.layers[1].ext_params.rate), \
+    assert be.allclose(hidden_rate, hidden_rate_func), \
     "hidden rate wrong in exponential-exponential rbm"
 
-    assert be.allclose(visible_rate, rbm.layers[0].ext_params.rate), \
+    assert be.allclose(visible_rate, visible_rate_func), \
     "visible rate wrong in exponential-exponential rbm"
 
+'''
 def test_exponential_derivatives():
     num_visible_units = 100
     num_hidden_units = 50
