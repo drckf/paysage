@@ -25,7 +25,7 @@ class TAP_rbm(model.Model):
 
     """
 
-    def __init__(self, layer_list, terms=2, init_lr_EMF=0.1, tolerance_EMF=1e-2, max_iters_EMF=100, num_persistent_samples=0):
+    def __init__(self, layer_list, terms=2, init_lr_EMF=0.1, tolerance_EMF=1e-7, max_iters_EMF=100, num_persistent_samples=0):
         """
         Create a TAP rbm model.
 
@@ -372,6 +372,6 @@ class TAP_rbm(model.Model):
         grad.layers[0] = layers.IntrinsicParamsBernoulli(da + da_EMF)
         grad.layers[1] = layers.IntrinsicParamsBernoulli(db + db_EMF)
 
-        score = be.accumulate(self.marginal_free_energy, vdata)
-        print(score / batch_size + EMF)
+        #score = be.accumulate(self.marginal_free_energy, vdata)
+        #print(-score / batch_size + EMF)
         return grad
