@@ -257,7 +257,7 @@ class TAP_rbm(model.Model):
         return \
             be.tsum(be.multiply(m.v, be.log(m.v)) + be.multiply(1.0 - m.v, be.log(1.0 - m.v))) + \
             be.tsum(be.multiply(m.h, be.log(m.h)) + be.multiply(1.0 - m.h, be.log(1.0 - m.h))) - \
-            be.dot(a,m.v) - be.dot(b,m.h) - be.dot(m.v, a + be.dot(w,m.h)) - \
+            be.dot(b,m.h) - be.dot(m.v, a + be.dot(w,m.h)) - \
             0.5 * be.dot(m_v_quad, be.dot(ww, m_h_quad))
 
     # The Legendre transform of F(v;q) as a function of q according to TAP expansion 3 terms
@@ -277,7 +277,7 @@ class TAP_rbm(model.Model):
         return \
             be.tsum(be.multiply(m.v, be.log(m.v)) + be.multiply(1.0 - m.v, be.log(1.0 - m.v))) + \
             be.tsum(be.multiply(m.h, be.log(m.h)) + be.multiply(1.0 - m.h, be.log(1.0 - m.h))) - \
-            be.dot(a,m.v) - be.dot(b,m.h) - be.dot(m.v, a + be.dot(w,m.h)) - \
+            be.dot(b,m.h) - be.dot(m.v, a + be.dot(w,m.h)) - \
             0.5 * be.dot(m_v_quad, be.dot(ww, m_h_quad)) - \
             (4.0/3.0) * be.tsum(be.multiply(alias2, be.multiply(alias1, www)))
 
