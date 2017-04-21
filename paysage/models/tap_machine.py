@@ -281,18 +281,6 @@ class TAP_rbm(model.Model):
             0.5 * be.dot(m_v_quad, be.dot(ww, m_h_quad)) - \
             (4.0/3.0) * be.tsum(be.multiply(alias2, be.multiply(alias1, www)))
 
-    def marginal_free_energy(self, v):
-        """
-        '''
-        -\log \sum_h \exp{-E(v,h)}
-        '''
-        """
-        # alias weights and biases
-        w = self.weights[0].int_params[0]
-        a = self.layers[0].int_params[0]
-        b = self.layers[1].int_params[0]
-        return -be.dot(a,v) - be.tsum(be.logaddexp((b + be.dot(v,w)), be.zeros_like(b)))
-
     def grad_a_gamma(self, m, w, a, b):
         return -m.v
     def grad_b_gamma(self, m, w, a, b):
