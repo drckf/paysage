@@ -13,7 +13,7 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True
 
     num_hidden_units = 256
     batch_size = 100
-    learning_rate = 0.1
+    learning_rate = 0.005
 
     (_, _, shuffled_filepath) = \
             util.default_paths(paysage_path)
@@ -37,7 +37,7 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True
                                 metrics=['ReconstructionError',
                                          'EnergyDistance'])
 
-    opt = optimizers.Gradient(stepsize=learning_rate,
+    opt = optimizers.ADAM(stepsize=learning_rate,
                               scheduler=optimizers.PowerLawDecay(0.1),
                               tolerance=1e-4,
                               ascent=True)

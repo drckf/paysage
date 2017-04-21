@@ -15,7 +15,7 @@ def __init__(self, layer_list, init_lr_EMF=0.1, tolerance_EMF=0.01, max_iters_EM
 
 
 
-Create a TAP rbm model.<br /><br />Notes:<br /> ~ Only 2-layer models currently supported.<br /><br />Args:<br /> ~ layer_list: A list of layers objects.<br /><br /> ~ EMF computation parameters:<br /> ~  ~ init_lr float: initial learning rate which is halved whenever necessary to enforce descent.<br /> ~  ~ tol float: tolerance for quitting minimization.<br /> ~  ~ max_iters: maximum gradient decsent steps<br /> ~  ~ number of persistent magnetization parameters to keep as seeds for gradient descent.<br /> ~  ~  ~ 0 implies we use a random seed each iteration<br /><br />Returns:<br /> ~ model: A TAP rbm model.
+Create a TAP RBM model.<br /><br />Notes:<br /> ~ Only 2-layer models currently supported.<br /><br />Args:<br /> ~ layer_list: A list of layers objects.<br /><br /> ~ EMF computation parameters:<br /> ~  ~ init_lr float: initial learning rate which is halved whenever necessary to enforce descent.<br /> ~  ~ tol float: tolerance for quitting minimization.<br /> ~  ~ max_iters: maximum gradient decsent steps<br /> ~  ~ number of persistent magnetization parameters to keep as seeds for gradient descent.<br /> ~  ~  ~ 0 implies we use a random seed each iteration<br /><br />Returns:<br /> ~ model: A TAP RBM model.
 
 
 ### clamped\_free\_energy
@@ -33,25 +33,13 @@ def clamped_free_energy(self, v, w, a, b)
 ### deterministic\_iteration
 ```py
 
-def deterministic_iteration(self, vis, n: int, beta=None)
+def deterministic_iteration(self, n, state, beta=None, clamped=[])
 
 ```
 
 
 
-Perform multiple deterministic (maximum probability) updates.<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ n: Number of steps.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
-
-
-### deterministic\_step
-```py
-
-def deterministic_step(self, vis, beta=None)
-
-```
-
-
-
-Perform a single deterministic (maximum probability) update.<br />v -> update h distribution -> h -> update v distribution -> v'<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
+Perform multiple deterministic (maximum probability) updates<br />in alternating layers.<br />state -> new state<br /><br />Args:<br /> ~ n (int): number of steps.<br /> ~ state (State object): the current state of each layer<br /> ~ beta (optional, tensor (batch_size, 1)): Inverse temperatures<br /> ~ clamped (list): list of layer indices to clamp<br /><br />Returns:<br /> ~ new state
 
 
 ### get\_config
@@ -81,7 +69,7 @@ Compute the Gibbs free engergy of the model according to the TAP<br />expansion 
 ### gradient
 ```py
 
-def gradient(self, vdata, vmodel)
+def gradient(self, data_state, model_state)
 
 ```
 
@@ -99,79 +87,55 @@ def initialize(self, data, method: str='hinton')
 
 
 
-Inialize the parameters of the model.<br /><br />Args:<br /> ~ data: A batch object.<br /> ~ method (optional): The initalization method.<br /><br />Returns:<br /> ~ None
+Inialize the parameters of the model.<br /><br />Args:<br /> ~ data: A Batch object.<br /> ~ method (optional): The initalization method.<br /><br />Returns:<br /> ~ None
 
 
 ### joint\_energy
 ```py
 
-def joint_energy(self, vis, hid)
+def joint_energy(self, data)
 
 ```
 
 
 
-Compute the joint energy of the model.<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ hid (batch_size, num_hidden): Sampled hidden units:<br /><br />Returns:<br /> ~ tensor (batch_size, ): Joint energies.
+Compute the joint energy of the model based on a state.<br /><br />Args:<br /> ~ data (State object): the current state of each layer<br /><br />Returns:<br /> ~ tensor (num_samples,): Joint energies.
 
 
 ### marginal\_free\_energy
 ```py
 
-def marginal_free_energy(self, vis)
+def marginal_free_energy(self, data)
 
 ```
 
 
 
-Compute the marginal free energy of the model.<br /><br />If the energy is:<br />E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j<br />Then the marginal free energy is:<br />F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /><br />Returns:<br /> ~ tensor (batch_size, ): Marginal free energies.
+Compute the marginal free energy of the model.<br /><br />If the energy is:<br />E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j<br />Then the marginal free energy is:<br />F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)<br />This can be extended to a deep model by a sum over all hidden states<br /><br />Args:<br /> ~ data (State object): The current state of each layer.<br /><br />Returns:<br /> ~ tensor (batch_size, ): Marginal free energies.
 
 
 ### markov\_chain
 ```py
 
-def markov_chain(self, vis, n, beta=None)
+def markov_chain(self, n, state, beta=None, clamped=[])
 
 ```
 
 
 
-Perform multiple Gibbs sampling steps.<br />v ~ h ~ v_1 ~ h_1 ~ ... ~ v_n<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ n: Number of steps.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
-
-
-### mcstep
-```py
-
-def mcstep(self, vis, beta=None)
-
-```
-
-
-
-Perform a single Gibbs sampling update.<br />v -> update h distribution ~ h -> update v distribution ~ v'<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
+Perform multiple Gibbs sampling steps in alternating layers.<br />state -> new state<br /><br />Args:<br /> ~ n (int): number of steps.<br /> ~ state (State object): the current state of each layer<br /> ~ beta (optional, tensor (batch_size, 1)): Inverse temperatures<br /> ~ clamped (list): list of layer indices to clamp<br /><br />Returns:<br /> ~ new state
 
 
 ### mean\_field\_iteration
 ```py
 
-def mean_field_iteration(self, vis, n, beta=None)
+def mean_field_iteration(self, n, state, beta=None, clamped=[])
 
 ```
 
 
 
-Perform multiple mean-field updates.<br />v -> h -> v_1 -> h_1 -> ... -> v_n<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ n: Number of steps.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
-
-
-### mean\_field\_step
-```py
-
-def mean_field_step(self, vis, beta=None)
-
-```
-
-
-
-Perform a single mean-field update.<br />v -> update h distribution -> h -> update v distribution -> v'<br /><br />Args:<br /> ~ vis (batch_size, num_visible): Observed visible units.<br /> ~ beta (optional, (batch_size, 1)): Inverse temperatures.<br /><br />Returns:<br /> ~ tensor: New visible units (v').
+Perform multiple mean-field updates in alternating layers<br />states -> new state<br /><br />Args:<br /> ~ n (int): number of steps.<br /> ~ state (State object): the current state of each layer<br /> ~ beta (optional, tensor (batch_size, 1)): Inverse temperatures<br /> ~ clamped (list): list of layer indices to clamp<br /><br />Returns:<br /> ~ new state
 
 
 ### parameter\_update

@@ -71,6 +71,7 @@ def test_grbm_reload():
         grbm_reload = model.Model.from_saved(store)
         store.close()
     # check the two models are consistent
+<<<<<<< HEAD
     vis_state = vis_layer.random((num_samples, num_vis))
 
     hid_orig = grbm.layers[1].conditional_mode(
@@ -80,6 +81,13 @@ def test_grbm_reload():
     hid_reload = grbm_reload.layers[1].conditional_mode(
         [vis_layer.rescale(vis_state)],
         [grbm_reload.weights[0].W()])
+=======
+    vis_data = vis_layer.sample_state()
+    data_state = model.State.from_visible(vis_data, grbm)
+    vis_orig = grbm.deterministic_iteration(1, data_state).units[0]
+    vis_reload = grbm_reload.deterministic_iteration(1, data_state).units[0]
+    assert be.allclose(vis_orig, vis_reload)
+>>>>>>> master
 
     assert be.allclose(hid_orig, hid_reload)
 

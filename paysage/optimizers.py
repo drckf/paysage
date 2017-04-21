@@ -308,7 +308,6 @@ class Gradient(Optimizer):
         self.scheduler.increment(epoch)
         lr_ = partial(be.tmul_,
                       be.float_scalar(self.grad_multiplier * self.scheduler.get_lr() * self.stepsize))
-
         self.delta = grad
         gu.grad_apply_(lr_, self.delta)
         model.parameter_update(self.delta)
