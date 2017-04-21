@@ -252,7 +252,7 @@ def test_exponential_conditional_params():
     assert be.allclose(visible_rate, visible_rate_func), \
     "visible rate wrong in exponential-exponential rbm"
 
-'''
+
 def test_exponential_derivatives():
     num_visible_units = 100
     num_hidden_units = 50
@@ -272,17 +272,16 @@ def test_exponential_derivatives():
     b = be.rand((num_hidden_units,))
     W = -be.rand((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     vdata_scaled = rbm.layers[0].rescale(vdata)
 
     # compute the mean of the hidden layer
-    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
-    hid_mean = rbm.layers[1].mean()
+    hid_mean = rbm.layers[1].conditional_mean([vdata], [rbm.weights[0].W()])
     hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
 
     # compute the derivatives
@@ -292,10 +291,10 @@ def test_exponential_derivatives():
 
     # compute the derivatives using the layer functions
     vis_derivs = rbm.layers[0].derivatives(vdata, [hid_mean_scaled],
-                                            [rbm.weights[0].W()])
+                                            [rbm.weights[0].W_T()])
 
     hid_derivs = rbm.layers[1].derivatives(hid_mean, [vdata_scaled],
-                                               [rbm.weights[0].W_T()])
+                                               [rbm.weights[0].W()])
 
     weight_derivs = rbm.weights[0].derivatives(vdata, hid_mean_scaled)
 
@@ -308,6 +307,7 @@ def test_exponential_derivatives():
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in exponential-exponential rbm"
 
+'''
 def test_gaussian_update():
     num_visible_units = 100
     num_hidden_units = 50
