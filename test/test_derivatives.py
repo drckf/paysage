@@ -307,8 +307,8 @@ def test_exponential_derivatives():
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in exponential-exponential rbm"
 
-'''
-def test_gaussian_update():
+
+def test_gaussian_conditional_params():
     num_visible_units = 100
     num_hidden_units = 50
     batch_size = 25
@@ -328,11 +328,11 @@ def test_gaussian_update():
     log_var_b = 0.1 * be.randn((num_hidden_units,))
     W = be.randn((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.layers[0].int_params.log_var[:] = log_var_a
-    rbm.layers[1].int_params.log_var[:] = log_var_b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.layers[0].params.log_var[:] = log_var_a
+    rbm.layers[1].params.log_var[:] = log_var_b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
@@ -360,22 +360,25 @@ def test_gaussian_update():
     visible_mean = be.dot(hdata_scaled, be.transpose(W)) # (batch_size, num_hidden_units)
     visible_mean += be.broadcast(a, visible_mean)
 
-    # update the extrinsic parameters using the layer functions
-    rbm.layers[0].update([hdata_scaled], [rbm.weights[0].W_T()])
-    rbm.layers[1].update([vdata_scaled], [rbm.weights[0].W()])
+    # update the conditional parameters using the layer functions
+    vis_mean_func, vis_var_func = rbm.layers[0]._conditional_params(
+        [hdata_scaled], [rbm.weights[0].W_T()])
+    hid_mean_func, hid_var_func = rbm.layers[1]._conditional_params(
+        [vdata_scaled], [rbm.weights[0].W()])
 
-    assert be.allclose(visible_var, rbm.layers[0].ext_params.variance),\
+    assert be.allclose(visible_var, vis_var_func),\
     "visible variance wrong in gaussian-gaussian rbm"
 
-    assert be.allclose(hidden_var, rbm.layers[1].ext_params.variance),\
+    assert be.allclose(hidden_var, hid_var_func),\
     "hidden variance wrong in gaussian-gaussian rbm"
 
-    assert be.allclose(visible_mean, rbm.layers[0].ext_params.mean),\
+    assert be.allclose(visible_mean, vis_mean_func),\
     "visible mean wrong in gaussian-gaussian rbm"
 
-    assert be.allclose(hidden_mean, rbm.layers[1].ext_params.mean),\
+    assert be.allclose(hidden_mean, hid_mean_func),\
     "hidden mean wrong in gaussian-gaussian rbm"
 
+'''
 def test_gaussian_derivatives():
     num_visible_units = 100
     num_hidden_units = 50
