@@ -166,7 +166,7 @@ class TAP_rbm(model.Model):
             eps = 1e-6
             its = 0
             lr = init_lr
-            gam = gamma(m, w, a, b)
+            gam = gamma(m)
 
             while (its < max_iters):
                 its += 1
@@ -176,7 +176,7 @@ class TAP_rbm(model.Model):
                 be.clip_inplace(m_provisional.v, eps, 1.0-eps)
                 be.clip_inplace(m_provisional.h, eps, 1.0-eps)
 
-                gam_provisional = gamma(m_provisional, w, a, b)
+                gam_provisional = gamma(m_provisional)
                 if (gam - gam_provisional < 0):
                     lr *= 0.5
                     if (lr < 1e-10):
@@ -233,7 +233,11 @@ class TAP_rbm(model.Model):
 
     # The Legendre transform of F(v;q) as a function of q according to Mean Field approximation
     # specialized to the RBM case
-    def gamma_MF(self, m, w, a, b):
+    def gamma_MF(self, m):
+        # alias weights and biases
+        w = self.weights[0].int_params[0]
+        a = self.layers[0].int_params[0]
+        b = self.layers[1].int_params[0]
         return \
             be.tsum(be.multiply(m.v, be.log(m.v)) + be.multiply(1.0 - m.v, be.log(1.0 - m.v))) + \
             be.tsum(be.multiply(m.h, be.log(m.h)) + be.multiply(1.0 - m.h, be.log(1.0 - m.h))) - \
@@ -241,7 +245,11 @@ class TAP_rbm(model.Model):
 
     # The Legendre transform of F(v;q) as a function of q according to TAP expansion 2 terms
     # specialized to the RBM case
-    def gamma_TAP2(self, m, w, a, b):
+    def gamma_TAP2(self, m):
+        # alias weights and biases
+        w = self.weights[0].int_params[0]
+        a = self.layers[0].int_params[0]
+        b = self.layers[1].int_params[0]
         m_v_quad = m.v - be.square(m.v)
         m_h_quad = m.h - be.square(m.h)
         ww = be.square(w)
@@ -254,7 +262,11 @@ class TAP_rbm(model.Model):
 
     # The Legendre transform of F(v;q) as a function of q according to TAP expansion 3 terms
     # specialized to the RBM case
-    def gamma_TAP3(self, m, w, a, b):
+    def gamma_TAP3(self, m):
+        # alias weights and biases
+        w = self.weights[0].int_params[0]
+        a = self.layers[0].int_params[0]
+        b = self.layers[1].int_params[0]
         m_v_quad = m.v - be.square(m.v)
         m_h_quad = m.h - be.square(m.h)
         ww = be.square(w)
@@ -269,12 +281,16 @@ class TAP_rbm(model.Model):
             0.5 * be.dot(m_v_quad, be.dot(ww, m_h_quad)) - \
             (4.0/3.0) * be.tsum(be.multiply(alias2, be.multiply(alias1, www)))
 
-    def marginal_free_energy(self, v, w, a, b):
+    def marginal_free_energy(self, v):
         """
         '''
         -\log \sum_h \exp{-E(v,h)}
         '''
         """
+        # alias weights and biases
+        w = self.weights[0].int_params[0]
+        a = self.layers[0].int_params[0]
+        b = self.layers[1].int_params[0]
         return -be.dot(a,v) - be.tsum(be.logaddexp((b + be.dot(v,w)), be.zeros_like(b)))
 
     def grad_a_gamma(self, m, w, a, b):
@@ -356,5 +372,6 @@ class TAP_rbm(model.Model):
         grad.layers[0] = layers.IntrinsicParamsBernoulli(da + da_EMF)
         grad.layers[1] = layers.IntrinsicParamsBernoulli(db + db_EMF)
 
-        #print(score / batch_size + EMF)
+        score = be.accumulate(self.marginal_free_energy, vdata)
+        print(score / batch_size + EMF)
         return grad
