@@ -261,6 +261,7 @@ class TAP_rbm(model.Model):
         www = be.multiply(ww,w)
         alias1 = be.unsqueeze(be.multiply(0.5 - m.v, m_v_quad),1)
         alias2 = be.unsqueeze(be.multiply(0.5 - m.h, m_h_quad),0)
+
         return \
             be.tsum(be.multiply(m.v, be.log(m.v)) + be.multiply(1.0 - m.v, be.log(1.0 - m.v))) + \
             be.tsum(be.multiply(m.h, be.log(m.h)) + be.multiply(1.0 - m.h, be.log(1.0 - m.h))) - \
@@ -276,26 +277,18 @@ class TAP_rbm(model.Model):
         """
         return -be.dot(a,v) - be.tsum(be.logaddexp((b + be.dot(v,w)), be.zeros_like(b)))
 
-    def grad_a_gamma_MF(self, m, w, a, b):
+    def grad_a_gamma(self, m, w, a, b):
         return -m.v
-    def grad_b_gamma_MF(self, m, w, a, b):
+    def grad_b_gamma(self, m, w, a, b):
         return -m.h
     def grad_w_gamma_MF(self, m, w, a, b):
         return -be.outer(m.v, m.h)
 
-    def grad_a_gamma_TAP2(self, m, w, a, b):
-        return -m.v
-    def grad_b_gamma_TAP2(self, m, w, a, b):
-        return -m.h
     def grad_w_gamma_TAP2(self, m, w, a, b):
         m_v_quad = m.v - be.square(m.v)
         m_h_quad = m.h - be.square(m.h)
         return -be.outer(m.v, m.h) - be.multiply(w, be.outer(m_v_quad, m_h_quad))
 
-    def grad_a_gamma_TAP3(self, m, w, a, b):
-        return -m.v
-    def grad_b_gamma_TAP3(self, m, w, a, b):
-        return -m.h
     def grad_w_gamma_TAP3(self, m, w, a, b):
         m_v_quad = m.v - be.square(m.v)
         m_h_quad = m.h - be.square(m.h)
@@ -312,16 +305,10 @@ class TAP_rbm(model.Model):
         b = self.layers[1].int_params.loc
 
         if self.terms == 1:
-             grad_a_gamma = self.grad_a_gamma_MF
-             grad_b_gamma = self.grad_b_gamma_MF
              grad_w_gamma = self.grad_w_gamma_MF
         elif self.terms == 2:
-             grad_a_gamma = self.grad_a_gamma_TAP2
-             grad_b_gamma = self.grad_b_gamma_TAP2
              grad_w_gamma = self.grad_w_gamma_TAP2
         elif self.terms == 3:
-             grad_a_gamma = self.grad_a_gamma_TAP3
-             grad_b_gamma = self.grad_b_gamma_TAP3
              grad_w_gamma = self.grad_w_gamma_TAP3
 
         # compute the TAP3 approximation to the Gibbs free energy:
@@ -347,8 +334,8 @@ class TAP_rbm(model.Model):
 
         # Compute the gradients at this minimizing magnetization
         dw_EMF = grad_w_gamma(m,w,a,b)
-        da_EMF = grad_a_gamma(m,w,a,b)
-        db_EMF = grad_b_gamma(m,w,a,b)
+        da_EMF = self.grad_a_gamma(m,w,a,b)
+        db_EMF = self.grad_b_gamma(m,w,a,b)
 
         # compute average grad_F_marginal over the minibatch
         intermediate = be.expit(be.dot(vdata,w) + b)
