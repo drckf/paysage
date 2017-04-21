@@ -254,11 +254,7 @@ def test_exponential_online_param_update():
     vis = ly.random((num_samples, num_vis))
     ly.online_param_update(vis)
 
-<<<<<<< HEAD
 def test_exponential_conditional_params():
-=======
-def test_exponential_update():
->>>>>>> master
     ly = layers.ExponentialLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     scaled_units = [be.randn((num_samples, num_hid))]
