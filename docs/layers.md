@@ -1,39 +1,7 @@
 # Documentation for Layers (layers.py)
 
-## class ExtrinsicParamsExponential
-ExtrinsicParamsExponential(rate,)
-
-
-## class IntrinsicParamsExponential
-IntrinsicParamsExponential(loc,)
-
-
-## class ExtrinsicParamsBernoulli
-ExtrinsicParamsBernoulli(field,)
-
-
-## class IntrinsicParamsBernoulli
-IntrinsicParamsBernoulli(loc,)
-
-
-## class ExtrinsicParamsGaussian
-ExtrinsicParamsGaussian(mean, variance)
-
-
-## class IntrinsicParamsGaussian
-IntrinsicParamsGaussian(loc, log_var)
-
-
-## class IntrinsicParamsWeights
-IntrinsicParamsWeights(matrix,)
-
-
-## class ExtrinsicParamsIsing
-ExtrinsicParamsIsing(field,)
-
-
-## class IntrinsicParamsIsing
-IntrinsicParamsIsing(loc,)
+## class ParamsExponential
+ParamsExponential(loc,)
 
 
 ## class ExponentialLayer
@@ -74,6 +42,42 @@ def add_penalty(self, penalty)
 Add a penalty to the layer.<br /><br />Note:<br /> ~ Modfies the layer.penalties attribute in place.<br /><br />Args:<br /> ~ penalty (dict): {param_name: penalty (paysage.penalties)}<br /><br />Returns:<br /> ~ None
 
 
+### conditional\_mean
+```py
+
+def conditional_mean(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Compute the mean of the distribution conditioned on the state<br />of the connected layers.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mean of the distribution.
+
+
+### conditional\_mode
+```py
+
+def conditional_mode(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Compute the mode of the distribution conditioned on the state<br />of the connected layers.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mode of the distribution
+
+
+### conditional\_sample
+```py
+
+def conditional_sample(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Draw a random sample from the disribution conditioned on the state<br />of the connected layers.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
+
+
 ### derivatives
 ```py
 
@@ -83,7 +87,7 @@ def derivatives(self, vis, hid, weights, beta=None)
 
 
 
-Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor, (num_units, num_connected_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (namedtuple): param_name: tensor (contains gradient)
+Compute the derivatives of the layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (namedtuple): param_name: tensor (contains gradient)
 
 
 ### energy
@@ -107,7 +111,7 @@ def enforce_constraints(self)
 
 
 
-Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### get\_base\_config
@@ -167,7 +171,7 @@ def load_params(self, store, key)
 
 
 
-Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### log\_partition\_function
@@ -179,31 +183,7 @@ def log_partition_function(self, phi)
 
 
 
-Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let a_i be the intrinsic loc parameter of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = Tr_{x_i} exp( -a_i x_i + phi_i x_i)<br />= 1 / (a_i - phi_i)<br /><br />log(Z_i) = -log(a_i - phi_i)<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
-
-
-### mean
-```py
-
-def mean(self)
-
-```
-
-
-
-Compute the mean of the distribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mean of the distribution.
-
-
-### mode
-```py
-
-def mode(self)
-
-```
-
-
-
-The mode of the Exponential distribution is undefined.<br /><br />Args:<br /> ~ None<br /><br />Raises:<br /> ~ NotImplementedError
+Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let a_i be the loc parameter of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = Tr_{x_i} exp( -a_i x_i + phi_i x_i)<br />= 1 / (a_i - phi_i)<br /><br />log(Z_i) = -log(a_i - phi_i)<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
 
 
 ### online\_param\_update
@@ -215,7 +195,7 @@ def online_param_update(self, data)
 
 
 
-Update the intrinsic parameters using an observed batch of data.<br />Used for initializing the layer parameters.<br /><br />Notes:<br /> ~ Modifies layer.sample_size and layer.int_params in place.<br /><br />Args:<br /> ~ data (tensor (num_samples, num_units)): observed values for units<br /><br />Returns:<br /> ~ None
+Update the parameters using an observed batch of data.<br />Used for initializing the layer parameters.<br /><br />Notes:<br /> ~ Modifies layer.sample_size and layer.params in place.<br /><br />Args:<br /> ~ data (tensor (num_samples, num_units)): observed values for units<br /><br />Returns:<br /> ~ None
 
 
 ### parameter\_step
@@ -227,7 +207,7 @@ def parameter_step(self, deltas)
 
 
 
-Update the values of the intrinsic parameters:<br /><br />layer.int_params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.int_params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
+Update the values of the parameters:<br /><br />layer.params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
 
 
 ### random
@@ -254,18 +234,6 @@ def rescale(self, observations)
 Rescale is equivalent to the identity function for the Exponential layer.<br /><br />Args:<br /> ~ observations (tensor (num_samples, num_units)):<br /> ~  ~ Values of the observed units.<br /><br />Returns:<br /> ~ tensor: observations
 
 
-### sample\_state
-```py
-
-def sample_state(self)
-
-```
-
-
-
-Draw a random sample from the disribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
-
-
 ### save\_params
 ```py
 
@@ -275,7 +243,7 @@ def save_params(self, store, key)
 
 
 
-Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Save the parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### shrink\_parameters
@@ -287,21 +255,13 @@ def shrink_parameters(self, shrinkage=1)
 
 
 
-Apply shrinkage to the intrinsic parameters of the layer.<br />Does nothing for the Exponential layer.<br /><br />Args:<br /> ~ shrinkage (float \in [0,1]): the amount of shrinkage to apply<br /><br />Returns:<br /> ~ None
-
-
-### update
-```py
-
-def update(self, scaled_units, weights, beta=None)
-
-```
+Apply shrinkage to the parameters of the layer.<br />Does nothing for the Exponential layer.<br /><br />Args:<br /> ~ shrinkage (float \in [0,1]): the amount of shrinkage to apply<br /><br />Returns:<br /> ~ None
 
 
 
-Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
 
-
+## class ParamsBernoulli
+ParamsBernoulli(loc,)
 
 
 ## class BernoulliLayer
@@ -342,6 +302,42 @@ def add_penalty(self, penalty)
 Add a penalty to the layer.<br /><br />Note:<br /> ~ Modfies the layer.penalties attribute in place.<br /><br />Args:<br /> ~ penalty (dict): {param_name: penalty (paysage.penalties)}<br /><br />Returns:<br /> ~ None
 
 
+### conditional\_mean
+```py
+
+def conditional_mean(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Compute the mean of the distribution conditioned on the state<br />of the connected layers.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mean of the distribution.
+
+
+### conditional\_mode
+```py
+
+def conditional_mode(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Compute the mode of the distribution conditioned on the state<br />of the connected layers.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mode of the distribution
+
+
+### conditional\_sample
+```py
+
+def conditional_sample(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Draw a random sample from the disribution conditioned on the state<br />of the connected layers.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
+
+
 ### derivatives
 ```py
 
@@ -351,7 +347,7 @@ def derivatives(self, vis, hid, weights, beta=None)
 
 
 
-Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor, (num_units, num_connected_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (namedtuple): param_name: tensor (contains gradient)
+Compute the derivatives of the layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (namedtuple): param_name: tensor (contains gradient)
 
 
 ### energy
@@ -375,7 +371,7 @@ def enforce_constraints(self)
 
 
 
-Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### get\_base\_config
@@ -435,7 +431,7 @@ def load_params(self, store, key)
 
 
 
-Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### log\_partition\_function
@@ -447,31 +443,7 @@ def log_partition_function(self, phi)
 
 
 
-Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let a_i be the intrinsic loc parameter of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)<br />= 1 + exp(a_i + phi_i)<br /><br />log(Z_i) = softplus(a_i + phi_i)<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
-
-
-### mean
-```py
-
-def mean(self)
-
-```
-
-
-
-Compute the mean of the distribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mean of the distribution.
-
-
-### mode
-```py
-
-def mode(self)
-
-```
-
-
-
-Compute the mode of the distribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mode of the distribution
+Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let a_i be the loc parameter of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)<br />= 1 + exp(a_i + phi_i)<br /><br />log(Z_i) = softplus(a_i + phi_i)<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
 
 
 ### online\_param\_update
@@ -483,7 +455,7 @@ def online_param_update(self, data)
 
 
 
-Update the intrinsic parameters using an observed batch of data.<br />Used for initializing the layer parameters.<br /><br />Notes:<br /> ~ Modifies layer.sample_size and layer.int_params in place.<br /><br />Args:<br /> ~ data (tensor (num_samples, num_units)): observed values for units<br /><br />Returns:<br /> ~ None
+Update the parameters using an observed batch of data.<br />Used for initializing the layer parameters.<br /><br />Notes:<br /> ~ Modifies layer.sample_size and layer.params in place.<br /><br />Args:<br /> ~ data (tensor (num_samples, num_units)): observed values for units<br /><br />Returns:<br /> ~ None
 
 
 ### parameter\_step
@@ -495,7 +467,7 @@ def parameter_step(self, deltas)
 
 
 
-Update the values of the intrinsic parameters:<br /><br />layer.int_params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.int_params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
+Update the values of the parameters:<br /><br />layer.params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
 
 
 ### random
@@ -522,18 +494,6 @@ def rescale(self, observations)
 Rescale is equivalent to the identity function for the Bernoulli layer.<br /><br />Args:<br /> ~ observations (tensor (num_samples, num_units)):<br /> ~  ~ Values of the observed units.<br /><br />Returns:<br /> ~ tensor: observations
 
 
-### sample\_state
-```py
-
-def sample_state(self)
-
-```
-
-
-
-Draw a random sample from the disribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
-
-
 ### save\_params
 ```py
 
@@ -543,7 +503,7 @@ def save_params(self, store, key)
 
 
 
-Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Save the parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### shrink\_parameters
@@ -555,21 +515,13 @@ def shrink_parameters(self, shrinkage=1)
 
 
 
-Apply shrinkage to the intrinsic parameters of the layer.<br />Does nothing for the Bernoulli layer.<br /><br />Args:<br /> ~ shrinkage (float \in [0,1]): the amount of shrinkage to apply<br /><br />Returns:<br /> ~ None
-
-
-### update
-```py
-
-def update(self, scaled_units, weights, beta=None)
-
-```
+Apply shrinkage to the parameters of the layer.<br />Does nothing for the Bernoulli layer.<br /><br />Args:<br /> ~ shrinkage (float \in [0,1]): the amount of shrinkage to apply<br /><br />Returns:<br /> ~ None
 
 
 
-Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
 
-
+## class ParamsGaussian
+ParamsGaussian(loc, log_var)
 
 
 ## class GaussianLayer
@@ -610,6 +562,42 @@ def add_penalty(self, penalty)
 Add a penalty to the layer.<br /><br />Note:<br /> ~ Modfies the layer.penalties attribute in place.<br /><br />Args:<br /> ~ penalty (dict): {param_name: penalty (paysage.penalties)}<br /><br />Returns:<br /> ~ None
 
 
+### conditional\_mean
+```py
+
+def conditional_mean(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Compute the mean of the distribution conditioned on the state<br />of the connected layers.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mean of the distribution.
+
+
+### conditional\_mode
+```py
+
+def conditional_mode(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Compute the mode of the distribution conditioned on the state<br />of the connected layers. For a Gaussian layer, the mode equals<br />the mean.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mode of the distribution
+
+
+### conditional\_sample
+```py
+
+def conditional_sample(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Draw a random sample from the disribution conditioned on the state<br />of the connected layers.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
+
+
 ### derivatives
 ```py
 
@@ -619,7 +607,7 @@ def derivatives(self, vis, hid, weights, beta=None)
 
 
 
-Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor (num_units, num_connected_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (namedtuple): param_name: tensor (contains gradient)
+Compute the derivatives of the layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (namedtuple): param_name: tensor (contains gradient)
 
 
 ### energy
@@ -643,7 +631,7 @@ def enforce_constraints(self)
 
 
 
-Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### get\_base\_config
@@ -703,7 +691,7 @@ def load_params(self, store, key)
 
 
 
-Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### log\_partition\_function
@@ -715,31 +703,7 @@ def log_partition_function(self, phi)
 
 
 
-Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let u_i and s_i be the intrinsic loc and scale parameters of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + \phi_i x_i)<br />= exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i<br /><br />log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2<br /><br />Args:<br /> ~ phi tensor (num_samples, num_units): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
-
-
-### mean
-```py
-
-def mean(self)
-
-```
-
-
-
-Compute the mean of the distribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mean of the distribution.
-
-
-### mode
-```py
-
-def mode(self)
-
-```
-
-
-
-Compute the mode of the distribution.<br />For a Gaussian layer, the mode equals the mean.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mode of the distribution
+Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let u_i and s_i be the loc and scale parameters of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + \phi_i x_i)<br />= exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i<br /><br />log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2<br /><br />Args:<br /> ~ phi tensor (num_samples, num_units): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
 
 
 ### online\_param\_update
@@ -751,7 +715,7 @@ def online_param_update(self, data)
 
 
 
-Update the intrinsic parameters using an observed batch of data.<br />Used for initializing the layer parameters.<br /><br />Notes:<br /> ~ Modifies layer.sample_size and layer.int_params in place.<br /><br />Args:<br /> ~ data (tensor (num_samples, num_units)): observed values for units<br /><br />Returns:<br /> ~ None
+Update the parameters using an observed batch of data.<br />Used for initializing the layer parameters.<br /><br />Notes:<br /> ~ Modifies layer.sample_size and layer.params in place.<br /><br />Args:<br /> ~ data (tensor (num_samples, num_units)): observed values for units<br /><br />Returns:<br /> ~ None
 
 
 ### parameter\_step
@@ -763,7 +727,7 @@ def parameter_step(self, deltas)
 
 
 
-Update the values of the intrinsic parameters:<br /><br />layer.int_params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.int_params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
+Update the values of the parameters:<br /><br />layer.params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
 
 
 ### random
@@ -790,18 +754,6 @@ def rescale(self, observations)
 Scale the observations by the variance of the layer.<br /><br />v'_i = v_i / var_i<br /><br />Args:<br /> ~ observations (tensor (num_samples, num_units)):<br /> ~  ~ Values of the observed units.<br /><br />Returns:<br /> ~ tensor: Rescaled observations
 
 
-### sample\_state
-```py
-
-def sample_state(self)
-
-```
-
-
-
-Draw a random sample from the disribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
-
-
 ### save\_params
 ```py
 
@@ -811,7 +763,7 @@ def save_params(self, store, key)
 
 
 
-Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Save the parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### shrink\_parameters
@@ -823,25 +775,21 @@ def shrink_parameters(self, shrinkage=0.1)
 
 
 
-Apply shrinkage to the variance parameters of the layer.<br /><br />new_variance = (1-shrinkage) * old_variance + shrinkage * 1<br /><br />Notes:<br /> ~ Modifies layer.int_params in place.<br /><br />Args:<br /> ~ shrinkage (float \in [0,1]): the amount of shrinkage to apply<br /><br />Returns:<br /> ~ None
-
-
-### update
-```py
-
-def update(self, scaled_units, weights, beta=None)
-
-```
+Apply shrinkage to the variance parameters of the layer.<br /><br />new_variance = (1-shrinkage) * old_variance + shrinkage * 1<br /><br />Notes:<br /> ~ Modifies layer.params in place.<br /><br />Args:<br /> ~ shrinkage (float \in [0,1]): the amount of shrinkage to apply<br /><br />Returns:<br /> ~ None
 
 
 
-Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
 
-
+## class ParamsWeights
+ParamsWeights(matrix,)
 
 
 ## class OrderedDict
 Dictionary that remembers insertion order
+
+
+## class ParamsIsing
+ParamsIsing(loc,)
 
 
 ## class ParamsLayer
@@ -886,6 +834,42 @@ def add_penalty(self, penalty)
 Add a penalty to the layer.<br /><br />Note:<br /> ~ Modfies the layer.penalties attribute in place.<br /><br />Args:<br /> ~ penalty (dict): {param_name: penalty (paysage.penalties)}<br /><br />Returns:<br /> ~ None
 
 
+### conditional\_mean
+```py
+
+def conditional_mean(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Compute the mean of the distribution conditioned on the state<br />of the connected layers.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mean of the distribution.
+
+
+### conditional\_mode
+```py
+
+def conditional_mode(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Compute the mode of the distribution conditioned on the state<br />of the connected layers.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mode of the distribution
+
+
+### conditional\_sample
+```py
+
+def conditional_sample(self, scaled_units, weights, beta=None)
+
+```
+
+
+
+Draw a random sample from the disribution conditioned on the state<br />of the connected layers.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
+
+
 ### derivatives
 ```py
 
@@ -895,7 +879,7 @@ def derivatives(self, vis, hid, weights, beta=None)
 
 
 
-Compute the derivatives of the intrinsic layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor, (num_units, num_connected_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (namedtuple): param_name: tensor (contains gradient)
+Compute the derivatives of the layer parameters.<br /><br />Args:<br /> ~ vis (tensor (num_samples, num_units)):<br /> ~  ~ The values of the visible units.<br /> ~ hid list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the hidden units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ grad (namedtuple): param_name: tensor (contains gradient)
 
 
 ### energy
@@ -919,7 +903,7 @@ def enforce_constraints(self)
 
 
 
-Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### get\_base\_config
@@ -979,7 +963,7 @@ def load_params(self, store, key)
 
 
 
-Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### log\_partition\_function
@@ -991,31 +975,7 @@ def log_partition_function(self, phi)
 
 
 
-Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let a_i be the intrinsic loc parameter of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)<br />= 2 cosh(a_i + phi_i)<br /><br />log(Z_i) = logcosh(a_i + phi_i)<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
-
-
-### mean
-```py
-
-def mean(self)
-
-```
-
-
-
-Compute the mean of the distribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mean of the distribution.
-
-
-### mode
-```py
-
-def mode(self)
-
-```
-
-
-
-Compute the mode of the distribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): The mode of the distribution
+Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let a_i be the loc parameter of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)<br />= 2 cosh(a_i + phi_i)<br /><br />log(Z_i) = logcosh(a_i + phi_i)<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
 
 
 ### online\_param\_update
@@ -1027,7 +987,7 @@ def online_param_update(self, data)
 
 
 
-Update the intrinsic parameters using an observed batch of data.<br />Used for initializing the layer parameters.<br /><br />Notes:<br /> ~ Modifies layer.sample_size and layer.int_params in place.<br /><br />Args:<br /> ~ data (tensor (num_samples, num_units)): observed values for units<br /><br />Returns:<br /> ~ None
+Update the parameters using an observed batch of data.<br />Used for initializing the layer parameters.<br /><br />Notes:<br /> ~ Modifies layer.sample_size and layer.params in place.<br /><br />Args:<br /> ~ data (tensor (num_samples, num_units)): observed values for units<br /><br />Returns:<br /> ~ None
 
 
 ### parameter\_step
@@ -1039,7 +999,7 @@ def parameter_step(self, deltas)
 
 
 
-Update the values of the intrinsic parameters:<br /><br />layer.int_params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.int_params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
+Update the values of the parameters:<br /><br />layer.params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
 
 
 ### random
@@ -1066,18 +1026,6 @@ def rescale(self, observations)
 Rescale is equivalent to the identity function for the Ising layer.<br /><br />Args:<br /> ~ observations (tensor (num_samples, num_units)):<br /> ~  ~ Values of the observed units.<br /><br />Returns:<br /> ~ tensor: observations
 
 
-### sample\_state
-```py
-
-def sample_state(self)
-
-```
-
-
-
-Draw a random sample from the disribution.<br /><br />Determined from the extrinsic parameters (layer.ext_params).<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor (num_samples, num_units): Sampled units.
-
-
 ### save\_params
 ```py
 
@@ -1087,7 +1035,7 @@ def save_params(self, store, key)
 
 
 
-Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Save the parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### shrink\_parameters
@@ -1099,19 +1047,7 @@ def shrink_parameters(self, shrinkage=1)
 
 
 
-Apply shrinkage to the intrinsic parameters of the layer.<br />Does nothing for the Ising layer.<br /><br />Args:<br /> ~ shrinkage (float \in [0,1]): the amount of shrinkage to apply<br /><br />Returns:<br /> ~ None
-
-
-### update
-```py
-
-def update(self, scaled_units, weights, beta=None)
-
-```
-
-
-
-Update the extrinsic parameters of the layer.<br /><br />Notes:<br /> ~ Modfies layer.ext_params in place.<br /><br />Args:<br /> ~ scaled_units list[tensor (num_samples, num_connected_units)]:<br /> ~  ~ The rescaled values of the connected units.<br /> ~ weights list[tensor, (num_connected_units, num_units)]:<br /> ~  ~ The weights connecting the layers.<br /> ~ beta (tensor (num_samples, 1), optional):<br /> ~  ~ Inverse temperatures.<br /><br />Returns:<br /> ~ None
+Apply shrinkage to the parameters of the layer.<br />Does nothing for the Ising layer.<br /><br />Args:<br /> ~ shrinkage (float \in [0,1]): the amount of shrinkage to apply<br /><br />Returns:<br /> ~ None
 
 
 
@@ -1127,7 +1063,7 @@ def W(self)
 
 
 
-Get the weight matrix.<br /><br />A convenience method for accessing layer.int_params.matrix<br />with a shorter syntax.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor: weight matrix
+Get the weight matrix.<br /><br />A convenience method for accessing layer.params.matrix<br />with a shorter syntax.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor: weight matrix
 
 
 ### W\_T
@@ -1139,7 +1075,7 @@ def W_T(self)
 
 
 
-Get the transpose of the weight matrix.<br /><br />A convenience method for accessing the transpose of<br />layer.int_params.matrix with a shorter syntax.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor: transpose of weight matrix
+Get the transpose of the weight matrix.<br /><br />A convenience method for accessing the transpose of<br />layer.params.matrix with a shorter syntax.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ tensor: transpose of weight matrix
 
 
 ### \_\_init\_\_
@@ -1151,7 +1087,7 @@ def __init__(self, shape)
 
 
 
-Create a weight layer.<br /><br />Notes:<br /> ~ Simple weight layers only have a single internal parameter matrix.<br /> ~ They have no external parameters because they do not depend<br /> ~ on the state of anything else.<br /><br /> ~ The shape is regarded as a dimensionality of<br /> ~ the visible and hidden units for the layer,<br /> ~ as `shape = (visible, hidden)`.<br /><br />Args:<br /> ~ shape (tuple): shape of the weight tensor (int, int)<br /><br />Returns:<br /> ~ weights layer
+Create a weight layer.<br /><br />Notes:<br /> ~ The shape is regarded as a dimensionality of<br /> ~ the visible and hidden units for the layer,<br /> ~ as `shape = (visible, hidden)`.<br /><br />Args:<br /> ~ shape (tuple): shape of the weight tensor (int, int)<br /><br />Returns:<br /> ~ weights layer
 
 
 ### add\_constraint
@@ -1211,7 +1147,7 @@ def enforce_constraints(self)
 
 
 
-Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### get\_base\_config
@@ -1271,7 +1207,7 @@ def load_params(self, store, key)
 
 
 
-Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### parameter\_step
@@ -1283,7 +1219,7 @@ def parameter_step(self, deltas)
 
 
 
-Update the values of the intrinsic parameters:<br /><br />layer.int_params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.int_params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
+Update the values of the parameters:<br /><br />layer.params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
 
 
 ### save\_params
@@ -1295,7 +1231,7 @@ def save_params(self, store, key)
 
 
 
-Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Save the parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 
@@ -1347,7 +1283,7 @@ def enforce_constraints(self)
 
 
 
-Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the intrinsic parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Apply the contraints to the layer parameters.<br /><br />Note:<br /> ~ Modifies the parameters of the layer in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### from\_config
@@ -1419,7 +1355,7 @@ def load_params(self, store, key)
 
 
 
-Load the intrinsic parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 ### parameter\_step
@@ -1431,7 +1367,7 @@ def parameter_step(self, deltas)
 
 
 
-Update the values of the intrinsic parameters:<br /><br />layer.int_params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.int_params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
+Update the values of the parameters:<br /><br />layer.params.name -= deltas.name<br /><br />Notes:<br /> ~ Modifies the elements of the layer.params attribute in place.<br /><br />Args:<br /> ~ deltas (dict): {param_name: tensor (update)}<br /><br />Returns:<br /> ~ None
 
 
 ### save\_params
@@ -1443,7 +1379,7 @@ def save_params(self, store, key)
 
 
 
-Save the intrinsic parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+Save the parameters to a HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the writeable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
 
