@@ -79,6 +79,28 @@ def test_transpose():
     assert torch_matrix.allclose(torch_y_T, torch_py_y_T), \
     "torch -> python -> torch failure: transpose"
 
+def test_unsqueeze():
+
+    shape = (100,)
+
+    py_rand.set_seed()
+    py_x = py_rand.rand(shape)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_x_col = py_matrix.unsqueeze(py_x,1)
+    torch_x_col = torch_matrix.unsqueeze(torch_x,1)
+    py_x_row = py_matrix.unsqueeze(py_x,0)
+    torch_x_row = torch_matrix.unsqueeze(torch_x,0)
+
+    assert_close(py_x_col, torch_x_col, \
+    "python->torch failure: unsqueeze to col vector")
+
+    assert_close(py_x_row, torch_x_row, \
+    "python->torch failure: unsqueeze to row vector")
+
+    assert py_matrix.shape(py_x_col) == py_matrix.shape(py_x_row.transpose())
+    assert torch_matrix.shape(torch_x_col) == torch_matrix.shape(torch_matrix.transpose(torch_x_row))
+
 def test_zeros():
     shape = (100, 100)
 
