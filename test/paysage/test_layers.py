@@ -60,7 +60,7 @@ def test_get_penalty_grad():
 
 def test_parameter_step():
     ly = layers.Weights((num_vis, num_hid))
-    deltas = layers.IntrinsicParamsWeights(be.randn(ly.shape))
+    deltas = layers.ParamsWeights(be.randn(ly.shape))
     ly.parameter_step(deltas)
 
 def test_get_base_config():
@@ -125,13 +125,13 @@ def test_gaussian_shrink_parameters():
     ly = layers.GaussianLayer(num_vis)
     ly.shrink_parameters(0.1)
 
-def test_gaussian_update():
+def test_gaussian_conditional_params():
     ly = layers.GaussianLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     scaled_units = [be.randn((num_samples, num_hid))]
     weights = [w.W_T()]
     beta = be.rand((num_samples, 1))
-    ly.update(scaled_units, weights, beta)
+    ly._conditional_params(scaled_units, weights, beta)
 
 def test_gaussian_derivatives():
     ly = layers.GaussianLayer(num_vis)
@@ -168,20 +168,20 @@ def test_ising_online_param_update():
     vis = ly.random((num_samples, num_vis))
     ly.online_param_update(vis)
 
-def test_ising_update():
+def test_ising_conditional_params():
     ly = layers.IsingLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     scaled_units = [be.randn((num_samples, num_hid))]
     weights = [w.W_T()]
     beta = be.rand((num_samples, 1))
-    ly.update(scaled_units, weights, beta)
+    ly._conditional_params(scaled_units, weights, beta)
 
 def test_ising_derivatives():
     ly = layers.IsingLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     vis = ly.random((num_samples, num_vis))
     hid = [be.randn((num_samples, num_hid))]
-    weights = [w.W()]
+    weights = [w.W_T()]
     beta = be.rand((num_samples, 1))
     ly.derivatives(vis, hid, weights, beta)
 
@@ -211,20 +211,20 @@ def test_bernoulli_online_param_update():
     vis = ly.random((num_samples, num_vis))
     ly.online_param_update(vis)
 
-def test_bernoulli_update():
+def test_bernoulli_conditional_params():
     ly = layers.BernoulliLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     scaled_units = [be.randn((num_samples, num_hid))]
     weights = [w.W_T()]
     beta = be.rand((num_samples, 1))
-    ly.update(scaled_units, weights, beta)
+    ly._conditional_params(scaled_units, weights, beta)
 
 def test_bernoulli_derivatives():
     ly = layers.BernoulliLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     vis = ly.random((num_samples, num_vis))
     hid = [be.randn((num_samples, num_hid))]
-    weights = [w.W()]
+    weights = [w.W_T()]
     beta = be.rand((num_samples, 1))
     ly.derivatives(vis, hid, weights, beta)
 
@@ -254,20 +254,20 @@ def test_exponential_online_param_update():
     vis = ly.random((num_samples, num_vis))
     ly.online_param_update(vis)
 
-def test_exponential_update():
+def test_exponential_conditional_params():
     ly = layers.ExponentialLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     scaled_units = [be.randn((num_samples, num_hid))]
     weights = [w.W_T()]
     beta = be.rand((num_samples, 1))
-    ly.update(scaled_units, weights, beta)
+    ly._conditional_params(scaled_units, weights, beta)
 
 def test_exponential_derivatives():
     ly = layers.ExponentialLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     vis = ly.random((num_samples, num_vis))
     hid = [be.randn((num_samples, num_hid))]
-    weights = [w.W()]
+    weights = [w.W_T()]
     beta = be.rand((num_samples, 1))
     ly.derivatives(vis, hid, weights, beta)
 

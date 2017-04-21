@@ -15,7 +15,7 @@ def hinton(batch, model):
     "A practical guide to training restricted Boltzmann machines."
     Momentum 9.1 (2010): 926.
 
-    Initalize the weights from N(0, \sigma)
+    Initialize the weights from N(0, \sigma)
     Set hidden_bias = 0
     Set visible_bias = inverse_mean( \< v_i \> )
     If visible_scale: set visible_scale = \< v_i^2 \> - \< v_i \>^2
@@ -32,7 +32,7 @@ def hinton(batch, model):
 
     """
     for i in range(len(model.weights)):
-        model.weights[i].int_params.matrix[:] = \
+        model.weights[i].params.matrix[:] = \
                         0.01 * be.randn(model.weights[i].shape)
     while True:
         try:
@@ -52,7 +52,7 @@ def glorot_normal(batch, model):
 
     "Understanding the difficulty of training deep feedforward neural networks", 2010:
 
-    Initalize the weights from N(0, \sigma)
+    Initialize the weights from N(0, \sigma)
     with \sigma = \sqrt(2 / (num_vis_units + num_hidden_units)).
 
     Set hidden_bias = 0
@@ -64,7 +64,7 @@ def glorot_normal(batch, model):
 
     Args:
         batch: A batch object that provides minibatches of data.
-        model: A model to inialize.
+        model: A model to initialize.
 
     Returns:
         None
@@ -72,7 +72,7 @@ def glorot_normal(batch, model):
     """
     for i in range(len(model.weights)):
         sigma = math.sqrt(2/(model.weights[i].shape[0] + model.weights[i].shape[1]))
-        model.weights[i].int_params.matrix[:] = \
+        model.weights[i].params.matrix[:] = \
                         sigma * be.randn(model.weights[i].shape)
     while True:
         try:

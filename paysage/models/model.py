@@ -172,11 +172,11 @@ class Model(object):
 
     def initialize(self, data, method: str='hinton'):
         """
-        Inialize the parameters of the model.
+        Initialize the parameters of the model.
 
         Args:
             data: A Batch object.
-            method (optional): The initalization method.
+            method (optional): The initialization method.
 
         Returns:
             None
@@ -238,6 +238,37 @@ class Model(object):
         return [[j for j in [i-1,i] if 0<=j<self.num_layers-1]
                    for i in range(self.num_layers)]
 
+    def _connected_rescaled_units(self, i, state):
+        """
+        Helper function to retrieve the rescaled units connected to layer i.
+
+        Args:
+            i (int): the index of the layer of interest
+            state (State): the current state of the units
+
+        Returns:
+            list[tensor]: the rescaled values of the connected units
+
+        """
+        return [self.layers[j].rescale(state.units[j])
+                            for j in self.layer_connections[i]]
+
+    def _connected_weights(self, i):
+        """
+        Helper function to retrieve the values of the weights connecting
+        layer i to its neighbors.
+
+        Args:
+            i (int): the index of the layer of interest
+
+        Returns:
+            list[tensor]: the weights connecting layer i to its neighbros
+
+        """
+        return [self.weights[j].W() if j < i else self.weights[j].W_T()
+                            for j in self.weight_connections[i]]
+
+
     def _alternating_update(self, func_name, state, beta=None, clamped=[]):
         """
         Performs a single Gibbs sampling update in alternating layers.
@@ -261,14 +292,12 @@ class Model(object):
                 if i in clamped:
                     continue
                 else:
-                    self.layers[i].update(
-                        [self.layers[j].rescale(updated_state.units[j])
-                            for j in self.layer_connections[i]],
-                        [self.weights[j].W() if j < i else self.weights[j].W_T()
-                            for j in self.weight_connections[i]],
-                        beta)
+                    func = getattr(self.layers[i], func_name)
 
-                    updated_state.units[i] = getattr(self.layers[i], func_name)()
+                    updated_state.units[i] = func(
+                        self._connected_rescaled_units(i, updated_state),
+                        self._connected_weights(i),
+                        beta)
 
         return updated_state
 
@@ -294,7 +323,7 @@ class Model(object):
         """
         new_state = State.from_state(state)
         for _ in range(n):
-            new_state = self._alternating_update('sample_state',
+            new_state = self._alternating_update('conditional_sample',
                                                  new_state,
                                                  beta,
                                                  clamped)
@@ -322,7 +351,7 @@ class Model(object):
         """
         new_state = State.from_state(state)
         for _ in range(n):
-            new_state = self._alternating_update('mean',
+            new_state = self._alternating_update('conditional_mean',
                                                  new_state,
                                                  beta,
                                                  clamped)
@@ -351,7 +380,7 @@ class Model(object):
         """
         new_state = State.from_state(state)
         for _ in range(n):
-            new_state = self._alternating_update('mode',
+            new_state = self._alternating_update('conditional_mode',
                                                  new_state,
                                                  beta,
                                                  clamped)
@@ -378,17 +407,18 @@ class Model(object):
 
         # POSITIVE PHASE (using observed)
 
-        # update the hidden layers
+        # compute the conditional mean of the hidden layers
         new_data_state = self.mean_field_iteration(1, data_state, clamped=[0])
-        # compute the gradients
+
+        # compute the postive phase of the gradients of the layer parameters
         for i in range(self.num_layers):
             grad.layers[i] = self.layers[i].derivatives(
                 new_data_state.units[i],
-                [self.layers[j].rescale(new_data_state.units[j])
-                    for j in self.layer_connections[i]],
-                [self.weights[j].W() if j < i else self.weights[j].W_T()
-                    for j in self.weight_connections[i]],
+                self._connected_rescaled_units(i, new_data_state),
+                self._connected_weights(i)
             )
+
+        # compute the positive phase of the gradients of the weights
         for i in range(self.num_layers - 1):
             grad.weights[i] = self.weights[i].derivatives(
                 self.layers[i].rescale(new_data_state.units[i]),
@@ -397,19 +427,20 @@ class Model(object):
 
         # NEGATIVE PHASE (using sampled)
 
-        # update the hidden layers
+        # compute the conditional mean of the hidden layers
         new_model_state = self.mean_field_iteration(1, model_state, clamped=[0])
-        # compute the gradients
+
+        # update the gradients of the layer parameters with the negative phase
         for i in range(self.num_layers):
             grad.layers[i] = be.mapzip(be.subtract,
                 self.layers[i].derivatives(
                     new_model_state.units[i],
-                    [self.layers[j].rescale(new_model_state.units[j])
-                        for j in self.layer_connections[i]],
-                    [self.weights[j].W() if j < i else self.weights[j].W_T()
-                        for j in self.weight_connections[i]],
+                    self._connected_rescaled_units(i, new_model_state),
+                    self._connected_weights(i)
                 ),
             grad.layers[i])
+
+        # update the gradients of the weight parameters with the negative phase
         for i in range(self.num_layers - 1):
             grad.weights[i] = be.mapzip(be.subtract,
                 self.weights[i].derivatives(

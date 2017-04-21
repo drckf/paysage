@@ -95,9 +95,9 @@ class TAP_rbm(model.Model):
 
         """
 
-        w = self.weights[0].int_params.matrix
-        a = self.layers[0].int_params.loc
-        b = self.layers[1].int_params.loc
+        w = self.weights[0].params.matrix
+        a = self.layers[0].params.loc
+        b = self.layers[1].params.loc
 
         def grad_v_gamma_TAP2(m, w, a):
             m_h_quad = m.h - be.square(m.h)
@@ -210,9 +210,9 @@ class TAP_rbm(model.Model):
 
         batch_size = be.shape(data_state.units[0])[0]
         # alias weights and biases
-        w = self.weights[0].int_params.matrix
-        a = self.layers[0].int_params.loc
-        b = self.layers[1].int_params.loc
+        w = self.weights[0].params.matrix
+        a = self.layers[0].params.loc
+        b = self.layers[1].params.loc
 
         # compute the TAP2 approximation to the Gibbs free energy:
         EMF = 1e6
@@ -255,9 +255,9 @@ class TAP_rbm(model.Model):
             [None for w in self.weights]
         )
 
-        grad.weights[0] = layers.IntrinsicParamsWeights(dw + dw_EMF)
-        grad.layers[0] = layers.IntrinsicParamsBernoulli(da + da_EMF)
-        grad.layers[1] = layers.IntrinsicParamsBernoulli(db + db_EMF)
+        grad.weights[0] = layers.ParamsWeights(dw + dw_EMF)
+        grad.layers[0] = layers.ParamsBernoulli(da + da_EMF)
+        grad.layers[1] = layers.ParamsBernoulli(db + db_EMF)
 
         #print(score / batch_size + EMF)
         return grad

@@ -37,7 +37,7 @@ class Sampler(object):
     def set_positive_state(self, state):
         """
         Set up the positive state for each of the Markov Chains.
-        The initial state is randomly initalized.
+        The initial state is randomly initialized.
 
         Notes:
             Modifies the state attribute in place.
@@ -53,8 +53,8 @@ class Sampler(object):
 
     def set_negative_state(self, state):
         """
-        Set up the inital states for each of the Markov Chains.
-        The initial state is randomly initalized.
+        Set up the initial states for each of the Markov Chains.
+        The initial state is randomly initialized.
 
         Notes:
             Modifies the state attribute in place.
