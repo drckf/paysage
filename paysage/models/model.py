@@ -222,19 +222,15 @@ class Model(object):
         """
         i = 0
 
-        self.layers[i+1].update(
-            [self.layers[i].rescale(vis)],
-            [self.weights[i].W()],
-            beta)
+        hid = self.layers[i+1].conditional_sample(
+                [self.layers[i].rescale(vis)],
+                [self.weights[i].W()],
+                beta)
 
-        hid = self.layers[i+1].sample_state()
-
-        self.layers[i].update(
+        return self.layers[i].conditional_sample(
             [self.layers[i+1].rescale(hid)],
             [self.weights[i].W_T()],
             beta)
-
-        return self.layers[i].sample_state()
 
     # TODO: use State
     # this function is just a repeated application of mcstep
@@ -289,19 +285,15 @@ class Model(object):
         """
         i = 0
 
-        self.layers[i+1].update(
+        hid = self.layers[i+1].conditional_mean(
             [self.layers[i].rescale(vis)],
             [self.weights[i].W()],
             beta)
 
-        hid = self.layers[i+1].mean()
-
-        self.layers[i].update(
+        return self.layers[i].conditional_mean(
             [self.layers[i+1].rescale(hid)],
             [self.weights[i].W_T()],
             beta)
-
-        return self.layers[i].mean()
 
     # TODO: use State
     # this function is just a repeated application of mean_field_step
@@ -356,19 +348,15 @@ class Model(object):
         """
         i = 0
 
-        self.layers[i+1].update(
+        hid = self.layers[i+1].conditional_mode(
             [self.layers[i].rescale(vis)],
             [self.weights[i].W()],
             beta)
 
-        hid = self.layers[i+1].mode()
-
-        self.layers[i].update(
+        return self.layers[i].conditional_mode(
             [self.layers[i+1].rescale(hid)],
             [self.weights[i].W_T()],
             beta)
-
-        return self.layers[i].mode()
 
     # TODO: use State
     # this function is just a repeated application of deterministic_step
@@ -451,55 +439,48 @@ class Model(object):
         # 1. Scale vdata
         vdata_scaled = self.layers[i].rescale(vdata)
 
-        # 2. Update the hidden layer
-        self.layers[i+1].update(
+        # 2. Compute the mean of the hidden layer
+        hid = self.layers[i+1].conditional_mean(
             [vdata_scaled],
             [self.weights[0].W()]
         )
 
-        # 3. Compute the mean of the hidden layer
-        hid = self.layers[i+1].mean()
-
-        # 4. Scale the hidden mean
+        # 3. Scale the hidden mean
         hid_scaled = self.layers[i+1].rescale(hid)
 
-        # 5. Compute the gradients
+        # 4. Compute the gradients
         grad.layers[i] = self.layers[i].derivatives(vdata,
                                                     [hid_scaled],
-                                                    [self.weights[0].W()]
+                                                    [self.weights[0].W_T()]
         )
 
         grad.layers[i+1] = self.layers[i+1].derivatives(hid,
                                                         [vdata_scaled],
-                                                        [self.weights[0].W_T()]
+                                                        [self.weights[0].W()]
         )
 
-        grad.weights[i] = self.weights[i].derivatives(vdata_scaled,
-                                                      hid_scaled)
+        grad.weights[i] = self.weights[i].derivatives(vdata_scaled, hid_scaled)
 
         # NEGATIVE PHASE (using sampled)
 
         # 1. Scale vdata
         vmodel_scaled = self.layers[i].rescale(vmodel)
 
-        # 2. Update the hidden layer
-        self.layers[i+1].update(
+        # 2. Compute the mean of the hidden layer
+        hid = self.layers[i+1].conditional_mean(
             [vmodel_scaled],
             [self.weights[0].W()]
         )
 
-        # 3. Compute the mean of the hidden layer
-        hid = self.layers[i+1].mean()
-
-        # 4. Scale hidden mean
+        # 3. Scale hidden mean
         hid_scaled = self.layers[i+1].rescale(hid)
 
-        # 5. Compute the gradients
+        # 4. Compute the gradients
         grad.layers[i] = be.mapzip(be.subtract,
                                    self.layers[i].derivatives(
                                        vmodel,
                                        [hid_scaled],
-                                       [self.weights[0].W()]
+                                       [self.weights[0].W_T()]
                                    ),
                                    grad.layers[i])
 
@@ -507,7 +488,7 @@ class Model(object):
                                      self.layers[i+1].derivatives(
                                          hid,
                                          [vmodel_scaled],
-                                         [self.weights[0].W_T()]
+                                         [self.weights[0].W()]
                                      ),
                                      grad.layers[i+1])
 
