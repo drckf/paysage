@@ -27,7 +27,7 @@ class TAP_rbm(model.Model):
 
     def __init__(self, layer_list, terms=2, init_lr_EMF=0.1, tolerance_EMF=1e-7, max_iters_EMF=100, num_persistent_samples=0):
         """
-        Create a TAP rbm model.
+        Create a TAP RBM model.
 
         Notes:
             Only 2-layer models currently supported.
@@ -44,7 +44,7 @@ class TAP_rbm(model.Model):
                     0 implies we use a random seed each iteration
 
         Returns:
-            model: A TAP rbm model.
+            model: A TAP RBM model.
 
         """
         super().__init__(layer_list)
@@ -96,16 +96,16 @@ class TAP_rbm(model.Model):
             terms: number of terms to use (1, 2, or 3 allowed)
 
         Returns:
-            tuple (magnetization, TAP3-approximated Gibbs free energy)
+            tuple (magnetization, TAP-approximated Gibbs free energy)
                   (Magnetization, float)
 
         """
         if terms != 1 and terms != 2 and terms != 3:
             raise ValueError("Must specify one, two, or three terms in TAP expansion training method")
 
-        w = self.weights[0].int_params.matrix
-        a = self.layers[0].int_params.loc
-        b = self.layers[1].int_params.loc
+        w = self.weights[0].params.matrix
+        a = self.layers[0].params.loc
+        b = self.layers[1].params.loc
 
         # Mean field derivatives
         def grad_v_gamma_MF(m, w, a):
@@ -235,9 +235,9 @@ class TAP_rbm(model.Model):
     # specialized to the RBM case
     def gamma_MF(self, m):
         # alias weights and biases
-        w = self.weights[0].int_params[0]
-        a = self.layers[0].int_params[0]
-        b = self.layers[1].int_params[0]
+        w = self.weights[0].params[0]
+        a = self.layers[0].params[0]
+        b = self.layers[1].params[0]
         return \
             be.tsum(be.multiply(m.v, be.log(m.v)) + be.multiply(1.0 - m.v, be.log(1.0 - m.v))) + \
             be.tsum(be.multiply(m.h, be.log(m.h)) + be.multiply(1.0 - m.h, be.log(1.0 - m.h))) - \
@@ -247,9 +247,9 @@ class TAP_rbm(model.Model):
     # specialized to the RBM case
     def gamma_TAP2(self, m):
         # alias weights and biases
-        w = self.weights[0].int_params[0]
-        a = self.layers[0].int_params[0]
-        b = self.layers[1].int_params[0]
+        w = self.weights[0].params[0]
+        a = self.layers[0].params[0]
+        b = self.layers[1].params[0]
         m_v_quad = m.v - be.square(m.v)
         m_h_quad = m.h - be.square(m.h)
         ww = be.square(w)
@@ -264,9 +264,9 @@ class TAP_rbm(model.Model):
     # specialized to the RBM case
     def gamma_TAP3(self, m):
         # alias weights and biases
-        w = self.weights[0].int_params[0]
-        a = self.layers[0].int_params[0]
-        b = self.layers[1].int_params[0]
+        w = self.weights[0].params[0]
+        a = self.layers[0].params[0]
+        b = self.layers[1].params[0]
         m_v_quad = m.v - be.square(m.v)
         m_h_quad = m.h - be.square(m.h)
         ww = be.square(w)
@@ -300,15 +300,16 @@ class TAP_rbm(model.Model):
         return -be.outer(m.v, m.h) - be.multiply(w, be.outer(m_v_quad, m_h_quad)) - \
                4.0 * be.multiply(ww, be.outer(be.multiply(0.5 - m.v, m_v_quad), be.multiply(0.5 - m.h, m_h_quad)))
 
-    def gradient(self, vdata, vmodel):
+    def gradient(self, data_state, model_state):
         """
         Gradient of -\ln P(v) with respect to the weights and biases
         """
 
+        batch_size = be.shape(data_state.units[0])[0]
         # alias weights and biases
-        w = self.weights[0].int_params.matrix
-        a = self.layers[0].int_params.loc
-        b = self.layers[1].int_params.loc
+        w = self.weights[0].params.matrix
+        a = self.layers[0].params.loc
+        b = self.layers[1].params.loc
 
         if self.terms == 1:
              grad_w_gamma = self.grad_w_gamma_MF
@@ -317,7 +318,7 @@ class TAP_rbm(model.Model):
         elif self.terms == 3:
              grad_w_gamma = self.grad_w_gamma_TAP3
 
-        # compute the TAP3 approximation to the Gibbs free energy:
+        # compute the TAP approximation to the Gibbs free energy:
         EMF = 1e6
         m = None
         if len(self.persistent_samples) == 0: # random seed
@@ -344,21 +345,21 @@ class TAP_rbm(model.Model):
         db_EMF = self.grad_b_gamma(m,w,a,b)
 
         # compute average grad_F_marginal over the minibatch
-        intermediate = be.expit(be.dot(vdata,w) + b)
+        intermediate = be.expit(be.dot(data_state.units[0],w) + b)
 
-        da = be.mean(vdata, axis=0)
+        da = be.mean(data_state.units[0], axis=0)
         db = be.mean(intermediate, axis=0)
-        batch_size = be.shape(vdata)[0]
-        dw = be.dot(be.transpose(vdata), intermediate) / batch_size
+        batch_size = be.shape(data_state.units[0])[0]
+        dw = be.dot(be.transpose(data_state.units[0]), intermediate) / batch_size
 
         grad = gu.Gradient(
             [None for l in self.layers],
             [None for w in self.weights]
         )
 
-        grad.weights[0] = layers.IntrinsicParamsWeights(dw + dw_EMF)
-        grad.layers[0] = layers.IntrinsicParamsBernoulli(da + da_EMF)
-        grad.layers[1] = layers.IntrinsicParamsBernoulli(db + db_EMF)
+        grad.weights[0] = layers.ParamsWeights(dw + dw_EMF)
+        grad.layers[0] = layers.ParamsBernoulli(da + da_EMF)
+        grad.layers[1] = layers.ParamsBernoulli(db + db_EMF)
 
         #score = be.accumulate(self.marginal_free_energy, vdata)
         #print(-score / batch_size + EMF)

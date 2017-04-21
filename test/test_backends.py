@@ -312,17 +312,28 @@ def test_normalize():
     assert_close(py_norm, torch_norm, "normalize")
 
 def test_norm():
-    shape = (100,)
+    shape = (100, 100)
 
     py_rand.set_seed()
     py_x = py_rand.rand(shape)
     torch_x = torch_matrix.float_tensor(py_x)
 
+    # overall norm
     py_norm = py_matrix.norm(py_x)
     torch_norm = torch_matrix.norm(torch_x)
 
     assert allclose(py_norm, torch_norm), \
     "python l2 norm != torch l2 norm"
+
+    # norm over axis 0, keepdims = False
+    py_norm = py_matrix.norm(py_x, axis=0)
+    torch_norm = torch_matrix.norm(torch_x, axis=0)
+    assert_close(py_norm, torch_norm, "norm (axis-0)")
+
+    # norm over axis 0, keepdims
+    py_norm = py_matrix.norm(py_x, axis=0, keepdims=True)
+    torch_norm = torch_matrix.norm(torch_x, axis=0, keepdims=True)
+    assert_close(py_norm, torch_norm, "norm (axis-0, keepdims)")
 
 def test_tmax():
     shape = (100, 100)

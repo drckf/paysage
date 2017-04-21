@@ -397,19 +397,32 @@ def normalize(x: T.Tensor) -> T.Tensor:
     y = EPSILON + x
     return x/numpy.sum(y)
 
-def norm(x: T.Tensor) -> float:
+def norm(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
     Return the L2 norm of a tensor.
 
     Args:
         x: A tensor.
+        axis (optional): the axis for taking the norm
+        keepdims (optional): If this is set to true, the dimension of the tensor
+                             is unchanged. Otherwise, the reduced axis is removed
+                             and the dimension of the array is 1 less.
 
     Returns:
-        float: The L2 norm of the tensor
+        if axis is none:
+            float: The L2 norm of the tensor
                (i.e., the sqrt of the sum of the squared elements).
+        else:
+            tensor: The L2 norm along the specified axis.
 
     """
-    return numpy.linalg.norm(x)
+    if axis is None:
+        return numpy.linalg.norm(x)
+    else:
+        if keepdims:
+            return numpy.expand_dims(numpy.linalg.norm(x, axis=axis), axis)
+        else:
+            return numpy.linalg.norm(x, axis=axis)
 
 def tmax(x: T.Tensor, axis: int=None, keepdims: bool=False)-> T.FloatingPoint:
     """

@@ -4,7 +4,7 @@ from paysage.models import model
 
 import pytest
 
-def test_bernoulli_update():
+def test_bernoulli_conditional_params():
     num_visible_units = 100
     num_hidden_units = 50
     batch_size = 25
@@ -22,30 +22,33 @@ def test_bernoulli_update():
     b = be.randn((num_hidden_units,))
     W = be.randn((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     hdata = rbm.layers[1].random((batch_size, num_hidden_units))
 
-    # compute extrinsic parameters
+    # compute conditional parameters
     hidden_field = be.dot(vdata, W) # (batch_size, num_hidden_units)
     hidden_field += be.broadcast(b, hidden_field)
 
     visible_field = be.dot(hdata, be.transpose(W)) # (batch_size, num_visible_units)
     visible_field += be.broadcast(a, visible_field)
 
-    # update the extrinsic parameter using the layer functions
-    rbm.layers[0].update([hdata], [rbm.weights[0].W_T()])
-    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
+    # compute conditional parameters with layer funcitons
+    hidden_field_layer = rbm.layers[1]._conditional_params(
+        [vdata], [rbm.weights[0].W()])
+    visible_field_layer = rbm.layers[0]._conditional_params(
+        [hdata], [rbm.weights[0].W_T()])
 
-    assert be.allclose(hidden_field, rbm.layers[1].ext_params.field), \
+    assert be.allclose(hidden_field, hidden_field_layer), \
     "hidden field wrong in bernoulli-bernoulli rbm"
 
-    assert be.allclose(visible_field, rbm.layers[0].ext_params.field), \
+    assert be.allclose(visible_field, visible_field_layer), \
     "visible field wrong in bernoulli-bernoulli rbm"
+
 
 def test_bernoulli_derivatives():
     num_visible_units = 100
@@ -65,17 +68,16 @@ def test_bernoulli_derivatives():
     b = be.randn((num_hidden_units,))
     W = be.randn((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     vdata_scaled = rbm.layers[0].rescale(vdata)
 
-    # compute the mean of the hidden layer
-    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
-    hid_mean = rbm.layers[1].mean()
+    # compute the conditional mean of the hidden layer
+    hid_mean = rbm.layers[1].conditional_mean([vdata], [rbm.weights[0].W()])
     hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
 
     # compute the derivatives
@@ -85,10 +87,10 @@ def test_bernoulli_derivatives():
 
     # compute the derivatives using the layer functions
     vis_derivs = rbm.layers[0].derivatives(vdata, [hid_mean_scaled],
-                                            [rbm.weights[0].W()])
+                                            [rbm.weights[0].W_T()])
 
     hid_derivs = rbm.layers[1].derivatives(hid_mean, [vdata_scaled],
-                                          [rbm.weights[0].W_T()])
+                                          [rbm.weights[0].W()])
 
     weight_derivs = rbm.weights[0].derivatives(vdata, hid_mean_scaled)
 
@@ -101,7 +103,8 @@ def test_bernoulli_derivatives():
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in bernoulli-bernoulli rbm"
 
-def test_ising_update():
+
+def test_ising_conditional_params():
     num_visible_units = 100
     num_hidden_units = 50
     batch_size = 25
@@ -119,30 +122,33 @@ def test_ising_update():
     b = be.randn((num_hidden_units,))
     W = be.randn((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     hdata = rbm.layers[1].random((batch_size, num_hidden_units))
 
-    # compute extrinsic parameters
+    # compute conditional parameters
     hidden_field = be.dot(vdata, W) # (batch_size, num_hidden_units)
     hidden_field += be.broadcast(b, hidden_field)
 
     visible_field = be.dot(hdata, be.transpose(W)) # (batch_size, num_visible_units)
     visible_field += be.broadcast(a, visible_field)
 
-    # update the extrinsic parameter using the layer functions
-    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
-    rbm.layers[0].update([hdata], [rbm.weights[0].W_T()])
+    # compute the conditional parameters using the layer functions
+    hidden_field_func = rbm.layers[1]._conditional_params(
+        [vdata], [rbm.weights[0].W()])
+    visible_field_func = rbm.layers[0]._conditional_params(
+        [hdata], [rbm.weights[0].W_T()])
 
-    assert be.allclose(hidden_field, rbm.layers[1].ext_params.field), \
+    assert be.allclose(hidden_field, hidden_field_func), \
     "hidden field wrong in ising-ising rbm"
 
-    assert be.allclose(visible_field, rbm.layers[0].ext_params.field), \
+    assert be.allclose(visible_field, visible_field_func), \
     "visible field wrong in ising-ising rbm"
+
 
 def test_ising_derivatives():
     num_visible_units = 100
@@ -162,17 +168,16 @@ def test_ising_derivatives():
     b = be.randn((num_hidden_units,))
     W = be.randn((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     vdata_scaled = rbm.layers[0].rescale(vdata)
 
     # compute the mean of the hidden layer
-    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
-    hid_mean = rbm.layers[1].mean()
+    hid_mean = rbm.layers[1].conditional_mean([vdata], [rbm.weights[0].W()])
     hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
 
     # compute the derivatives
@@ -182,11 +187,11 @@ def test_ising_derivatives():
 
     # compute the derivatives using the layer functions
     vis_derivs = rbm.layers[0].derivatives(vdata, [hid_mean_scaled],
-                                            [rbm.weights[0].W()]
+                                            [rbm.weights[0].W_T()]
                                             )
 
     hid_derivs = rbm.layers[1].derivatives(hid_mean, [vdata_scaled],
-                                           [rbm.weights[0].W_T()]
+                                           [rbm.weights[0].W()]
                                            )
 
     weight_derivs = rbm.weights[0].derivatives(vdata, hid_mean_scaled)
@@ -200,7 +205,8 @@ def test_ising_derivatives():
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in ising-ising rbm"
 
-def test_exponential_update():
+
+def test_exponential_conditional_params():
     num_visible_units = 100
     num_hidden_units = 50
     batch_size = 25
@@ -219,30 +225,33 @@ def test_exponential_update():
     b = be.rand((num_hidden_units,))
     W = -be.rand((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     hdata = rbm.layers[1].random((batch_size, num_hidden_units))
 
-    # compute extrinsic parameters
+    # compute conditional parameters
     hidden_rate = -be.dot(vdata, W) # (batch_size, num_hidden_units)
     hidden_rate += be.broadcast(b, hidden_rate)
 
     visible_rate = -be.dot(hdata, be.transpose(W)) # (batch_size, num_visible_units)
     visible_rate += be.broadcast(a, visible_rate)
 
-    # update the extrinsic parameter using the layer functions
-    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
-    rbm.layers[0].update([hdata], [rbm.weights[0].W_T()])
+    # compute the conditional parameters using the layer functions
+    hidden_rate_func = rbm.layers[1]._conditional_params(
+        [vdata], [rbm.weights[0].W()])
+    visible_rate_func = rbm.layers[0]._conditional_params(
+        [hdata], [rbm.weights[0].W_T()])
 
-    assert be.allclose(hidden_rate, rbm.layers[1].ext_params.rate), \
+    assert be.allclose(hidden_rate, hidden_rate_func), \
     "hidden rate wrong in exponential-exponential rbm"
 
-    assert be.allclose(visible_rate, rbm.layers[0].ext_params.rate), \
+    assert be.allclose(visible_rate, visible_rate_func), \
     "visible rate wrong in exponential-exponential rbm"
+
 
 def test_exponential_derivatives():
     num_visible_units = 100
@@ -263,17 +272,16 @@ def test_exponential_derivatives():
     b = be.rand((num_hidden_units,))
     W = -be.rand((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     vdata_scaled = rbm.layers[0].rescale(vdata)
 
     # compute the mean of the hidden layer
-    rbm.layers[1].update([vdata], [rbm.weights[0].W()])
-    hid_mean = rbm.layers[1].mean()
+    hid_mean = rbm.layers[1].conditional_mean([vdata], [rbm.weights[0].W()])
     hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
 
     # compute the derivatives
@@ -283,10 +291,10 @@ def test_exponential_derivatives():
 
     # compute the derivatives using the layer functions
     vis_derivs = rbm.layers[0].derivatives(vdata, [hid_mean_scaled],
-                                            [rbm.weights[0].W()])
+                                            [rbm.weights[0].W_T()])
 
     hid_derivs = rbm.layers[1].derivatives(hid_mean, [vdata_scaled],
-                                               [rbm.weights[0].W_T()])
+                                               [rbm.weights[0].W()])
 
     weight_derivs = rbm.weights[0].derivatives(vdata, hid_mean_scaled)
 
@@ -299,7 +307,8 @@ def test_exponential_derivatives():
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in exponential-exponential rbm"
 
-def test_gaussian_update():
+
+def test_gaussian_conditional_params():
     num_visible_units = 100
     num_hidden_units = 50
     batch_size = 25
@@ -319,11 +328,11 @@ def test_gaussian_update():
     log_var_b = 0.1 * be.randn((num_hidden_units,))
     W = be.randn((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.layers[0].int_params.log_var[:] = log_var_a
-    rbm.layers[1].int_params.log_var[:] = log_var_b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.layers[0].params.log_var[:] = log_var_a
+    rbm.layers[1].params.log_var[:] = log_var_b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
@@ -351,21 +360,24 @@ def test_gaussian_update():
     visible_mean = be.dot(hdata_scaled, be.transpose(W)) # (batch_size, num_hidden_units)
     visible_mean += be.broadcast(a, visible_mean)
 
-    # update the extrinsic parameters using the layer functions
-    rbm.layers[0].update([hdata_scaled], [rbm.weights[0].W_T()])
-    rbm.layers[1].update([vdata_scaled], [rbm.weights[0].W()])
+    # update the conditional parameters using the layer functions
+    vis_mean_func, vis_var_func = rbm.layers[0]._conditional_params(
+        [hdata_scaled], [rbm.weights[0].W_T()])
+    hid_mean_func, hid_var_func = rbm.layers[1]._conditional_params(
+        [vdata_scaled], [rbm.weights[0].W()])
 
-    assert be.allclose(visible_var, rbm.layers[0].ext_params.variance),\
+    assert be.allclose(visible_var, vis_var_func),\
     "visible variance wrong in gaussian-gaussian rbm"
 
-    assert be.allclose(hidden_var, rbm.layers[1].ext_params.variance),\
+    assert be.allclose(hidden_var, hid_var_func),\
     "hidden variance wrong in gaussian-gaussian rbm"
 
-    assert be.allclose(visible_mean, rbm.layers[0].ext_params.mean),\
+    assert be.allclose(visible_mean, vis_mean_func),\
     "visible mean wrong in gaussian-gaussian rbm"
 
-    assert be.allclose(hidden_mean, rbm.layers[1].ext_params.mean),\
+    assert be.allclose(hidden_mean, hid_mean_func),\
     "hidden mean wrong in gaussian-gaussian rbm"
+
 
 def test_gaussian_derivatives():
     num_visible_units = 100
@@ -387,11 +399,11 @@ def test_gaussian_derivatives():
     log_var_b = 0.1 * be.randn((num_hidden_units,))
     W = be.randn((num_visible_units, num_hidden_units))
 
-    rbm.layers[0].int_params.loc[:] = a
-    rbm.layers[1].int_params.loc[:] = b
-    rbm.layers[0].int_params.log_var[:] = log_var_a
-    rbm.layers[1].int_params.log_var[:] = log_var_b
-    rbm.weights[0].int_params.matrix[:] = W
+    rbm.layers[0].params.loc[:] = a
+    rbm.layers[1].params.loc[:] = b
+    rbm.layers[0].params.log_var[:] = log_var_a
+    rbm.layers[1].params.log_var[:] = log_var_b
+    rbm.weights[0].params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
@@ -399,9 +411,9 @@ def test_gaussian_derivatives():
     vdata_scaled = vdata / be.broadcast(visible_var, vdata)
 
     # compute the mean of the hidden layer
-    rbm.layers[1].update([vdata_scaled], [rbm.weights[0].W()])
+    hid_mean = rbm.layers[1].conditional_mean(
+        [vdata_scaled], [rbm.weights[0].W()])
     hidden_var = be.exp(log_var_b)
-    hid_mean = rbm.layers[1].mean()
     hid_mean_scaled = rbm.layers[1].rescale(hid_mean)
 
     # compute the derivatives
@@ -421,14 +433,11 @@ def test_gaussian_derivatives():
     d_W = -be.batch_outer(vdata_scaled, hid_mean_scaled) / len(vdata_scaled)
 
     # compute the derivatives using the layer functions
-    rbm.layers[1].update([vdata_scaled], [rbm.weights[0].W()])
-    rbm.layers[0].update([hid_mean_scaled], [rbm.weights[0].W_T()])
-
     vis_derivs = rbm.layers[0].derivatives(vdata, [hid_mean_scaled],
-                                            [rbm.weights[0].W()])
+                                            [rbm.weights[0].W_T()])
 
     hid_derivs = rbm.layers[1].derivatives(hid_mean, [vdata_scaled],
-                                           [rbm.weights[0].W_T()])
+                                           [rbm.weights[0].W()])
 
     weight_derivs = rbm.weights[0].derivatives(vdata_scaled, hid_mean_scaled)
 
