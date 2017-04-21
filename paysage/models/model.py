@@ -172,7 +172,7 @@ class Model(object):
 
     def initialize(self, data, method: str='hinton'):
         """
-        Inialize the parameters of the model.
+        Initialize the parameters of the model.
 
         Args:
             data: A Batch object.
