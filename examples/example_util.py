@@ -68,7 +68,7 @@ def show_reconstructions(rbm, v_data, fit, show_plot):
 
 def compute_fantasy_particles(rbm, v_data, fit):
     random_samples = rbm.random(v_data)
-    model_state = State.from_visible(v_data, rbm)
+    model_state = State.from_visible(random_samples, rbm)
     sampler = fit.DrivenSequentialMC(rbm)
     sampler.set_negative_state(model_state)
     sampler.update_negative_state(1000)
