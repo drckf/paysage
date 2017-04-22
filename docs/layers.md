@@ -1398,7 +1398,7 @@ def get(key)
 ### namedtuple
 ```py
 
-def namedtuple(typename, field_names, verbose=False, rename=False)
+def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
 
 ```
 

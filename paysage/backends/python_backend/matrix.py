@@ -299,6 +299,20 @@ def reshape(tensor: T.Tensor, newshape: T.Tuple[int]) -> T.Tensor:
     """
     return numpy.reshape(tensor, newshape)
 
+def unsqueeze(tensor: T.Tensor, axis: int) -> T.Tensor:
+    """
+    Return tensor with a new axis inserted.
+
+    Args:
+        tensor: A tensor.
+        axis: The desired axis.
+
+    Returns:
+        tensor: A tensor with the new axis inserted.
+
+    """
+    return numpy.expand_dims(tensor, axis)
+
 def dtype(tensor: T.Tensor) -> type:
     """
     Return the type of the tensor.
@@ -797,7 +811,6 @@ def outer(x: T.Tensor, y: T.Tensor) -> T.Tensor:
     """
     return numpy.outer(x,y)
 
-
 class BroadcastError(ValueError):
     """
     BroadcastError exception:
@@ -831,7 +844,7 @@ def broadcast(vec: T.Tensor, matrix: T.Tensor) -> T.Tensor:
         return numpy.broadcast_to(vec, shape(matrix))
     except ValueError:
         raise BroadcastError('cannot broadcast vector of dimension {} \
-onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
+        onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
 
 def add(a: T.Tensor, b: T.Tensor) -> T.Tensor:
     """

@@ -309,6 +309,20 @@ def reshape(tensor: T.FloatTensor,
     """
     return tensor.view(*newshape)
 
+def unsqueeze(tensor: T.Tensor, axis: int) -> T.Tensor:
+    """
+    Return tensor with a new axis inserted.
+
+    Args:
+        tensor: A tensor.
+        axis: The desired axis.
+
+    Returns:
+        tensor: A tensor with the new axis inserted.
+
+    """
+    return torch.unsqueeze(tensor, axis)
+
 def dtype(tensor: T.FloatTensor) -> type:
     """
     Return the type of the tensor.
@@ -928,7 +942,7 @@ def broadcast(vec: T.FloatTensor, matrix: T.FloatTensor) -> T.FloatTensor:
             return vec.expand(matrix.size(0), matrix.size(1))
     except ValueError:
         raise BroadcastError('cannot broadcast vector of dimension {} \
-onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
+              onto matrix of dimension {}'.format(shape(vec), shape(matrix)))
 
 def add(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
     """
