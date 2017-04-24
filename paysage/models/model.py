@@ -91,7 +91,6 @@ class State(object):
 class Model(object):
     """
     General model class.
-    Currently only supports models with 2 layers,
     (i.e., Restricted Boltzmann Machines).
 
     Example usage:
@@ -106,9 +105,6 @@ class Model(object):
         """
         Create a model.
 
-        Notes:
-            Only 2-layer models currently supported.
-
         Args:
             layer_list: A list of layers objects.
 
@@ -122,9 +118,6 @@ class Model(object):
         self.num_layers = len(self.layers)
         self.layer_connections = self._layer_connections()
         self.weight_connections = self._weight_connections()
-
-        assert self.num_layers == 2,\
-        "Only models with 2 layers are currently supported"
 
         # adjacent layers are connected by weights
         # therefore, if there are len(layers) = n then len(weights) = n - 1
@@ -267,7 +260,6 @@ class Model(object):
         """
         return [self.weights[j].W() if j < i else self.weights[j].W_T()
                             for j in self.weight_connections[i]]
-
 
     def _alternating_update(self, func_name, state, beta=None, clamped=[]):
         """
@@ -505,13 +497,12 @@ class Model(object):
             tensor (batch_size, ): Marginal free energies.
 
         """
-        assert self.num_layers == 2 # supported for 2-layer models only
-        i = 0
-        phi = be.dot(data.units[i], self.weights[i].W())
-        log_Z_hidden = self.layers[i+1].log_partition_function(phi)
         energy = 0
-        energy += self.layers[i].energy(data.units[i])
-        energy -= be.tsum(log_Z_hidden, axis=1)
+        for i in range(self.num_layers - 1):
+            phi = be.dot(data.units[i], self.weights[i].W())
+            log_Z_hidden = self.layers[i+1].log_partition_function(phi)
+            energy += self.layers[i].energy(data.units[i])
+            energy -= be.tsum(log_Z_hidden, axis=1)
         return energy
 
     def save(self, store):
