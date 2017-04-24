@@ -672,7 +672,8 @@ class GaussianLayer(Layer):
     def random(self, array_or_shape):
         """
         Generate a random sample with the same type as the layer.
-        For a Gaussian layer, draws from the standard normal distribution N(0,1).
+        For a Gaussian layer, draws from a normal distribution
+        with the mean and variance determined from the params attribute.
 
         Used for generating initial configurations for Monte Carlo runs.
 
@@ -686,10 +687,15 @@ class GaussianLayer(Layer):
 
         """
         try:
-            r = be.float_tensor(self.rand(be.shape(array_or_shape)))
-        except AttributeError:
-            r = be.float_tensor(self.rand(array_or_shape))
-        return r
+            shape = be.shape(array_or_shape)
+        except Exception:
+            shape = array_or_shape
+
+        mean = self.params.loc
+        var = be.exp(self.params.log_var)
+        r = self.rand(shape)
+
+        return be.add(mean, be.multiply(be.sqrt(var), r))
 
 
 ParamsIsing = namedtuple("ParamsIsing", ["loc"])
@@ -960,7 +966,8 @@ class IsingLayer(Layer):
     def random(self, array_or_shape):
         """
         Generate a random sample with the same type as the layer.
-        For an Ising layer, draws -1 or +1 with equal probablity.
+        For an Ising layer, draws -1 or +1 with the field determined
+        by the params attribute.
 
         Used for generating initial configurations for Monte Carlo runs.
 
@@ -974,10 +981,13 @@ class IsingLayer(Layer):
 
         """
         try:
-            r = self.rand(be.shape(array_or_shape))
-        except AttributeError:
-            r = self.rand(array_or_shape)
-        return 2 * be.float_tensor(r < 0.5) - 1
+            shape = be.shape(array_or_shape)
+        except Exception:
+            shape = array_or_shape
+
+        r = self.rand(shape)
+        p = be.expit(be.broadcast(self.params.loc, r))
+        return 2 * be.float_tensor(r < p) - 1
 
 
 ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
@@ -1248,7 +1258,8 @@ class BernoulliLayer(Layer):
     def random(self, array_or_shape):
         """
         Generate a random sample with the same type as the layer.
-        For a Bernoulli layer, draws 0 or 1 with equal probability.
+        For a Bernoulli layer, draws 0 or 1 with the field determined
+        by the params attribute.
 
         Used for generating initial configurations for Monte Carlo runs.
 
@@ -1262,10 +1273,13 @@ class BernoulliLayer(Layer):
 
         """
         try:
-            r = self.rand(be.shape(array_or_shape))
-        except AttributeError:
-            r = self.rand(array_or_shape)
-        return be.float_tensor(r < 0.5)
+            shape = be.shape(array_or_shape)
+        except Exception:
+            shape = array_or_shape
+
+        r = self.rand(shape)
+        p = be.expit(be.broadcast(self.params.loc, r))
+        return be.float_tensor(r < p)
 
 
 ParamsExponential = namedtuple("ParamsExponential", ["loc"])
@@ -1535,7 +1549,7 @@ class ExponentialLayer(Layer):
         """
         Generate a random sample with the same type as the layer.
         For an Exponential layer, draws from the exponential distribution
-        with mean 1 (i.e., Expo(1)).
+        with the rate determined by the params attribute.
 
         Used for generating initial configurations for Monte Carlo runs.
 
@@ -1549,10 +1563,13 @@ class ExponentialLayer(Layer):
 
         """
         try:
-            r = self.rand(be.shape(array_or_shape))
-        except AttributeError:
-            r = self.rand(array_or_shape)
-        return -be.log(r)
+            shape = be.shape(array_or_shape)
+        except Exception:
+            shape = array_or_shape
+
+        r = self.rand(shape)
+        return be.divide(self.params.loc, -be.log(r))
+
 
 
 # ---- FUNCTIONS ----- #

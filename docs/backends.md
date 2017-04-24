@@ -609,13 +609,13 @@ Return the number of dimensions of a tensor.<br /><br />Args:<br /> ~ tensor: A 
 ### norm
 ```py
 
-def norm(x: numpy.ndarray) -> float
+def norm(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
 
 ```
 
 
 
-Return the L2 norm of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ float: The L2 norm of the tensor<br /> ~  ~    (i.e., the sqrt of the sum of the squared elements).
+Return the L2 norm of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ axis (optional): the axis for taking the norm<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is none:<br /> ~  ~ float: The L2 norm of the tensor<br /> ~  ~    (i.e., the sqrt of the sum of the squared elements).<br /> ~ else:<br /> ~  ~ tensor: The L2 norm along the specified axis.
 
 
 ### normalize
@@ -1084,6 +1084,18 @@ def tsum(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.
 
 
 Return the sum of the elements of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis for taking the sum.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall sum of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The sum of the tensor along the specified axis.
+
+
+### unsqueeze
+```py
+
+def unsqueeze(tensor: numpy.ndarray, axis: int) -> numpy.ndarray
+
+```
+
+
+
+Return tensor with a new axis inserted.<br /><br />Args:<br /> ~ tensor: A tensor.<br /> ~ axis: The desired axis.<br /><br />Returns:<br /> ~ tensor: A tensor with the new axis inserted.
 
 
 ### var
