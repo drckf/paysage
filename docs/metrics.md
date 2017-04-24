@@ -221,7 +221,7 @@ Get the value of the energy gap.<br /><br />Args:<br /> ~ None<br /><br />Return
 ### namedtuple
 ```py
 
-def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
+def namedtuple(typename, field_names, verbose=False, rename=False)
 
 ```
 
