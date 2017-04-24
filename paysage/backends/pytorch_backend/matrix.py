@@ -1279,7 +1279,7 @@ def fast_energy_distance(minibatch: T.FloatTensor,
     X = resample(minibatch, n, replace=True)
     Y = resample(samples, m, replace=True)
 
-    for i in range(n):
+    for i in range(n-1):
         for j in range(i+1, n):
             d1 += euclidean_distance(X[i], X[j])
     d1 = 2.0 * d1 / (n*n - n)
