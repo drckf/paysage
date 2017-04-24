@@ -219,7 +219,7 @@ def random(self, array_or_shape)
 
 
 
-Generate a random sample with the same type as the layer.<br />For an Exponential layer, draws from the exponential distribution<br />with mean 1 (i.e., Expo(1)).<br /><br />Used for generating initial configurations for Monte Carlo runs.<br /><br />Args:<br /> ~ array_or_shape (array or shape tuple):<br /> ~  ~ If tuple, then this is taken to be the shape.<br /> ~  ~ If array, then its shape is used.<br /><br />Returns:<br /> ~ tensor: Random sample with desired shape.
+Generate a random sample with the same type as the layer.<br />For an Exponential layer, draws from the exponential distribution<br />with the rate determined by the params attribute.<br /><br />Used for generating initial configurations for Monte Carlo runs.<br /><br />Args:<br /> ~ array_or_shape (array or shape tuple):<br /> ~  ~ If tuple, then this is taken to be the shape.<br /> ~  ~ If array, then its shape is used.<br /><br />Returns:<br /> ~ tensor: Random sample with desired shape.
 
 
 ### rescale
@@ -479,7 +479,7 @@ def random(self, array_or_shape)
 
 
 
-Generate a random sample with the same type as the layer.<br />For a Bernoulli layer, draws 0 or 1 with equal probability.<br /><br />Used for generating initial configurations for Monte Carlo runs.<br /><br />Args:<br /> ~ array_or_shape (array or shape tuple):<br /> ~  ~ If tuple, then this is taken to be the shape.<br /> ~  ~ If array, then its shape is used.<br /><br />Returns:<br /> ~ tensor: Random sample with desired shape.
+Generate a random sample with the same type as the layer.<br />For a Bernoulli layer, draws 0 or 1 with the field determined<br />by the params attribute.<br /><br />Used for generating initial configurations for Monte Carlo runs.<br /><br />Args:<br /> ~ array_or_shape (array or shape tuple):<br /> ~  ~ If tuple, then this is taken to be the shape.<br /> ~  ~ If array, then its shape is used.<br /><br />Returns:<br /> ~ tensor: Random sample with desired shape.
 
 
 ### rescale
@@ -739,7 +739,7 @@ def random(self, array_or_shape)
 
 
 
-Generate a random sample with the same type as the layer.<br />For a Gaussian layer, draws from the standard normal distribution N(0,1).<br /><br />Used for generating initial configurations for Monte Carlo runs.<br /><br />Args:<br /> ~ array_or_shape (array or shape tuple):<br /> ~  ~ If tuple, then this is taken to be the shape.<br /> ~  ~ If array, then its shape is used.<br /><br />Returns:<br /> ~ tensor: Random sample with desired shape.
+Generate a random sample with the same type as the layer.<br />For a Gaussian layer, draws from a normal distribution<br />with the mean and variance determined from the params attribute.<br /><br />Used for generating initial configurations for Monte Carlo runs.<br /><br />Args:<br /> ~ array_or_shape (array or shape tuple):<br /> ~  ~ If tuple, then this is taken to be the shape.<br /> ~  ~ If array, then its shape is used.<br /><br />Returns:<br /> ~ tensor: Random sample with desired shape.
 
 
 ### rescale
@@ -1011,7 +1011,7 @@ def random(self, array_or_shape)
 
 
 
-Generate a random sample with the same type as the layer.<br />For an Ising layer, draws -1 or +1 with equal probablity.<br /><br />Used for generating initial configurations for Monte Carlo runs.<br /><br />Args:<br /> ~ array_or_shape (array or shape tuple):<br /> ~  ~ If tuple, then this is taken to be the shape.<br /> ~  ~ If array, then its shape is used.<br /><br />Returns:<br /> ~ tensor: Random sample with desired shape.
+Generate a random sample with the same type as the layer.<br />For an Ising layer, draws -1 or +1 with the field determined<br />by the params attribute.<br /><br />Used for generating initial configurations for Monte Carlo runs.<br /><br />Args:<br /> ~ array_or_shape (array or shape tuple):<br /> ~  ~ If tuple, then this is taken to be the shape.<br /> ~  ~ If array, then its shape is used.<br /><br />Returns:<br /> ~ tensor: Random sample with desired shape.
 
 
 ### rescale
@@ -1398,7 +1398,7 @@ def get(key)
 ### namedtuple
 ```py
 
-def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
+def namedtuple(typename, field_names, verbose=False, rename=False)
 
 ```
 

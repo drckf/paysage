@@ -672,7 +672,8 @@ class GaussianLayer(Layer):
     def random(self, array_or_shape):
         """
         Generate a random sample with the same type as the layer.
-        For a Gaussian layer, draws from the standard normal distribution N(0,1).
+        For a Gaussian layer, draws from a normal distribution
+        with the mean and variance determined from the params attribute.
 
         Used for generating initial configurations for Monte Carlo runs.
 
@@ -965,7 +966,8 @@ class IsingLayer(Layer):
     def random(self, array_or_shape):
         """
         Generate a random sample with the same type as the layer.
-        For an Ising layer, draws -1 or +1 with equal probablity.
+        For an Ising layer, draws -1 or +1 with the field determined
+        by the params attribute.
 
         Used for generating initial configurations for Monte Carlo runs.
 
@@ -1256,7 +1258,8 @@ class BernoulliLayer(Layer):
     def random(self, array_or_shape):
         """
         Generate a random sample with the same type as the layer.
-        For a Bernoulli layer, draws 0 or 1 with equal probability.
+        For a Bernoulli layer, draws 0 or 1 with the field determined
+        by the params attribute.
 
         Used for generating initial configurations for Monte Carlo runs.
 
@@ -1546,7 +1549,7 @@ class ExponentialLayer(Layer):
         """
         Generate a random sample with the same type as the layer.
         For an Exponential layer, draws from the exponential distribution
-        with mean 1 (i.e., Expo(1)).
+        with the rate determined by the params attribute.
 
         Used for generating initial configurations for Monte Carlo runs.
 
