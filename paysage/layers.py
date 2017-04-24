@@ -686,10 +686,15 @@ class GaussianLayer(Layer):
 
         """
         try:
-            r = be.float_tensor(self.rand(be.shape(array_or_shape)))
-        except AttributeError:
-            r = be.float_tensor(self.rand(array_or_shape))
-        return r
+            shape = be.shape(array_or_shape)
+        except Exception:
+            shape = array_or_shape
+
+        mean = self.params.loc
+        var = be.exp(self.params.log_var)
+        r = self.rand(shape)
+
+        return be.add(mean, be.multiply(be.sqrt(var), r))
 
 
 ParamsIsing = namedtuple("ParamsIsing", ["loc"])
@@ -974,10 +979,13 @@ class IsingLayer(Layer):
 
         """
         try:
-            r = self.rand(be.shape(array_or_shape))
-        except AttributeError:
-            r = self.rand(array_or_shape)
-        return 2 * be.float_tensor(r < 0.5) - 1
+            shape = be.shape(array_or_shape)
+        except Exception:
+            shape = array_or_shape
+
+        r = self.rand(shape)
+        p = be.expit(be.broadcast(self.params.loc, r))
+        return 2 * be.float_tensor(r < p) - 1
 
 
 ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
@@ -1262,10 +1270,13 @@ class BernoulliLayer(Layer):
 
         """
         try:
-            r = self.rand(be.shape(array_or_shape))
-        except AttributeError:
-            r = self.rand(array_or_shape)
-        return be.float_tensor(r < 0.5)
+            shape = be.shape(array_or_shape)
+        except Exception:
+            shape = array_or_shape
+
+        r = self.rand(shape)
+        p = be.expit(be.broadcast(self.params.loc, r))
+        return be.float_tensor(r < p)
 
 
 ParamsExponential = namedtuple("ParamsExponential", ["loc"])
@@ -1549,10 +1560,13 @@ class ExponentialLayer(Layer):
 
         """
         try:
-            r = self.rand(be.shape(array_or_shape))
-        except AttributeError:
-            r = self.rand(array_or_shape)
-        return -be.log(r)
+            shape = be.shape(array_or_shape)
+        except Exception:
+            shape = array_or_shape
+
+        r = self.rand(shape)
+        return be.div(self.params.loc, -be.log(r))
+
 
 
 # ---- FUNCTIONS ----- #
