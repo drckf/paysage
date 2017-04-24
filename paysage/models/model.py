@@ -381,8 +381,7 @@ class Model(object):
     def gradient(self, data_state, model_state):
         """
         Compute the gradient of the model parameters.
-        Updates the states for the positive and negative phases,
-        and computes the gradient from the unit values.
+        Scales the units in the state and computes the gradient.
 
         Args:
             data_state (State object): The observed visible units and sampled hidden units.
@@ -399,45 +398,39 @@ class Model(object):
 
         # POSITIVE PHASE (using observed)
 
-        # compute the conditional mean of the hidden layers
-        new_data_state = self.mean_field_iteration(1, data_state, clamped=[0])
-
-        # compute the postive phase of the gradients of the layer parameters
+        # compute the gradients
         for i in range(self.num_layers):
             grad.layers[i] = self.layers[i].derivatives(
-                new_data_state.units[i],
-                self._connected_rescaled_units(i, new_data_state),
-                self._connected_weights(i)
+                data_state.units[i],
+                [self.layers[j].rescale(data_state.units[j])
+                    for j in self.layer_connections[i]],
+                [self.weights[j].W() if j < i else self.weights[j].W_T()
+                    for j in self.weight_connections[i]],
             )
-
-        # compute the positive phase of the gradients of the weights
         for i in range(self.num_layers - 1):
             grad.weights[i] = self.weights[i].derivatives(
-                self.layers[i].rescale(new_data_state.units[i]),
-                self.layers[i+1].rescale(new_data_state.units[i+1]),
+                self.layers[i].rescale(data_state.units[i]),
+                self.layers[i+1].rescale(data_state.units[i+1]),
             )
 
         # NEGATIVE PHASE (using sampled)
 
-        # compute the conditional mean of the hidden layers
-        new_model_state = self.mean_field_iteration(1, model_state, clamped=[0])
-
-        # update the gradients of the layer parameters with the negative phase
+        # compute the gradients
         for i in range(self.num_layers):
             grad.layers[i] = be.mapzip(be.subtract,
                 self.layers[i].derivatives(
-                    new_model_state.units[i],
-                    self._connected_rescaled_units(i, new_model_state),
-                    self._connected_weights(i)
+                    model_state.units[i],
+                    [self.layers[j].rescale(model_state.units[j])
+                        for j in self.layer_connections[i]],
+                    [self.weights[j].W() if j < i else self.weights[j].W_T()
+                        for j in self.weight_connections[i]],
                 ),
             grad.layers[i])
-
-        # update the gradients of the weight parameters with the negative phase
         for i in range(self.num_layers - 1):
             grad.weights[i] = be.mapzip(be.subtract,
                 self.weights[i].derivatives(
-                    self.layers[i].rescale(new_model_state.units[i]),
-                    self.layers[i+1].rescale(new_model_state.units[i+1]),
+                    self.layers[i].rescale(model_state.units[i]),
+                    self.layers[i+1].rescale(model_state.units[i+1]),
                 ),
             grad.weights[i])
 

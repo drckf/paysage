@@ -405,6 +405,7 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
     # PCD persists the state of the sampler from the previous iteration
     data_state = State.from_visible(vdata, model)
     sampler.set_positive_state(data_state)
+    sampler.update_positive_state(steps)
     sampler.update_negative_state(steps)
 
     # compute the gradient
