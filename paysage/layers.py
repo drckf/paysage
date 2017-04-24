@@ -1565,7 +1565,7 @@ class ExponentialLayer(Layer):
             shape = array_or_shape
 
         r = self.rand(shape)
-        return be.div(self.params.loc, -be.log(r))
+        return be.divide(self.params.loc, -be.log(r))
 
 
 
