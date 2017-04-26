@@ -56,7 +56,7 @@ class TAP_rbm(model.Model):
             self.persistent_samples.append(None)
         self.tap_seed = None
 
-        if terms != 1 and terms != 2 and terms != 3:
+        if terms not in [1, 2, 3]:
             raise ValueError("Must specify one, two, or three terms in TAP expansion training method")
         self.terms = terms
 
@@ -100,7 +100,7 @@ class TAP_rbm(model.Model):
                   (Magnetization, float)
 
         """
-        if terms != 1 and terms != 2 and terms != 3:
+        if terms not in [1, 2, 3]:
             raise ValueError("Must specify one, two, or three terms in TAP expansion training method")
 
         w = self.weights[0].params.matrix
