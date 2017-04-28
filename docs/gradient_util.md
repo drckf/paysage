@@ -93,7 +93,7 @@ Apply an in place function entrywise over the zip of two Gradient objects.<br />
 ### namedtuple
 ```py
 
-def namedtuple(typename, field_names, verbose=False, rename=False)
+def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
 
 ```
 
