@@ -35,7 +35,8 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True
 
     perf  = fit.ProgressMonitor(data,
                                 metrics=['ReconstructionError',
-                                         'EnergyDistance'])
+                                         'EnergyDistance',
+                                         'HeatCapacity'])
 
     opt = optimizers.Gradient(stepsize=learning_rate,
                               scheduler=optimizers.PowerLawDecay(0.1),
