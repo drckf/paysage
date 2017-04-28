@@ -105,6 +105,7 @@ class TAP_rbm(model.Model):
             tol float: tolerance for quitting minimization.
             max_iters: maximum gradient decsent steps.
             terms: number of terms to use (1, 2, or 3 allowed)
+            method: one of 'gd' or 'constraint' picking which Gibbs FE minimization method to use.
 
         Returns:
             tuple (magnetization, TAP-approximated Helmholtz free energy)
@@ -113,6 +114,9 @@ class TAP_rbm(model.Model):
         """
         if terms not in [1, 2, 3]:
             raise ValueError("Must specify one, two, or three terms in TAP expansion training method")
+
+        if method not in ['gd', 'constraint']:
+            raise ValueError("Must specify a valid method for minimizing the Gibbs free energy")
 
         w = self.weights[0].params.matrix
         a = self.layers[0].params.loc
