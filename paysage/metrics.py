@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-"""This module defines classes that represent the state of some model fit
- metric, derived from summary information about the current state of the model
- (encapsulated in MetricState).
+"""
+This module defines classes that represent the state of some model fit metric,
+derived from summary information about the current state of the model
+(encapsulated in MetricState).
+
 """
 
 from collections import namedtuple
@@ -12,14 +14,22 @@ from . import backends as be
 # ----- CLASSES ----- #
 
 """
-A namedtuple of states
+A namedtuple of states.
+
+Attributes:
+    minibatch: a State object with the visible units clamped to the observations
+    reconstructions: a State object with one update from the observations
+    random_samples: a State object with random units for all layers
+    samples: a State object sampled from the model (i.e., fantasy particles)
+    model: a Model object
+
 """
 MetricState = namedtuple('MetricState', [
     'minibatch',
     'reconstructions',
     'random_samples',
     'samples',
-    'amodel'
+    'model'
 ])
 
 class ReconstructionError(object):
@@ -71,10 +81,7 @@ class ReconstructionError(object):
             Changes norm and mean_square_error in place.
 
         Args:
-            minibatch (tensor (num_samples, num_units))
-            reconstructions (tensor (num_samples, num))
-            kwargs: key word arguments
-                not used, but helpful for looping through metric functions
+            update_args: uses visible layer of minibatch and reconstructions
 
         Returns:
             None
@@ -156,10 +163,7 @@ class EnergyDistance(object):
             Changes norm and energy_distance in place.
 
         Args:
-            minibatch (tensor (num_samples, num_units))
-            samples (tensor (num_samples, num)): fantasy particles
-            kwargs: key word arguments
-                not used, but helpful for looping through metric functions
+            update_args: uses visible layer of minibatch and samples
 
         Returns:
             None
@@ -239,22 +243,17 @@ class EnergyGap(object):
             Changes norm and energy_gap in place.
 
         Args:
-            minibatch (tensor (num_samples, num_units)):
-                samples from the model
-            random_samples (tensor (num_samples, num))
-            amodel (Model): the model
-            kwargs: key word arguments
-                not used, but helpful for looping through metric functions
+            update_args: uses all layers of minibatch and random_samples, and model
 
         Returns:
             None
 
         """
         self.norm += 1
-        self.energy_gap += be.mean(update_args.amodel
-                                   .marginal_free_energy(update_args.minibatch))
-        self.energy_gap -= be.mean(update_args.amodel
-                                   .marginal_free_energy(update_args.random_samples))
+        self.energy_gap += be.mean(update_args.model
+                                   .joint_energy(update_args.minibatch))
+        self.energy_gap -= be.mean(update_args.model
+                                   .joint_energy(update_args.random_samples))
 
     def value(self):
         """
@@ -328,23 +327,18 @@ class EnergyZscore(object):
             Changes norm, random_mean, and random_mean_square in place.
 
         Args:
-            minibatch (tensor (num_samples, num_units)):
-                samples from the model
-            random_samples (tensor (num_samples, num))
-            amodel (Model): the model
-            kwargs: key word arguments
-                not used, but helpful for looping through metric functions
+            update_args: uses all layers of minibatch and random_samples, and model
 
         Returns:
             None
 
         """
-        self.data_mean += be.mean(update_args.amodel
-                                  .marginal_free_energy(update_args.minibatch))
-        self.random_mean += be.mean(update_args.amodel
-                                     .marginal_free_energy(update_args.random_samples))
-        self.random_mean_square += be.mean(update_args.amodel
-                                           .marginal_free_energy(update_args.random_samples)**2)
+        self.data_mean += be.mean(update_args.model
+                                  .joint_energy(update_args.minibatch))
+        self.random_mean += be.mean(update_args.model
+                                     .joint_energy(update_args.random_samples))
+        self.random_mean_square += be.mean(update_args.model
+                                           .joint_energy(update_args.random_samples)**2)
 
     def value(self) -> float:
         """
@@ -413,17 +407,17 @@ class HeatCapacity(object):
             Changes heat capacity in place.
 
         Args:
-            Just the model is used since this is not a stochastic metric
+            update_args: uses all layers of random_samples, and model
 
         Returns:
             None
 
         """
         self.norm += 1
-        self.heat_capacity += be.mean(be.square(update_args.amodel
-                                   .joint_energy(update_args.random_samples)))
-        self.heat_capacity -= be.square(be.mean(update_args.amodel
-                                   .joint_energy(update_args.random_samples)))
+        self.heat_capacity += be.mean(be.square(update_args.model
+                                   .joint_energy(update_args.samples)))
+        self.heat_capacity -= be.square(be.mean(update_args.model
+                                   .joint_energy(update_args.samples)))
 
     def value(self) -> float:
         """
