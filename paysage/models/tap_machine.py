@@ -389,24 +389,18 @@ class TAP_rbm(model.Model):
         da_EMF /= (num_p + num_r)
         db_EMF /= (num_p + num_r)
 
-        # compute average grad_F_marginal over the minibatch
-        intermediate = be.expit(be.add(be.unsqueeze(b,0), be.dot(data_state.units[0], w)))
 
-        da = be.mean(data_state.units[0], axis=0)
-        db = be.mean(intermediate, axis=0)
-        batch_size = be.shape(data_state.units[0])[0]
-        dw = be.dot(be.transpose(data_state.units[0]), intermediate) / batch_size
+        # compute average grad_F_marginal over the minibatch
+        grad_MFE = self.grad_marginal_free_energy(data_state)
 
         grad = gu.Gradient(
             [None for l in self.layers],
             [None for w in self.weights]
         )
 
-        grad.weights[0] = layers.ParamsWeights(dw + dw_EMF)
-        grad.layers[0] = layers.ParamsBernoulli(da + da_EMF)
-        grad.layers[1] = layers.ParamsBernoulli(db + db_EMF)
+        grad.weights[0] = layers.ParamsWeights(dw_EMF - grad_MFE.weights[0][0])
+        grad.layers[0] = layers.ParamsBernoulli(da_EMF - grad_MFE.layers[0][0])
+        grad.layers[1] = layers.ParamsBernoulli(db_EMF - grad_MFE.layers[1][0])
 
-        #score = be.accumulate(self.marginal_free_energy, vdata)
-        #print(-score / batch_size + EMF)
         return grad
 
