@@ -25,7 +25,8 @@ class TAP_rbm(model.Model):
 
     """
 
-    def __init__(self, layer_list, terms=2, init_lr_EMF=0.1, tolerance_EMF=1e-7, max_iters_EMF=100, num_persistent_samples=0):
+    def __init__(self, layer_list, terms=2, init_lr_EMF=0.1, tolerance_EMF=1e-7,
+                 max_iters_EMF=100, num_random_samples=1, num_persistent_samples=0):
         """
         Create a TAP RBM model.
 
@@ -34,14 +35,17 @@ class TAP_rbm(model.Model):
 
         Args:
             layer_list: A list of layers objects.
-            terms: number of terms to use in the TAP expansion (#TODO: deprecate this attribute when we turn tap training into a method and use tap1,tap2,tap3 as methods)
+            terms: number of terms to use in the TAP expansion
+            #TODO: deprecate this attribute when
+            we turn tap training into a method and use tap1,tap2,tap3 as methods
 
             EMF computation parameters:
                 init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
                 tol float: tolerance for quitting minimization.
                 max_iters: maximum gradient decsent steps
-                number of persistent magnetization parameters to keep as seeds for gradient descent.
-                    0 implies we use a random seed each iteration
+                num_random_samples: number of Gibbs FE seeds to start from random
+                num_persistent_samples: number of persistent magnetization parameters to keep as seeds
+                    for Gibbs FE estimation.
 
         Returns:
             model: A TAP RBM model.
@@ -51,6 +55,7 @@ class TAP_rbm(model.Model):
         self.tolerance_EMF = tolerance_EMF
         self.max_iters_EMF = max_iters_EMF
         self.init_lr_EMF = init_lr_EMF
+        self.num_random_samples = num_random_samples
         self.persistent_samples = []
         for i in range (num_persistent_samples):
             self.persistent_samples.append(None)
@@ -61,26 +66,32 @@ class TAP_rbm(model.Model):
         self.terms = terms
 
 
-    def gibbs_free_energy(self, seed=None, init_lr=0.1, tol=1e-4, max_iters=50, terms=2):
+    def helmholtz_free_energy(self, seed=None, init_lr=0.1, tol=1e-4, max_iters=50, terms=2, method='gd'):
         """
-        Compute the Gibbs free engergy of the model according to the TAP
+        Compute the Helmholtz free engergy of the model according to the TAP
         expansion around infinite temperature to second order.
 
-        If the energy is:
+        If the energy is,
         '''
-            E(v, h) := -\langle a,v \rangle - \langle b,h \rangle - \langle v,W \cdot h \rangle, with state probability distribution:
-            P(v,h)  := 1/\sum_{v,h} \exp{-E(v,h)} * \exp{-E(v,h)}, and the marginal
-            P(v)    := \sum_{h} P(v,h)
+            E(v, h) := -\langle a,v \rangle - \langle b,h \rangle - \langle v,W \cdot h \rangle,
         '''
-        Then the Gibbs free energy is:
+        with Boltzmann probability distribution,
         '''
-            F(v) := -log\sum_{v,h} \exp{-E(v,h)}
+            P(v,h)  := 1/\sum_{v,h} \exp{-E(v,h)} * \exp{-E(v,h)},
+        '''
+        and the marginal,
+        '''
+            P(v)    := \sum_{h} P(v,h),
+        '''
+        then the Helmholtz free energy is,
+        '''
+            F(v) := -log\sum_{v,h} \exp{-E(v,h)}.
         '''
         We add an auxiliary local field q, and introduce the inverse temperature variable \beta to define
         '''
             \beta F(v;q) := -log\sum_{v,h} \exp{-\beta E(v,h) + \beta \langle q, v \rangle}
         '''
-        Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q
+        Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q, the Gibbs free energy.
         The TAP formula is Taylor series of \Gamma in \beta, around \beta=0.
         Setting \beta=1 and regarding the first two terms of the series as an approximation of \Gamma[m],
         we can minimize \Gamma in m to obtain an approximation of F(v;q=0) = F(v)
@@ -94,14 +105,18 @@ class TAP_rbm(model.Model):
             tol float: tolerance for quitting minimization.
             max_iters: maximum gradient decsent steps.
             terms: number of terms to use (1, 2, or 3 allowed)
+            method: one of 'gd' or 'constraint' picking which Gibbs FE minimization method to use.
 
         Returns:
-            tuple (magnetization, TAP-approximated Gibbs free energy)
+            tuple (magnetization, TAP-approximated Helmholtz free energy)
                   (Magnetization, float)
 
         """
         if terms not in [1, 2, 3]:
             raise ValueError("Must specify one, two, or three terms in TAP expansion training method")
+
+        if method not in ['gd', 'constraint']:
+            raise ValueError("Must specify a valid method for minimizing the Gibbs free energy")
 
         w = self.weights[0].params.matrix
         a = self.layers[0].params.loc
@@ -179,17 +194,20 @@ class TAP_rbm(model.Model):
                 gam_provisional = gamma(m_provisional)
                 if (gam - gam_provisional < 0):
                     lr *= 0.5
+                    #print("decreased lr" + str(its))
                     if (lr < 1e-10):
+                        #print("tol reached on iter" + str(its))
                         break
                 elif (gam - gam_provisional < tol):
                     break
                 else:
+                    #print(gam - gam_provisional)
                     m = m_provisional
                     gam = gam_provisional
 
             return (m, gam)
 
-        def minimize_gamma_constraint_sat(w, a, b, m, tol, max_iters, interpolation_factor=0.9):
+        def minimize_gamma_constraint_sat(w, a, b, m, tol, max_iters, interpolation_factor=1.0, terms=2):
             """
             Minimize Gamma via repeated application of the self-consistent constraint
 
@@ -197,27 +215,40 @@ class TAP_rbm(model.Model):
 
             """
             its = 0
-            gam = self.gamma_TAP2(m, w, a, b)
+            if terms == 1:
+                gamma = self.gamma_MF
+                cut2 = 0.0
+                cut3 = 0.0
+            elif terms == 2:
+                gamma = self.gamma_TAP2
+                cut2 = 1.0
+                cut3 = 0.0
+            elif terms == 3:
+                gamma = self.gamma_TAP3
+                cut2 = 1.0
+                cut3 = 1.0
+
+            gam = gamma(m)
             ww = be.multiply(w,w)
             while (its < max_iters):
                 its += 1
                 m_v_quad = m.v - be.multiply(m.v,m.v)
-                m_h_provisional = be.expit(b + be.dot(m.v,w) - be.dot(m_v_quad, be.dot(ww, m.h - 0.5)))
+                m_h_provisional = be.expit(b + be.dot(m.v,w) - cut2 * be.dot(m_v_quad, be.dot(ww, m.h - 0.5)))
                 m.h *= (1.0 - interpolation_factor)
                 m.h += interpolation_factor * m_h_provisional
 
                 m_h_quad = m.h - be.multiply(m.h,m.h)
-                m_v_provisional = be.expit(a + be.dot(w,m.h)-be.dot(m.v - 0.5, be.dot(ww, m_h_quad)))
+                m_v_provisional = be.expit(a + be.dot(w,m.h) - cut2 * be.dot(m.v - 0.5, be.dot(ww, m_h_quad)))
                 m.v *= (1.0 - interpolation_factor)
                 m.v += interpolation_factor * m_v_provisional
 
-                gam_update = self.gamma_TAP2(m, w, a, b)
+                gam_update = gamma(m)
                 if (abs(gam_update - gam) < tol):
+                    #print("stopped after " + str(its))
                     break
                 gam = gam_update
 
             return (m, gam)
-
 
         # generate random sample in domain to use as a starting location for gradient descent
         if seed==None :
@@ -228,8 +259,10 @@ class TAP_rbm(model.Model):
                 0.99 * be.float_tensor(be.rand((num_hidden_units,))) + 0.005
             )
 
-        return minimize_gamma_GD(w, a, b, seed, init_lr, tol, max_iters, terms)
-        #return minimize_gamma_constraint_sat(w, a, b, seed, tol, max_iters)
+        if method == 'gd':
+            return minimize_gamma_GD(w, a, b, seed, init_lr, tol, max_iters, terms=terms)
+        elif method == 'constraint':
+            return minimize_gamma_constraint_sat(w, a, b, seed, tol, max_iters,  terms=terms)
 
     # The Legendre transform of F(v;q) as a function of q according to Mean Field approximation
     # specialized to the RBM case
@@ -318,31 +351,40 @@ class TAP_rbm(model.Model):
         elif self.terms == 3:
              grad_w_gamma = self.grad_w_gamma_TAP3
 
-        # compute the TAP approximation to the Gibbs free energy:
+        # compute the TAP approximation to the Helmholtz free energy:
         EMF = 1e6
         m = None
-        if len(self.persistent_samples) == 0: # random seed
-                (m,EMF) = self.gibbs_free_energy(m,
+        num_p = len(self.persistent_samples)
+        num_r = self.num_random_samples
+        dw_EMF = be.zeros_like(w)
+        da_EMF = be.zeros_like(a)
+        db_EMF = be.zeros_like(b)
+        # compute minimizing magnetizations from random initializations
+        for s in range(num_r):
+            (m,EMF) = self.helmholtz_free_energy(None,
                                                  self.init_lr_EMF,
                                                  self.tolerance_EMF,
                                                  self.max_iters_EMF,
                                                  self.terms)
-        else:
-            best_EMF = 1e7
-            for s in range(len(self.persistent_samples)): # persistent seeds
-                (self.persistent_samples[s],EMF) = self.gibbs_free_energy(self.persistent_samples[s],
-                                                                          self.init_lr_EMF,
-                                                                          self.tolerance_EMF,
-                                                                          self.max_iters_EMF,
-                                                                          self.terms)
-                if EMF < best_EMF:
-                    best_EMF = EMF
-                    m = self.persistent_samples[s]
-
-        # Compute the gradients at this minimizing magnetization
-        dw_EMF = grad_w_gamma(m,w,a,b)
-        da_EMF = self.grad_a_gamma(m,w,a,b)
-        db_EMF = self.grad_b_gamma(m,w,a,b)
+            # Compute the gradients at this minimizing magnetization
+            dw_EMF += grad_w_gamma(m,w,a,b)
+            da_EMF += self.grad_a_gamma(m,w,a,b)
+            db_EMF += self.grad_b_gamma(m,w,a,b)
+        # compute minimizing magnetizations from seeded initializations
+        for s in range(num_p): # persistent seeds
+            (self.persistent_samples[s],EMF) = \
+             self.helmholtz_free_energy(self.persistent_samples[s],
+                                        self.init_lr_EMF,
+                                        self.tolerance_EMF,
+                                        self.max_iters_EMF,
+                                        self.terms)
+            # Compute the gradients at this minimizing magnetization
+            dw_EMF += grad_w_gamma(self.persistent_samples[s],w,a,b)
+            da_EMF += self.grad_a_gamma(self.persistent_samples[s],w,a,b)
+            db_EMF += self.grad_b_gamma(self.persistent_samples[s],w,a,b)
+        dw_EMF /= (num_p + num_r)
+        da_EMF /= (num_p + num_r)
+        db_EMF /= (num_p + num_r)
 
         # compute average grad_F_marginal over the minibatch
         intermediate = be.expit(be.add(be.unsqueeze(b,0), be.dot(data_state.units[0], w)))
@@ -364,3 +406,4 @@ class TAP_rbm(model.Model):
         #score = be.accumulate(self.marginal_free_energy, vdata)
         #print(-score / batch_size + EMF)
         return grad
+

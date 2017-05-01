@@ -319,7 +319,7 @@ class ProgressMonitor(object):
                                          reconstructions=sampler.pos_state,
                                          random_samples=model_state,
                                          samples=sampler.neg_state,
-                                         amodel=model)
+                                         model=model)
 
             # update metrics
             for m in self.metrics:
