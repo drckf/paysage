@@ -71,10 +71,7 @@ class ReconstructionError(object):
             Changes norm and mean_square_error in place.
 
         Args:
-            minibatch (tensor (num_samples, num_units))
-            reconstructions (tensor (num_samples, num))
-            kwargs: key word arguments
-                not used, but helpful for looping through metric functions
+            update_args: MetricState orderedtuple
 
         Returns:
             None
@@ -156,10 +153,7 @@ class EnergyDistance(object):
             Changes norm and energy_distance in place.
 
         Args:
-            minibatch (tensor (num_samples, num_units))
-            samples (tensor (num_samples, num)): fantasy particles
-            kwargs: key word arguments
-                not used, but helpful for looping through metric functions
+            update_args: MetricState orderedtuple
 
         Returns:
             None
@@ -239,12 +233,7 @@ class EnergyGap(object):
             Changes norm and energy_gap in place.
 
         Args:
-            minibatch (tensor (num_samples, num_units)):
-                samples from the model
-            random_samples (tensor (num_samples, num))
-            amodel (Model): the model
-            kwargs: key word arguments
-                not used, but helpful for looping through metric functions
+            update_args: MetricState orderedtuple
 
         Returns:
             None
@@ -328,12 +317,7 @@ class EnergyZscore(object):
             Changes norm, random_mean, and random_mean_square in place.
 
         Args:
-            minibatch (tensor (num_samples, num_units)):
-                samples from the model
-            random_samples (tensor (num_samples, num))
-            amodel (Model): the model
-            kwargs: key word arguments
-                not used, but helpful for looping through metric functions
+            update_args: MetricState orderedtuple
 
         Returns:
             None
@@ -413,7 +397,7 @@ class HeatCapacity(object):
             Changes heat capacity in place.
 
         Args:
-            Just the model is used since this is not a stochastic metric
+            update_args: MetricState orderedtuple
 
         Returns:
             None
