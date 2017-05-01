@@ -65,6 +65,9 @@ class TAP_rbm(model.Model):
             raise ValueError("Must specify one, two, or three terms in TAP expansion training method")
         self.terms = terms
 
+        if num_random_samples + num_persistent_samples <= 0:
+            raise ValueError("Must specify at least one random or persistent sample for Gibbs FE seeding")
+
 
     def helmholtz_free_energy(self, seed=None, init_lr=0.1, tol=1e-4, max_iters=50, terms=2, method='gd'):
         """
