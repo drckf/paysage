@@ -5,7 +5,7 @@ Stochastic gradient descent with minibatches
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, batch, optimizer, epochs, method=<function persistent_contrastive_divergence at 0x118317510>, sampler=<class 'paysage.fit.SequentialMC'>, mcsteps=1, monitor=None)
+def __init__(self, model, batch, optimizer, epochs, method=<function persistent_contrastive_divergence at 0x117e03488>, sampler=<class 'paysage.fit.SequentialMC'>, mcsteps=1, monitor=None)
 
 ```
 

@@ -111,11 +111,6 @@ def test_gaussian_energy():
     vis = ly.random((num_samples, num_vis))
     ly.energy(vis)
 
-def test_gaussian_log_partition_function():
-    ly = layers.GaussianLayer(num_vis)
-    vis = ly.random((num_samples, num_vis))
-    ly.log_partition_function(vis)
-
 def test_gaussian_online_param_update():
     ly = layers.GaussianLayer(num_vis)
     vis = ly.random((num_samples, num_vis))
@@ -158,11 +153,6 @@ def test_ising_energy():
     vis = ly.random((num_samples, num_vis))
     ly.energy(vis)
 
-def test_ising_log_partition_function():
-    ly = layers.IsingLayer(num_vis)
-    vis = ly.random((num_samples, num_vis))
-    ly.log_partition_function(vis)
-
 def test_ising_online_param_update():
     ly = layers.IsingLayer(num_vis)
     vis = ly.random((num_samples, num_vis))
@@ -201,11 +191,6 @@ def test_bernoulli_energy():
     vis = ly.random((num_samples, num_vis))
     ly.energy(vis)
 
-def test_bernoulli_log_partition_function():
-    ly = layers.BernoulliLayer(num_vis)
-    vis = ly.random((num_samples, num_vis))
-    ly.log_partition_function(vis)
-
 def test_bernoulli_online_param_update():
     ly = layers.BernoulliLayer(num_vis)
     vis = ly.random((num_samples, num_vis))
@@ -243,11 +228,6 @@ def test_exponential_energy():
     ly = layers.ExponentialLayer(num_vis)
     vis = ly.random((num_samples, num_vis))
     ly.energy(vis)
-
-def test_exponential_log_partition_function():
-    ly = layers.ExponentialLayer(num_vis)
-    vis = ly.random((num_samples, num_vis))
-    ly.log_partition_function(vis)
 
 def test_exponential_online_param_update():
     ly = layers.ExponentialLayer(num_vis)
