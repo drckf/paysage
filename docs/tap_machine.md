@@ -252,7 +252,7 @@ Save a model to an open HDFStore.<br /><br />Notes:<br /> ~ Performs an IO opera
 ### namedtuple
 ```py
 
-def namedtuple(typename, field_names, verbose=False, rename=False)
+def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
 
 ```
 

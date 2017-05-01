@@ -160,6 +160,58 @@ Get the value of the energy z-score.<br /><br />Args:<br /> ~ None<br /><br />Re
 
 
 
+## class HeatCapacity
+Compute the heat capacity of the system thought of as a spin system.<br /><br />We take the HC to be the second cumulant of the energy, or alternately<br />the negative second derivative with respect to inverse temperature of<br />the Gibbs free energy.
+### \_\_init\_\_
+```py
+
+def __init__(self)
+
+```
+
+
+
+Create HeatCapacity object.<br /><br />Args:<br /> ~ downsample (int; optional): how many samples to use<br /><br />Returns:<br /> ~ heat capacity object
+
+
+### reset
+```py
+
+def reset(self) -> None
+
+```
+
+
+
+Reset the metric to it's initial state.<br /><br />Note:<br /> ~ Modifies the heat capacity in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+
+
+### update
+```py
+
+def update(self, update_args: paysage.metrics.MetricState) -> None
+
+```
+
+
+
+Update the estimate for the heat capacity<br /><br />Notes:<br /> ~ Changes heat capacity in place.<br /><br />Args:<br /> ~ Just the model is used since this is not a stochastic metric<br /><br />Returns:<br /> ~ None
+
+
+### value
+```py
+
+def value(self) -> float
+
+```
+
+
+
+Get the value of the heat capacity.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ heat capacity (float)
+
+
+
+
 ## class MetricState
 MetricState(minibatch, reconstructions, random_samples, samples, amodel)
 
@@ -221,7 +273,7 @@ Get the value of the energy gap.<br /><br />Args:<br /> ~ None<br /><br />Return
 ### namedtuple
 ```py
 
-def namedtuple(typename, field_names, verbose=False, rename=False)
+def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
 
 ```
 
