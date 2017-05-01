@@ -317,51 +317,64 @@ class TAP_rbm(model.Model):
             0.5 * be.dot(m_v_quad, be.dot(ww, m_h_quad)) - \
             (4.0/3.0) * be.tsum(be.multiply(alias2, be.multiply(alias1, www)))
 
-    def grad_a_gamma(self, m, w, a, b):
-        return -m.v
-    def grad_b_gamma(self, m, w, a, b):
-        return -m.h
-    def grad_w_gamma_MF(self, m, w, a, b):
-        return -be.outer(m.v, m.h)
-
-    def grad_w_gamma_TAP2(self, m, w, a, b):
-        m_v_quad = m.v - be.square(m.v)
-        m_h_quad = m.h - be.square(m.h)
-        return -be.outer(m.v, m.h) - be.multiply(w, be.outer(m_v_quad, m_h_quad))
-
-    def grad_w_gamma_TAP3(self, m, w, a, b):
-        m_v_quad = m.v - be.square(m.v)
-        m_h_quad = m.h - be.square(m.h)
-        ww = be.square(w)
-        return -be.outer(m.v, m.h) - be.multiply(w, be.outer(m_v_quad, m_h_quad)) - \
-               4.0 * be.multiply(ww, be.outer(be.multiply(0.5 - m.v, m_v_quad), be.multiply(0.5 - m.h, m_h_quad)))
-
-    def gradient(self, data_state, model_state):
+    def grad_helmholtz_free_energy(self, num_r, num_p):
         """
-        Gradient of -\ln P(v) with respect to the weights and biases
-        """
+        Compute the gradient of the Helmholtz free engergy of the model according to the TAP
+        expansion around infinite temperature.
 
-        batch_size = be.shape(data_state.units[0])[0]
+        This function will use the class members which specify the parameters for the
+        Gibbs FE minimization.
+        The gradients are taken as the average over the gradients computed at each of the
+        minimial magnetizations for the Gibbs FE.
+
+        Args:
+            num_r: (int>=0) number of random seeds to use for Gibbs FE minimization
+            num_p: (int>=0) number of persistent seeds to use for Gibbs FE minimization
+        Returns:
+            namedtuple: Gradient: containing gradients of the model parameters.
+
+        """
+        def grad_a_gamma(m, w, a, b):
+            return -m.v
+        def grad_b_gamma(m, w, a, b):
+            return -m.h
+        def grad_w_gamma_MF(m, w, a, b):
+            return -be.outer(m.v, m.h)
+
+        def grad_w_gamma_TAP2(m, w, a, b):
+            m_v_quad = m.v - be.square(m.v)
+            m_h_quad = m.h - be.square(m.h)
+            return -be.outer(m.v, m.h) - be.multiply(w, be.outer(m_v_quad, m_h_quad))
+
+        def grad_w_gamma_TAP3(m, w, a, b):
+            m_v_quad = m.v - be.square(m.v)
+            m_h_quad = m.h - be.square(m.h)
+            ww = be.square(w)
+            return -be.outer(m.v, m.h) - be.multiply(w, be.outer(m_v_quad, m_h_quad)) - \
+                   4.0 * be.multiply(ww, be.outer( \
+                   be.multiply(0.5 - m.v, m_v_quad), be.multiply(0.5 - m.h, m_h_quad)))
+
         # alias weights and biases
         w = self.weights[0].params.matrix
         a = self.layers[0].params.loc
         b = self.layers[1].params.loc
 
         if self.terms == 1:
-             grad_w_gamma = self.grad_w_gamma_MF
+             grad_w_gamma = grad_w_gamma_MF
         elif self.terms == 2:
-             grad_w_gamma = self.grad_w_gamma_TAP2
+             grad_w_gamma = grad_w_gamma_TAP2
         elif self.terms == 3:
-             grad_w_gamma = self.grad_w_gamma_TAP3
+             grad_w_gamma = grad_w_gamma_TAP3
 
         # compute the TAP approximation to the Helmholtz free energy:
-        EMF = 1e6
-        m = None
-        num_p = len(self.persistent_samples)
-        num_r = self.num_random_samples
-        dw_EMF = be.zeros_like(w)
-        da_EMF = be.zeros_like(a)
-        db_EMF = be.zeros_like(b)
+        grad_EMF = gu.Gradient(
+            [layers.ParamsWeights(be.zeros_like(lay.params.loc)) for lay in self.layers],
+            [layers.ParamsBernoulli(be.zeros_like(weigh.params.matrix)) for weigh in self.weights]
+        )
+
+        dw_EMF = grad_EMF.weights[0][0]
+        da_EMF = grad_EMF.layers[0][0]
+        db_EMF = grad_EMF.layers[1][0]
         # compute minimizing magnetizations from random initializations
         for s in range(num_r):
             (m,EMF) = self.helmholtz_free_energy(None,
@@ -371,8 +384,8 @@ class TAP_rbm(model.Model):
                                                  self.terms)
             # Compute the gradients at this minimizing magnetization
             dw_EMF += grad_w_gamma(m,w,a,b)
-            da_EMF += self.grad_a_gamma(m,w,a,b)
-            db_EMF += self.grad_b_gamma(m,w,a,b)
+            da_EMF += grad_a_gamma(m,w,a,b)
+            db_EMF += grad_b_gamma(m,w,a,b)
         # compute minimizing magnetizations from seeded initializations
         for s in range(num_p): # persistent seeds
             (self.persistent_samples[s],EMF) = \
@@ -383,24 +396,40 @@ class TAP_rbm(model.Model):
                                         self.terms)
             # Compute the gradients at this minimizing magnetization
             dw_EMF += grad_w_gamma(self.persistent_samples[s],w,a,b)
-            da_EMF += self.grad_a_gamma(self.persistent_samples[s],w,a,b)
-            db_EMF += self.grad_b_gamma(self.persistent_samples[s],w,a,b)
+            da_EMF += grad_a_gamma(self.persistent_samples[s],w,a,b)
+            db_EMF += grad_b_gamma(self.persistent_samples[s],w,a,b)
         dw_EMF /= (num_p + num_r)
         da_EMF /= (num_p + num_r)
         db_EMF /= (num_p + num_r)
 
+        return grad_EMF
 
+    def gradient(self, data_state, model_state):
+        """
+        Gradient of -\ln P(v) with respect to the weights and biases
+
+        Args:
+            data_state (State object): The observed visible units and sampled hidden units.
+            model_state (State objects): The visible and hidden units sampled from the model.
+
+        Returns:
+            namedtuple: Gradient: containing gradients of the model parameters.
+
+        """
         # compute average grad_F_marginal over the minibatch
         grad_MFE = self.grad_marginal_free_energy(data_state)
+        # compute the gradient of the Helmholtz FE via TAP
+        grad_EMF = self.grad_helmholtz_free_energy(
+                        num_r=self.num_random_samples, num_p=len(self.persistent_samples))
 
         grad = gu.Gradient(
             [None for l in self.layers],
             [None for w in self.weights]
         )
 
-        grad.weights[0] = layers.ParamsWeights(dw_EMF - grad_MFE.weights[0][0])
-        grad.layers[0] = layers.ParamsBernoulli(da_EMF - grad_MFE.layers[0][0])
-        grad.layers[1] = layers.ParamsBernoulli(db_EMF - grad_MFE.layers[1][0])
+        grad.weights[0] = layers.ParamsWeights(grad_EMF.weights[0][0] - grad_MFE.weights[0][0])
+        grad.layers[0] = layers.ParamsBernoulli(grad_EMF.layers[0][0] - grad_MFE.layers[0][0])
+        grad.layers[1] = layers.ParamsBernoulli(grad_EMF.layers[1][0] - grad_MFE.layers[1][0])
 
         return grad
 
