@@ -174,18 +174,6 @@ def load_params(self, store, key)
 Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
-### log\_partition\_function
-```py
-
-def log_partition_function(self, phi)
-
-```
-
-
-
-Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let a_i be the loc parameter of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = Tr_{x_i} exp( -a_i x_i + phi_i x_i)<br />= 1 / (a_i - phi_i)<br /><br />log(Z_i) = -log(a_i - phi_i)<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
-
-
 ### online\_param\_update
 ```py
 
@@ -434,18 +422,6 @@ def load_params(self, store, key)
 Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
-### log\_partition\_function
-```py
-
-def log_partition_function(self, phi)
-
-```
-
-
-
-Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let a_i be the loc parameter of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)<br />= 1 + exp(a_i + phi_i)<br /><br />log(Z_i) = softplus(a_i + phi_i)<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
-
-
 ### online\_param\_update
 ```py
 
@@ -692,18 +668,6 @@ def load_params(self, store, key)
 
 
 Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
-
-
-### log\_partition\_function
-```py
-
-def log_partition_function(self, phi)
-
-```
-
-
-
-Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let u_i and s_i be the loc and scale parameters of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + \phi_i x_i)<br />= exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i<br /><br />log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2<br /><br />Args:<br /> ~ phi tensor (num_samples, num_units): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
 
 
 ### online\_param\_update
@@ -964,18 +928,6 @@ def load_params(self, store, key)
 
 
 Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
-
-
-### log\_partition\_function
-```py
-
-def log_partition_function(self, phi)
-
-```
-
-
-
-Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let a_i be the loc parameter of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)<br />= 2 cosh(a_i + phi_i)<br /><br />log(Z_i) = logcosh(a_i + phi_i)<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
 
 
 ### online\_param\_update
@@ -1398,7 +1350,7 @@ def get(key)
 ### namedtuple
 ```py
 
-def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
+def namedtuple(typename, field_names, verbose=False, rename=False)
 
 ```
 
