@@ -488,7 +488,7 @@ class Model(object):
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
 
-    def marginal_free_energy(self, data):
+    def marginal_free_energy(self, data_state):
         """
         Compute the marginal free energy of the model.
 
@@ -507,12 +507,47 @@ class Model(object):
         """
         assert self.num_layers == 2 # supported for 2-layer models only
         i = 0
-        phi = be.dot(data.units[i], self.weights[i].W())
+        phi = be.dot(data_state.units[i], self.weights[i].W())
         log_Z_hidden = self.layers[i+1].log_partition_function(phi)
         energy = 0
-        energy += self.layers[i].energy(data.units[i])
+        energy += self.layers[i].energy(data_state.units[i])
         energy -= be.tsum(log_Z_hidden, axis=1)
         return energy
+
+    def grad_marginal_free_energy(self, data_state):
+        """
+        Compute the gradient of the marginal free energy of the model.
+
+        Args:
+            data (State object): The current state of each layer.
+
+        Returns:
+            dict: Gradient object parametrized by the model parameters.
+
+        """
+        assert self.num_layers == 2 # supported for 2-layer models only
+        grad = gu.Gradient(
+            [None for l in self.layers],
+            [None for w in self.weights]
+        )
+
+        i = 0
+        grad.layers[i] = self.layers[i].derivatives(
+            data_state.units[i],
+            self._connected_rescaled_units(i, data_state),
+            self._connected_weights(i)
+        )
+
+        phi = be.dot(data_state.units[i], self.weights[i].W())
+        grad.layers[i+1] = self.layers[i+1].grad_log_partition_function(phi)
+        grad.layers[i+1].loc[:] *= -1
+
+        grad.weights[i] = self.weights[i].grad_log_partition_function(
+                                           data_state.units[i],
+                                           self.layers[i+1]._grad_log_partition_function(phi))
+        grad.weights[i].matrix[:] *= -1
+
+        return grad
 
     def save(self, store):
         """
