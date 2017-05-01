@@ -363,7 +363,9 @@ class HeatCapacity(object):
 
     We take the HC to be the second cumulant of the energy, or alternately
     the negative second derivative with respect to inverse temperature of
-    the Gibbs free energy.
+    the Gibbs free energy.  In order to estimate this quantity we perform
+    Gibbs sampling starting from random samples drawn from the visible layer's
+    distribution.
 
     """
 
