@@ -406,7 +406,7 @@ class TAP_rbm(model.Model):
 
     def gradient(self, data_state, model_state):
         """
-        Gradient of -\ln P(v) with respect to the weights and biases
+        Gradient of -\ln P(v) with respect to the model parameters
 
         Args:
             data_state (State object): The observed visible units and sampled hidden units.
