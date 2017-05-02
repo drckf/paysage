@@ -403,8 +403,8 @@ class Model(object):
         # compute the postive phase of the gradients of the layer parameters
         for i in range(self.num_layers):
             grad.layers[i] = self.layers[i].derivatives(
-                data_state.units[i],
-                [self.layers[j].rescale(data_state.units[j])
+                new_data_state.units[i],
+                [self.layers[j].rescale(new_data_state.units[j])
                     for j in self.layer_connections[i]],
                 [self.weights[j].W() if j < i else self.weights[j].W_T()
                     for j in self.weight_connections[i]],
@@ -413,8 +413,8 @@ class Model(object):
         # compute the positive phase of the gradients of the weights
         for i in range(self.num_layers - 1):
             grad.weights[i] = self.weights[i].derivatives(
-                self.layers[i].rescale(data_state.units[i]),
-                self.layers[i+1].rescale(data_state.units[i+1]),
+                self.layers[i].rescale(new_data_state.units[i]),
+                self.layers[i+1].rescale(new_data_state.units[i+1]),
             )
 
         # NEGATIVE PHASE (using sampled)
@@ -426,8 +426,8 @@ class Model(object):
         for i in range(self.num_layers):
             grad.layers[i] = be.mapzip(be.subtract,
                 self.layers[i].derivatives(
-                    model_state.units[i],
-                    [self.layers[j].rescale(model_state.units[j])
+                    new_model_state.units[i],
+                    [self.layers[j].rescale(new_model_state.units[j])
                         for j in self.layer_connections[i]],
                     [self.weights[j].W() if j < i else self.weights[j].W_T()
                         for j in self.weight_connections[i]],
@@ -438,8 +438,8 @@ class Model(object):
         for i in range(self.num_layers - 1):
             grad.weights[i] = be.mapzip(be.subtract,
                 self.weights[i].derivatives(
-                    self.layers[i].rescale(model_state.units[i]),
-                    self.layers[i+1].rescale(model_state.units[i+1]),
+                    self.layers[i].rescale(new_model_state.units[i]),
+                    self.layers[i+1].rescale(new_model_state.units[i+1]),
                 ),
             grad.weights[i])
 
