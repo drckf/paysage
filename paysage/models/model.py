@@ -1,6 +1,7 @@
 import os
 import copy
 import pandas
+from typing import List
 
 from .. import layers
 from .. import backends as be
@@ -170,7 +171,7 @@ class Model(object):
             layer_list.append(layers.Layer.from_config(ly))
         return cls(layer_list)
 
-    def initialize(self, data, method: str='hinton'):
+    def initialize(self, data, method: str='hinton') -> None:
         """
         Initialize the parameters of the model.
 
@@ -287,13 +288,11 @@ class Model(object):
         updated_state = State.from_state(state)
 
         # update the odd then the even layers
-        for ll in [range(1, self.num_layers, 2), range(0, self.num_layers, 2)]:
-            for i in ll:
-                if i in clamped:
-                    continue
-                else:
+        for layer_set in [range(1, self.num_layers, 2),
+                          range(0, self.num_layers, 2)]:
+            for i in layer_set:
+                if i not in clamped:
                     func = getattr(self.layers[i], func_name)
-
                     updated_state.units[i] = func(
                         self._connected_rescaled_units(i, updated_state),
                         self._connected_weights(i),
@@ -301,7 +300,7 @@ class Model(object):
 
         return updated_state
 
-    def markov_chain(self, n, state, beta=None, clamped=[]):
+    def markov_chain(self, n, state, beta=None, clamped: List[int]=[]) -> State:
         """
         Perform multiple Gibbs sampling steps in alternating layers.
         state -> new state
@@ -488,7 +487,7 @@ class Model(object):
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
 
-    def save(self, store):
+    def save(self, store: pandas.HDFStore) -> None:
         """
         Save a model to an open HDFStore.
 
@@ -515,7 +514,7 @@ class Model(object):
             self.layers[i].save_params(store, key)
 
     @classmethod
-    def from_saved(cls, store):
+    def from_saved(cls, store: pandas.HDFStore) -> None:
         """
         Build a model by reading from an open HDFStore.
 

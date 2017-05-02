@@ -71,7 +71,8 @@ def glorot_normal(batch, model):
 
     """
     for i in range(len(model.weights)):
-        sigma = math.sqrt(2/(model.weights[i].shape[0] + model.weights[i].shape[1]))
+        sigma = math.sqrt(2/(model.weights[i].shape[0]
+                             + model.weights[i].shape[1]))
         model.weights[i].params.matrix[:] = \
                         sigma * be.randn(model.weights[i].shape)
     while True:

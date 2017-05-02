@@ -130,8 +130,8 @@ class SequentialMC(Sampler):
         """
         if not self.pos_state:
             raise AttributeError(
-                  'You must call the initialize(self, array_or_shape)'
-                  +' method to set the initial state of the Markov Chain')
+                'You must call the initialize(self, array_or_shape)'
+                +' method to set the initial state of the Markov Chain')
         self.pos_state = self.updater(steps, self.pos_state)
 
     def update_negative_state(self, steps):
@@ -150,8 +150,8 @@ class SequentialMC(Sampler):
         """
         if not self.neg_state:
             raise AttributeError(
-                  'You must call the initialize(self, array_or_shape)'
-                  +' method to set the initial state of the Markov Chain')
+                'You must call the initialize(self, array_or_shape)'
+                +' method to set the initial state of the Markov Chain')
         self.neg_state = self.updater(steps, self.neg_state)
 
 class DrivenSequentialMC(Sampler):
@@ -229,8 +229,8 @@ class DrivenSequentialMC(Sampler):
         """
         if not self.pos_state:
             raise AttributeError(
-                  'You must call the initialize(self, array_or_shape)'
-                  +' method to set the initial state of the Markov Chain')
+                'You must call the initialize(self, array_or_shape)'
+                +' method to set the initial state of the Markov Chain')
         self.pos_state = self.updater(steps, self.pos_state, self.beta)
 
     def update_negative_state(self, steps):
@@ -250,8 +250,8 @@ class DrivenSequentialMC(Sampler):
         """
         if not self.neg_state:
             raise AttributeError(
-                  'You must call the initialize(self, array_or_shape)'
-                  +' method to set the initial state of the Markov Chain')
+                'You must call the initialize(self, array_or_shape)'
+                +' method to set the initial state of the Markov Chain')
         self._update_beta()
         self.neg_state = self.updater(steps, self.neg_state, self.beta)
 
@@ -294,8 +294,8 @@ class ProgressMonitor(object):
         """
         sampler = SequentialMC(model)
 
-        for m in self.metrics:
-            m.reset()
+        for metric in self.metrics:
+            metric.reset()
 
         while True:
             try:
@@ -322,14 +322,14 @@ class ProgressMonitor(object):
                                          model=model)
 
             # update metrics
-            for m in self.metrics:
-                m.update(metric_state)
+            for metric in self.metrics:
+                metric.update(metric_state)
 
         # compute metric dictionary
         metdict = OrderedDict([(m.name, m.value()) for m in self.metrics])
         if show:
-            for m in metdict:
-                print("-{0}: {1:.6f}".format(m, metdict[m]))
+            for metric in metdict:
+                print("-{0}: {1:.6f}".format(metric, metdict[metric]))
 
         if store:
             self.memory.append(metdict)

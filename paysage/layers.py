@@ -46,7 +46,7 @@ class Layer(object):
         """
         return {
             "layer_type"  : self.__class__.__name__,
-            "parameters"   : list(self.params._fields),
+            "parameters"  : list(self.params._fields),
             "penalties"   : {pk: self.penalties[pk].get_config()
                              for pk in self.penalties},
             "constraints" : {ck: self.constraints[ck].__name__
@@ -191,7 +191,7 @@ class Layer(object):
         """
         pen = {param_name:
                self.penalties[param_name].value(
-               getattr(self.params, param_name)
+                   getattr(self.params, param_name)
                )
                for param_name in self.penalties}
         return pen
@@ -440,9 +440,8 @@ class GaussianLayer(Layer):
 
         """
         scale = be.exp(self.params.log_var)
-        result = vis - be.broadcast(self.params.loc, vis)
-        result = be.square(result)
-        result /= be.broadcast(scale, vis)
+        diff = vis - be.broadcast(self.params.loc, vis)
+        result = be.square(diff) / be.broadcast(scale, vis)
         return 0.5 * be.mean(result, axis=1)
 
     def online_param_update(self, data):
