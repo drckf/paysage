@@ -26,7 +26,7 @@ class TAP_rbm(model.Model):
     """
 
     def __init__(self, layer_list, terms=2, init_lr_EMF=0.1, tolerance_EMF=1e-7,
-                 max_iters_EMF=100, num_random_samples=1, num_persistent_samples=0):
+                 max_iters_EMF=50, num_random_samples=1, num_persistent_samples=0):
         """
         Create a TAP RBM model.
 
@@ -69,7 +69,7 @@ class TAP_rbm(model.Model):
             raise ValueError("Must specify at least one random or persistent sample for Gibbs FE seeding")
 
 
-    def helmholtz_free_energy(self, seed=None, init_lr=0.1, tol=1e-4, max_iters=50, terms=2, method='gd'):
+    def helmholtz_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50, terms=2, method='gd'):
         """
         Compute the Helmholtz free engergy of the model according to the TAP
         expansion around infinite temperature to second order.
@@ -368,8 +368,8 @@ class TAP_rbm(model.Model):
 
         # compute the TAP approximation to the Helmholtz free energy:
         grad_EMF = gu.Gradient(
-            [layers.ParamsWeights(be.zeros_like(lay.params.loc)) for lay in self.layers],
-            [layers.ParamsBernoulli(be.zeros_like(weigh.params.matrix)) for weigh in self.weights]
+            [layers.ParamsBernoulli(be.zeros_like(lay.params.loc)) for lay in self.layers],
+            [layers.ParamsWeights(be.zeros_like(weigh.params.matrix)) for weigh in self.weights]
         )
 
         dw_EMF = grad_EMF.weights[0][0]
@@ -427,9 +427,11 @@ class TAP_rbm(model.Model):
             [None for w in self.weights]
         )
 
-        grad.weights[0] = layers.ParamsWeights(grad_EMF.weights[0][0] - grad_MFE.weights[0][0])
-        grad.layers[0] = layers.ParamsBernoulli(grad_EMF.layers[0][0] - grad_MFE.layers[0][0])
-        grad.layers[1] = layers.ParamsBernoulli(grad_EMF.layers[1][0] - grad_MFE.layers[1][0])
+        for i in range(self.num_layers):
+            grad.layers[i] = be.mapzip(be.subtract, grad_MFE.layers[i], grad_EMF.layers[i])
+
+        for i in range(self.num_layers - 1):
+            grad.weights[i] = be.mapzip(be.subtract, grad_MFE.weights[i], grad_EMF.weights[i])
 
         return grad
 
