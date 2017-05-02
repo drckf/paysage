@@ -74,18 +74,6 @@ def joint_energy(self, data)
 Compute the joint energy of the model based on a state.<br /><br />Args:<br /> ~ data (State object): the current state of each layer<br /><br />Returns:<br /> ~ tensor (num_samples,): Joint energies.
 
 
-### marginal\_free\_energy
-```py
-
-def marginal_free_energy(self, data)
-
-```
-
-
-
-Compute the marginal free energy of the model.<br /><br />If the energy is:<br />E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j<br />Then the marginal free energy is:<br />F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)<br />This can be extended to a deep model by a sum over all hidden states<br /><br />Args:<br /> ~ data (State object): The current state of each layer.<br /><br />Returns:<br /> ~ tensor (batch_size, ): Marginal free energies.
-
-
 ### markov\_chain
 ```py
 

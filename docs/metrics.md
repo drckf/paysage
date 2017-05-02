@@ -1,8 +1,10 @@
 # Documentation for Metrics (metrics.py)
 
-This module defines classes that represent the state of some model fit
- metric, derived from summary information about the current state of the model
- (encapsulated in MetricState).
+
+This module defines classes that represent the state of some model fit metric,
+derived from summary information about the current state of the model
+(encapsulated in MetricState).
+
 
 ## class ReconstructionError
 Compute the root-mean-squared error between observations and their<br />reconstructions using minibatches.
@@ -39,7 +41,7 @@ def update(self, update_args: paysage.metrics.MetricState) -> None
 
 
 
-Update the estimate for the reconstruction error using a batch<br />of observations and a batch of reconstructions.<br /><br />Notes:<br /> ~ Changes norm and mean_square_error in place.<br /><br />Args:<br /> ~ minibatch (tensor (num_samples, num_units))<br /> ~ reconstructions (tensor (num_samples, num))<br /> ~ kwargs: key word arguments<br /> ~  ~ not used, but helpful for looping through metric functions<br /><br />Returns:<br /> ~ None
+Update the estimate for the reconstruction error using a batch<br />of observations and a batch of reconstructions.<br /><br />Notes:<br /> ~ Changes norm and mean_square_error in place.<br /><br />Args:<br /> ~ update_args: uses visible layer of minibatch and reconstructions<br /><br /><br />Returns:<br /> ~ None
 
 
 ### value
@@ -91,7 +93,7 @@ def update(self, update_args: paysage.metrics.MetricState) -> None
 
 
 
-Update the estimate for the energy distance using a batch<br />of observations and a batch of fantasy particles.<br /><br />Notes:<br /> ~ Changes norm and energy_distance in place.<br /><br />Args:<br /> ~ minibatch (tensor (num_samples, num_units))<br /> ~ samples (tensor (num_samples, num)): fantasy particles<br /> ~ kwargs: key word arguments<br /> ~  ~ not used, but helpful for looping through metric functions<br /><br />Returns:<br /> ~ None
+Update the estimate for the energy distance using a batch<br />of observations and a batch of fantasy particles.<br /><br />Notes:<br /> ~ Changes norm and energy_distance in place.<br /><br />Args:<br /> ~ update_args: uses visible layer of minibatch and samples<br /><br />Returns:<br /> ~ None
 
 
 ### value
@@ -143,7 +145,7 @@ def update(self, update_args: paysage.metrics.MetricState) -> None
 
 
 
-Update the estimate for the energy z-score using a batch<br />of observations and a batch of fantasy particles.<br /><br />Notes:<br /> ~ Changes norm, random_mean, and random_mean_square in place.<br /><br />Args:<br /> ~ minibatch (tensor (num_samples, num_units)):<br /> ~  ~ samples from the model<br /> ~ random_samples (tensor (num_samples, num))<br /> ~ amodel (Model): the model<br /> ~ kwargs: key word arguments<br /> ~  ~ not used, but helpful for looping through metric functions<br /><br />Returns:<br /> ~ None
+Update the estimate for the energy z-score using a batch<br />of observations and a batch of fantasy particles.<br /><br />Notes:<br /> ~ Changes norm, random_mean, and random_mean_square in place.<br /><br />Args:<br /> ~ update_args: uses all layers of minibatch and random_samples, and model<br /><br />Returns:<br /> ~ None
 
 
 ### value
@@ -160,8 +162,60 @@ Get the value of the energy z-score.<br /><br />Args:<br /> ~ None<br /><br />Re
 
 
 
+## class HeatCapacity
+Compute the heat capacity of the system thought of as a spin system.<br /><br />We take the HC to be the second cumulant of the energy, or alternately<br />the negative second derivative with respect to inverse temperature of<br />the Gibbs free energy.  In order to estimate this quantity we perform<br />Gibbs sampling starting from random samples drawn from the visible layer's<br />distribution.
+### \_\_init\_\_
+```py
+
+def __init__(self)
+
+```
+
+
+
+Create HeatCapacity object.<br /><br />Args:<br /> ~ downsample (int; optional): how many samples to use<br /><br />Returns:<br /> ~ heat capacity object
+
+
+### reset
+```py
+
+def reset(self) -> None
+
+```
+
+
+
+Reset the metric to it's initial state.<br /><br />Note:<br /> ~ Modifies the heat capacity in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+
+
+### update
+```py
+
+def update(self, update_args: paysage.metrics.MetricState) -> None
+
+```
+
+
+
+Update the estimate for the heat capacity<br /><br />Notes:<br /> ~ Changes heat capacity in place.<br /><br />Args:<br /> ~ update_args: uses all layers of random_samples, and model<br /><br />Returns:<br /> ~ None
+
+
+### value
+```py
+
+def value(self) -> float
+
+```
+
+
+
+Get the value of the heat capacity.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ heat capacity (float)
+
+
+
+
 ## class MetricState
-MetricState(minibatch, reconstructions, random_samples, samples, amodel)
+MetricState(minibatch, reconstructions, random_samples, samples, model)
 
 
 ## class EnergyGap
@@ -199,7 +253,7 @@ def update(self, update_args: paysage.metrics.MetricState) -> None
 
 
 
-Update the estimate for the energy gap using a batch<br />of observations and a batch of fantasy particles.<br /><br />Notes:<br /> ~ Changes norm and energy_gap in place.<br /><br />Args:<br /> ~ minibatch (tensor (num_samples, num_units)):<br /> ~  ~ samples from the model<br /> ~ random_samples (tensor (num_samples, num))<br /> ~ amodel (Model): the model<br /> ~ kwargs: key word arguments<br /> ~  ~ not used, but helpful for looping through metric functions<br /><br />Returns:<br /> ~ None
+Update the estimate for the energy gap using a batch<br />of observations and a batch of fantasy particles.<br /><br />Notes:<br /> ~ Changes norm and energy_gap in place.<br /><br />Args:<br /> ~ update_args: uses all layers of minibatch and random_samples, and model<br /><br />Returns:<br /> ~ None
 
 
 ### value

@@ -28,10 +28,10 @@ def grad_fold(func, grad):
 
     """
     result = 0
-    for ly in grad.layers:
-        result = be.fold(func, ly)
-    for w in grad.weights:
-        result = be.fold(func, w)
+    for layer in grad.layers:
+        result = be.fold(func, layer)
+    for weight in grad.weights:
+        result = be.fold(func, weight)
     return result
 
 def grad_accumulate(func, grad):
@@ -48,10 +48,10 @@ def grad_accumulate(func, grad):
 
     """
     result = 0
-    for ly in grad.layers:
-        result = be.accumulate(func, ly)
-    for w in grad.weights:
-        result = be.accumulate(func, w)
+    for layer in grad.layers:
+        result = be.accumulate(func, layer)
+    for weight in grad.weights:
+        result = be.accumulate(func, weight)
     return result
 
 def grad_apply(func, grad):
@@ -86,10 +86,10 @@ def grad_apply_(func_, grad):
         None
 
     """
-    for ly in grad.layers:
-        be.apply_(func_, ly)
-    for w in grad.weights:
-        be.apply_(func_, w)
+    for layer in grad.layers:
+        be.apply_(func_, layer)
+    for weight in grad.weights:
+        be.apply_(func_, weight)
 
 def grad_mapzip(func, grad1, grad2):
     """
@@ -106,8 +106,8 @@ def grad_mapzip(func, grad1, grad2):
     n = len(grad1.layers)
     m = len(grad1.weights)
     return Gradient(
-    [be.mapzip(func, grad1.layers[i], grad2.layers[i]) for i in range(n)],
-    [be.mapzip(func, grad1.weights[i], grad2.weights[i]) for i in range(m)]
+        [be.mapzip(func, grad1.layers[i], grad2.layers[i]) for i in range(n)],
+        [be.mapzip(func, grad1.weights[i], grad2.weights[i]) for i in range(m)]
     )
 
 def grad_mapzip_(func_, grad1, grad2):

@@ -46,7 +46,7 @@ class Layer(object):
         """
         return {
             "layer_type"  : self.__class__.__name__,
-            "parameters"   : list(self.params._fields),
+            "parameters"  : list(self.params._fields),
             "penalties"   : {pk: self.penalties[pk].get_config()
                              for pk in self.penalties},
             "constraints" : {ck: self.constraints[ck].__name__
@@ -191,7 +191,7 @@ class Layer(object):
         """
         pen = {param_name:
                self.penalties[param_name].value(
-               getattr(self.params, param_name)
+                   getattr(self.params, param_name)
                )
                for param_name in self.penalties}
         return pen
@@ -440,36 +440,9 @@ class GaussianLayer(Layer):
 
         """
         scale = be.exp(self.params.log_var)
-        result = vis - be.broadcast(self.params.loc, vis)
-        result = be.square(result)
-        result /= be.broadcast(scale, vis)
+        diff = vis - be.broadcast(self.params.loc, vis)
+        result = be.square(diff) / be.broadcast(scale, vis)
         return 0.5 * be.mean(result, axis=1)
-
-    def log_partition_function(self, phi):
-        """
-        Compute the logarithm of the partition function of the layer
-        with external field phi.
-
-        Let u_i and s_i be the loc and scale parameters of unit i.
-        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
-
-        Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + \phi_i x_i)
-        = exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i
-
-        log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2
-
-        Args:
-            phi tensor (num_samples, num_units): external field
-
-        Returns:
-            logZ (tensor, num_samples, num_units)): log partition function
-
-        """
-        scale = be.exp(self.params.log_var)
-        logZ = be.multiply(self.params.loc, phi)
-        logZ += be.multiply(scale, be.square(phi))
-        logZ += be.log(be.broadcast(scale, phi))
-        return logZ
 
     def online_param_update(self, data):
         """
@@ -774,28 +747,6 @@ class IsingLayer(Layer):
         """
         return -be.dot(data, self.params.loc)
 
-    def log_partition_function(self, phi):
-        """
-        Compute the logarithm of the partition function of the layer
-        with external field phi.
-
-        Let a_i be the loc parameter of unit i.
-        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
-
-        Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)
-        = 2 cosh(a_i + phi_i)
-
-        log(Z_i) = logcosh(a_i + phi_i)
-
-        Args:
-            phi (tensor (num_samples, num_units)): external field
-
-        Returns:
-            logZ (tensor, num_samples, num_units)): log partition function
-
-        """
-        return be.logcosh(be.add(self.params.loc, phi))
-
     def online_param_update(self, data):
         """
         Update the parameters using an observed batch of data.
@@ -1066,28 +1017,6 @@ class BernoulliLayer(Layer):
         """
         return -be.dot(data, self.params.loc)
 
-    def log_partition_function(self, phi):
-        """
-        Compute the logarithm of the partition function of the layer
-        with external field phi.
-
-        Let a_i be the loc parameter of unit i.
-        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
-
-        Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)
-        = 1 + exp(a_i + phi_i)
-
-        log(Z_i) = softplus(a_i + phi_i)
-
-        Args:
-            phi (tensor (num_samples, num_units)): external field
-
-        Returns:
-            logZ (tensor, num_samples, num_units)): log partition function
-
-        """
-        return be.softplus(be.add(self.params.loc, phi))
-
     def online_param_update(self, data):
         """
         Update the parameters using an observed batch of data.
@@ -1357,28 +1286,6 @@ class ExponentialLayer(Layer):
 
         """
         return be.dot(data, self.params.loc)
-
-    def log_partition_function(self, phi):
-        """
-        Compute the logarithm of the partition function of the layer
-        with external field phi.
-
-        Let a_i be the loc parameter of unit i.
-        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
-
-        Z_i = Tr_{x_i} exp( -a_i x_i + phi_i x_i)
-        = 1 / (a_i - phi_i)
-
-        log(Z_i) = -log(a_i - phi_i)
-
-        Args:
-            phi (tensor (num_samples, num_units)): external field
-
-        Returns:
-            logZ (tensor, num_samples, num_units)): log partition function
-
-        """
-        return -be.log(be.subtract(self.params.loc, phi))
 
     def online_param_update(self, data):
         """

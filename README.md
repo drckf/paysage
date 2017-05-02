@@ -33,7 +33,7 @@ On MaxOSX with PyEnv:
 Running the examples requires a file mnist.h5 containing the MNIST dataset of handwritten images. The script download_mnist.py in the mnist/ folder will fetch the file from the web.
 
 ## Using PyTorch
-Paysage uses one of two backends for performing computations. By default, computations are performed using numpy/numexpr/numba on the CPU. If you have installed [PyTorch](https://pytorch.org), then you can switch to the pytorch backend by changing the setting in `paysage/backends/config.json` to `pytorch`.
+Paysage uses one of two backends for performing computations. By default, computations are performed using numpy/numexpr/numba on the CPU. If you have installed [PyTorch](http://pytorch.org), then you can switch to the pytorch backend by changing the setting in `paysage/backends/config.json` to `pytorch`.
 
 ## System Dependencies
 

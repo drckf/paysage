@@ -20,13 +20,13 @@ RBM with TAP formula-based gradient which supports deterministic training<br /><
 ### \_\_init\_\_
 ```py
 
-def __init__(self, layer_list, terms=2, init_lr_EMF=0.1, tolerance_EMF=1e-07, max_iters_EMF=100, num_persistent_samples=0)
+def __init__(self, layer_list, terms=2, init_lr_EMF=0.1, tolerance_EMF=1e-07, max_iters_EMF=100, num_random_samples=1, num_persistent_samples=0)
 
 ```
 
 
 
-Create a TAP RBM model.<br /><br />Notes:<br /> ~ Only 2-layer models currently supported.<br /><br />Args:<br /> ~ layer_list: A list of layers objects.<br /> ~ terms: number of terms to use in the TAP expansion (#TODO: deprecate this attribute when we turn tap training into a method and use tap1,tap2,tap3 as methods)<br /><br /> ~ EMF computation parameters:<br /> ~  ~ init_lr float: initial learning rate which is halved whenever necessary to enforce descent.<br /> ~  ~ tol float: tolerance for quitting minimization.<br /> ~  ~ max_iters: maximum gradient decsent steps<br /> ~  ~ number of persistent magnetization parameters to keep as seeds for gradient descent.<br /> ~  ~  ~ 0 implies we use a random seed each iteration<br /><br />Returns:<br /> ~ model: A TAP RBM model.
+Create a TAP RBM model.<br /><br />Notes:<br /> ~ Only 2-layer models currently supported.<br /><br />Args:<br /> ~ layer_list: A list of layers objects.<br /> ~ terms: number of terms to use in the TAP expansion<br /> ~ #TODO: deprecate this attribute when<br /> ~ we turn tap training into a method and use tap1,tap2,tap3 as methods<br /><br /> ~ EMF computation parameters:<br /> ~  ~ init_lr float: initial learning rate which is halved whenever necessary to enforce descent.<br /> ~  ~ tol float: tolerance for quitting minimization.<br /> ~  ~ max_iters: maximum gradient decsent steps<br /> ~  ~ num_random_samples: number of Gibbs FE seeds to start from random<br /> ~  ~ num_persistent_samples: number of persistent magnetization parameters to keep as seeds<br /> ~  ~  ~ for Gibbs FE estimation.<br /><br />Returns:<br /> ~ model: A TAP RBM model.
 
 
 ### deterministic\_iteration
@@ -78,18 +78,6 @@ def get_config(self) -> dict
 
 
 Get a configuration for the model.<br /><br />Notes:<br /> ~ Includes metadata on the layers.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ A dictionary configuration for the model.
-
-
-### gibbs\_free\_energy
-```py
-
-def gibbs_free_energy(self, seed=None, init_lr=0.1, tol=0.0001, max_iters=50, terms=2)
-
-```
-
-
-
-Compute the Gibbs free engergy of the model according to the TAP<br />expansion around infinite temperature to second order.<br /><br />If the energy is:<br />'''<br /> ~ E(v, h) := -\langle a,v angle - \langle b,h angle - \langle v,W \cdot h angle, with state probability distribution:<br /> ~ P(v,h)  := 1/\sum_{v,h} \exp{-E(v,h)} * \exp{-E(v,h)}, and the marginal<br /> ~ P(v) ~ := \sum_{h} P(v,h)<br />'''<br />Then the Gibbs free energy is:<br />'''<br /> ~ F(v) := -log\sum_{v,h} \exp{-E(v,h)}<br />'''<br />We add an auxiliary local field q, and introduce the inverse temperature variable eta to define<br />'''<br /> ~ eta F(v;q) := -log\sum_{v,h} \exp{-eta E(v,h) + eta \langle q, v angle}<br />'''<br />Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q<br />The TAP formula is Taylor series of \Gamma in eta, around eta=0.<br />Setting eta=1 and regarding the first two terms of the series as an approximation of \Gamma[m],<br />we can minimize \Gamma in m to obtain an approximation of F(v;q=0) = F(v)<br /><br />This implementation uses gradient descent from a random starting location to minimize the function<br /><br />Args:<br /> ~ seed 'None' or Magnetization: initial seed for the minimization routine.<br /> ~  ~  ~  ~  ~  ~  ~  ~   Chosing 'None' will result in a random seed<br /> ~ init_lr float: initial learning rate which is halved whenever necessary to enforce descent.<br /> ~ tol float: tolerance for quitting minimization.<br /> ~ max_iters: maximum gradient decsent steps.<br /> ~ terms: number of terms to use (1, 2, or 3 allowed)<br /><br />Returns:<br /> ~ tuple (magnetization, TAP-approximated Gibbs free energy)<br /> ~  ~   (Magnetization, float)
 
 
 ### grad\_a\_gamma
@@ -149,6 +137,18 @@ def gradient(self, data_state, model_state)
 Gradient of -\ln P(v) with respect to the weights and biases
 
 
+### helmholtz\_free\_energy
+```py
+
+def helmholtz_free_energy(self, seed=None, init_lr=0.1, tol=0.0001, max_iters=50, terms=2, method='gd')
+
+```
+
+
+
+Compute the Helmholtz free engergy of the model according to the TAP<br />expansion around infinite temperature to second order.<br /><br />If the energy is,<br />'''<br /> ~ E(v, h) := -\langle a,v angle - \langle b,h angle - \langle v,W \cdot h angle,<br />'''<br />with Boltzmann probability distribution,<br />'''<br /> ~ P(v,h)  := 1/\sum_{v,h} \exp{-E(v,h)} * \exp{-E(v,h)},<br />'''<br />and the marginal,<br />'''<br /> ~ P(v) ~ := \sum_{h} P(v,h),<br />'''<br />then the Helmholtz free energy is,<br />'''<br /> ~ F(v) := -log\sum_{v,h} \exp{-E(v,h)}.<br />'''<br />We add an auxiliary local field q, and introduce the inverse temperature variable eta to define<br />'''<br /> ~ eta F(v;q) := -log\sum_{v,h} \exp{-eta E(v,h) + eta \langle q, v angle}<br />'''<br />Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q, the Gibbs free energy.<br />The TAP formula is Taylor series of \Gamma in eta, around eta=0.<br />Setting eta=1 and regarding the first two terms of the series as an approximation of \Gamma[m],<br />we can minimize \Gamma in m to obtain an approximation of F(v;q=0) = F(v)<br /><br />This implementation uses gradient descent from a random starting location to minimize the function<br /><br />Args:<br /> ~ seed 'None' or Magnetization: initial seed for the minimization routine.<br /> ~  ~  ~  ~  ~  ~  ~  ~   Chosing 'None' will result in a random seed<br /> ~ init_lr float: initial learning rate which is halved whenever necessary to enforce descent.<br /> ~ tol float: tolerance for quitting minimization.<br /> ~ max_iters: maximum gradient decsent steps.<br /> ~ terms: number of terms to use (1, 2, or 3 allowed)<br /> ~ method: one of 'gd' or 'constraint' picking which Gibbs FE minimization method to use.<br /><br />Returns:<br /> ~ tuple (magnetization, TAP-approximated Helmholtz free energy)<br /> ~  ~   (Magnetization, float)
+
+
 ### initialize
 ```py
 
@@ -171,18 +171,6 @@ def joint_energy(self, data)
 
 
 Compute the joint energy of the model based on a state.<br /><br />Args:<br /> ~ data (State object): the current state of each layer<br /><br />Returns:<br /> ~ tensor (num_samples,): Joint energies.
-
-
-### marginal\_free\_energy
-```py
-
-def marginal_free_energy(self, data)
-
-```
-
-
-
-Compute the marginal free energy of the model.<br /><br />If the energy is:<br />E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j<br />Then the marginal free energy is:<br />F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)<br />This can be extended to a deep model by a sum over all hidden states<br /><br />Args:<br /> ~ data (State object): The current state of each layer.<br /><br />Returns:<br /> ~ tensor (batch_size, ): Marginal free energies.
 
 
 ### markov\_chain

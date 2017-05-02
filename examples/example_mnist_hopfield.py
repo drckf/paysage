@@ -33,7 +33,7 @@ def example_mnist_hopfield(paysage_path=None, num_epochs=10, show_plot=False):
     rbm = model.Model([vis_layer, hid_layer])
     rbm.initialize(data)
 
-    metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore']
+    metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore', 'HeatCapacity']
     perf = fit.ProgressMonitor(data, metrics=metrics)
 
     # set up the optimizer and the fit method
