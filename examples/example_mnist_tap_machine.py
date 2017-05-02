@@ -14,6 +14,7 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True
     num_hidden_units = 256
     batch_size = 100
     learning_rate = 0.1
+    num_terms = 2
 
     (_, _, shuffled_filepath) = \
             util.default_paths(paysage_path)
@@ -29,13 +30,14 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True
     vis_layer = layers.BernoulliLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = tap_machine.TAP_rbm([vis_layer, hid_layer], num_persistent_samples=0,
-                              tolerance_EMF=1e-4, max_iters_EMF=25, terms=2)
+    rbm = tap_machine.TAP_rbm([vis_layer, hid_layer], num_persistent_samples=0, num_random_samples=1,
+                              tolerance_EMF=1e-4, max_iters_EMF=25, terms=num_terms)
     rbm.initialize(data, 'glorot_normal')
 
     perf  = fit.ProgressMonitor(data,
                                 metrics=['ReconstructionError',
-                                         'EnergyDistance'])
+                                         'EnergyDistance',
+                                         'HeatCapacity'])
 
     opt = optimizers.Gradient(stepsize=learning_rate,
                               scheduler=optimizers.PowerLawDecay(0.1),
@@ -45,7 +47,7 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True
     sgd = fit.SGD(rbm, data, opt, num_epochs, method=fit.tap, monitor=perf)
 
     # fit the model
-    print('training with stochastic gradient ascent ')
+    print('Training with stochastic gradient ascent using TAP expansion to ' + str(num_terms) + ' terms.')
     sgd.train()
 
     util.show_metrics(rbm, perf)

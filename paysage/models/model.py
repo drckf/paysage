@@ -487,32 +487,6 @@ class Model(object):
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
 
-    def marginal_free_energy(self, data):
-        """
-        Compute the marginal free energy of the model.
-
-        If the energy is:
-        E(v, h) = -\sum_i a_i(v_i) - \sum_j b_j(h_j) - \sum_{ij} W_{ij} v_i h_j
-        Then the marginal free energy is:
-        F(v) =  -\sum_i a_i(v_i) - \sum_j \log \int dh_j \exp(b_j(h_j) - \sum_i W_{ij} v_i)
-        This can be extended to a deep model by a sum over all hidden states
-
-        Args:
-            data (State object): The current state of each layer.
-
-        Returns:
-            tensor (batch_size, ): Marginal free energies.
-
-        """
-        assert self.num_layers == 2 # supported for 2-layer models only
-        i = 0
-        phi = be.dot(data.units[i], self.weights[i].W())
-        log_Z_hidden = self.layers[i+1].log_partition_function(phi)
-        energy = 0
-        energy += self.layers[i].energy(data.units[i])
-        energy -= be.tsum(log_Z_hidden, axis=1)
-        return energy
-
     def save(self, store: pandas.HDFStore) -> None:
         """
         Save a model to an open HDFStore.
