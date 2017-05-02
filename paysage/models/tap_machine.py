@@ -169,22 +169,22 @@ class TAP_rbm(model.Model):
 
             """
             if terms == 1:
-                gamma = self.gamma_MF
+                gibbs_FE = self.gibbs_free_energy_MF
                 grad_v_gamma = grad_v_gamma_MF
                 grad_h_gamma = grad_h_gamma_MF
             elif terms == 2:
-                gamma = self.gamma_TAP2
+                gibbs_FE = self.gibbs_free_energy_TAP2
                 grad_v_gamma = grad_v_gamma_TAP2
                 grad_h_gamma = grad_h_gamma_TAP2
             elif terms == 3:
-                gamma = self.gamma_MF
+                gibbs_FE = self.gibbs_free_energy_MF
                 grad_v_gamma = grad_v_gamma_TAP3
                 grad_h_gamma = grad_h_gamma_TAP3
 
             eps = 1e-6
             its = 0
             lr = init_lr
-            gam = gamma(m)
+            gam = gibbs_FE(m)
 
             while (its < max_iters):
                 its += 1
@@ -194,7 +194,7 @@ class TAP_rbm(model.Model):
                 be.clip_inplace(m_provisional.v, eps, 1.0-eps)
                 be.clip_inplace(m_provisional.h, eps, 1.0-eps)
 
-                gam_provisional = gamma(m_provisional)
+                gam_provisional = gibbs_FE(m_provisional)
                 if (gam - gam_provisional < 0):
                     lr *= 0.5
                     #print("decreased lr" + str(its))
@@ -219,19 +219,19 @@ class TAP_rbm(model.Model):
             """
             its = 0
             if terms == 1:
-                gamma = self.gamma_MF
+                gibbs_FE = self.gibbs_free_energy_MF
                 cut2 = 0.0
                 cut3 = 0.0
             elif terms == 2:
-                gamma = self.gamma_TAP2
+                gibbs_FE = self.gibbs_free_energy_TAP2
                 cut2 = 1.0
                 cut3 = 0.0
             elif terms == 3:
-                gamma = self.gamma_TAP3
+                gibbs_FE = self.gibbs_free_energy_TAP3
                 cut2 = 1.0
                 cut3 = 1.0
 
-            gam = gamma(m)
+            gam = gibbs_FE(m)
             ww = be.multiply(w,w)
             while (its < max_iters):
                 its += 1
@@ -245,7 +245,7 @@ class TAP_rbm(model.Model):
                 m.v *= (1.0 - interpolation_factor)
                 m.v += interpolation_factor * m_v_provisional
 
-                gam_update = gamma(m)
+                gam_update = gibbs_FE(m)
                 if (abs(gam_update - gam) < tol):
                     #print("stopped after " + str(its))
                     break
@@ -269,7 +269,7 @@ class TAP_rbm(model.Model):
 
     # The Legendre transform of F(v;q) as a function of q according to Mean Field approximation
     # specialized to the RBM case
-    def gamma_MF(self, m):
+    def gibbs_free_energy_MF(self, m):
         # alias weights and biases
         w = self.weights[0].params[0]
         a = self.layers[0].params[0]
@@ -281,7 +281,7 @@ class TAP_rbm(model.Model):
 
     # The Legendre transform of F(v;q) as a function of q according to TAP expansion 2 terms
     # specialized to the RBM case
-    def gamma_TAP2(self, m):
+    def gibbs_free_energy_TAP2(self, m):
         # alias weights and biases
         w = self.weights[0].params[0]
         a = self.layers[0].params[0]
@@ -298,7 +298,7 @@ class TAP_rbm(model.Model):
 
     # The Legendre transform of F(v;q) as a function of q according to TAP expansion 3 terms
     # specialized to the RBM case
-    def gamma_TAP3(self, m):
+    def gibbs_free_energy_TAP3(self, m):
         # alias weights and biases
         w = self.weights[0].params[0]
         a = self.layers[0].params[0]
