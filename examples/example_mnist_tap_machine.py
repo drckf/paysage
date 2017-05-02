@@ -44,7 +44,9 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True
                               tolerance=1e-4,
                               ascent=True)
 
-    sgd = fit.SGD(rbm, data, opt, num_epochs, method=fit.tap, monitor=perf)
+    sampler = fit.SequentialMC(rbm)
+
+    sgd = fit.SGD(rbm, data, opt, num_epochs, sampler=sampler, method=fit.tap, monitor=perf)
 
     # fit the model
     print('Training with stochastic gradient ascent using TAP expansion to ' + str(num_terms) + ' terms.')

@@ -493,7 +493,7 @@ class Model(object):
         Compute the gradient of the marginal free energy of the model.
 
         Args:
-            data (State object): The current state of each layer.
+            data_state (State object): The current state of each layer.
 
         Returns:
             dict: Gradient object parametrized by the model parameters.
@@ -520,6 +520,44 @@ class Model(object):
                                            data_state.units[i],
                                            self.layers[i+1]._grad_log_partition_function(phi))
         grad.weights[i].matrix[:] *= -1
+
+        return grad
+
+    def grad_marginal_free_energy_sampled(self, data_state, steps=1):
+        """
+        Compute the gradient of the marginal free energy of the model via sampling,
+        i.e. the usual positive phase
+
+        Args:
+            data_state (State object): The current state of each layer.
+
+        Returns:
+            dict: Gradient object parametrized by the model parameters.
+
+        """
+        grad = gu.Gradient(
+            [None for l in self.layers],
+            [None for w in self.weights]
+        )
+        # POSITIVE PHASE (using observed)
+
+        # compute the conditional mean of the hidden layers
+        new_data_state = self.mean_field_iteration(1, data_state, clamped=[0])
+
+        # compute the postive phase of the gradients of the layer parameters
+        for i in range(self.num_layers):
+            grad.layers[i] = self.layers[i].derivatives(
+                new_data_state.units[i],
+                self._connected_rescaled_units(i, new_data_state),
+                self._connected_weights(i)
+            )
+
+        # compute the positive phase of the gradients of the weights
+        for i in range(self.num_layers - 1):
+            grad.weights[i] = self.weights[i].derivatives(
+                self.layers[i].rescale(new_data_state.units[i]),
+                self.layers[i+1].rescale(new_data_state.units[i+1]),
+            )
 
         return grad
 

@@ -413,7 +413,7 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
 # alias
 pcd = persistent_contrastive_divergence
 
-def tap(vdata, model, sampler=None, steps=None):
+def tap(vdata, model, sampler, steps=1):
     """
     Compute the gradient using the Thouless-Anderson-Palmer (TAP)
     mean field approximation.
@@ -435,6 +435,8 @@ def tap(vdata, model, sampler=None, steps=None):
 
     """
     data_state = State.from_visible(vdata, model)
+    sampler.set_positive_state(data_state)
+    sampler.update_positive_state(steps)
     return model.gradient(data_state, None)
 
 
