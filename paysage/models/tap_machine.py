@@ -120,6 +120,9 @@ class TAP_rbm(model.Model):
         if method not in ['gd', 'constraint']:
             raise ValueError("Must specify a valid method for minimizing the Gibbs free energy")
 
+        if self.num_layers != 2:
+            raise ValueError("Currently only 2-layer models are supported for the Helmholtz free energy")
+
         w = self.weights[0].params.matrix
         a = self.layers[0].params.loc
         b = self.layers[1].params.loc
@@ -414,6 +417,8 @@ class TAP_rbm(model.Model):
             namedtuple: Gradient: containing gradients of the model parameters.
 
         """
+        if self.num_layers != 2:
+            raise ValueError("Currently only 2-layer models are supported for the TAP gradient")
         # compute average grad_F_marginal over the minibatch
         grad_MFE = self.grad_marginal_free_energy(data_state)
         # compute the gradient of the Helmholtz FE via TAP
