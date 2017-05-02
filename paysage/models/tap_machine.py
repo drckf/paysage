@@ -6,12 +6,11 @@ from ..models.initialize import init_model as init
 from . import gradient_util as gu
 from . import model
 
-class Magnetization(object):
-    def __init__(self, v=None, h=None):
-        self.v = v
-        self.h = h
+# This type represents a magnetization dual to the visible and hidden layers
+# of the 2-layer model
+Magnetization = namedtuple("Magnetization", ["v", "h"])
 
-# Derives from Model object defined in hidden.py
+# Derives from Model object defined in model.py
 class TAP_rbm(model.Model):
     """
     RBM with TAP formula-based gradient which supports deterministic training
