@@ -368,8 +368,8 @@ class TAP_rbm(model.Model):
 
         # compute the TAP approximation to the Helmholtz free energy:
         grad_EMF = gu.Gradient(
-            [layers.ParamsBernoulli(be.zeros_like(lay.params.loc)) for lay in self.layers],
-            [layers.ParamsWeights(be.zeros_like(weigh.params.matrix)) for weigh in self.weights]
+            [be.apply(be.zeros_like, lay.params) for lay in self.layers],
+            [be.apply(be.zeros_like, way.params) for way in self.weights]
         )
 
         dw_EMF = grad_EMF.weights[0][0]
