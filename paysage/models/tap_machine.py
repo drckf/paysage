@@ -404,7 +404,7 @@ class TAP_rbm(model.Model):
 
         return grad_EMF
 
-    def gradient(self, data_state, model_state):
+    def TAP_gradient(self, data_state, model_state):
         """
         Gradient of -\ln P(v) with respect to the model parameters
 
@@ -417,7 +417,7 @@ class TAP_rbm(model.Model):
 
         """
         # compute average grad_F_marginal over the minibatch
-        grad_MFE = self.grad_marginal_free_energy_sampled(data_state)
+        grad_MFE = self.grad_marginal_free_energy(data_state)
         # compute the gradient of the Helmholtz FE via TAP
         grad_EMF = self.grad_helmholtz_free_energy(
                         num_r=self.num_random_samples, num_p=len(self.persistent_samples))

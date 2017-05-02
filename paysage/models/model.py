@@ -488,42 +488,7 @@ class Model(object):
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
 
-    def grad_marginal_free_energy(self, data_state):
-        """
-        Compute the gradient of the marginal free energy of the model.
-
-        Args:
-            data_state (State object): The current state of each layer.
-
-        Returns:
-            dict: Gradient object parametrized by the model parameters.
-
-        """
-        assert self.num_layers == 2 # supported for 2-layer models only
-        grad = gu.Gradient(
-            [None for l in self.layers],
-            [None for w in self.weights]
-        )
-
-        i = 0
-        grad.layers[i] = self.layers[i].derivatives(
-            data_state.units[i],
-            self._connected_rescaled_units(i, data_state),
-            self._connected_weights(i)
-        )
-
-        phi = be.dot(data_state.units[i], self.weights[i].W())
-        grad.layers[i+1] = self.layers[i+1].grad_log_partition_function(phi)
-        grad.layers[i+1].loc[:] *= -1
-
-        grad.weights[i] = self.weights[i].grad_log_partition_function(
-                                           data_state.units[i],
-                                           self.layers[i+1]._grad_log_partition_function(phi))
-        grad.weights[i].matrix[:] *= -1
-
-        return grad
-
-    def grad_marginal_free_energy_sampled(self, data_state, steps=1):
+    def grad_marginal_free_energy(self, data_state, steps=1):
         """
         Compute the gradient of the marginal free energy of the model via sampling,
         i.e. the usual positive phase

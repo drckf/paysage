@@ -364,21 +364,6 @@ class Weights(Layer):
         """
         return -be.batch_dot(vis, self.W(), hid)
 
-    def grad_log_partition_function(self, vis, grad_log_Z):
-        """
-        Compute the gradient of the logarithm of the partition function of the layer
-        with external field phi.
-
-        Args:
-            phi (tensor (num_samples, num_units)): external field
-
-        Returns:
-            (d_a_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
-
-        """
-        batch_size = be.shape(vis)[0]
-        return ParamsWeights(be.dot(be.transpose(vis), grad_log_Z) / batch_size)
-
 
 ParamsGaussian = namedtuple("ParamsGaussian", ["loc", "log_var"])
 
@@ -1032,38 +1017,6 @@ class BernoulliLayer(Layer):
 
         """
         return -be.dot(data, self.params.loc)
-
-    def _grad_log_partition_function(self, phi):
-        """
-        Compute the gradient of the logarithm of the partition function of the layer
-        with external field phi.
-
-        (d_a_i)softplus(a_i + phi_i) = expit(a_i + phi_i)
-
-        Args:
-            phi (tensor (num_samples, num_units)): external field
-
-        Returns:
-            (d_a_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
-
-        """
-        return be.expit(be.add(be.unsqueeze(self.params.loc,0), phi))
-
-    def grad_log_partition_function(self, phi):
-        """
-        Compute the gradient of the logarithm of the partition function of the layer
-        with external field phi.
-
-        (d_a_i)softplus(a_i + phi_i) = expit(a_i + phi_i)
-
-        Args:
-            phi (tensor (num_samples, num_units)): external field
-
-        Returns:
-            (d_a_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
-
-        """
-        return ParamsBernoulli(be.mean(self._grad_log_partition_function(phi), axis=0))
 
     def online_param_update(self, data):
         """
