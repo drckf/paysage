@@ -125,25 +125,25 @@ class TAP_rbm(model.Model):
         b = self.layers[1].params.loc
 
         # Mean field derivatives
-        def grad_v_gamma_MF(m, w, a):
+        def grad_v_gibbs_FE_MF(m, w, a):
             return be.log(be.divide(1.0 - m.v, m.v)) - a - be.dot(w, m.h)
-        def grad_h_gamma_MF(m, w, b):
+        def grad_h_gibbs_FE_MF(m, w, b):
             return be.log(be.divide(1.0 - m.h, m.h)) - b - be.dot(m.v,w)
 
         # MF plus Onsager reaction term
-        def grad_v_gamma_TAP2(m, w, a):
+        def grad_v_gibbs_FE_TAP2(m, w, a):
             m_h_quad = m.h - be.square(m.h)
             ww = be.square(w)
             return be.log(be.divide(1.0 - m.v, m.v)) - a - be.dot(w, m.h) - \
                    be.multiply(0.5 - m.v,be.dot(ww, m_h_quad))
-        def grad_h_gamma_TAP2(m, w, b):
+        def grad_h_gibbs_FE_TAP2(m, w, b):
             m_v_quad = m.v - be.square(m.v)
             ww = be.square(w)
             return be.log(be.divide(1.0 - m.h, m.h)) - b - be.dot(m.v,w) - \
                    be.multiply(be.dot(m_v_quad,ww),0.5 - m.h)
 
         # Third order TAP expansion gradients
-        def grad_v_gamma_TAP3(m, w, a):
+        def grad_v_gibbs_FE_TAP3(m, w, a):
             m_h_quad = m.h - be.square(m.h)
             ww = be.square(w)
             www = be.multiply(ww,w)
@@ -151,7 +151,7 @@ class TAP_rbm(model.Model):
                    be.multiply(0.5 - m.v,be.dot(ww, m_h_quad)) - \
                    (4.0/3.0)*be.multiply(0.5 - 3.0*m.v + 3.0*be.square(m.v),\
                    be.dot(www,be.multiply(0.5 - m.h, m_h_quad)))
-        def grad_h_gamma_TAP3(m, w, b):
+        def grad_h_gibbs_FE_TAP3(m, w, b):
             m_v_quad = m.v - be.square(m.v)
             ww = be.square(w)
             www = be.multiply(ww,w)
@@ -160,25 +160,25 @@ class TAP_rbm(model.Model):
                    (4.0/3.0)*be.multiply(be.dot(be.multiply(0.5 - m.v, m_v_quad),www),\
                    0.5 - 3.0*m.h + 3.0*be.square(m.h))
 
-        def minimize_gamma_GD(w, a, b, m, init_lr, tol, max_iters, terms):
+        def minimize_gibbs_free_energy_GD(w, a, b, m, init_lr, tol, max_iters, terms):
             """
-            Simple gradient descent routine to minimize Gamma
+            Simple gradient descent routine to minimize gibbs_FE
 
             Warning: this function modifies seed to avoid an extra copy and allocation
 
             """
             if terms == 1:
                 gibbs_FE = self.gibbs_free_energy_MF
-                grad_v_gamma = grad_v_gamma_MF
-                grad_h_gamma = grad_h_gamma_MF
+                grad_v_gibbs_FE = grad_v_gibbs_FE_MF
+                grad_h_gibbs_FE = grad_h_gibbs_FE_MF
             elif terms == 2:
                 gibbs_FE = self.gibbs_free_energy_TAP2
-                grad_v_gamma = grad_v_gamma_TAP2
-                grad_h_gamma = grad_h_gamma_TAP2
+                grad_v_gibbs_FE = grad_v_gibbs_FE_TAP2
+                grad_h_gibbs_FE = grad_h_gibbs_FE_TAP2
             elif terms == 3:
                 gibbs_FE = self.gibbs_free_energy_MF
-                grad_v_gamma = grad_v_gamma_TAP3
-                grad_h_gamma = grad_h_gamma_TAP3
+                grad_v_gibbs_FE = grad_v_gibbs_FE_TAP3
+                grad_h_gibbs_FE = grad_h_gibbs_FE_TAP3
 
             eps = 1e-6
             its = 0
@@ -187,8 +187,8 @@ class TAP_rbm(model.Model):
 
             while (its < max_iters):
                 its += 1
-                m_provisional = Magnetization(m.v - lr*grad_v_gamma(m, w, a),
-                                              m.h - lr*grad_h_gamma(m, w, b))
+                m_provisional = Magnetization(m.v - lr*grad_v_gibbs_FE(m, w, a),
+                                              m.h - lr*grad_h_gibbs_FE(m, w, b))
                 # Warning: in general a lot of clipping gets done here
                 be.clip_inplace(m_provisional.v, eps, 1.0-eps)
                 be.clip_inplace(m_provisional.h, eps, 1.0-eps)
@@ -209,9 +209,9 @@ class TAP_rbm(model.Model):
 
             return (m, gam)
 
-        def minimize_gamma_constraint_sat(w, a, b, m, tol, max_iters, interpolation_factor=1.0, terms=2):
+        def minimize_gibbs_free_energy_constraint_sat(w, a, b, m, tol, max_iters, interpolation_factor=1.0, terms=2):
             """
-            Minimize Gamma via repeated application of the self-consistent constraint
+            Minimize gibbs_FE via repeated application of the self-consistent constraint
 
             Warning: this function modifies seed to avoid an extra copy and allocation
 
@@ -262,9 +262,9 @@ class TAP_rbm(model.Model):
             )
 
         if method == 'gd':
-            return minimize_gamma_GD(w, a, b, seed, init_lr, tol, max_iters, terms=terms)
+            return minimize_gibbs_free_energy_GD(w, a, b, seed, init_lr, tol, max_iters, terms=terms)
         elif method == 'constraint':
-            return minimize_gamma_constraint_sat(w, a, b, seed, tol, max_iters,  terms=terms)
+            return minimize_gibbs_free_energy_constraint_sat(w, a, b, seed, tol, max_iters,  terms=terms)
 
     # The Legendre transform of F(v;q) as a function of q according to Mean Field approximation
     # specialized to the RBM case
@@ -333,19 +333,18 @@ class TAP_rbm(model.Model):
             namedtuple: Gradient: containing gradients of the model parameters.
 
         """
-        def grad_a_gamma(m, w, a, b):
+        def grad_a_gibbs_FE(m, w, a, b):
             return -m.v
-        def grad_b_gamma(m, w, a, b):
+        def grad_b_gibbs_FE(m, w, a, b):
             return -m.h
-        def grad_w_gamma_MF(m, w, a, b):
+        def grad_w_gibbs_FE_MF(m, w, a, b):
             return -be.outer(m.v, m.h)
-
-        def grad_w_gamma_TAP2(m, w, a, b):
+        def grad_w_gibbs_FE_TAP2(m, w, a, b):
             m_v_quad = m.v - be.square(m.v)
             m_h_quad = m.h - be.square(m.h)
             return -be.outer(m.v, m.h) - be.multiply(w, be.outer(m_v_quad, m_h_quad))
 
-        def grad_w_gamma_TAP3(m, w, a, b):
+        def grad_w_gibbs_FE_TAP3(m, w, a, b):
             m_v_quad = m.v - be.square(m.v)
             m_h_quad = m.h - be.square(m.h)
             ww = be.square(w)
@@ -359,11 +358,11 @@ class TAP_rbm(model.Model):
         b = self.layers[1].params.loc
 
         if self.terms == 1:
-             grad_w_gamma = grad_w_gamma_MF
+             grad_w_gibbs_FE = grad_w_gibbs_FE_MF
         elif self.terms == 2:
-             grad_w_gamma = grad_w_gamma_TAP2
+             grad_w_gibbs_FE = grad_w_gibbs_FE_TAP2
         elif self.terms == 3:
-             grad_w_gamma = grad_w_gamma_TAP3
+             grad_w_gibbs_FE = grad_w_gibbs_FE_TAP3
 
         # compute the TAP approximation to the Helmholtz free energy:
         grad_EMF = gu.Gradient(
@@ -382,9 +381,9 @@ class TAP_rbm(model.Model):
                                                  self.max_iters_EMF,
                                                  self.terms)
             # Compute the gradients at this minimizing magnetization
-            dw_EMF += grad_w_gamma(m,w,a,b)
-            da_EMF += grad_a_gamma(m,w,a,b)
-            db_EMF += grad_b_gamma(m,w,a,b)
+            dw_EMF += grad_w_gibbs_FE(m,w,a,b)
+            da_EMF += grad_a_gibbs_FE(m,w,a,b)
+            db_EMF += grad_b_gibbs_FE(m,w,a,b)
         # compute minimizing magnetizations from seeded initializations
         for s in range(num_p): # persistent seeds
             (self.persistent_samples[s],EMF) = \
@@ -394,9 +393,9 @@ class TAP_rbm(model.Model):
                                         self.max_iters_EMF,
                                         self.terms)
             # Compute the gradients at this minimizing magnetization
-            dw_EMF += grad_w_gamma(self.persistent_samples[s],w,a,b)
-            da_EMF += grad_a_gamma(self.persistent_samples[s],w,a,b)
-            db_EMF += grad_b_gamma(self.persistent_samples[s],w,a,b)
+            dw_EMF += grad_w_gibbs_FE(self.persistent_samples[s],w,a,b)
+            da_EMF += grad_a_gibbs_FE(self.persistent_samples[s],w,a,b)
+            db_EMF += grad_b_gibbs_FE(self.persistent_samples[s],w,a,b)
         dw_EMF /= (num_p + num_r)
         da_EMF /= (num_p + num_r)
         db_EMF /= (num_p + num_r)
