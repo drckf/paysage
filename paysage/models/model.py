@@ -397,7 +397,10 @@ class Model(object):
 
         # POSITIVE PHASE (using observed)
 
-        # compute the gradients
+        # compute the conditional mean of the hidden layers
+        new_data_state = self.mean_field_iteration(1, data_state, clamped=[0])
+
+        # compute the postive phase of the gradients of the layer parameters
         for i in range(self.num_layers):
             grad.layers[i] = self.layers[i].derivatives(
                 data_state.units[i],
@@ -406,6 +409,8 @@ class Model(object):
                 [self.weights[j].W() if j < i else self.weights[j].W_T()
                     for j in self.weight_connections[i]],
             )
+
+        # compute the positive phase of the gradients of the weights
         for i in range(self.num_layers - 1):
             grad.weights[i] = self.weights[i].derivatives(
                 self.layers[i].rescale(data_state.units[i]),
@@ -414,7 +419,10 @@ class Model(object):
 
         # NEGATIVE PHASE (using sampled)
 
-        # compute the gradients
+        # compute the conditional mean of the hidden layers
+        new_model_state = self.mean_field_iteration(1, model_state, clamped=[0])
+
+        # update the gradients of the layer parameters with the negative phase
         for i in range(self.num_layers):
             grad.layers[i] = be.mapzip(be.subtract,
                 self.layers[i].derivatives(
@@ -425,6 +433,8 @@ class Model(object):
                         for j in self.weight_connections[i]],
                 ),
             grad.layers[i])
+
+        # update the gradients of the weight parameters with the negative phase
         for i in range(self.num_layers - 1):
             grad.weights[i] = be.mapzip(be.subtract,
                 self.weights[i].derivatives(
