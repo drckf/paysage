@@ -4,7 +4,6 @@ from . import backends as be
 from . import metrics as M
 from paysage.models.model import State
 
-
 class Sampler(object):
     """Base class for the sequential Monte Carlo samplers"""
     def __init__(self, model, method='stochastic', **kwargs):
@@ -172,20 +171,31 @@ class DrivenSequentialMC(Sampler):
 
         """
         super().__init__(model, method=method)
-        self.beta_momentum = beta_momentum
-        self.beta_std = beta_std
+
+        from numpy.random import gamma, poisson
+        self.gamma = gamma
+        self.poisson = poisson
+
+        self.std = beta_std
+        self.var = self.std**2
+
+        self.phi = beta_momentum # autocorrelation
+        self.nu = 1 / self.var # location parameter
+        self.c = (1-self.phi) * self.var # scale parameter
+
         self.beta = None
         self.has_beta = False
 
     def _update_beta(self):
         """
-        Update beta with an AR(1) process.
+        Update beta with an autoregressive Gamma process.
 
-        AR(1) process: X_t = momentum * X_(t-1) + loc + scale * noise
-        E[X] = loc / (1 - momentum)
-             -> loc = E[X] * (1 - momentum)
-        Var[X] = scale ** 2 / (1 - momentum**2)
-               -> scale = sqrt(Var[X] * (1 - momentum**2))
+        beta_0 ~ Gamma(nu,c/(1-phi)) = Gamma(nu, var)
+        h_t ~ Possion( phi/c * h_{t-1})
+        beta_t ~ Gamma(nu + z_t, c)
+
+        Achieves a stationary distribution with mean 1 and variance var:
+        Gamma(nu, var) = Gamma(1/var, var)
 
         Notes:
             Modifies the folling attributes in place:
@@ -204,13 +214,13 @@ class DrivenSequentialMC(Sampler):
                 self.beta_shape = (be.shape(self.pos_state.units[0])[0], 1)
             else:
                 self.beta_shape = (be.shape(self.neg_state.units[0])[0], 1)
-            self.beta_loc = (1-self.beta_momentum) * be.ones(self.beta_shape)
-            self.beta_scale = self.beta_std * math.sqrt(1-self.beta_momentum**2)
-            self.beta = be.ones(self.beta_shape)
+            self.beta = self.gamma(self.nu, self.var, size=self.beta_shape)
+        z = self.poisson(lam=self.beta * self.phi / self.c)
+        self.beta = self.gamma(self.nu + z, self.c)
 
-        self.beta *= self.beta_momentum
-        self.beta += self.beta_loc
-        self.beta += self.beta_scale * be.randn(self.beta_shape)
+    def _beta(self):
+        """Return beta in the appropriate tensor format."""
+        return be.float_tensor(self.beta)
 
     def update_positive_state(self, steps):
         """
@@ -218,7 +228,6 @@ class DrivenSequentialMC(Sampler):
 
         Notes:
             Modifies the state attribute in place.
-            Calls _update_beta() method.
 
         Args:
             steps (int): the number of Monte Carlo steps
@@ -231,7 +240,7 @@ class DrivenSequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
-        self.pos_state = self.updater(steps, self.pos_state, self.beta)
+        self.pos_state = self.updater(steps, self.pos_state, beta=None)
 
     def update_negative_state(self, steps):
         """
@@ -253,7 +262,7 @@ class DrivenSequentialMC(Sampler):
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
         self._update_beta()
-        self.neg_state = self.updater(steps, self.neg_state, self.beta)
+        self.neg_state = self.updater(steps, self.neg_state, self._beta())
 
 
 class ProgressMonitor(object):

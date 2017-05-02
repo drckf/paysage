@@ -40,7 +40,9 @@ def example_mnist_rbm(paysage_path=None, num_epochs=10, show_plot=False):
                           scheduler=optimizers.PowerLawDecay(0.1))
 
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
-                                                method='stochastic')
+                                                method='stochastic',
+                                                beta_std = 1.0,
+                                                beta_momentum = 0.0)
 
     cd = fit.SGD(rbm, data, opt, num_epochs, method=fit.pcd, sampler=sampler,
                  mcsteps=mc_steps, monitor=perf)
