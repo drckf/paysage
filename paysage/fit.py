@@ -155,7 +155,7 @@ class SequentialMC(Sampler):
 
 class DrivenSequentialMC(Sampler):
     """An accelerated sequential Monte Carlo sampler"""
-    def __init__(self, model, beta_momentum=0.9, beta_std=0.2,
+    def __init__(self, model, beta_momentum=0.9, beta_std=0.6,
                  method='stochastic'):
         """
         Create a sequential Monte Carlo sampler.
@@ -199,7 +199,7 @@ class DrivenSequentialMC(Sampler):
 
         Notes:
             Modifies the folling attributes in place:
-                has_beta, beta_shape, beta_loc, beta_scale, beta
+                has_beta, beta_shape, beta
 
         Args:
             None
