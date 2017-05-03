@@ -34,7 +34,7 @@ def color_to_ising(tensor):
 
 # ----- CLASSES ----- #
 
-class Batch(object):
+class HDFBatch(object):
     """
     Serves up minibatches from an HDFStore.
     The validation set is taken as the last (1 - train_fraction)
