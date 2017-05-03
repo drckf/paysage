@@ -33,11 +33,11 @@ def test_tap_machine(paysage_path=None):
     be.set_seed()
 
     # set up the reader to get minibatches
-    data = batch.Batch(shuffled_filepath,
-                       'train/images',
-                       batch_size,
-                       transform=batch.binarize_color,
-                       train_fraction=0.1)
+    data = batch.HDFBatch(shuffled_filepath,
+                         'train/images',
+                          batch_size,
+                          transform=batch.binarize_color,
+                          train_fraction=0.1)
 
     # set up the model and initialize the parameters
     vis_layer = layers.BernoulliLayer(data.ncols)
