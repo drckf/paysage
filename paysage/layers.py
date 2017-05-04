@@ -1389,7 +1389,7 @@ class ExponentialLayer(Layer):
             rate -= be.dot(scaled_units[i], weights[i])
         rate += be.broadcast(self.params.loc, rate)
         if beta is not None:
-            rate = be.multiple(beta, rate)
+            rate = be.multiply(beta, rate)
         return rate
 
     def conditional_mode(self, scaled_units, weights, beta=None):
