@@ -433,7 +433,7 @@ def tap(vdata, model, sampler, positive_steps=1):
         gradient
 
     """
-    if self.num_layers != 2:
+    if model.num_layers != 2:
         raise ValueError("Currently only 2-layer models are supported for the tap method")
     data_state = State.from_visible(vdata, model)
     sampler.set_positive_state(data_state)
