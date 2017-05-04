@@ -51,7 +51,7 @@ def show_metrics(rbm, performance):
     performance.check_progress(rbm, 0, show=True)
 
 def compute_reconstructions(rbm, v_data, fit):
-    sampler = fit.SequentialMC(rbm)
+    sampler = fit.DrivenSequentialMC(rbm)
     data_state = State.from_visible(v_data, rbm)
     sampler.set_positive_state(data_state)
     sampler.update_positive_state(1)
@@ -69,10 +69,10 @@ def show_reconstructions(rbm, v_data, fit, show_plot):
 def compute_fantasy_particles(rbm, v_data, fit):
     random_samples = rbm.random(v_data)
     model_state = State.from_visible(random_samples, rbm)
-    sampler = fit.SequentialMC(rbm)
+    sampler = fit.DrivenSequentialMC(rbm)
     sampler.set_negative_state(model_state)
     sampler.update_negative_state(1000)
-    v_model = rbm.deterministic_iteration(1, sampler.neg_state).units[0]
+    v_model = rbm.deterministic_iteration(10, sampler.neg_state).units[0]
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     return numpy.array([[be.to_numpy_array(v_model[i])] for i in idx])
