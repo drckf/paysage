@@ -419,7 +419,8 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
     sampler.set_positive_state(data_state)
     sampler.update_negative_state(steps)
 
-    # compute the conditional sampling on all visible-side layers,
+    # step through the hidden layers, up to the last
+    # for each, compute the conditional sampling on all visible-side layers,
     # inclusive over hidden-side layers
     for i in range(1, model.num_layers - 1):
         clamped_layers = list(range(i))
