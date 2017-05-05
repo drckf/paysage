@@ -503,9 +503,9 @@ class StochasticGradientDescent(object):
                 except StopIteration:
                     break
 
+                #self.optimizer.update_stepsize_()
                 self.optimizer.update(self.model,
-                self.grad_approx(v_data, self.model, self.sampler, self.mcsteps),
-                epoch)
+                self.grad_approx(v_data, self.model, self.sampler, self.mcsteps))
 
                 t += 1
 

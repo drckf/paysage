@@ -40,8 +40,7 @@ def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
     metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore', 'HeatCapacity']
     perf = fit.ProgressMonitor(data, metrics=metrics)
 
-    opt = optimizers.ADAM(stepsize=learning_rate,
-                          scheduler=optimizers.PowerLawDecay(0.1))
+    opt = optimizers.ADAM(stepsize=learning_rate)
 
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')

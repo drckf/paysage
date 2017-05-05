@@ -40,7 +40,6 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs = 10, show_plot=True
                                          'HeatCapacity'])
 
     opt = optimizers.Gradient(stepsize=learning_rate,
-                              scheduler=optimizers.PowerLawDecay(0.1),
                               tolerance=1e-4,
                               ascent=True)
 
