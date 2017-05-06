@@ -1,8 +1,9 @@
-import time, math
+import time
 from collections import OrderedDict
 from . import backends as be
 from . import metrics as M
-from paysage.models.model import State
+from . import schedules
+from .models.model import State
 
 class Sampler(object):
     """Base class for the sequential Monte Carlo samplers"""
@@ -158,7 +159,7 @@ class SequentialMC(Sampler):
 class DrivenSequentialMC(Sampler):
     """An accelerated sequential Monte Carlo sampler"""
     def __init__(self, model, beta_momentum=0.99, beta_std=0.6,
-                 method='stochastic'):
+                 method='stochastic', schedule=schedules.constant(1.0)):
         """
         Create a sequential Monte Carlo sampler.
 
@@ -167,9 +168,10 @@ class DrivenSequentialMC(Sampler):
             beta_momentum (float in [0,1]): autoregressive coefficient of beta
             beta_std (float > 0): the standard deviation of beta
             method (str; optional): how to update the particles
+            schedule (generator; optional)
 
         Returns:
-            SequentialMC
+            DrivenSequentialMC
 
         """
         super().__init__(model, method=method)
@@ -187,6 +189,11 @@ class DrivenSequentialMC(Sampler):
 
         self.beta = None
         self.has_beta = False
+        self.schedule = schedule
+
+    def _anneal(self):
+        t = next(self.schedule)
+        return self.nu / t, self.c * t
 
     def _update_beta(self):
         """
@@ -210,15 +217,16 @@ class DrivenSequentialMC(Sampler):
             None
 
         """
+        nu, c = self._anneal()
         if not self.has_beta:
             self.has_beta = True
             if self.pos_state:
                 self.beta_shape = (be.shape(self.pos_state.units[0])[0], 1)
             else:
                 self.beta_shape = (be.shape(self.neg_state.units[0])[0], 1)
-            self.beta = self.gamma(self.nu, self.var, size=self.beta_shape)
-        z = self.poisson(lam=self.beta * self.phi / self.c)
-        self.beta = self.gamma(self.nu + z, self.c)
+            self.beta = self.gamma(nu, c/(1-self.phi), size=self.beta_shape)
+        z = self.poisson(lam=self.beta * self.phi/c)
+        self.beta = self.gamma(nu + z, c)
 
     def _beta(self):
         """Return beta in the appropriate tensor format."""
