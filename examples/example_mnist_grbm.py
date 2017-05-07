@@ -52,6 +52,11 @@ def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
     print('training with contrastive divergence')
     cd.train()
 
+    import numpy
+    print("beta")
+    print(numpy.mean(sampler.beta), numpy.std(sampler.beta))
+    print()
+
     # evaluate the model
     util.show_metrics(rbm, perf)
     util.show_reconstructions(rbm, data.get('validate'), fit, show_plot)

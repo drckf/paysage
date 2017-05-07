@@ -70,8 +70,11 @@ def show_reconstructions(rbm, v_data, fit, show_plot):
 def compute_fantasy_particles(rbm, v_data, fit):
     random_samples = rbm.random(v_data)
     model_state = State.from_visible(random_samples, rbm)
+
     #schedule = schedules.power_law_decay(initial=1.0, coefficient=0.02)
-    sampler = fit.DrivenSequentialMC(rbm)
+    #sampler = fit.DrivenSequentialMC(rbm, schedule=schedule)
+
+    sampler = fit.SequentialMC(rbm)
     sampler.set_negative_state(model_state)
     sampler.update_negative_state(1000)
     v_model = rbm.deterministic_iteration(1, sampler.neg_state).units[0]
