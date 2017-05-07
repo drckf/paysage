@@ -33,7 +33,7 @@ def exponential_decay(initial=1.0, coefficient=0.9):
         yield be.float_scalar(value)
         value *= coefficient
 
-def power_lay_decay(initial=1.0, coefficient = 0.1):
+def power_law_decay(initial=1.0, coefficient = 0.1):
     """
     Power law decay with coefficient alpha, i.e. x(t) = 1 / (1 + alpha * t).
     Sets x(0) = 1 and uses the recursive formula 1/x(t+1) = alpha + 1/x(t).

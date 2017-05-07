@@ -159,7 +159,8 @@ class SequentialMC(Sampler):
 class DrivenSequentialMC(Sampler):
     """An accelerated sequential Monte Carlo sampler"""
     def __init__(self, model, beta_momentum=0.99, beta_std=0.6,
-                 method='stochastic', schedule=schedules.constant(1.0)):
+                 method='stochastic',
+                 schedule=schedules.constant(1.0)):
         """
         Create a sequential Monte Carlo sampler.
 
@@ -271,8 +272,9 @@ class DrivenSequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
-        self._update_beta()
-        self.neg_state = self.updater(steps, self.neg_state, self._beta())
+        for _ in range(steps):
+            self._update_beta()
+            self.neg_state = self.updater(1, self.neg_state, self._beta())
 
 
 class ProgressMonitor(object):

@@ -129,7 +129,7 @@ class Optimizer(object):
     """Base class for the optimizer methods."""
     def __init__(self,
                  stepsize=0.001,
-                 scheduler=schedules.power_lay_decay,
+                 scheduler=schedules.power_law_decay,
                  tolerance=1e-7,
                  ascent=False):
         """
@@ -186,7 +186,7 @@ class Gradient(Optimizer):
     """Vanilla gradient optimizer"""
     def __init__(self,
                  stepsize=0.001,
-                 scheduler=schedules.power_lay_decay,
+                 scheduler=schedules.power_law_decay,
                  tolerance=1e-7,
                  ascent=False):
         """
@@ -240,7 +240,7 @@ class Momentum(Optimizer):
     def __init__(self,
                  stepsize=0.001,
                  momentum=0.9,
-                 scheduler=schedules.power_lay_decay,
+                 scheduler=schedules.power_law_decay,
                  tolerance=1e-7,
                  ascent=False):
         """
@@ -296,7 +296,7 @@ class RMSProp(Optimizer):
     def __init__(self,
                  stepsize=0.001,
                  mean_square_weight=0.9,
-                 scheduler=schedules.power_lay_decay,
+                 scheduler=schedules.power_law_decay,
                  tolerance=1e-7,
                  ascent=False):
         """
@@ -358,7 +358,7 @@ class ADAM(Optimizer):
                  stepsize=0.001,
                  mean_weight=0.9,
                  mean_square_weight=0.999,
-                 scheduler=schedules.power_lay_decay,
+                 scheduler=schedules.power_law_decay,
                  tolerance=1e-7,
                  ascent=False):
         """
