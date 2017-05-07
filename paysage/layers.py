@@ -451,7 +451,7 @@ class GaussianLayer(Layer):
        with external field phi.
 
        Let u_i and s_i be the loc and scale parameters of unit i.
-       Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
+       Let phi_i be an external field
 
        Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + \phi_i x_i)
        = exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i
@@ -471,7 +471,27 @@ class GaussianLayer(Layer):
        logZ += be.log(be.broadcast(scale, phi))
        return logZ
 
+    def augmented_log_partition_function(self, B, A):
+        """
+        Compute the logarithm of the partition function of the layer
+        with external field phi augmented with a quadratic factor.
 
+        Let a_i be the loc parameter of unit i.
+        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
+
+        Z_i = Tr_{x_i} exp( a_i x_i + B_i x_i - A_i x_i^2)
+        = 1 + \exp(a_i + B_i - A_i)
+
+        log(Z_i) = softplus(a_i + B_i - A_i)
+
+        Args:
+            phi (tensor (num_samples, num_units)): external field
+
+        Returns:
+            logZ (tensor, num_samples, num_units)): log partition function
+
+        """
+        return be.softplus(be.add(self.params.loc, be.subtract(A,B)))
 
     def online_param_update(self, data):
         """
@@ -1068,6 +1088,7 @@ class BernoulliLayer(Layer):
 
         """
         return -be.dot(data, self.params.loc)
+
     def log_partition_function(self, phi):
         """
         Compute the logarithm of the partition function of the layer
@@ -1089,6 +1110,63 @@ class BernoulliLayer(Layer):
 
         """
         return be.softplus(be.add(self.params.loc, phi))
+
+    def augmented_log_partition_function(self, B, A):
+        """
+        Compute the logarithm of the partition function of the layer
+        with external field phi augmented with a quadratic factor.
+
+        Let a_i be the loc parameter of unit i.
+        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
+
+        Z_i = Tr_{x_i} exp( a_i x_i + B_i x_i - A_i x_i^2)
+        = 1 + \exp(a_i + B_i - A_i)
+
+        log(Z_i) = softplus(a_i + B_i - A_i)
+
+        Args:
+            A (tensor (num_samples, num_units)): external field
+            B (tensor (num_samples, num_units)): diagonal quadratic external field
+
+        Returns:
+            logZ (tensor, num_samples, num_units)): log partition function
+
+        """
+        return be.softplus(be.add(self.params.loc, be.subtract(A,B)))
+
+    def _grad_log_partition_function(self, B, A):
+        """
+        Compute the gradient of the logarithm of the partition function of the layer
+        with external field phi.
+
+        (d_a_i)softplus(a_i + B_i - A_i) = expit(a_i + B_i - A_i)
+
+        Args:
+            A (tensor (num_samples, num_units)): external field
+            B (tensor (num_samples, num_units)): diagonal quadratic external field
+
+        Returns:
+            (d_a_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
+
+        """
+        return be.expit(be.add(be.unsqueeze(self.params.loc,0), be.subtract(A,B)))
+
+    def grad_log_partition_function(self, B, A):
+        """
+        Compute the gradient of the logarithm of the partition function of the layer
+        with external field B and quadratic interaction A.
+
+        (d_a_i)softplus(a_i + B_i - A_i) = expit(a_i + B_i - A_i)
+
+        Args:
+            A (tensor (num_samples, num_units)): external field
+            B (tensor (num_samples, num_units)): diagonal quadratic external field
+
+        Returns:
+            (d_a_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
+
+        """
+        return ParamsBernoulli(be.mean(self._grad_log_partition_function(B,A), axis=0))
 
     def online_param_update(self, data):
         """
