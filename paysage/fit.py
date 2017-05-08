@@ -154,8 +154,7 @@ class SequentialMC(Sampler):
                 +' method to set the initial state of the Markov Chain')
         self.neg_state = self.updater(steps, self.neg_state)
 
-# TODO: method to anneal the std -> 0 so that the sampled distribution
-# approaches the model distribution eventually
+
 class DrivenSequentialMC(Sampler):
     """An accelerated sequential Monte Carlo sampler"""
     def __init__(self, model, beta_momentum=0.99, beta_std=0.6,
