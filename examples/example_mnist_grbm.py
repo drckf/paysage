@@ -24,11 +24,11 @@ def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
             util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
-    data = batch.Batch(shuffled_filepath,
-                       'train/images',
-                       batch_size,
-                       transform=transform,
-                       train_fraction=0.99)
+    data = batch.HDFBatch(shuffled_filepath,
+                         'train/images',
+                          batch_size,
+                          transform=transform,
+                          train_fraction=0.99)
 
     # set up the model and initialize the parameters
     vis_layer = layers.GaussianLayer(data.ncols)

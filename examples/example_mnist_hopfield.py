@@ -20,11 +20,11 @@ def example_mnist_hopfield(paysage_path=None, num_epochs=10, show_plot=False):
         util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
-    data = batch.Batch(shuffled_filepath,
-                       'train/images',
-                       batch_size,
-                       transform=batch.binarize_color,
-                       train_fraction=0.99)
+    data = batch.HDFBatch(shuffled_filepath,
+                         'train/images',
+                          batch_size,
+                          transform=batch.binarize_color,
+                          train_fraction=0.99)
 
     # set up the model and initialize the parameters
     vis_layer = layers.BernoulliLayer(data.ncols)
