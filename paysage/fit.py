@@ -506,13 +506,15 @@ class StochasticGradientDescent(object):
         for epoch in range(self.epochs):
             t = 0
             start_time = time.time()
+
+            self.optimizer.update_stepsize_()
+
             while True:
                 try:
                     v_data = self.batch.get(mode='train')
                 except StopIteration:
                     break
 
-                self.optimizer.update_stepsize_()
                 self.optimizer.update(self.model,
                 self.grad_approx(v_data, self.model, self.sampler, self.mcsteps))
 
