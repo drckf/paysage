@@ -6,6 +6,7 @@ from paysage import layers
 from paysage.models import tap_machine
 from paysage import fit
 from paysage import optimizers
+from paysage import schedules
 
 import pytest
 
@@ -13,7 +14,7 @@ def test_tap_machine(paysage_path=None):
     num_hidden_units = 10
     batch_size = 50
     num_epochs = 1
-    learning_rate = 0.01
+    learning_rate = schedules.power_law_decay(initial=0.1, coefficient=0.1)
 
     if not paysage_path:
         paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
