@@ -6,6 +6,7 @@ from paysage.models import model
 from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
+from paysage import schedules
 
 be.set_seed(137) # for determinism
 
@@ -17,7 +18,7 @@ def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
 
     num_hidden_units = 500
     batch_size = 50
-    learning_rate = 0.001 # gaussian rbm usually requires smaller learnign rate
+    learning_rate = schedules.power_law_decay(initial=0.001, coefficient=0.1)
     mc_steps = 1
 
     (_, _, shuffled_filepath) = \

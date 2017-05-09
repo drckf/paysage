@@ -2,6 +2,7 @@ from . import backends as be
 from cytoolz import identity, partial
 from .models import gradient_util as gu
 from . import schedules
+from copy import deepcopy
 
 # ----- CLASSES ----- #
 
@@ -128,8 +129,7 @@ class GradientMemory(object):
 class Optimizer(object):
     """Base class for the optimizer methods."""
     def __init__(self,
-                 stepsize=0.001,
-                 scheduler=schedules.power_law_decay,
+                 stepsize=schedules.constant(initial=0.001),
                  tolerance=1e-7,
                  ascent=False):
         """
@@ -137,8 +137,7 @@ class Optimizer(object):
 
         Args:
             model: a Model object to optimize
-            stepsize (float; optional): the initial stepsize
-            scheduler (function that returns generator; optional)
+            stepsize (generator; optional): the stepsize schedule
             tolerance (float; optional):
                 the gradient magnitude to declar convergence
 
@@ -147,7 +146,6 @@ class Optimizer(object):
 
         """
         self.stepsize = stepsize
-        self.scheduler = scheduler(initial=self.stepsize)
         self.tolerance = tolerance
         self.delta = {}
         self.grad_sign = be.float_scalar(1 - 2 * ascent)
@@ -165,7 +163,7 @@ class Optimizer(object):
         mag = gu.grad_magnitude(self.delta)
         return mag <= self.tolerance
 
-    def update_stepsize_(self):
+    def update_lr(self):
         """
         Update the current value of the stepsize:
 
@@ -179,14 +177,14 @@ class Optimizer(object):
             None
 
         """
-        self.stepsize = next(self.scheduler)
+        lr = be.float_scalar(next(self.stepsize) * self.grad_sign)
+        self.lr_ = partial(be.tmul_, lr)
 
 
 class Gradient(Optimizer):
     """Vanilla gradient optimizer"""
     def __init__(self,
-                 stepsize=0.001,
-                 scheduler=schedules.power_law_decay,
+                 stepsize=schedules.constant(initial=0.001),
                  tolerance=1e-7,
                  ascent=False):
         """
@@ -197,8 +195,7 @@ class Gradient(Optimizer):
 
         Args:
             model: a Model object to optimize
-            stepsize (float; optional): the initial stepsize
-            scheduler (function that returns generator; optional)
+            stepsize (generator; optional): the stepsize schedule
             tolerance (float; optional):
                 the gradient magnitude to declar convergence
 
@@ -206,7 +203,7 @@ class Gradient(Optimizer):
             StochasticGradientDescent
 
         """
-        super().__init__(stepsize, scheduler, tolerance, ascent)
+        super().__init__(stepsize, tolerance, ascent)
 
     def update(self, model, grad):
         """
@@ -224,9 +221,8 @@ class Gradient(Optimizer):
             None
 
         """
-        lr_ = partial(be.tmul_, be.float_scalar(self.grad_sign * self.stepsize))
         self.delta = grad
-        gu.grad_apply_(lr_, self.delta)
+        gu.grad_apply_(self.lr_, self.delta)
         model.parameter_update(self.delta)
 
 class Momentum(Optimizer):
@@ -238,9 +234,8 @@ class Momentum(Optimizer):
 
     """
     def __init__(self,
-                 stepsize=0.001,
+                 stepsize=schedules.constant(initial=0.001),
                  momentum=0.9,
-                 scheduler=schedules.power_law_decay,
                  tolerance=1e-7,
                  ascent=False):
         """
@@ -251,9 +246,8 @@ class Momentum(Optimizer):
 
         Args:
             model: a Model object to optimize
-            stepsize (float; optional): the initial stepsize
+            stepsize (generator; optional): the stepsize schedule
             momentum (float; optional): the amount of momentum
-            scheduler (function that returns generatorrator; optional)
             tolerance (float; optional):
                 the gradient magnitude to declar convergence
 
@@ -261,7 +255,7 @@ class Momentum(Optimizer):
             Momentum
 
         """
-        super().__init__(stepsize, scheduler, tolerance, ascent)
+        super().__init__(stepsize, tolerance, ascent)
         self.memory = GradientMemory(mean_weight=momentum,
                                      mean_square_weight=0)
 
@@ -281,9 +275,9 @@ class Momentum(Optimizer):
             None
 
         """
-        lr = partial(be.tmul, be.float_scalar(self.grad_sign * self.stepsize))
         self.memory.update(grad)
-        self.delta = gu.grad_apply(lr, self.memory.mean_gradient)
+        self.delta = deepcopy(self.memory.mean_gradient)
+        gu.grad_apply_(self.lr_, self.delta)
         model.parameter_update(self.delta)
 
 
@@ -294,9 +288,8 @@ class RMSProp(Optimizer):
 
     """
     def __init__(self,
-                 stepsize=0.001,
+                 stepsize=schedules.constant(initial=0.001),
                  mean_square_weight=0.9,
-                 scheduler=schedules.power_law_decay,
                  tolerance=1e-7,
                  ascent=False):
         """
@@ -307,10 +300,9 @@ class RMSProp(Optimizer):
 
         Args:
             model: a Model object to optimize
-            stepsize (float; optional): the initial stepsize
+            stepsize (generator; optional): the stepsize schedule
             mean_square_weight (float; optional):
                 for computing the running average of the mean-square gradient
-            scheduler (function that returns generator; optional)
             tolerance (float; optional):
                 the gradient magnitude to declar convergence
 
@@ -318,7 +310,7 @@ class RMSProp(Optimizer):
             RMSProp
 
         """
-        super().__init__(stepsize, scheduler, tolerance, ascent)
+        super().__init__(stepsize, tolerance, ascent)
         self.memory = GradientMemory(mean_weight=0,
                                      mean_square_weight=mean_square_weight)
 
@@ -338,10 +330,9 @@ class RMSProp(Optimizer):
             None
 
         """
-        lr_ = partial(be.tmul_, be.float_scalar(self.grad_sign * self.stepsize))
         self.memory.update(grad)
         self.delta = self.memory.normalize(grad, True)
-        gu.grad_apply_(lr_, self.delta)
+        gu.grad_apply_(self.lr_, self.delta)
         model.parameter_update(self.delta)
 
 
@@ -355,10 +346,9 @@ class ADAM(Optimizer):
 
     """
     def __init__(self,
-                 stepsize=0.001,
+                 stepsize=schedules.constant(initial=0.001),
                  mean_weight=0.9,
                  mean_square_weight=0.999,
-                 scheduler=schedules.power_law_decay,
                  tolerance=1e-7,
                  ascent=False):
         """
@@ -369,12 +359,11 @@ class ADAM(Optimizer):
 
         Args:
             model: a Model object to optimize
-            stepsize (float; optional): the initial stepsize
+            stepsize (generator; optional): the stepsize schedule
             mean_weight (float; optional):
                 for computing the running average of the mean gradient
             mean_square_weight (float; optional):
                 for computing the running average of the mean-square gradient
-            scheduler (function that returns generator; optional)
             tolerance (float; optional):
                 the gradient magnitude to declar convergence
 
@@ -382,7 +371,7 @@ class ADAM(Optimizer):
             ADAM
 
         """
-        super().__init__(stepsize, scheduler, tolerance, ascent)
+        super().__init__(stepsize, tolerance, ascent)
         self.memory = GradientMemory(mean_weight=mean_weight,
                                      mean_square_weight=mean_square_weight)
 
@@ -402,10 +391,9 @@ class ADAM(Optimizer):
             None
 
         """
-        lr_ = partial(be.tmul_, be.float_scalar(self.grad_sign * self.stepsize))
         self.memory.update(grad)
         self.delta = self.memory.normalize(self.memory.mean_gradient, True)
-        gu.grad_apply_(lr_, self.delta)
+        gu.grad_apply_(self.lr_, self.delta)
         model.parameter_update(self.delta)
 
 
