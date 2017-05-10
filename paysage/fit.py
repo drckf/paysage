@@ -114,7 +114,7 @@ class SequentialMC(Sampler):
         """
         super().__init__(model, method=method)
 
-    def update_positive_state(self, steps, clamped=[]):
+    def update_positive_state(self, steps, clamped=[0]):
         """
         Update the positive state of the particles.
 
@@ -232,7 +232,7 @@ class DrivenSequentialMC(Sampler):
         """Return beta in the appropriate tensor format."""
         return be.float_tensor(self.beta)
 
-    def update_positive_state(self, steps, clamped=[]):
+    def update_positive_state(self, steps, clamped=[0]):
         """
         Update the state of the particles.
 
