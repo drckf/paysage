@@ -5,6 +5,7 @@ import plotting
 from paysage import batch
 from paysage.models.model import State
 from paysage import backends as be
+from paysage import schedules
 
 # ----- DEFAULT PATHS ----- #
 
@@ -69,12 +70,16 @@ def show_reconstructions(rbm, v_data, fit, show_plot):
 def compute_fantasy_particles(rbm, v_data, fit):
     random_samples = rbm.random(v_data)
     model_state = State.from_visible(random_samples, rbm)
-    sampler = fit.DrivenSequentialMC(rbm)
+
+    schedule = schedules.power_law_decay(initial=1.0, coefficient=0.5)
+    sampler = fit.DrivenSequentialMC(rbm, schedule=schedule)
+
     sampler.set_negative_state(model_state)
     sampler.update_negative_state(1000)
-    v_model = rbm.deterministic_iteration(1, sampler.neg_state).units[0]
 
+    v_model = rbm.deterministic_iteration(1, sampler.neg_state).units[0]
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
+
     return numpy.array([[be.to_numpy_array(v_model[i])] for i in idx])
 
 def show_fantasy_particles(rbm, v_data, fit, show_plot):
