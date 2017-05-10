@@ -574,10 +574,10 @@ class GaussianLayer(Layer):
         mean = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
             mean += be.dot(scaled_units[i], weights[i])
-        if beta is not None:
-            mean *= be.broadcast(beta, mean)
         mean += be.broadcast(self.params.loc, mean)
         var = be.broadcast(be.exp(self.params.log_var), mean)
+        if beta is not None:
+            var = be.divide(beta, var)
         return mean, var
 
     def conditional_mode(self, scaled_units, weights, beta=None):
@@ -847,9 +847,9 @@ class IsingLayer(Layer):
         field = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
             field += be.dot(scaled_units[i], weights[i])
-        if beta is not None:
-            field *= be.broadcast(beta,field)
         field += be.broadcast(self.params.loc, field)
+        if beta is not None:
+            field = be.multiply(beta, field)
         return field
 
     def conditional_mode(self, scaled_units, weights, beta=None):
@@ -1117,9 +1117,9 @@ class BernoulliLayer(Layer):
         field = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
             field += be.dot(scaled_units[i], weights[i])
-        if beta is not None:
-            field *= be.broadcast(beta, field)
         field += be.broadcast(self.params.loc, field)
+        if beta is not None:
+            field = be.multiply(beta, field)
         return field
 
     def conditional_mode(self, scaled_units, weights, beta=None):
@@ -1387,9 +1387,9 @@ class ExponentialLayer(Layer):
         rate = -be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
             rate -= be.dot(scaled_units[i], weights[i])
-        if beta is not None:
-            rate *= be.broadcast(beta,rate)
         rate += be.broadcast(self.params.loc, rate)
+        if beta is not None:
+            rate = be.multiply(beta, rate)
         return rate
 
     def conditional_mode(self, scaled_units, weights, beta=None):
