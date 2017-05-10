@@ -4,6 +4,7 @@ from paysage.models import model
 from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
+from paysage import schedules
 
 be.set_seed(137) # for determinism
 
@@ -13,18 +14,18 @@ def example_mnist_hopfield(paysage_path=None, num_epochs=10, show_plot=False):
 
     num_hidden_units = 500
     batch_size = 50
-    learning_rate = 0.001
+    learning_rate = schedules.power_law_decay(initial=0.001, coefficient=0.1)
     mc_steps = 1
 
     (_, _, shuffled_filepath) = \
         util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
-    data = batch.Batch(shuffled_filepath,
-                       'train/images',
-                       batch_size,
-                       transform=batch.binarize_color,
-                       train_fraction=0.99)
+    data = batch.HDFBatch(shuffled_filepath,
+                         'train/images',
+                          batch_size,
+                          transform=batch.binarize_color,
+                          train_fraction=0.99)
 
     # set up the model and initialize the parameters
     vis_layer = layers.BernoulliLayer(data.ncols)
@@ -37,8 +38,7 @@ def example_mnist_hopfield(paysage_path=None, num_epochs=10, show_plot=False):
     perf = fit.ProgressMonitor(data, metrics=metrics)
 
     # set up the optimizer and the fit method
-    opt = optimizers.ADAM(stepsize=learning_rate,
-                          scheduler=optimizers.PowerLawDecay(0.1))
+    opt = optimizers.ADAM(stepsize=learning_rate)
 
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
                                                 method='stochastic')
