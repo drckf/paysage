@@ -1014,6 +1014,7 @@ class IsingLayer(Layer):
 
 
 ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
+MagnetizationBernoulli = namedtuple("MagnetizationBernoulli", ["a", "c"])
 
 class BernoulliLayer(Layer):
     """Layer with Bernoulli units (i.e., 0 or +1)."""
@@ -1035,6 +1036,7 @@ class BernoulliLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsBernoulli(be.zeros(self.len))
+        self.magnetization = MagnetizationBernoulli(be.zeros(self.len), be.zeros(self.len))
 
     def get_config(self):
         """
