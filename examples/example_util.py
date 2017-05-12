@@ -43,9 +43,9 @@ def default_paths(paysage_path = None):
 
 # ----- CHECK MODEL ----- #
 
-def example_plot(grid, show_plot):
+def example_plot(grid, show_plot, dim=28):
     if show_plot:
-        plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+        plotting.plot_image_grid(grid, (dim,dim), vmin=grid.min(), vmax=grid.max())
 
 def show_metrics(rbm, performance):
     print('Final performance metrics:')
