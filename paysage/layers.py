@@ -1116,10 +1116,11 @@ class BernoulliLayer(Layer):
     def augmented_log_partition_function(self, B, A):
         """
         Compute the logarithm of the partition function of the layer
-        with external field phi augmented with a quadratic factor.
+        with external field B augmented with a quadratic, diagonal interaction A.
 
         Let a_i be the loc parameter of unit i.
-        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
+        Let B_i be a local field
+        Let A_i be a diagonal quadratic interaction
 
         Z_i = Tr_{x_i} exp( a_i x_i + B_i x_i - A_i x_i^2)
         = 1 + \exp(a_i + B_i - A_i)
@@ -1139,7 +1140,7 @@ class BernoulliLayer(Layer):
     def _grad_log_partition_function(self, B, A):
         """
         Compute the gradient of the logarithm of the partition function of the layer
-        with external field phi.
+        with external fields B,A as above.
 
         (d_a_i)softplus(a_i + B_i - A_i) = expit(a_i + B_i - A_i)
 
@@ -1155,8 +1156,8 @@ class BernoulliLayer(Layer):
 
     def grad_log_partition_function(self, B, A):
         """
-        Compute the gradient of the logarithm of the partition function of the layer
-        with external field B and quadratic interaction A.
+        Compute the gradient of the logarithm of the partition function with respect to
+        its local field parameter with external field B and quadratic interaction A.
 
         (d_a_i)softplus(a_i + B_i - A_i) = expit(a_i + B_i - A_i)
 
