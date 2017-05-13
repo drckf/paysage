@@ -60,8 +60,7 @@ def test_rbm(paysage_path=None):
     opt = optimizers.RMSProp(stepsize=learning_rate)
 
 
-    sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
-                                                method='stochastic')
+    sampler = fit.DrivenSequentialMC.from_batch(rbm, data)
 
     cd = fit.SGD(rbm, data, opt, num_epochs, method = fit.pcd, sampler=sampler,
                  mcsteps=mc_steps, monitor=perf)

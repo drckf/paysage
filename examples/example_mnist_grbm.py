@@ -43,8 +43,7 @@ def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
 
     opt = optimizers.ADAM(stepsize=learning_rate)
 
-    sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
-                                                method='stochastic')
+    sampler = fit.DrivenSequentialMC.from_batch(rbm, data)
 
     cd = fit.SGD(rbm, data, opt, num_epochs, method=fit.pcd, sampler=sampler,
                  mcsteps=mc_steps, monitor=perf)
