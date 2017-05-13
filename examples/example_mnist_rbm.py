@@ -21,7 +21,7 @@ def example_mnist_rbm(paysage_path=None, num_epochs=10, show_plot=False):
 
     # set up the reader to get minibatches
     data = batch.HDFBatch(shuffled_filepath,
-                         'train/images',
+                          'train/images',
                           batch_size,
                           transform=batch.binarize_color,
                           train_fraction=0.99)

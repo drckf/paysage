@@ -96,4 +96,4 @@ def compute_weights(rbm):
 def show_weights(rbm, show_plot, dim=28):
     print("\nPlot a random sample of the weights")
     grid = compute_weights(rbm)
-    example_plot(grid, show_plot)
+    example_plot(grid, show_plot, dim=dim)
