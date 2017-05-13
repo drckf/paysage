@@ -13,7 +13,7 @@ import example_util as util
 def example_mnist_deep_rbm(paysage_path=None, num_epochs=10, show_plot=False):
     num_hidden_units = 500
     batch_size = 50
-    learning_rate = schedules.power_law_decay(initial=0.001, coefficient=0.1)
+    learning_rate = schedules.power_law_decay(initial=0.002, coefficient=0.1)
     mc_steps = 1
 
     (_, _, shuffled_filepath) = \
@@ -61,4 +61,4 @@ def example_mnist_deep_rbm(paysage_path=None, num_epochs=10, show_plot=False):
     print("Done")
 
 if __name__ == "__main__":
-    example_mnist_deep_rbm(show_plot = False)
+    example_mnist_deep_rbm(show_plot = True)

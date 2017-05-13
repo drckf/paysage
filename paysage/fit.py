@@ -114,6 +114,8 @@ class SequentialMC(Sampler):
         """
         super().__init__(model, method=method)
 
+    # TODO: test mean_field
+    # positive states are often always updated using mean_field
     def update_positive_state(self, steps, clamped=[0]):
         """
         Update the positive state of the particles.
@@ -232,6 +234,8 @@ class DrivenSequentialMC(Sampler):
         """Return beta in the appropriate tensor format."""
         return be.float_tensor(self.beta)
 
+    # TODO: test mean_field
+    # positive states are often always updated using mean_field
     def update_positive_state(self, steps, clamped=[0]):
         """
         Update the state of the particles.
@@ -250,6 +254,7 @@ class DrivenSequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
+        #self.pos_state = self.model.mean_field_iteration(steps, self.pos_state, beta=None, clamped=clamped)
         self.pos_state = self.updater(steps, self.pos_state, beta=None, clamped=clamped)
 
     def update_negative_state(self, steps, clamped=[]):
