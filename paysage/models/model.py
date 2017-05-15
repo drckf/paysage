@@ -292,6 +292,36 @@ class Model(object):
 
         return updated_state
 
+    def _cyclic_update(self, func_name, state, beta=None, clamped=[]):
+        """
+        Performs a single Gibbs sampling update, cycling through the layers.
+        Updates 1 -> n -> 0.
+        state -> new state
+
+        Args:
+            func_name (str, function name): layer function name to apply to the units to sample
+            state (State object): the current state of each layer
+            beta (optional, tensor (batch_size, 1)): Inverse temperatures
+            clamped (list): list of layer indices to clamp (no update)
+
+        Returns:
+            new state
+
+        """
+        updated_state = State.from_state(state)
+
+        # update in sequence
+        update_sequence = list(range(1,self.num_layers)) + list(range(self.num_layers-2,-1,-1))
+        for i in update_sequence:
+            if i not in clamped:
+                func = getattr(self.layers[i], func_name)
+                updated_state.units[i] = func(
+                    self._connected_rescaled_units(i, updated_state),
+                    self._connected_weights(i),
+                    beta)
+
+        return updated_state
+
     def markov_chain(self, n, state, beta=None, clamped: List[int]=[]) -> State:
         """
         Perform multiple Gibbs sampling steps in alternating layers.
@@ -377,7 +407,7 @@ class Model(object):
                                                  clamped)
         return new_state
 
-    def gradient(self, data_state, model_state):
+    def gradient(self, data_state, model_state, clamped=[]):
         """
         Compute the gradient of the model parameters.
         Scales the units in the state and computes the gradient.
@@ -385,6 +415,7 @@ class Model(object):
         Args:
             data_state (State object): The observed visible units and sampled hidden units.
             model_state (State objects): The visible and hidden units sampled from the model.
+            clamped: layer numbers to clamp.  Also clamps connecting weight layers.
 
         Returns:
             dict: Gradients of the model parameters.
@@ -395,47 +426,59 @@ class Model(object):
             [None for w in self.weights]
         )
 
+        update_layers = [i for i in range(self.num_layers) if i not in clamped]
+        update_weights = [i for i in range(self.num_layers - 1) \
+            if (i-1 not in clamped) and (i+1 not in clamped)]
+
         # POSITIVE PHASE (using observed)
 
         # compute the postive phase of the gradients of the layer parameters
         for i in range(self.num_layers):
-            grad.layers[i] = self.layers[i].derivatives(
-                data_state.units[i],
-                [self.layers[j].rescale(data_state.units[j])
-                    for j in self.layer_connections[i]],
-                [self.weights[j].W() if j < i else self.weights[j].W_T()
-                    for j in self.weight_connections[i]],
-            )
+            if i not in clamped:
+                grad.layers[i] = self.layers[i].derivatives(
+                    data_state.units[i],
+                    [self.layers[j].rescale(data_state.units[j])
+                        for j in self.layer_connections[i]],
+                    [self.weights[j].W() if j < i else self.weights[j].W_T()
+                        for j in self.weight_connections[i]],
+                )
 
         # compute the positive phase of the gradients of the weights
         for i in range(self.num_layers - 1):
-            grad.weights[i] = self.weights[i].derivatives(
-                self.layers[i].rescale(data_state.units[i]),
-                self.layers[i+1].rescale(data_state.units[i+1]),
-            )
+            if (i-1 not in clamped) and (i+1 not in clamped):
+                grad.weights[i] = self.weights[i].derivatives(
+                    self.layers[i].rescale(data_state.units[i]),
+                    self.layers[i+1].rescale(data_state.units[i+1]),
+                )
 
         # NEGATIVE PHASE (using sampled)
 
         # update the gradients of the layer parameters with the negative phase
         for i in range(self.num_layers):
-            grad.layers[i] = be.mapzip(be.subtract,
-                self.layers[i].derivatives(
-                    model_state.units[i],
-                    [self.layers[j].rescale(model_state.units[j])
-                        for j in self.layer_connections[i]],
-                    [self.weights[j].W() if j < i else self.weights[j].W_T()
-                        for j in self.weight_connections[i]],
-                ),
-            grad.layers[i])
+            if i not in clamped:
+                grad.layers[i] = be.mapzip(be.subtract,
+                    self.layers[i].derivatives(
+                        model_state.units[i],
+                        [self.layers[j].rescale(model_state.units[j])
+                            for j in self.layer_connections[i]],
+                        [self.weights[j].W() if j < i else self.weights[j].W_T()
+                            for j in self.weight_connections[i]],
+                    ),
+                grad.layers[i])
+            else:
+                grad.layers[i] = self.layers[i].get_null_params()
 
         # update the gradients of the weight parameters with the negative phase
         for i in range(self.num_layers - 1):
-            grad.weights[i] = be.mapzip(be.subtract,
-                self.weights[i].derivatives(
-                    self.layers[i].rescale(model_state.units[i]),
-                    self.layers[i+1].rescale(model_state.units[i+1]),
-                ),
-            grad.weights[i])
+            if (i-1 not in clamped) and (i+1 not in clamped):
+                grad.weights[i] = be.mapzip(be.subtract,
+                    self.weights[i].derivatives(
+                        self.layers[i].rescale(model_state.units[i]),
+                        self.layers[i+1].rescale(model_state.units[i+1]),
+                    ),
+                grad.weights[i])
+            else:
+                grad.weights[i] = self.weights[i].get_null_params()
 
         return grad
 

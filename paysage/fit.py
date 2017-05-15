@@ -357,7 +357,7 @@ class ProgressMonitor(object):
         return metdict
 
 
-def contrastive_divergence(vdata, model, sampler, steps=1):
+def contrastive_divergence(vdata, model, sampler, steps=1, clamped_grad=[]):
     """
     Compute an approximation to the likelihood gradient using the CD-k
     algorithm for approximate maximum likelihood inference.
@@ -378,6 +378,7 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
         model: a model object
         sampler: a sampler object
         steps (int): the number of Monte Carlo steps
+        clamped_grad (list): layers to clamp the gradient on
 
     Returns:
         gradient
@@ -406,12 +407,12 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
     grad_model_state = model.mean_field_iteration(1, sampler.neg_state, clamped=clamped_layers)
 
     # compute the gradient
-    return model.gradient(grad_data_state, grad_model_state)
+    return model.gradient(grad_data_state, grad_model_state, clamped=clamped_grad)
 
 # alias
 cd = contrastive_divergence
 
-def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
+def persistent_contrastive_divergence(vdata, model, sampler, steps=1, clamped_grad=[]):
     """
     PCD-k algorithm for approximate maximum likelihood inference.
 
@@ -429,6 +430,7 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
         model: a model object
         sampler: a sampler object
         steps (int): the number of Monte Carlo steps
+        clamped_grad (list): layers to clamp the gradient on
 
     Returns:
         gradient
@@ -453,12 +455,12 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
     grad_model_state = model.mean_field_iteration(1, sampler.neg_state, clamped=clamped_layers)
 
     # compute the gradient
-    return model.gradient(grad_data_state, grad_model_state)
+    return model.gradient(grad_data_state, grad_model_state, clamped=clamped_grad)
 
 # alias
 pcd = persistent_contrastive_divergence
 
-def tap(vdata, model, sampler=None, steps=None):
+def tap(vdata, model, sampler=None, steps=None, clamped_grad=[]):
     """
     Compute the gradient using the Thouless-Anderson-Palmer (TAP)
     mean field approximation.
@@ -480,7 +482,7 @@ def tap(vdata, model, sampler=None, steps=None):
 
     """
     data_state = State.from_visible(vdata, model)
-    return model.gradient(data_state, None)
+    return model.gradient(data_state, None, clamped=clamped_grad)
 
 
 class StochasticGradientDescent(object):
@@ -514,7 +516,7 @@ class StochasticGradientDescent(object):
         self.optimizer = optimizer
         self.monitor = monitor
 
-    def train(self):
+    def train(self, clamped=[]):
         """
         Train the model.
 
@@ -540,8 +542,16 @@ class StochasticGradientDescent(object):
                 except StopIteration:
                     break
 
-                self.optimizer.update(self.model,
-                self.grad_approx(v_data, self.model, self.sampler, self.mcsteps))
+                self.optimizer.update(
+                    self.model,
+                    self.grad_approx(
+                        v_data,
+                        self.model,
+                        self.sampler,
+                        self.mcsteps,
+                        clamped_grad=clamped
+                    )
+                )
 
                 t += 1
 
