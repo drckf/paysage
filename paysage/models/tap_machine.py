@@ -66,7 +66,7 @@ class TAP_rbm(model.Model):
             raise ValueError("Must specify at least one random or persistent sample for Gibbs FE seeding")
 
 
-    def helmholtz_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50, terms=2, method='gd'):
+    def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50, terms=2, method='gd'):
         """
         Compute the Helmholtz free engergy of the model according to the TAP
         expansion around infinite temperature to second order.
@@ -183,7 +183,7 @@ class TAP_rbm(model.Model):
                    "Constraint satisfaction is not currently supported"
             return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters, terms=terms)
 
-    def grad_helmholtz_free_energy(self, num_r, num_p):
+    def grad_TAP_free_energy(self, num_r, num_p):
         """
         Compute the gradient of the Helmholtz free engergy of the model according to the TAP
         expansion around infinite temperature.
@@ -209,7 +209,7 @@ class TAP_rbm(model.Model):
 
         # compute minimizing magnetizations from random initializations
         for s in range(num_r):
-            (mag,EMF) = self.helmholtz_free_energy(None,
+            (mag,EMF) = self.TAP_free_energy(None,
                                                    self.init_lr_EMF,
                                                    self.tolerance_EMF,
                                                    self.max_iters_EMF,
@@ -222,7 +222,7 @@ class TAP_rbm(model.Model):
         # compute minimizing magnetizations from seeded initializations
         for s in range(num_p): # persistent seeds
             (self.persistent_samples[s],EMF) = \
-             self.helmholtz_free_energy(self.persistent_samples[s],
+             self.TAP_free_energy(self.persistent_samples[s],
                                         self.init_lr_EMF,
                                         self.tolerance_EMF,
                                         self.max_iters_EMF,
@@ -253,7 +253,7 @@ class TAP_rbm(model.Model):
         # compute average grad_F_marginal over the minibatch
         grad_MFE = self.grad_marginal_free_energy(data_state)
         # compute the gradient of the Helmholtz FE via TAP_gradient
-        grad_HFE = self.grad_helmholtz_free_energy(
+        grad_HFE = self.grad_TAP_free_energy(
                         num_r=self.num_random_samples, num_p=len(self.persistent_samples))
         return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
 
