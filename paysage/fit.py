@@ -7,13 +7,12 @@ from .models.model import State
 
 class Sampler(object):
     """Base class for the sequential Monte Carlo samplers"""
-    def __init__(self, model, method='stochastic', **kwargs):
+    def __init__(self, model, **kwargs):
         """
         Create a sampler.
 
         Args:
             model: a model object
-            method (str; optional): how to update the particles
             kwargs (optional)
 
         Returns:
@@ -23,16 +22,7 @@ class Sampler(object):
         self.model = model
         self.pos_state = None
         self.neg_state = None
-
-        self.method = method
-        if self.method == 'stochastic':
-            self.updater = self.model.markov_chain
-        elif self.method == 'mean_field':
-            self.updater = self.model.mean_field_iteration
-        elif self.method == 'deterministic':
-            self.updater = self.model.deterministic_iteration
-        else:
-            raise ValueError("Unknown method {}".format(self.method))
+        self.updater = self.model.markov_chain
 
     def set_positive_state(self, state):
         """
@@ -76,7 +66,7 @@ class Sampler(object):
         return self.pos_state, self.neg_state
 
     @classmethod
-    def from_batch(cls, model, batch, method='stochastic', **kwargs):
+    def from_batch(cls, model, batch, **kwargs):
         """
         Create a sampler from a batch object.
 
@@ -90,7 +80,7 @@ class Sampler(object):
             sampler
 
         """
-        tmp = cls(model, method=method, **kwargs)
+        tmp = cls(model, **kwargs)
         vdata = batch.get('train')
         tmp.set_positive_state(State.from_visible(vdata, model))
         tmp.set_negative_state(State.from_visible(vdata, model))
@@ -100,7 +90,7 @@ class Sampler(object):
 
 class SequentialMC(Sampler):
     """Basic sequential Monte Carlo sampler"""
-    def __init__(self, model, method='stochastic'):
+    def __init__(self, model):
         """
         Create a sequential Monte Carlo sampler.
 
@@ -112,7 +102,7 @@ class SequentialMC(Sampler):
             SequentialMC
 
         """
-        super().__init__(model, method=method)
+        super().__init__(model)
 
     def update_positive_state(self, steps, clamped=[0]):
         """
@@ -157,8 +147,7 @@ class SequentialMC(Sampler):
 
 class DrivenSequentialMC(Sampler):
     """An accelerated sequential Monte Carlo sampler"""
-    def __init__(self, model, beta_momentum=0.99, beta_std=0.6,
-                 method='stochastic',
+    def __init__(self, model, beta_momentum=0.9, beta_std=0.6,
                  schedule=schedules.constant(initial=1.0)):
         """
         Create a sequential Monte Carlo sampler.
@@ -167,14 +156,13 @@ class DrivenSequentialMC(Sampler):
             model: a model object
             beta_momentum (float in [0,1]): autoregressive coefficient of beta
             beta_std (float > 0): the standard deviation of beta
-            method (str; optional): how to update the particles
             schedule (generator; optional)
 
         Returns:
             DrivenSequentialMC
 
         """
-        super().__init__(model, method=method)
+        super().__init__(model)
 
         from numpy.random import gamma, poisson
         self.gamma = gamma

@@ -152,7 +152,7 @@ Compute the Helmholtz free engergy of the model according to the TAP<br />expans
 ### initialize
 ```py
 
-def initialize(self, data, method: str='hinton')
+def initialize(self, data, method: str='hinton') -> None
 
 ```
 
@@ -176,7 +176,7 @@ Compute the joint energy of the model based on a state.<br /><br />Args:<br /> ~
 ### markov\_chain
 ```py
 
-def markov_chain(self, n, state, beta=None, clamped=[])
+def markov_chain(self, n, state, beta=None, clamped: typing.List=[]) -> paysage.models.model.State
 
 ```
 
@@ -224,7 +224,7 @@ Generate a random sample with the same shape,<br />and of the same type, as the 
 ### save
 ```py
 
-def save(self, store)
+def save(self, store: pandas.io.pytables.HDFStore) -> None
 
 ```
 

@@ -92,12 +92,12 @@ Shuffle a table in the HDFStore, write to a new file.
 
 
 
-## class Batch
+## class HDFBatch
 Serves up minibatches from an HDFStore.<br />The validation set is taken as the last (1 - train_fraction)<br />samples in the store.<br />The data should probably be randomly shuffled if being used to<br />train a non-recurrent model.
 ### \_\_init\_\_
 ```py
 
-def __init__(self, filename, key, batch_size, train_fraction=0.9, transform=<function float_tensor at 0x11763c158>)
+def __init__(self, filename, key, batch_size, train_fraction=0.9, transform=<function float_tensor at 0x105122ea0>)
 
 ```
 
