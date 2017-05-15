@@ -7,13 +7,12 @@ from .models.model import State
 
 class Sampler(object):
     """Base class for the sequential Monte Carlo samplers"""
-    def __init__(self, model, method='stochastic', **kwargs):
+    def __init__(self, model, **kwargs):
         """
         Create a sampler.
 
         Args:
             model: a model object
-            method (str; optional): how to update the particles
             kwargs (optional)
 
         Returns:
@@ -23,16 +22,7 @@ class Sampler(object):
         self.model = model
         self.pos_state = None
         self.neg_state = None
-
-        self.method = method
-        if self.method == 'stochastic':
-            self.updater = self.model.markov_chain
-        elif self.method == 'mean_field':
-            self.updater = self.model.mean_field_iteration
-        elif self.method == 'deterministic':
-            self.updater = self.model.deterministic_iteration
-        else:
-            raise ValueError("Unknown method {}".format(self.method))
+        self.updater = self.model.markov_chain
 
     def set_positive_state(self, state):
         """
@@ -76,7 +66,7 @@ class Sampler(object):
         return self.pos_state, self.neg_state
 
     @classmethod
-    def from_batch(cls, model, batch, method='stochastic', **kwargs):
+    def from_batch(cls, model, batch, **kwargs):
         """
         Create a sampler from a batch object.
 
@@ -90,7 +80,7 @@ class Sampler(object):
             sampler
 
         """
-        tmp = cls(model, method=method, **kwargs)
+        tmp = cls(model, **kwargs)
         vdata = batch.get('train')
         tmp.set_positive_state(State.from_visible(vdata, model))
         tmp.set_negative_state(State.from_visible(vdata, model))
@@ -100,7 +90,7 @@ class Sampler(object):
 
 class SequentialMC(Sampler):
     """Basic sequential Monte Carlo sampler"""
-    def __init__(self, model, method='stochastic'):
+    def __init__(self, model):
         """
         Create a sequential Monte Carlo sampler.
 
@@ -112,9 +102,9 @@ class SequentialMC(Sampler):
             SequentialMC
 
         """
-        super().__init__(model, method=method)
+        super().__init__(model)
 
-    def update_positive_state(self, steps):
+    def update_positive_state(self, steps, clamped=[0]):
         """
         Update the positive state of the particles.
 
@@ -132,9 +122,9 @@ class SequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
-        self.pos_state = self.updater(steps, self.pos_state)
+        self.pos_state = self.updater(steps, self.pos_state, clamped=clamped)
 
-    def update_negative_state(self, steps):
+    def update_negative_state(self, steps, clamped=[]):
         """
         Update the negative state of the particles.
 
@@ -152,13 +142,12 @@ class SequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
-        self.neg_state = self.updater(steps, self.neg_state)
+        self.neg_state = self.updater(steps, self.neg_state, clamped=clamped)
 
 
 class DrivenSequentialMC(Sampler):
     """An accelerated sequential Monte Carlo sampler"""
-    def __init__(self, model, beta_momentum=0.99, beta_std=0.6,
-                 method='stochastic',
+    def __init__(self, model, beta_momentum=0.9, beta_std=0.6,
                  schedule=schedules.constant(initial=1.0)):
         """
         Create a sequential Monte Carlo sampler.
@@ -167,14 +156,13 @@ class DrivenSequentialMC(Sampler):
             model: a model object
             beta_momentum (float in [0,1]): autoregressive coefficient of beta
             beta_std (float > 0): the standard deviation of beta
-            method (str; optional): how to update the particles
             schedule (generator; optional)
 
         Returns:
             DrivenSequentialMC
 
         """
-        super().__init__(model, method=method)
+        super().__init__(model)
 
         from numpy.random import gamma, poisson
         self.gamma = gamma
@@ -232,7 +220,7 @@ class DrivenSequentialMC(Sampler):
         """Return beta in the appropriate tensor format."""
         return be.float_tensor(self.beta)
 
-    def update_positive_state(self, steps):
+    def update_positive_state(self, steps, clamped=[0]):
         """
         Update the state of the particles.
 
@@ -250,9 +238,9 @@ class DrivenSequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
-        self.pos_state = self.updater(steps, self.pos_state, beta=None)
+        self.pos_state = self.updater(steps, self.pos_state, beta=None, clamped=clamped)
 
-    def update_negative_state(self, steps):
+    def update_negative_state(self, steps, clamped=[]):
         """
         Update the negative state of the particles.
 
@@ -273,7 +261,7 @@ class DrivenSequentialMC(Sampler):
                 +' method to set the initial state of the Markov Chain')
         for _ in range(steps):
             self._update_beta()
-            self.neg_state = self.updater(1, self.neg_state, self._beta())
+            self.neg_state = self.updater(1, self.neg_state, self._beta(), clamped=clamped)
 
 
 class ProgressMonitor(object):
@@ -332,7 +320,7 @@ class ProgressMonitor(object):
             sampler.set_negative_state(model_state)
 
             # update the states
-            sampler.update_positive_state(1)
+            sampler.update_positive_state(1, clamped=[])
             sampler.update_negative_state(self.update_steps)
 
             metric_state = M.MetricState(minibatch=data_state,
@@ -393,8 +381,20 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
     sampler.update_positive_state(steps)
     sampler.update_negative_state(steps)
 
+    # compute the conditional sampling on all visible-side layers,
+    # inclusive over hidden-side layers
+    for i in range(1, model.num_layers - 1):
+        clamped_layers = list(range(i))
+        sampler.update_positive_state(steps, clamped=clamped_layers)
+        sampler.update_negative_state(steps, clamped=clamped_layers)
+
+    # make a mean field step to copmute the expectation on the last layer
+    clamped_layers = list(range(model.num_layers - 1))
+    grad_data_state = model.mean_field_iteration(1, sampler.pos_state, clamped=clamped_layers)
+    grad_model_state = model.mean_field_iteration(1, sampler.neg_state, clamped=clamped_layers)
+
     # compute the gradient
-    return model.gradient(*sampler.get_states())
+    return model.gradient(grad_data_state, grad_model_state)
 
 # alias
 cd = contrastive_divergence
@@ -427,8 +427,21 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
     sampler.set_positive_state(data_state)
     sampler.update_negative_state(steps)
 
+    # step through the hidden layers, up to the last
+    # for each, compute the conditional sampling on all visible-side layers,
+    # inclusive over hidden-side layers
+    for i in range(1, model.num_layers - 1):
+        clamped_layers = list(range(i))
+        sampler.update_positive_state(steps, clamped=clamped_layers)
+        sampler.update_negative_state(steps, clamped=clamped_layers)
+
+    # make a mean field step to copmute the expectation on the last layer
+    clamped_layers = list(range(model.num_layers - 1))
+    grad_data_state = model.mean_field_iteration(1, sampler.pos_state, clamped=clamped_layers)
+    grad_model_state = model.mean_field_iteration(1, sampler.neg_state, clamped=clamped_layers)
+
     # compute the gradient
-    return model.gradient(*sampler.get_states())
+    return model.gradient(grad_data_state, grad_model_state)
 
 # alias
 pcd = persistent_contrastive_divergence
