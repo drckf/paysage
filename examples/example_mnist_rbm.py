@@ -12,7 +12,7 @@ import example_util as util
 
 def example_mnist_rbm(paysage_path=None, num_epochs=10, show_plot=False):
     num_hidden_units = 500
-    batch_size = 50
+    batch_size = 100
     learning_rate = schedules.power_law_decay(initial=0.01, coefficient=0.1)
     mc_steps = 1
 
@@ -39,8 +39,7 @@ def example_mnist_rbm(paysage_path=None, num_epochs=10, show_plot=False):
     # set up the optimizer and the fit method
     opt = optimizers.ADAM(stepsize=learning_rate)
 
-    sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
-                                                method='stochastic')
+    sampler = fit.DrivenSequentialMC.from_batch(rbm, data)
 
     cd = fit.SGD(rbm, data, opt, num_epochs, method=fit.pcd, sampler=sampler,
                  mcsteps=mc_steps, monitor=perf)
