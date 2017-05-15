@@ -147,7 +147,7 @@ class SequentialMC(Sampler):
 
 class DrivenSequentialMC(Sampler):
     """An accelerated sequential Monte Carlo sampler"""
-    def __init__(self, model, beta_momentum=0.99, beta_std=0.6,
+    def __init__(self, model, beta_momentum=0.9, beta_std=0.6,
                  schedule=schedules.constant(initial=1.0)):
         """
         Create a sequential Monte Carlo sampler.
