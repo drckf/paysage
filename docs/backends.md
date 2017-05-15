@@ -165,7 +165,7 @@ Broadcasts vec into the shape of matrix following numpy rules:<br /><br />vec ~ 
 ### clip
 ```py
 
-def clip(tensor: numpy.ndarray, a_min: Union[int, float]=None, a_max: Union[int, float]=None) -> numpy.ndarray
+def clip(tensor: numpy.ndarray, a_min: typing.Union=None, a_max: typing.Union=None) -> numpy.ndarray
 
 ```
 
@@ -177,7 +177,7 @@ Return a tensor with its values clipped between a_min and a_max.<br /><br />Args
 ### clip\_inplace
 ```py
 
-def clip_inplace(tensor: numpy.ndarray, a_min: Union[int, float]=None, a_max: Union[int, float]=None) -> None
+def clip_inplace(tensor: numpy.ndarray, a_min: typing.Union=None, a_max: typing.Union=None) -> None
 
 ```
 
@@ -249,7 +249,7 @@ Divide tensor b by tensor a using broadcasting.<br /><br />Args:<br /> ~ a: A te
 ### dot
 ```py
 
-def dot(a: numpy.ndarray, b: numpy.ndarray) -> Union[numpy.float32, numpy.ndarray]
+def dot(a: numpy.ndarray, b: numpy.ndarray) -> typing.Union
 
 ```
 
@@ -273,7 +273,7 @@ Return the type of the tensor.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><
 ### equal
 ```py
 
-def equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
+def equal(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
 
 ```
 
@@ -309,7 +309,7 @@ Elementwise expit (a.k.a. logistic) function of a tensor.<br /><br />Args:<br />
 ### fill\_diagonal
 ```py
 
-def fill_diagonal(mat: numpy.ndarray, val: Union[int, float]) -> numpy.ndarray
+def fill_diagonal(mat: numpy.ndarray, val: typing.Union) -> numpy.ndarray
 
 ```
 
@@ -321,7 +321,7 @@ Fill the diagonal of the matirx with a specified value.<br /><br />Note:<br /> ~
 ### flatten
 ```py
 
-def flatten(tensor: Union[numpy.float32, numpy.ndarray]) -> Union[numpy.float32, numpy.ndarray]
+def flatten(tensor: typing.Union) -> typing.Union
 
 ```
 
@@ -333,7 +333,7 @@ Return a flattened tensor.<br /><br />Args:<br /> ~ tensor: A tensor or scalar.<
 ### float\_scalar
 ```py
 
-def float_scalar(scalar: Union[int, float]) -> float
+def float_scalar(scalar: typing.Union) -> float
 
 ```
 
@@ -369,7 +369,7 @@ Combines the result of a function over iterable a.<br /><br />For example:<br />
 ### greater
 ```py
 
-def greater(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
+def greater(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
 
 ```
 
@@ -381,7 +381,7 @@ Elementwise test if x > y.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A te
 ### greater\_equal
 ```py
 
-def greater_equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
+def greater_equal(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
 
 ```
 
@@ -393,7 +393,7 @@ Elementwise test if x >= y.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A t
 ### hstack
 ```py
 
-def hstack(tensors: Iterable[numpy.ndarray]) -> numpy.ndarray
+def hstack(tensors: typing.Iterable) -> numpy.ndarray
 
 ```
 
@@ -441,7 +441,7 @@ This decorator is used to compile a Python function into native code.<br /><br /
 ### lesser
 ```py
 
-def lesser(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
+def lesser(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
 
 ```
 
@@ -453,7 +453,7 @@ Elementwise test if x < y.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A te
 ### lesser\_equal
 ```py
 
-def lesser_equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
+def lesser_equal(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
 
 ```
 
@@ -549,7 +549,7 @@ Elementwise maximum of two tensors.<br /><br />Args:<br /> ~ x: A tensor.<br /> 
 ### mean
 ```py
 
-def mean(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
+def mean(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
 
 ```
 
@@ -573,7 +573,7 @@ Elementwise minimum of two tensors.<br /><br />Args:<br /> ~ x: A tensor.<br /> 
 ### mix\_inplace
 ```py
 
-def mix_inplace(w: Union[int, float], x: numpy.ndarray, y: numpy.ndarray) -> None
+def mix_inplace(w: typing.Union, x: numpy.ndarray, y: numpy.ndarray) -> None
 
 ```
 
@@ -609,7 +609,7 @@ Return the number of dimensions of a tensor.<br /><br />Args:<br /> ~ tensor: A 
 ### norm
 ```py
 
-def norm(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
+def norm(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
 
 ```
 
@@ -633,7 +633,7 @@ Divide x by it's sum.<br /><br />Args:<br /> ~ x: A non-negative tensor.<br /><b
 ### not\_equal
 ```py
 
-def not_equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
+def not_equal(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
 
 ```
 
@@ -657,7 +657,7 @@ Return the number of elements in a tensor.<br /><br />Args:<br /> ~ tensor: A te
 ### ones
 ```py
 
-def ones(shape: Tuple[int]) -> numpy.ndarray
+def ones(shape: typing.Tuple) -> numpy.ndarray
 
 ```
 
@@ -705,7 +705,7 @@ Evaluate the quadratic form a W b.<br /><br />a ~ vector, b ~ vector, W ~ matrix
 ### rand
 ```py
 
-def rand(shape: Tuple[int]) -> numpy.ndarray
+def rand(shape: typing.Tuple) -> numpy.ndarray
 
 ```
 
@@ -717,7 +717,7 @@ Generate a tensor of the specified shape filled with uniform random numbers<br /
 ### randn
 ```py
 
-def randn(shape: Tuple[int]) -> numpy.ndarray
+def randn(shape: typing.Tuple) -> numpy.ndarray
 
 ```
 
@@ -753,7 +753,7 @@ Repeat tensor n times along the first axis.<br /><br />Args:<br /> ~ tensor: A v
 ### reshape
 ```py
 
-def reshape(tensor: numpy.ndarray, newshape: Tuple[int]) -> numpy.ndarray
+def reshape(tensor: numpy.ndarray, newshape: typing.Tuple) -> numpy.ndarray
 
 ```
 
@@ -777,7 +777,7 @@ Set the seed of the random number generator.<br /><br />Notes:<br /> ~ Default s
 ### shape
 ```py
 
-def shape(tensor: numpy.ndarray) -> Tuple[int]
+def shape(tensor: numpy.ndarray) -> typing.Tuple
 
 ```
 
@@ -861,7 +861,7 @@ Elementwise square of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br /
 ### square\_mix\_inplace
 ```py
 
-def square_mix_inplace(w: Union[int, float], x: numpy.ndarray, y: numpy.ndarray) -> None
+def square_mix_inplace(w: typing.Union, x: numpy.ndarray, y: numpy.ndarray) -> None
 
 ```
 
@@ -873,7 +873,7 @@ Compute a weighted average of two matrices (x and y^2) and store the results in 
 ### stack
 ```py
 
-def stack(tensors: Iterable[numpy.ndarray], axis: int) -> numpy.ndarray
+def stack(tensors: typing.Iterable, axis: int) -> numpy.ndarray
 
 ```
 
@@ -885,7 +885,7 @@ Stack tensors along the specified axis.<br /><br />Args:<br /> ~ tensors: A list
 ### std
 ```py
 
-def std(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
+def std(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
 
 ```
 
@@ -921,7 +921,7 @@ Elementwise absolute value of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br
 ### tall
 ```py
 
-def tall(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[bool, numpy.ndarray]
+def tall(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
 
 ```
 
@@ -945,7 +945,7 @@ Elementwise hyperbolic tangent of a tensor.<br /><br />Args:<br /> ~ x: A tensor
 ### tany
 ```py
 
-def tany(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[bool, numpy.ndarray]
+def tany(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
 
 ```
 
@@ -957,7 +957,7 @@ Return True if any elements of the input tensor are true along the<br />specifie
 ### tmax
 ```py
 
-def tmax(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
+def tmax(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
 
 ```
 
@@ -969,7 +969,7 @@ Return the elementwise maximum of a tensor along the specified axis.<br /><br />
 ### tmin
 ```py
 
-def tmin(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
+def tmin(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
 
 ```
 
@@ -981,7 +981,7 @@ Return the elementwise minimum of a tensor along the specified axis.<br /><br />
 ### tmul
 ```py
 
-def tmul(a: Union[int, float], x: numpy.ndarray) -> numpy.ndarray
+def tmul(a: typing.Union, x: numpy.ndarray) -> numpy.ndarray
 
 ```
 
@@ -993,7 +993,7 @@ Elementwise multiplication of tensor x by scalar a.<br /><br />Args:<br /> ~ x: 
 ### tmul\_
 ```py
 
-def tmul_(a: Union[int, float], x: numpy.ndarray) -> numpy.ndarray
+def tmul_(a: typing.Union, x: numpy.ndarray) -> numpy.ndarray
 
 ```
 
@@ -1029,7 +1029,7 @@ Elementwise power of a tensor x to power a.<br /><br />Args:<br /> ~ x: A tensor
 ### tprod
 ```py
 
-def tprod(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
+def tprod(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
 
 ```
 
@@ -1077,7 +1077,7 @@ Return a tensor with rounded elements.<br /><br />Args:<br /> ~ tensor: A tensor
 ### tsum
 ```py
 
-def tsum(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
+def tsum(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
 
 ```
 
@@ -1101,7 +1101,7 @@ Return tensor with a new axis inserted.<br /><br />Args:<br /> ~ tensor: A tenso
 ### var
 ```py
 
-def var(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
+def var(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
 
 ```
 
@@ -1113,7 +1113,7 @@ Return the variance of the elements of a tensor along the specified axis.<br /><
 ### vstack
 ```py
 
-def vstack(tensors: Iterable[numpy.ndarray]) -> numpy.ndarray
+def vstack(tensors: typing.Iterable) -> numpy.ndarray
 
 ```
 
@@ -1125,7 +1125,7 @@ Concatenate tensors along the zeroth axis.<br /><br />Args:<br /> ~ tensors: A l
 ### zeros
 ```py
 
-def zeros(shape: Tuple[int]) -> numpy.ndarray
+def zeros(shape: typing.Tuple) -> numpy.ndarray
 
 ```
 

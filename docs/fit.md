@@ -5,7 +5,7 @@ Stochastic gradient descent with minibatches
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, batch, optimizer, epochs, method=<function persistent_contrastive_divergence at 0x117e03488>, sampler=<class 'paysage.fit.SequentialMC'>, mcsteps=1, monitor=None)
+def __init__(self, model, batch, optimizer, epochs, method=<function persistent_contrastive_divergence at 0x1074a00d0>, sampler=<class 'paysage.fit.SequentialMC'>, mcsteps=1, monitor=None)
 
 ```
 
@@ -33,13 +33,13 @@ An accelerated sequential Monte Carlo sampler
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, beta_momentum=0.9, beta_std=0.2, method='stochastic')
+def __init__(self, model, beta_momentum=0.9, beta_std=0.6, schedule=<generator object constant at 0x1073b6c50>)
 
 ```
 
 
 
-Create a sequential Monte Carlo sampler.<br /><br />Args:<br /> ~ model: a model object<br /> ~ beta_momentum (float in [0,1]): autoregressive coefficient of beta<br /> ~ beta_std (float > 0): the standard deviation of beta<br /> ~ method (str; optional): how to update the particles<br /><br />Returns:<br /> ~ SequentialMC
+Create a sequential Monte Carlo sampler.<br /><br />Args:<br /> ~ model: a model object<br /> ~ beta_momentum (float in [0,1]): autoregressive coefficient of beta<br /> ~ beta_std (float > 0): the standard deviation of beta<br /> ~ schedule (generator; optional)<br /><br />Returns:<br /> ~ DrivenSequentialMC
 
 
 ### get\_states
@@ -81,7 +81,7 @@ Set up the positive state for each of the Markov Chains.<br />The initial state 
 ### update\_negative\_state
 ```py
 
-def update_negative_state(self, steps)
+def update_negative_state(self, steps, clamped=[])
 
 ```
 
@@ -93,13 +93,13 @@ Update the negative state of the particles.<br /><br />Notes:<br /> ~ Modifies t
 ### update\_positive\_state
 ```py
 
-def update_positive_state(self, steps)
+def update_positive_state(self, steps, clamped=[0])
 
 ```
 
 
 
-Update the state of the particles.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /> ~ Calls _update_beta() method.<br /><br />Args:<br /> ~ steps (int): the number of Monte Carlo steps<br /><br />Returns:<br /> ~ None
+Update the state of the particles.<br /><br />Notes:<br /> ~ Modifies the state attribute in place.<br /><br />Args:<br /> ~ steps (int): the number of Monte Carlo steps<br /><br />Returns:<br /> ~ None
 
 
 
@@ -137,7 +137,7 @@ Basic sequential Monte Carlo sampler
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, method='stochastic')
+def __init__(self, model)
 
 ```
 
@@ -185,7 +185,7 @@ Set up the positive state for each of the Markov Chains.<br />The initial state 
 ### update\_negative\_state
 ```py
 
-def update_negative_state(self, steps)
+def update_negative_state(self, steps, clamped=[])
 
 ```
 
@@ -197,7 +197,7 @@ Update the negative state of the particles.<br /><br />Notes:<br /> ~ Modifies t
 ### update\_positive\_state
 ```py
 
-def update_positive_state(self, steps)
+def update_positive_state(self, steps, clamped=[0])
 
 ```
 
@@ -217,13 +217,13 @@ Base class for the sequential Monte Carlo samplers
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, method='stochastic', **kwargs)
+def __init__(self, model, **kwargs)
 
 ```
 
 
 
-Create a sampler.<br /><br />Args:<br /> ~ model: a model object<br /> ~ method (str; optional): how to update the particles<br /> ~ kwargs (optional)<br /><br />Returns:<br /> ~ sampler
+Create a sampler.<br /><br />Args:<br /> ~ model: a model object<br /> ~ kwargs (optional)<br /><br />Returns:<br /> ~ sampler
 
 
 ### get\_states
