@@ -365,7 +365,7 @@ class Weights(Layer):
         return -be.batch_dot(vis, self.W(), hid)
 
     def _grad_GFE(self, mag_down, mag_up):
-        return ParamsWeights(-be.outer(mag_down.a, mag_up.a) - be.multiply(self.params.matrix, be.outer(mag_down.c, mag_up.c)))
+        return ParamsWeights(-be.outer(mag_down.a(), mag_up.a()) - be.multiply(self.params.matrix, be.outer(mag_down.c(), mag_up.c())))
 
 
 ParamsGaussian = namedtuple("ParamsGaussian", ["loc", "log_var"])
@@ -1017,7 +1017,38 @@ class IsingLayer(Layer):
 
 
 ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
-MagnetizationBernoulli = namedtuple("MagnetizationBernoulli", ["a", "c"])
+
+#TODO: make interface that this must implement
+class MagnetizationBernoulli(object):
+    def __init__(self, a_0):
+        self._a = a_0
+
+    def __iter__(self):
+        self.beginning = True
+        return self
+
+    def __next__(self):
+        if self.beginning == False:
+            raise StopIteration
+        else:
+            self.beginning = False
+            return self._a
+
+    def a(self):
+        return self._a
+    def c(self):
+        return self._a - be.square(self._a)
+
+    # TODO: should these really be here?
+    def _grad_GFE_update_down(self, mag_lower, mag, w, ww):
+        self._a -= be.dot(mag_lower.a(), w) + \
+                be.multiply(be.dot(mag_lower.c(), ww),
+                0.5 - mag.a())
+
+    def _grad_GFE_update_up(self, mag, mag_upper, w, ww):
+        self._a -= be.dot(w, mag_upper.a()) + \
+                be.multiply(0.5 - mag.a(),
+                be.dot(ww, mag_upper.c()))
 
 class BernoulliLayer(Layer):
     """Layer with Bernoulli units (i.e., 0 or +1)."""
@@ -1039,7 +1070,8 @@ class BernoulliLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsBernoulli(be.zeros(self.len))
-        self.magnetization = MagnetizationBernoulli(be.zeros(self.len), be.zeros(self.len))
+        #TODO: get rid of this member...
+        self.magnetization = MagnetizationBernoulli(be.zeros(self.len))
 
     def get_config(self):
         """
@@ -1094,29 +1126,7 @@ class BernoulliLayer(Layer):
         """
         return -be.dot(data, self.params.loc)
 
-    def log_partition_function(self, phi):
-        """
-        Compute the logarithm of the partition function of the layer
-        with external field phi.
-
-        Let a_i be the loc parameter of unit i.
-        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
-
-        Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)
-        = 1 + exp(a_i + phi_i)
-
-        log(Z_i) = softplus(a_i + phi_i)
-
-        Args:
-            phi (tensor (num_samples, num_units)): external field
-
-        Returns:
-            logZ (tensor, num_samples, num_units)): log partition function
-
-        """
-        return be.softplus(be.add(self.params.loc, phi))
-
-    def augmented_log_partition_function(self, B, A):
+    def log_partition_function(self, B, A):
         """
         Compute the logarithm of the partition function of the layer
         with external field B augmented with a quadratic, diagonal interaction A.
@@ -1175,18 +1185,22 @@ class BernoulliLayer(Layer):
         return ParamsBernoulli(be.mean(self._grad_log_partition_function(B,A), axis=0))
 
     def _gibbs_lagrange_multipliers_1st_moment(self, mag):
-        return be.subtract(self.params.loc, be.log(be.divide(1 - mag.a, mag.a)))
+        return be.subtract(self.params.loc, be.log(be.divide(1 - mag._a, mag._a)))
 
     def _gibbs_lagrange_multipliers_2nd_moment(self, mag):
-        return be.zeros_like(mag.a)
+        return be.zeros_like(mag._a)
+
+    def _gibbs_free_energy_entropy_term(self, B, A, mag):
+        return -be.tsum(self.log_partition_function(B, A)) + \
+                be.dot(B, mag._a) + \
+                be.dot(A, mag._a)
 
     def _grad_magnetization_GFE(self, mag):
         return MagnetizationBernoulli(
-            be.log(be.divide(1.0 - mag.a, mag.a)) - self.params.loc,
-            (1.0 - 2.0 * mag.a))
+            be.log(be.divide(1.0 - mag._a, mag._a)) - self.params.loc)
 
     def _grad_loc_GFE(self, mag):
-        return ParamsBernoulli(-mag.a)
+        return ParamsBernoulli(-mag._a)
 
     def online_param_update(self, data):
         """
