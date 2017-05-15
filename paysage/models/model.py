@@ -526,6 +526,60 @@ class Model(object):
 
         return grad
 
+    def grad_magnetization_GFE(self, mag):
+        grad = [None for lay in self.layers]
+        for l in range(self.num_layers):
+            grad[l] = self.layers[l]._grad_magnetization_GFE(mag[l])
+            # TODO: rewrite to loop over weights instead of layers
+            # TODO: deal with general c gradients
+            # add contribution from lower layer
+            if (l > 0):
+                way = self.weights[l-1]
+                w = way.params.matrix
+                ww = be.square(w)
+                grad[l].a[:] -= be.dot(mag[l-1].a, w) + \
+                                be.multiply(be.dot(mag[l-1].c, ww),
+                                            0.5 - mag[l].a)
+            # add contribution from upper layer
+            if (l < self.num_layers - 1):
+                way = self.weights[l]
+                w = way.params.matrix
+                ww = be.square(w)
+                grad[l].a[:] -= be.dot(w, mag[l+1].a) + \
+                                be.multiply(0.5 - mag[l].a,
+                                            be.dot(ww, mag[l+1].c))
+
+        #HACK for Bernoulli case:
+        for l in range(self.num_layers):
+            grad[l].c[:] = be.multiply((1.0 - 2.0 * mag[l].a), grad[l].a)
+        return grad
+
+    def grad_gibbs_free_energy(self, mag):
+        grad_GFE = gu.Gradient(
+            [self.layers[l]._grad_loc_GFE(mag[l]) for l in range(self.num_layers)],
+            [self.weights[w]._grad_GFE(mag[w], mag[w+1])
+                for w in range(self.num_layers-1)]
+            )
+        return grad_GFE
+
+    def gibbs_free_energy(self, mag):
+        # Gibbs FE according to TAP2 appoximation
+        total = 0
+        B = [self.layers[l]._gibbs_lagrange_multipliers_1st_moment(mag[l]) for l in range(self.num_layers)]
+        A = [self.layers[l]._gibbs_lagrange_multipliers_2nd_moment(mag[l]) for l in range(self.num_layers)]
+        for l in range(self.num_layers):
+            lay = self.layers[l]
+            total -= be.tsum(lay.augmented_log_partition_function(B[l], A[l])) - \
+                     be.dot(B[l], mag[l].a) - \
+                     be.dot(A[l], be.square(mag[l].a) + mag[l].c)
+
+        for w in range(self.num_layers-1):
+            way = self.weights[w]
+            total -= be.dot(mag[w].a, be.dot(way.params.matrix, mag[w+1].a))
+            total -= 0.5 * be.dot(mag[w].c, \
+                     be.dot(be.square(way.params.matrix), mag[w+1].c))
+        return total
+
     def save(self, store):
         """
         Save a model to an open HDFStore.

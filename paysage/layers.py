@@ -364,6 +364,9 @@ class Weights(Layer):
         """
         return -be.batch_dot(vis, self.W(), hid)
 
+    def _grad_GFE(self, mag_down, mag_up):
+        return ParamsWeights(-be.outer(mag_down.a, mag_up.a) - be.multiply(self.params.matrix, be.outer(mag_down.c, mag_up.c)))
+
 
 ParamsGaussian = namedtuple("ParamsGaussian", ["loc", "log_var"])
 
@@ -1170,6 +1173,20 @@ class BernoulliLayer(Layer):
 
         """
         return ParamsBernoulli(be.mean(self._grad_log_partition_function(B,A), axis=0))
+
+    def _gibbs_lagrange_multipliers_1st_moment(self, mag):
+        return be.subtract(self.params.loc, be.log(be.divide(1 - mag.a, mag.a)))
+
+    def _gibbs_lagrange_multipliers_2nd_moment(self, mag):
+        return be.zeros_like(mag.a)
+
+    def _grad_magnetization_GFE(self, mag):
+        return MagnetizationBernoulli(
+            be.log(be.divide(1.0 - mag.a, mag.a)) - self.params.loc,
+            (1.0 - 2.0 * mag.a))
+
+    def _grad_loc_GFE(self, mag):
+        return ParamsBernoulli(-mag.a)
 
     def online_param_update(self, data):
         """
