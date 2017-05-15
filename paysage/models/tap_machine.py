@@ -143,10 +143,6 @@ class TAP_rbm(model.Model):
                 for m_l in m_provisional:
                     be.apply_(clip_, m_l)
 
-                #HACK:
-                for l in range(self.num_layers):
-                    m_provisional[l].c[:] = m_provisional[l].a - be.square(m_provisional[l].a)
-
                 gam_provisional = self.gibbs_free_energy(m_provisional)
                 if (gam - gam_provisional < 0):
                     lr *= 0.5
@@ -170,11 +166,6 @@ class TAP_rbm(model.Model):
             clip_ = partial(be.clip_inplace, a_min=0.005, a_max=0.995)
             for m in seed:
                 be.apply_(clip_, m)
-
-
-        #TODO: remove special constraint for Bernoulli case
-        for mag in seed:
-            mag.c[:] = mag.a - be.square(mag.a)
 
         if method == 'gd':
             return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters, terms=terms)
