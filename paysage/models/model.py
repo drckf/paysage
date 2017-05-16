@@ -91,23 +91,13 @@ class State(object):
         return copy.deepcopy(state)
 
 
-"""Tuple with the indices of a connected layer
-and the corresponding Weights layer."""
-ConnectedLayer = namedtuple("ConnectedLayer", ["layer", "weights"])
-
-
-class LayerConnections(object):
+class LayerConnection(object):
     """
     Container to manage how a layer is used in a model.
     Holds attributes and which layers it is connected to.
 
     """
-    def __init__(self,
-                 left_connected_layers=OrderedDict(),
-                 right_connected_layers=OrderedDict(),
-                 sampling_clamped=False,
-                 gradient_clamped=False,
-                 excluded=False):
+    def __init__(self):
         """
         Constructor
 
@@ -124,14 +114,16 @@ class LayerConnections(object):
             None
 
         """
-        self.left_connected_layers = left_connected_layers
-        self.right_connected_layers = right_connected_layers
-        self.sampling_clamped = sampling_clamped
-        self.gradient_clamped = gradient_clamped
-        self.excluded = excluded
+        self.left_connected_layers = []
+        self.right_connected_layers = []
+        self.left_connected_weights = []
+        self.right_connected_weights = []
+        self.sampling_clamped = False
+        self.gradient_clamped = False
+        self.excluded = False
 
 
-class WeightsConnections(object):
+class WeightConnection(object):
     """
     Container to manage how Weights layers are used in a model.
     Holds attributes and which layers are connected to it.
@@ -167,118 +159,52 @@ class ComputationGraph(object):
             Only valid if the subsequent layer is the same size.
 
     The computation graph is defined by
-        - connections: a list of ConnectedLayers objects.
+        - weight_connections: a list of WeightConnection objects.
 
     Used to set the connections for primary layers and for weight layers.
     Also used to modify connections, for example in layerwise training.
 
     """
-    def __init__(self, num_layers, layer_connections=[]):
+    def __init__(self, num_layers, weight_connections=[]):
         """
         Instantiates with default connections, unless connections are specified.
 
         Args:
             num_layers: the number of layers
-            layer_connections: a list of LayerConnections (default None)
+            weight_connections: a list of WeightConnection (default None)
 
         Returns:
             None
 
         """
         self.num_layers = num_layers
-        self.layer_connections = layer_connections
-        self.weight_connections = None
-        self.excluded_layers = [i for i, lc in enumerate(layer_connections) if lc.excluded]
+        self.weight_connections = weight_connections
+        self.layer_connections = None
 
         # set the default connections if none given
-        if not self.layer_connections:
-            self.layer_connections = self.default_layer_connections()
-        # the weight connections are inferred
-        self.set_weight_connections()
+        if not self.weight_connections:
+            self.weight_connections = self.default_weight_connections()
+        # the layer connections are inferred
+        self.set_layer_connections()
 
-
-    def default_layer_connections(self):
+    def default_weight_connections(self):
         """
-        Creates the default layer connections.
+        Creates the default weight connections.
         Assumes the layers are linearly connected, with the first being visible.
 
         Args:
             None
 
         Returns:
-            layer_connections: a list of LayerConnections tuples.
+            weight_connections: a list of WeightConnection objects
 
         """
-        layer_connections = self.num_layers * [None]
-        for i in self.num_layers:
-            cl_left = []
-            cl_right = []
-            if i > 0:
-                cl_left = [ConnectedLayer(i-1, i-1)]
-            if i < self.num_layers - 1:
-                cl_right = [ConnectedLayer(i+1, i)]
-            layer_connections[i] = LayerConnections(cl_left, cl_right)
-        return layer_connections
-
-    def get_weight_connections(self):
-        """
-        Infers the weight connections from the layer_connections.
-        Checks consistency.
-
-        Args:
-            None
-
-        Returns:
-            weight_connections: a list of WeightsConnections tuples.
-
-        """
-        weight_connections = []
-        # loop over layers
-        for i, lc in enumerate(self.layer_connections):
-            # loop over the layers connected to this one
-
-
-
-    def set_excluded_layers(self, excluded):
-        """
-        Sets excluded layers.
-
-        Args:
-            excluded: a list of excluded layers.
-
-        Returns:
-            None
-
-        """
-        self.excluded_layers = excluded
-        self.set_layer_connections()
-        self.set_weight_connections()
-        self.check_graph()
-
-    def check_graph(self, model):
-        """
-        Checks if the computation graph is valid for a given model.
-        Raises an exception if invalid.
-
-        Args:
-            model: a Model object.
-
-        Returns:
-            None
-
-        """
-        pass
+        return [WeightConnection(i, i+1) for i in range(self.num_layers-1)]
 
     def set_layer_connections(self):
         """
-        Helper function to enumerate the connections between layers.
-        List of list of indices of each layer connected to the layer.
-        e.g. for a 4-layer model the connections are [[1], [0, 2], [1, 3], [2]].
-
-        Allows excluded layers, e.g. for a 4-layer model with excluded=[2],
-        the connections are [[1], [0, 3], None, [1]].
-
-        Sets the value of `layer_connections`.
+        Creates layer connections from `weight_connections`.
+        Sets the value to the attribute `layer_connections`.
 
         Args:
             None
@@ -287,28 +213,36 @@ class ComputationGraph(object):
             None
 
         """
-        self.layer_connections = [[j for j in [i-1,i+1] if 0<=j<self.num_layers]
-                                     for i in range(self.num_layers)]
+        layer_connections = []
+        for i in range(self.num_layers):
+            lc = LayerConnection()
+            # loop over all weights
+            for iw, w in enumerate(self.weight_connections):
+                # if the layer is connected on the shallower side
+                if w.left_layer == i:
+                    lc.right_connected_layers.append(w.right_layer)
+                    lc.right_connected_weights.append(iw)
+                # or if it's connected on the deeper side
+                elif w.right_layer == i:
+                    lc.left_connected_layers.append(w.left_layer)
+                    lc.left_connected_weights.append(iw)
+            layer_connections.append(lc)
+        self.layer_connections = layer_connections
 
-    def set_weight_connections(self):
+    def set_clamped_sampling(self, clamped_layers):
         """
-        Helper function to enumerate the connections between weights and layers.
-        List of list of indices of each weight layer connected to the layer.
-        e.g. for a 4-layer model the connections are [[0], [0, 1], [1, 2], [2]].
-
-        Sets the value of `weight_connections`.
+        Convenience function to set the layers which have sampling clamped.
+        Sets exactly the given layers as clamped (e.g. unclamps any others).
 
         Args:
-            None
+            clamped_layers (List): the exact set of layers to clamp
 
         Returns:
             None
 
         """
-        self.weight_connections = [[j for j in [i-1,i] if 0<=j<self.num_layers-1]
-                                      for i in range(self.num_layers)]
-
-
+        for i in range(self.num_layers):
+            self.layer_connections[i].sampling_clamped = (i in clamped_layers)
 
 
 class Model(object):
@@ -339,15 +273,15 @@ class Model(object):
         # as the zeroth element
         self.layers = layer_list
         self.num_layers = len(self.layers)
-        self.layer_connections = self._layer_connections()
-        self.weight_connections = self._weight_connections()
+        self.graph = ComputationGraph(self.num_layers)
 
-        # adjacent layers are connected by weights
-        # therefore, if there are len(layers) = n then len(weights) = n - 1
-        self.weights = [
-            layers.Weights((self.layers[i].len, self.layers[i+1].len))
-        for i in range(self.num_layers - 1)
-        ]
+        # set the weights
+        self.weights = [layers.Weights(
+                            (self.layers[w.left_layer].len,
+                             self.layers[w.right_layer].len
+                            )
+                        ) for w in self.graph.weight_connections]
+        self.num_weights = len(self.weights)
 
     def get_config(self) -> dict:
         """
@@ -434,8 +368,9 @@ class Model(object):
             list[tensor]: the rescaled values of the connected units
 
         """
-        return [self.layers[j].rescale(state.units[j])
-                            for j in self.layer_connections[i]]
+        connected_layers = self.graph.layer_connections[i].left_connected_layers \
+                        + self.graph.layer_connections[i].right_connected_layers
+        return [self.layers[j].rescale(state.units[j]) for j in connected_layers]
 
     def _connected_weights(self, i):
         """
@@ -449,10 +384,11 @@ class Model(object):
             list[tensor]: the weights connecting layer i to its neighbros
 
         """
-        return [self.weights[j].W() if j < i else self.weights[j].W_T()
-                    for j in self.graph.layer_connections[i].weights]
+        left_weights = self.graph.layer_connections[i].left_connected_weights
+        right_weights = self.graph.layer_connections[i].right_connected_weights
+        return [self.weights[j].W() for j in left_weights] + [self.weights[j].W_T() for j in right_weights]
 
-    def _alternating_update(self, func_name, state, beta=None, clamped=[]):
+    def _alternating_update(self, func_name, state, beta=None):
         """
         Performs a single Gibbs sampling update in alternating layers.
         state -> new state
@@ -461,7 +397,6 @@ class Model(object):
             func_name (str, function name): layer function name to apply to the units to sample
             state (State object): the current state of each layer
             beta (optional, tensor (batch_size, 1)): Inverse temperatures
-            clamped (list): list of layer indices to clamp (no update)
 
         Returns:
             new state
@@ -473,7 +408,7 @@ class Model(object):
         for layer_set in [range(1, self.num_layers, 2),
                           range(0, self.num_layers, 2)]:
             for i in layer_set:
-                if i not in clamped:
+                if not self.graph.layer_connections[i].sampling_clamped:
                     func = getattr(self.layers[i], func_name)
                     updated_state.units[i] = func(
                         self._connected_rescaled_units(i, updated_state),
@@ -482,7 +417,7 @@ class Model(object):
 
         return updated_state
 
-    def _cyclic_update(self, func_name, state, beta=None, clamped=[]):
+    def _cyclic_update(self, func_name, state, beta=None):
         """
         Performs a single Gibbs sampling update, cycling through the layers.
         Updates 1 -> n -> 0.
@@ -492,7 +427,6 @@ class Model(object):
             func_name (str, function name): layer function name to apply to the units to sample
             state (State object): the current state of each layer
             beta (optional, tensor (batch_size, 1)): Inverse temperatures
-            clamped (list): list of layer indices to clamp (no update)
 
         Returns:
             new state
@@ -512,7 +446,7 @@ class Model(object):
 
         return updated_state
 
-    def markov_chain(self, n, state, beta=None, clamped: List[int]=[]) -> State:
+    def markov_chain(self, n, state, beta=None) -> State:
         """
         Perform multiple Gibbs sampling steps in alternating layers.
         state -> new state
@@ -526,7 +460,6 @@ class Model(object):
             n (int): number of steps.
             state (State object): the current state of each layer
             beta (optional, tensor (batch_size, 1)): Inverse temperatures
-            clamped (list): list of layer indices to clamp
 
         Returns:
             new state
@@ -536,11 +469,10 @@ class Model(object):
         for _ in range(n):
             new_state = self._alternating_update('conditional_sample',
                                                  new_state,
-                                                 beta,
-                                                 clamped)
+                                                 beta)
         return new_state
 
-    def mean_field_iteration(self, n, state, beta=None, clamped=[]):
+    def mean_field_iteration(self, n, state, beta=None):
         """
         Perform multiple mean-field updates in alternating layers
         states -> new state
@@ -554,7 +486,6 @@ class Model(object):
             n (int): number of steps.
             state (State object): the current state of each layer
             beta (optional, tensor (batch_size, 1)): Inverse temperatures
-            clamped (list): list of layer indices to clamp
 
         Returns:
             new state
@@ -564,11 +495,10 @@ class Model(object):
         for _ in range(n):
             new_state = self._alternating_update('conditional_mean',
                                                  new_state,
-                                                 beta,
-                                                 clamped)
+                                                 beta)
         return new_state
 
-    def deterministic_iteration(self, n, state, beta=None, clamped=[]):
+    def deterministic_iteration(self, n, state, beta=None):
         """
         Perform multiple deterministic (maximum probability) updates
         in alternating layers.
@@ -583,7 +513,6 @@ class Model(object):
             n (int): number of steps.
             state (State object): the current state of each layer
             beta (optional, tensor (batch_size, 1)): Inverse temperatures
-            clamped (list): list of layer indices to clamp
 
         Returns:
             new state
@@ -593,11 +522,10 @@ class Model(object):
         for _ in range(n):
             new_state = self._alternating_update('conditional_mode',
                                                  new_state,
-                                                 beta,
-                                                 clamped)
+                                                 beta)
         return new_state
 
-    def gradient(self, data_state, model_state, clamped=[]):
+    def gradient(self, data_state, model_state):
         """
         Compute the gradient of the model parameters.
         Scales the units in the state and computes the gradient.
@@ -605,7 +533,6 @@ class Model(object):
         Args:
             data_state (State object): The observed visible units and sampled hidden units.
             model_state (State objects): The visible and hidden units sampled from the model.
-            clamped: layer numbers to clamp.  Also clamps connecting weight layers.
 
         Returns:
             dict: Gradients of the model parameters.
@@ -616,15 +543,16 @@ class Model(object):
             [None for w in self.weights]
         )
 
-        update_layers = [i for i in range(self.num_layers) if i not in clamped]
-        update_weights = [i for i in range(self.num_layers - 1) \
-            if (i-1 not in clamped) and (i+1 not in clamped)]
+        update_layers = [i for i in range(self.num_layers) \
+            if not self.graph.layer_connections[i].gradient_clamped]
+        update_weights = [i for i in range(self.num_weights) \
+            if not self.graph.weight_connections[i].gradient_clamped]
 
         # POSITIVE PHASE (using observed)
 
         # compute the postive phase of the gradients of the layer parameters
         for i in range(self.num_layers):
-            if i not in clamped:
+            if i in update_layers:
                 grad.layers[i] = self.layers[i].derivatives(
                     data_state.units[i],
                     self._connected_rescaled_units(i, data_state),
@@ -632,18 +560,20 @@ class Model(object):
                 )
 
         # compute the positive phase of the gradients of the weights
-        for i in range(self.num_layers - 1):
-            if (i-1 not in clamped) and (i+1 not in clamped):
+        for i in range(self.num_weights):
+            if i in update_weights:
+                iL = self.graph.weight_connections[i].left_layer
+                iR = self.graph.weight_connections[i].right_layer
                 grad.weights[i] = self.weights[i].derivatives(
-                    self.layers[i].rescale(data_state.units[i]),
-                    self.layers[i+1].rescale(data_state.units[i+1]),
+                    self.layers[iL].rescale(data_state.units[iL]),
+                    self.layers[iR].rescale(data_state.units[iR]),
                 )
 
         # NEGATIVE PHASE (using sampled)
 
         # update the gradients of the layer parameters with the negative phase
         for i in range(self.num_layers):
-            if i not in clamped:
+            if i in update_layers:
                 grad.layers[i] = be.mapzip(be.subtract,
                     self.layers[i].derivatives(
                         model_state.units[i],
@@ -655,12 +585,14 @@ class Model(object):
                 grad.layers[i] = self.layers[i].get_null_params()
 
         # update the gradients of the weight parameters with the negative phase
-        for i in range(self.num_layers - 1):
-            if (i-1 not in clamped) and (i+1 not in clamped):
+        for i in range(self.num_weights):
+            if i in update_weights:
+                iL = self.graph.weight_connections[i].left_layer
+                iR = self.graph.weight_connections[i].right_layer
                 grad.weights[i] = be.mapzip(be.subtract,
                     self.weights[i].derivatives(
-                        self.layers[i].rescale(model_state.units[i]),
-                        self.layers[i+1].rescale(model_state.units[i+1]),
+                        self.layers[iL].rescale(model_state.units[iL]),
+                        self.layers[iR].rescale(model_state.units[iR]),
                     ),
                 grad.weights[i])
             else:
@@ -684,7 +616,7 @@ class Model(object):
         """
         for i in range(self.num_layers):
             self.layers[i].parameter_step(deltas.layers[i])
-        for i in range(self.num_layers - 1):
+        for i in range(self.num_weights):
             self.weights[i].parameter_step(deltas.weights[i])
 
     def joint_energy(self, data):
@@ -699,10 +631,12 @@ class Model(object):
 
         """
         energy = 0
-        for i in range(self.num_layers - 1):
+        for i in range(self.num_layers):
             energy += self.layers[i].energy(data.units[i])
-            energy += self.layers[i+1].energy(data.units[i+1])
-            energy += self.weights[i].energy(data.units[i], data.units[i+1])
+        for i in range(self.num_weights):
+            iL = self.graph.weight_connections[i].left_layer
+            iR = self.graph.weight_connections[i].right_layer
+            energy += self.weights[i].energy(data.units[iL], data.units[iR])
         return energy
 
     def save(self, store: pandas.HDFStore) -> None:
@@ -724,10 +658,10 @@ class Model(object):
         store.put('model', pandas.DataFrame())
         store.get_storer('model').attrs.config = config
         # save the weights
-        for i in range(self.num_layers - 1):
+        for i in range(self.num_weights):
             key = os.path.join('weights', 'weights'+str(i))
             self.weights[i].save_params(store, key)
-        for i in range(len(self.layers)):
+        for i in range(self.num_layers):
             key = os.path.join('layers', 'layers'+str(i))
             self.layers[i].save_params(store, key)
 

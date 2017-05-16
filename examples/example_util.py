@@ -55,7 +55,7 @@ def compute_reconstructions(rbm, v_data, fit):
     sampler = fit.DrivenSequentialMC(rbm)
     data_state = State.from_visible(v_data, rbm)
     sampler.set_positive_state(data_state)
-    sampler.update_positive_state(1, clamped=[])
+    sampler.update_positive_state(1)
     v_model = rbm.deterministic_iteration(1, sampler.pos_state).units[0]
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)

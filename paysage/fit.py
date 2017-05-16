@@ -104,7 +104,7 @@ class SequentialMC(Sampler):
         """
         super().__init__(model)
 
-    def update_positive_state(self, steps, clamped=[0]):
+    def update_positive_state(self, steps):
         """
         Update the positive state of the particles.
 
@@ -122,9 +122,9 @@ class SequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
-        self.pos_state = self.updater(steps, self.pos_state, clamped=clamped)
+        self.pos_state = self.updater(steps, self.pos_state)
 
-    def update_negative_state(self, steps, clamped=[]):
+    def update_negative_state(self, steps):
         """
         Update the negative state of the particles.
 
@@ -142,7 +142,7 @@ class SequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
-        self.neg_state = self.updater(steps, self.neg_state, clamped=clamped)
+        self.neg_state = self.updater(steps, self.neg_state)
 
 
 class DrivenSequentialMC(Sampler):
@@ -220,7 +220,7 @@ class DrivenSequentialMC(Sampler):
         """Return beta in the appropriate tensor format."""
         return be.float_tensor(self.beta)
 
-    def update_positive_state(self, steps, clamped=[0]):
+    def update_positive_state(self, steps):
         """
         Update the state of the particles.
 
@@ -238,9 +238,9 @@ class DrivenSequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
-        self.pos_state = self.updater(steps, self.pos_state, beta=None, clamped=clamped)
+        self.pos_state = self.updater(steps, self.pos_state, beta=None)
 
-    def update_negative_state(self, steps, clamped=[]):
+    def update_negative_state(self, steps):
         """
         Update the negative state of the particles.
 
@@ -261,7 +261,7 @@ class DrivenSequentialMC(Sampler):
                 +' method to set the initial state of the Markov Chain')
         for _ in range(steps):
             self._update_beta()
-            self.neg_state = self.updater(1, self.neg_state, self._beta(), clamped=clamped)
+            self.neg_state = self.updater(1, self.neg_state, self._beta())
 
 
 class ProgressMonitor(object):
@@ -320,7 +320,7 @@ class ProgressMonitor(object):
             sampler.set_negative_state(model_state)
 
             # update the states
-            sampler.update_positive_state(1, clamped=[])
+            sampler.update_positive_state(1)
             sampler.update_negative_state(self.update_steps)
 
             metric_state = M.MetricState(minibatch=data_state,
@@ -345,7 +345,7 @@ class ProgressMonitor(object):
         return metdict
 
 
-def contrastive_divergence(vdata, model, sampler, steps=1, clamped_grad=[]):
+def contrastive_divergence(vdata, model, sampler, steps=1):
     """
     Compute an approximation to the likelihood gradient using the CD-k
     algorithm for approximate maximum likelihood inference.
@@ -360,13 +360,13 @@ def contrastive_divergence(vdata, model, sampler, steps=1, clamped_grad=[]):
 
     Notes:
         Modifies the state of the sampler.
+        Modifies the sampling attributes of the model's compute graph.
 
     Args:
         vdata (tensor): observed visible units
         model: a model object
         sampler: a sampler object
         steps (int): the number of Monte Carlo steps
-        clamped_grad (list): layers to clamp the gradient on
 
     Returns:
         gradient
@@ -385,22 +385,25 @@ def contrastive_divergence(vdata, model, sampler, steps=1, clamped_grad=[]):
     # compute the conditional sampling on all visible-side layers,
     # inclusive over hidden-side layers
     for i in range(1, model.num_layers - 1):
-        clamped_layers = list(range(i))
-        sampler.update_positive_state(steps, clamped=clamped_layers)
-        sampler.update_negative_state(steps, clamped=clamped_layers)
+        model.graph.set_clamped_sampling(list(range(i)))
+        sampler.update_positive_state(steps)
+        sampler.update_negative_state(steps)
 
     # make a mean field step to copmute the expectation on the last layer
-    clamped_layers = list(range(model.num_layers - 1))
-    grad_data_state = model.mean_field_iteration(1, sampler.pos_state, clamped=clamped_layers)
-    grad_model_state = model.mean_field_iteration(1, sampler.neg_state, clamped=clamped_layers)
+    model.graph.set_clamped_sampling(list(range(model.num_layers - 1)))
+    grad_data_state = model.mean_field_iteration(1, sampler.pos_state)
+    grad_model_state = model.mean_field_iteration(1, sampler.neg_state)
+
+    # reset the sampling clamping
+    model.graph.set_clamped_sampling([])
 
     # compute the gradient
-    return model.gradient(grad_data_state, grad_model_state, clamped=clamped_grad)
+    return model.gradient(grad_data_state, grad_model_state)
 
 # alias
 cd = contrastive_divergence
 
-def persistent_contrastive_divergence(vdata, model, sampler, steps=1, clamped_grad=[]):
+def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
     """
     PCD-k algorithm for approximate maximum likelihood inference.
 
@@ -412,13 +415,13 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1, clamped_gr
 
     Notes:
         Modifies the state of the sampler.
+        Modifies the sampling attributes of the model's compute graph.
 
     Args:
         vdata (tensor): observed visible units
         model: a model object
         sampler: a sampler object
         steps (int): the number of Monte Carlo steps
-        clamped_grad (list): layers to clamp the gradient on
 
     Returns:
         gradient
@@ -433,22 +436,25 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1, clamped_gr
     # for each, compute the conditional sampling on all visible-side layers,
     # inclusive over hidden-side layers
     for i in range(1, model.num_layers - 1):
-        clamped_layers = list(range(i))
-        sampler.update_positive_state(steps, clamped=clamped_layers)
-        sampler.update_negative_state(steps, clamped=clamped_layers)
+        model.graph.set_clamped_sampling(list(range(i)))
+        sampler.update_positive_state(steps)
+        sampler.update_negative_state(steps)
 
     # make a mean field step to copmute the expectation on the last layer
-    clamped_layers = list(range(model.num_layers - 1))
-    grad_data_state = model.mean_field_iteration(1, sampler.pos_state, clamped=clamped_layers)
-    grad_model_state = model.mean_field_iteration(1, sampler.neg_state, clamped=clamped_layers)
+    model.graph.set_clamped_sampling(list(range(model.num_layers - 1)))
+    grad_data_state = model.mean_field_iteration(1, sampler.pos_state)
+    grad_model_state = model.mean_field_iteration(1, sampler.neg_state)
+
+    # reset the sampling clamping
+    model.graph.set_clamped_sampling([])
 
     # compute the gradient
-    return model.gradient(grad_data_state, grad_model_state, clamped=clamped_grad)
+    return model.gradient(grad_data_state, grad_model_state)
 
 # alias
 pcd = persistent_contrastive_divergence
 
-def tap(vdata, model, sampler=None, steps=None, clamped_grad=[]):
+def tap(vdata, model, sampler=None, steps=None):
     """
     Compute the gradient using the Thouless-Anderson-Palmer (TAP)
     mean field approximation.
@@ -470,7 +476,7 @@ def tap(vdata, model, sampler=None, steps=None, clamped_grad=[]):
 
     """
     data_state = State.from_visible(vdata, model)
-    return model.gradient(data_state, None, clamped=clamped_grad)
+    return model.gradient(data_state, None)
 
 
 class StochasticGradientDescent(object):
@@ -504,7 +510,7 @@ class StochasticGradientDescent(object):
         self.optimizer = optimizer
         self.monitor = monitor
 
-    def train(self, clamped=[]):
+    def train(self):
         """
         Train the model.
 
@@ -536,8 +542,7 @@ class StochasticGradientDescent(object):
                         v_data,
                         self.model,
                         self.sampler,
-                        self.mcsteps,
-                        clamped_grad=clamped
+                        self.mcsteps
                     )
                 )
 
