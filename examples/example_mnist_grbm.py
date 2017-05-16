@@ -6,6 +6,7 @@ from paysage.models import model
 from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
+from paysage import schedules
 
 be.set_seed(137) # for determinism
 
@@ -16,19 +17,19 @@ transform = partial(batch.scale, denominator=255)
 def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
 
     num_hidden_units = 500
-    batch_size = 50
-    learning_rate = 0.001 # gaussian rbm usually requires smaller learnign rate
+    batch_size = 100
+    learning_rate = schedules.power_law_decay(initial=0.001, coefficient=0.1)
     mc_steps = 1
 
     (_, _, shuffled_filepath) = \
             util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
-    data = batch.Batch(shuffled_filepath,
-                       'train/images',
-                       batch_size,
-                       transform=transform,
-                       train_fraction=0.99)
+    data = batch.HDFBatch(shuffled_filepath,
+                         'train/images',
+                          batch_size,
+                          transform=transform,
+                          train_fraction=0.99)
 
     # set up the model and initialize the parameters
     vis_layer = layers.GaussianLayer(data.ncols)
@@ -40,11 +41,9 @@ def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
     metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore', 'HeatCapacity']
     perf = fit.ProgressMonitor(data, metrics=metrics)
 
-    opt = optimizers.ADAM(stepsize=learning_rate,
-                          scheduler=optimizers.PowerLawDecay(0.1))
+    opt = optimizers.ADAM(stepsize=learning_rate)
 
-    sampler = fit.DrivenSequentialMC.from_batch(rbm, data,
-                                                method='stochastic')
+    sampler = fit.DrivenSequentialMC.from_batch(rbm, data, beta_std=0.95)
 
     cd = fit.SGD(rbm, data, opt, num_epochs, method=fit.pcd, sampler=sampler,
                  mcsteps=mc_steps, monitor=perf)
@@ -55,8 +54,9 @@ def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
 
     # evaluate the model
     util.show_metrics(rbm, perf)
-    util.show_reconstructions(rbm, data.get('validate'), fit, show_plot)
-    util.show_fantasy_particles(rbm, data.get('validate'), fit, show_plot)
+    valid = data.get('validate')
+    util.show_reconstructions(rbm, valid, fit, show_plot)
+    util.show_fantasy_particles(rbm, valid, fit, show_plot)
     util.show_weights(rbm, show_plot)
 
     # close the HDF5 store
@@ -64,4 +64,4 @@ def example_mnist_grbm(paysage_path=None, num_epochs=10, show_plot=False):
     print("Done")
 
 if __name__ == "__main__":
-    example_mnist_grbm(show_plot = False)
+    example_mnist_grbm(show_plot = True)

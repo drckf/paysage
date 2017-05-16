@@ -5,6 +5,7 @@ import plotting
 from paysage import batch
 from paysage.models.model import State
 from paysage import backends as be
+from paysage import schedules
 
 # ----- DEFAULT PATHS ----- #
 
@@ -42,45 +43,49 @@ def default_paths(paysage_path = None):
 
 # ----- CHECK MODEL ----- #
 
-def example_plot(grid, show_plot):
+def example_plot(grid, show_plot, dim=28):
     if show_plot:
-        plotting.plot_image_grid(grid, (28,28), vmin=grid.min(), vmax=grid.max())
+        plotting.plot_image_grid(grid, (dim,dim), vmin=grid.min(), vmax=grid.max())
 
 def show_metrics(rbm, performance):
     print('Final performance metrics:')
-    performance.check_progress(rbm, 0, show=True)
+    performance.check_progress(rbm, show=True)
 
 def compute_reconstructions(rbm, v_data, fit):
     sampler = fit.DrivenSequentialMC(rbm)
     data_state = State.from_visible(v_data, rbm)
     sampler.set_positive_state(data_state)
-    sampler.update_positive_state(1)
+    sampler.update_positive_state(1, clamped=[])
     v_model = rbm.deterministic_iteration(1, sampler.pos_state).units[0]
 
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
     return numpy.array([[be.to_numpy_array(v_data[i]),
                          be.to_numpy_array(v_model[i])] for i in idx])
 
-def show_reconstructions(rbm, v_data, fit, show_plot):
+def show_reconstructions(rbm, v_data, fit, show_plot, dim=28):
     print("\nPlot a random sample of reconstructions")
     grid = compute_reconstructions(rbm, v_data, fit)
-    example_plot(grid, show_plot)
+    example_plot(grid, show_plot, dim=dim)
 
 def compute_fantasy_particles(rbm, v_data, fit):
     random_samples = rbm.random(v_data)
     model_state = State.from_visible(random_samples, rbm)
-    sampler = fit.DrivenSequentialMC(rbm)
+
+    schedule = schedules.power_law_decay(initial=1.0, coefficient=0.5)
+    sampler = fit.DrivenSequentialMC(rbm, schedule=schedule)
+
     sampler.set_negative_state(model_state)
     sampler.update_negative_state(1000)
-    v_model = rbm.deterministic_iteration(1, sampler.neg_state).units[0]
 
+    v_model = rbm.deterministic_iteration(1, sampler.neg_state).units[0]
     idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
+
     return numpy.array([[be.to_numpy_array(v_model[i])] for i in idx])
 
-def show_fantasy_particles(rbm, v_data, fit, show_plot):
+def show_fantasy_particles(rbm, v_data, fit, show_plot, dim=28):
     print("\nPlot a random sample of fantasy particles")
     grid = compute_fantasy_particles(rbm, v_data, fit)
-    example_plot(grid, show_plot)
+    example_plot(grid, show_plot, dim=dim)
 
 def compute_weights(rbm):
     idx = numpy.random.choice(range(rbm.weights[0].shape[1]),
@@ -88,7 +93,7 @@ def compute_weights(rbm):
     return numpy.array([[be.to_numpy_array(rbm.weights[0].W()[:, i])]
                         for i in idx])
 
-def show_weights(rbm, show_plot):
+def show_weights(rbm, show_plot, dim=28):
     print("\nPlot a random sample of the weights")
     grid = compute_weights(rbm)
-    example_plot(grid, show_plot)
+    example_plot(grid, show_plot, dim=dim)

@@ -1,6 +1,7 @@
 import example_mnist_grbm as grbm
 import example_mnist_hopfield as hopfield
 import example_mnist_rbm as rbm
+import example_mnist_deep_rbm as deep
 import example_mnist_tap_machine as tap
 
 def all_examples():
@@ -10,6 +11,8 @@ def all_examples():
     hopfield.example_mnist_hopfield()
     print("RBM")
     rbm.example_mnist_rbm()
+    print("Deep RBM")
+    deep.example_mnist_deep_rbm()
     print("TAP machine rbm")
     tap.example_mnist_tap_machine()
     print("Finished")

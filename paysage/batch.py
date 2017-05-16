@@ -34,7 +34,7 @@ def color_to_ising(tensor):
 
 # ----- CLASSES ----- #
 
-class Batch(object):
+class HDFBatch(object):
     """
     Serves up minibatches from an HDFStore.
     The validation set is taken as the last (1 - train_fraction)
@@ -57,6 +57,7 @@ class Batch(object):
         self.ncols = self.store.get_storer(key).ncols
         self.nrows = self.store.get_storer(key).nrows
         self.split = int(numpy.ceil(train_fraction * self.nrows))
+        self.split -= self.split % self.batch_size
 
         # create iterators over the data for the train/validate sets
         self.iterators = {}

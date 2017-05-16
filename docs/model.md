@@ -1,7 +1,7 @@
 # Documentation for Model (model.py)
 
 ## class Model
-General model class.<br />Currently only supports models with 2 layers,<br />(i.e., Restricted Boltzmann Machines).<br /><br />Example usage:<br />'''<br />vis = BernoulliLayer(nvis)<br />hid = BernoulliLayer(nhid)<br />rbm = Model([vis, hid])<br />'''
+General model class.<br />(i.e., Restricted Boltzmann Machines).<br /><br />Example usage:<br />'''<br />vis = BernoulliLayer(nvis)<br />hid = BernoulliLayer(nhid)<br />rbm = Model([vis, hid])<br />'''
 ### \_\_init\_\_
 ```py
 
@@ -11,7 +11,7 @@ def __init__(self, layer_list)
 
 
 
-Create a model.<br /><br />Notes:<br /> ~ Only 2-layer models currently supported.<br /><br />Args:<br /> ~ layer_list: A list of layers objects.<br /><br />Returns:<br /> ~ model: A model.
+Create a model.<br /><br />Args:<br /> ~ layer_list: A list of layers objects.<br /><br />Returns:<br /> ~ model: A model.
 
 
 ### deterministic\_iteration
@@ -47,13 +47,13 @@ def gradient(self, data_state, model_state)
 
 
 
-Compute the gradient of the model parameters.<br />Updates the states for the positive and negative phases,<br />and computes the gradient from the unit values.<br /><br />Args:<br /> ~ data_state (State object): The observed visible units and sampled hidden units.<br /> ~ model_state (State objects): The visible and hidden units sampled from the model.<br /><br />Returns:<br /> ~ dict: Gradients of the model parameters.
+Compute the gradient of the model parameters.<br />Scales the units in the state and computes the gradient.<br /><br />Args:<br /> ~ data_state (State object): The observed visible units and sampled hidden units.<br /> ~ model_state (State objects): The visible and hidden units sampled from the model.<br /><br />Returns:<br /> ~ dict: Gradients of the model parameters.
 
 
 ### initialize
 ```py
 
-def initialize(self, data, method: str='hinton')
+def initialize(self, data, method: str='hinton') -> None
 
 ```
 
@@ -77,7 +77,7 @@ Compute the joint energy of the model based on a state.<br /><br />Args:<br /> ~
 ### markov\_chain
 ```py
 
-def markov_chain(self, n, state, beta=None, clamped=[])
+def markov_chain(self, n, state, beta=None, clamped: typing.List=[]) -> paysage.models.model.State
 
 ```
 
@@ -125,7 +125,7 @@ Generate a random sample with the same shape,<br />and of the same type, as the 
 ### save
 ```py
 
-def save(self, store)
+def save(self, store: pandas.io.pytables.HDFStore) -> None
 
 ```
 
@@ -150,4 +150,8 @@ def __init__(self, tensors)
 Create a State object.<br /><br />Args:<br /> ~ tensors: a list of tensors<br /><br />Returns:<br /> ~ state object
 
 
+
+
+## class List
+list() -> new empty list<br />list(iterable) -> new list initialized from iterable's items
 

@@ -1,45 +1,5 @@
 # Documentation for Optimizers (optimizers.py)
 
-## class ExponentialDecay
-Learning rate that decays exponentially per epoch
-### \_\_init\_\_
-```py
-
-def __init__(self, lr_decay=0.9)
-
-```
-
-
-
-Create an exponential decay learning rate schedule.<br />Larger lr_decay -> slower decay.<br /><br />Args:<br /> ~ lr_decay (float \in (0,1))<br /><br />Returns:<br /> ~ ExponentialDecay
-
-
-### get\_lr
-```py
-
-def get_lr(self)
-
-```
-
-
-
-Compute the current value of the learning rate.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ lr (float)
-
-
-### increment
-```py
-
-def increment(self, epoch)
-
-```
-
-
-
-Update the iter and epoch attributes.<br /><br />Notes:<br /> ~ Modifies iter and epoch attributes in place.<br /><br />Args:<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
-
-
-
-
 ## class GradientMemory
 Many optimizers like RMSProp or ADAM keep track of moving averages<br />of the gradients. This class computes the first two moments of the<br />gradients as running averages.
 ### \_\_init\_\_
@@ -104,58 +64,18 @@ Update the running average of the squared model gradients.<br /><br />Args:<br /
 
 
 
-## class PowerLawDecay
-Learning rate that decays with a power law per epoch
-### \_\_init\_\_
-```py
-
-def __init__(self, lr_decay=0.1)
-
-```
-
-
-
-Create a power law decay learning rate schedule.<br />Larger lr_decay -> faster decay.<br /><br />Args:<br /> ~ lr_decay (float \in (0,1))<br /><br />Returns:<br /> ~ PowerLawDecay
-
-
-### get\_lr
-```py
-
-def get_lr(self)
-
-```
-
-
-
-Compute the current value of the learning rate.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ lr (float)
-
-
-### increment
-```py
-
-def increment(self, epoch)
-
-```
-
-
-
-Update the iter and epoch attributes.<br /><br />Notes:<br /> ~ Modifies iter and epoch attributes in place.<br /><br />Args:<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
-
-
-
-
 ## class Optimizer
 Base class for the optimizer methods.
 ### \_\_init\_\_
 ```py
 
-def __init__(self, scheduler=<paysage.optimizers.PowerLawDecay object at 0x118101be0>, tolerance=1e-07)
+def __init__(self, stepsize=<generator object constant at 0x1074a90a0>, tolerance=1e-07, ascent=False)
 
 ```
 
 
 
-Create an optimizer object:<br /><br />Args:<br /> ~ scheduler (a learning rate schedule object; optional)<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ Optimizer
+Create an optimizer object:<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (generator; optional): the stepsize schedule<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ Optimizer
 
 
 ### check\_convergence
@@ -170,32 +90,16 @@ def check_convergence(self)
 Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
 
 
-
-
-## class Scheduler
-Base class for the learning rate schedulers
-### \_\_init\_\_
+### update\_lr
 ```py
 
-def __init__(self)
+def update_lr(self)
 
 ```
 
 
 
-Create a scheduler object.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ Scheduler
-
-
-### increment
-```py
-
-def increment(self, epoch)
-
-```
-
-
-
-Update the iter and epoch attributes.<br /><br />Notes:<br /> ~ Modifies iter and epoch attributes in place.<br /><br />Args:<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+Update the current value of the stepsize:<br /><br />Notes:<br /> ~ Modifies stepsize attribute in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 
@@ -205,13 +109,13 @@ Vanilla gradient optimizer
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=0.001, scheduler=<paysage.optimizers.PowerLawDecay object at 0x118101c50>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<generator object constant at 0x1074a90f8>, tolerance=1e-07, ascent=False)
 
 ```
 
 
 
-Create a gradient ascent/descent optimizer.<br /><br />Aliases:<br /> ~ gradient<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (float; optional): the initial stepsize<br /> ~ scheduler (a learning rate scheduler object; optional)<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ StochasticGradientDescent
+Create a gradient ascent/descent optimizer.<br /><br />Aliases:<br /> ~ gradient<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (generator; optional): the stepsize schedule<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ StochasticGradientDescent
 
 
 ### check\_convergence
@@ -229,13 +133,25 @@ Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Return
 ### update
 ```py
 
-def update(self, model, grad, epoch)
+def update(self, model, grad)
 
 ```
 
 
 
 Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+
+
+### update\_lr
+```py
+
+def update_lr(self)
+
+```
+
+
+
+Update the current value of the stepsize:<br /><br />Notes:<br /> ~ Modifies stepsize attribute in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 
@@ -245,13 +161,13 @@ Stochastic gradient descent with momentum.<br />Qian, N. (1999).<br />On the mom
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=0.001, momentum=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x118101cf8>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<generator object constant at 0x1074a9150>, momentum=0.9, tolerance=1e-07, ascent=False)
 
 ```
 
 
 
-Create a stochastic gradient descent with momentum optimizer.<br /><br />Aliases:<br /> ~ momentum<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (float; optional): the initial stepsize<br /> ~ momentum (float; optional): the amount of momentum<br /> ~ scheduler (a learning rate scheduler object; optional)<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ Momentum
+Create a stochastic gradient descent with momentum optimizer.<br /><br />Aliases:<br /> ~ momentum<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (generator; optional): the stepsize schedule<br /> ~ momentum (float; optional): the amount of momentum<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ Momentum
 
 
 ### check\_convergence
@@ -269,13 +185,25 @@ Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Return
 ### update
 ```py
 
-def update(self, model, grad, epoch)
+def update(self, model, grad)
 
 ```
 
 
 
 Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+
+
+### update\_lr
+```py
+
+def update_lr(self)
+
+```
+
+
+
+Update the current value of the stepsize:<br /><br />Notes:<br /> ~ Modifies stepsize attribute in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 
@@ -285,13 +213,13 @@ Stochastic gradient descent with RMSProp.<br />Geoffrey Hinton's Coursera Course
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=0.001, mean_square_weight=0.9, scheduler=<paysage.optimizers.PowerLawDecay object at 0x118101da0>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<generator object constant at 0x1074a91a8>, mean_square_weight=0.9, tolerance=1e-07, ascent=False)
 
 ```
 
 
 
-Create a stochastic gradient descent with RMSProp optimizer.<br /><br />Aliases:<br /> ~ rmsprop<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (float; optional): the initial stepsize<br /> ~ mean_square_weight (float; optional):<br /> ~  ~ for computing the running average of the mean-square gradient<br /> ~ scheduler (a learning rate scheduler object; optional)<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ RMSProp
+Create a stochastic gradient descent with RMSProp optimizer.<br /><br />Aliases:<br /> ~ rmsprop<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (generator; optional): the stepsize schedule<br /> ~ mean_square_weight (float; optional):<br /> ~  ~ for computing the running average of the mean-square gradient<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ RMSProp
 
 
 ### check\_convergence
@@ -309,13 +237,25 @@ Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Return
 ### update
 ```py
 
-def update(self, model, grad, epoch)
+def update(self, model, grad)
 
 ```
 
 
 
 Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+
+
+### update\_lr
+```py
+
+def update_lr(self)
+
+```
+
+
+
+Update the current value of the stepsize:<br /><br />Notes:<br /> ~ Modifies stepsize attribute in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 
@@ -329,13 +269,13 @@ Stochastic gradient descent with Adaptive Moment Estimation algorithm.<br /><br 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=0.001, mean_weight=0.9, mean_square_weight=0.999, scheduler=<paysage.optimizers.PowerLawDecay object at 0x118101e48>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<generator object constant at 0x1074a9200>, mean_weight=0.9, mean_square_weight=0.999, tolerance=1e-07, ascent=False)
 
 ```
 
 
 
-Create a stochastic gradient descent with ADAM optimizer.<br /><br />Aliases:<br /> ~ adam<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (float; optional): the initial stepsize<br /> ~ mean_weight (float; optional):<br /> ~  ~ for computing the running average of the mean gradient<br /> ~ mean_square_weight (float; optional):<br /> ~  ~ for computing the running average of the mean-square gradient<br /> ~ scheduler (a learning rate scheduler object; optional)<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ ADAM
+Create a stochastic gradient descent with ADAM optimizer.<br /><br />Aliases:<br /> ~ adam<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (generator; optional): the stepsize schedule<br /> ~ mean_weight (float; optional):<br /> ~  ~ for computing the running average of the mean gradient<br /> ~ mean_square_weight (float; optional):<br /> ~  ~ for computing the running average of the mean-square gradient<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ ADAM
 
 
 ### check\_convergence
@@ -353,7 +293,7 @@ Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Return
 ### update
 ```py
 
-def update(self, model, grad, epoch)
+def update(self, model, grad)
 
 ```
 
@@ -362,4 +302,30 @@ def update(self, model, grad, epoch)
 Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
 
 
+### update\_lr
+```py
+
+def update_lr(self)
+
+```
+
+
+
+Update the current value of the stepsize:<br /><br />Notes:<br /> ~ Modifies stepsize attribute in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+
+
+
+
+## functions
+
+### deepcopy
+```py
+
+def deepcopy(x, memo=None, _nil=[])
+
+```
+
+
+
+Deep copy operation on arbitrary Python objects.<br /><br />See the module's __doc__ string for more info.
 

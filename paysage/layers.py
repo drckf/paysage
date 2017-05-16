@@ -46,7 +46,7 @@ class Layer(object):
         """
         return {
             "layer_type"  : self.__class__.__name__,
-            "parameters"   : list(self.params._fields),
+            "parameters"  : list(self.params._fields),
             "penalties"   : {pk: self.penalties[pk].get_config()
                              for pk in self.penalties},
             "constraints" : {ck: self.constraints[ck].__name__
@@ -191,7 +191,7 @@ class Layer(object):
         """
         pen = {param_name:
                self.penalties[param_name].value(
-               getattr(self.params, param_name)
+                   getattr(self.params, param_name)
                )
                for param_name in self.penalties}
         return pen
@@ -451,9 +451,8 @@ class GaussianLayer(Layer):
 
         """
         scale = be.exp(self.params.log_var)
-        result = vis - be.broadcast(self.params.loc, vis)
-        result = be.square(result)
-        result /= be.broadcast(scale, vis)
+        diff = vis - be.broadcast(self.params.loc, vis)
+        result = be.square(diff) / be.broadcast(scale, vis)
         return 0.5 * be.mean(result, axis=1)
 
     def log_partition_function(self, phi):
@@ -634,10 +633,10 @@ class GaussianLayer(Layer):
         mean = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
             mean += be.dot(scaled_units[i], weights[i])
-        if beta is not None:
-            mean *= be.broadcast(beta, mean)
         mean += be.broadcast(self.params.loc, mean)
         var = be.broadcast(be.exp(self.params.log_var), mean)
+        if beta is not None:
+            var = be.divide(beta, var)
         return mean, var
 
     def conditional_mode(self, scaled_units, weights, beta=None):
@@ -930,9 +929,9 @@ class IsingLayer(Layer):
         field = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
             field += be.dot(scaled_units[i], weights[i])
-        if beta is not None:
-            field *= be.broadcast(beta,field)
         field += be.broadcast(self.params.loc, field)
+        if beta is not None:
+            field = be.multiply(beta, field)
         return field
 
     def conditional_mode(self, scaled_units, weights, beta=None):
@@ -1221,23 +1220,22 @@ class BernoulliLayer(Layer):
             mag (magnetization object): magnetization of the layer
         """
         return -be.tsum(self.log_partition_function(B, A)) + \
-                be.dot(B, mag._a) + \
-                be.dot(A, mag._a)
+                be.dot(B, mag._a) + be.dot(A, mag._a)
 
     def _grad_magnetization_GFE(self, mag):
-                """
+        """
         Gradient of the Gibbs free energy with respect to the magnetization
         associated strictly with this layer
 
         Args:
             mag (magnetization object): magnetization of the layer
         """
-        return MagnetizationBernoulli(
-            be.log(be.divide(1.0 - mag._a, mag._a)) - self.params.loc)
+        return MagnetizationBernoulli(be.log(be.divide(1.0 - mag._a, mag._a)) - \
+                                      self.params.loc)
 
     def _grad_loc_GFE(self, mag):
         """
-        Gradient of the Gibbs free energy associated strictly with this layer
+        Gradient of the Gibbs free energy with respect to local field parameters
 
         Args:
             mag (magnetization object): magnetization of the layer
@@ -1344,9 +1342,9 @@ class BernoulliLayer(Layer):
         field = be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
             field += be.dot(scaled_units[i], weights[i])
-        if beta is not None:
-            field *= be.broadcast(beta, field)
         field += be.broadcast(self.params.loc, field)
+        if beta is not None:
+            field = be.multiply(beta, field)
         return field
 
     def conditional_mode(self, scaled_units, weights, beta=None):
@@ -1636,9 +1634,9 @@ class ExponentialLayer(Layer):
         rate = -be.dot(scaled_units[0], weights[0])
         for i in range(1, len(weights)):
             rate -= be.dot(scaled_units[i], weights[i])
-        if beta is not None:
-            rate *= be.broadcast(beta,rate)
         rate += be.broadcast(self.params.loc, rate)
+        if beta is not None:
+            rate = be.multiply(beta, rate)
         return rate
 
     def conditional_mode(self, scaled_units, weights, beta=None):

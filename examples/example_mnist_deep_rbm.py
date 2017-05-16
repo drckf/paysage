@@ -10,28 +10,28 @@ be.set_seed(137) # for determinism
 
 import example_util as util
 
-def example_mnist_hopfield(paysage_path=None, num_epochs=10, show_plot=False):
-
+def example_mnist_deep_rbm(paysage_path=None, num_epochs=10, show_plot=False):
     num_hidden_units = 500
     batch_size = 100
-    learning_rate = schedules.power_law_decay(initial=0.001, coefficient=0.1)
+    learning_rate = schedules.power_law_decay(initial=0.002, coefficient=0.1)
     mc_steps = 1
 
     (_, _, shuffled_filepath) = \
-        util.default_paths(paysage_path)
+            util.default_paths(paysage_path)
 
     # set up the reader to get minibatches
     data = batch.HDFBatch(shuffled_filepath,
-                         'train/images',
+                          'train/images',
                           batch_size,
                           transform=batch.binarize_color,
                           train_fraction=0.99)
 
     # set up the model and initialize the parameters
     vis_layer = layers.BernoulliLayer(data.ncols)
-    hid_layer = layers.GaussianLayer(num_hidden_units)
+    hid_1_layer = layers.BernoulliLayer(num_hidden_units)
+    hid_2_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = model.Model([vis_layer, hid_layer])
+    rbm = model.Model([vis_layer, hid_1_layer, hid_2_layer])
     rbm.initialize(data)
 
     metrics = ['ReconstructionError', 'EnergyDistance', 'EnergyGap', 'EnergyZscore', 'HeatCapacity']
@@ -40,7 +40,7 @@ def example_mnist_hopfield(paysage_path=None, num_epochs=10, show_plot=False):
     # set up the optimizer and the fit method
     opt = optimizers.ADAM(stepsize=learning_rate)
 
-    sampler = fit.DrivenSequentialMC.from_batch(rbm, data)
+    sampler = fit.SequentialMC.from_batch(rbm, data)
 
     cd = fit.SGD(rbm, data, opt, num_epochs, method=fit.pcd, sampler=sampler,
                  mcsteps=mc_steps, monitor=perf)
@@ -61,4 +61,4 @@ def example_mnist_hopfield(paysage_path=None, num_epochs=10, show_plot=False):
     print("Done")
 
 if __name__ == "__main__":
-    example_mnist_hopfield(show_plot = True)
+    example_mnist_deep_rbm(show_plot = True)
