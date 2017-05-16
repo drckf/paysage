@@ -59,7 +59,9 @@ def test_tap_machine(paysage_path=None):
                               tolerance=1e-3,
                               ascent=True)
 
-    solver = fit.SGD(rbm, data, opt, num_epochs, method=fit.tap, monitor=perf)
+    sampler = fit.SequentialMC(rbm)
+
+    solver = fit.SGD(rbm, data, opt, num_epochs, sampler=sampler, method=fit.tap, monitor=perf)
 
     # fit the model
     print('training with stochastic gradient ascent')
