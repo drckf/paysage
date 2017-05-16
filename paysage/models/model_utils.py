@@ -1,6 +1,4 @@
 import copy
-from collections import namedtuple
-from collections import OrderedDict
 from .. import backends as be
 
 
