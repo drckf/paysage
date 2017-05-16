@@ -11,6 +11,10 @@ A deep boltzmann machine typically has a structure like:
     
 L_0 : W_0 : L_1 : W_1 : L_2 ~ layer : weight : layer : weight : layer
 
+the connectivity can be represented by a graph where the layers are "verticies"
+and the weights are "edges". below, i put quotation marks around the usual
+graph theory terms
+
 the "adjacency matrix" for the layers is:
      L_0 L_1 L_2
 L_0: 0   1   0
@@ -27,7 +31,13 @@ are given by A[i].nonzero() (works for both numpy and torch tensors -- though,
 they return slightly different objects so need a backend function to standardize
 the result).
 
-the weight connections (i.e., the edge list) are:
+the "unoriented incidence matrix" of the graph is:
+     W_0 W_1
+L_0: 1   0
+L_1: 1   1
+L_2: 0   1
+
+the weight connections (i.e., the "edge list") are:
 0: [0, 1]
 1: [1, 2]
 
