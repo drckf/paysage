@@ -44,7 +44,7 @@ def rand_like(tensor: T.TorchTensor) -> T.FloatTensor:
         tensor: Random numbers between 0 and 1.
 
     """
-    return torch.rand(shape(tensor))
+    return torch.rand(tuple(tensor.size()))
 
 def randn(shape: T.Tuple[int]) -> T.FloatTensor:
     """
