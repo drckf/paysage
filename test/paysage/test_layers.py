@@ -203,8 +203,9 @@ def test_bernoulli_energy():
 
 def test_bernoulli_log_partition_function():
     ly = layers.BernoulliLayer(num_vis)
-    vis = ly.random((num_samples, num_vis))
-    ly.log_partition_function(vis)
+    B = ly.random((num_samples, num_vis))
+    A = ly.random((num_samples, num_vis))
+    ly.log_partition_function(B, A)
 
 def test_bernoulli_online_param_update():
     ly = layers.BernoulliLayer(num_vis)
