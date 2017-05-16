@@ -51,8 +51,9 @@ def example_mnist_deep_rbm(paysage_path=None, num_epochs=10, show_plot=False):
 
     # evaluate the model
     util.show_metrics(rbm, perf)
-    util.show_reconstructions(rbm, data.get('validate'), fit, show_plot)
-    util.show_fantasy_particles(rbm, data.get('validate'), fit, show_plot)
+    valid = data.get('validate')
+    util.show_reconstructions(rbm, valid, fit, show_plot)
+    util.show_fantasy_particles(rbm, valid, fit, show_plot)
     util.show_weights(rbm, show_plot)
 
     # close the HDF5 store
