@@ -3,6 +3,7 @@ import pandas
 
 from paysage import layers
 from paysage.models import model
+from paysage.models import model_utils
 from paysage import backends as be
 
 import pytest
@@ -72,7 +73,7 @@ def test_grbm_reload():
         store.close()
     # check the two models are consistent
     vis_data = vis_layer.random((num_samples, num_vis))
-    data_state = model.State.from_visible(vis_data, grbm)
+    data_state = model_utils.State.from_visible(vis_data, grbm)
     vis_orig = grbm.deterministic_iteration(1, data_state).units[0]
     vis_reload = grbm_reload.deterministic_iteration(1, data_state).units[0]
     assert be.allclose(vis_orig, vis_reload)
