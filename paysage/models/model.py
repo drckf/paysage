@@ -306,10 +306,8 @@ class Model(object):
             [None for w in self.weights]
         )
 
-        update_layers = [i for i in range(self.num_layers) \
-            if not self.graph.layer_connections[i].gradient_clamped]
-        update_weights = [i for i in range(self.num_weights) \
-            if not self.graph.weight_connections[i].gradient_clamped]
+        update_layers = range(self.num_layers)
+        update_weights = range(self.num_weights)
 
         # POSITIVE PHASE (using observed)
 
@@ -378,9 +376,11 @@ class Model(object):
 
         """
         for i in range(self.num_layers):
-            self.layers[i].parameter_step(deltas.layers[i])
+            if self.graph.layer_connections[i].trainable:
+                self.layers[i].parameter_step(deltas.layers[i])
         for i in range(self.num_weights):
-            self.weights[i].parameter_step(deltas.weights[i])
+            if self.graph.weight_connections[i].trainable:
+                self.weights[i].parameter_step(deltas.weights[i])
 
     def joint_energy(self, data):
         """

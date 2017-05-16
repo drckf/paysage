@@ -138,7 +138,7 @@ class LayerConnection(object):
                  left_connected_weights = None,
                  right_connected_weights = None,
                  sampling_clamped = False,
-                 gradient_clamped = False,
+                 trainable = True,
                  excluded = False):
         """
         Constructor
@@ -149,7 +149,7 @@ class LayerConnection(object):
             right_connected_layers: a list of ConnectedLayer tuples
                 for deeper connected layers.
             sampling_clamped: whether this layer's sampling is fixed.
-            gradient_clamped: whether this layer's gradient is fixed.
+            trainable: whether this layer's paramaters can be updated.
             excluded: whether this layer is excluded from the model.
 
         Returns:
@@ -165,7 +165,7 @@ class LayerConnection(object):
         self.right_connected_weights = right_connected_weights \
             if right_connected_weights else []
         self.sampling_clamped = sampling_clamped
-        self.gradient_clamped = gradient_clamped
+        self.trainable = trainable
         self.excluded = excluded
 
 
@@ -178,19 +178,19 @@ class WeightConnection(object):
     def __init__(self,
                  left_layer=None,
                  right_layer=None,
-                 gradient_clamped=False):
+                 trainable=True):
         """
         Constructor
 
         Args:
             left_layer: the shallower connected layer.
             right_layer: the deeper connected layer.
-            gradient_clamped: whether this layer's gradient is fixed.
+            trainable: whether this layer's parameters can be updated.
 
         """
         self.left_layer = left_layer
         self.right_layer = right_layer
-        self.gradient_clamped = gradient_clamped
+        self.trainable = trainable
 
 
 class ComputationGraph(object):
@@ -301,6 +301,26 @@ class ComputationGraph(object):
         """
         for layer_index in range(self.num_layers):
             self.layer_connections[layer_index].sampling_clamped = (layer_index in clamped_layers)
+
+    def set_trainable_layers(self, trainable_layers):
+        """
+        Convenience function to set the layers which are trainable
+        Sets exactly the given layers as trainable.
+        Sets the left-connected weights as untrainable.
+
+        Args:
+            trainable_layers (List): the exact set of layers which are trainable
+
+        Returns:
+            None
+
+        """
+        for layer_index in range(self.num_layers):
+            self.layer_connections[layer_index].trainable = (layer_index in trainable_layers)
+            # if the layer is not trainable, set the weights as untrainable
+            if not self.layer_connections[layer_index].trainable:
+                for weight_index in self.layer_connections[layer_index].left_connected_weights:
+                    self.weight_connections[weight_index].trainable = False
 
     def set_excluded_layers(self, excluded_layers):
         """
