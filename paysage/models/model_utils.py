@@ -6,7 +6,7 @@ from .. import backends as be
 Comments for drckf:
 
 A deep boltzmann machine typically has a structure like:
-    
+
 L_0 : W_0 : L_1 : W_1 : L_2 ~ layer : weight : layer : weight : layer
 
 the connectivity can be represented by a graph where the layers are "verticies"
@@ -40,7 +40,7 @@ the weight connections (i.e., the "edge list") are:
 1: [1, 2]
 
 Thoughts:
-    
+
 "Gradient Clampling" seems like a natural thing to put in the layer itself,
 because it can be handled easily in the `layer.parameter_step` method.
 
@@ -133,10 +133,10 @@ class LayerConnection(object):
 
     """
     def __init__(self,
-                 left_connected_layers = [],
-                 right_connected_layers = [],
-                 left_connected_weights = [],
-                 right_connected_weights = [],
+                 left_connected_layers = None,
+                 right_connected_layers = None,
+                 left_connected_weights = None,
+                 right_connected_weights = None,
                  sampling_clamped = False,
                  gradient_clamped = False,
                  excluded = False):
@@ -156,27 +156,17 @@ class LayerConnection(object):
             None
 
         """
-#
-#        Weird bug!
-#        I added the arguments to the constructor and the following lines.
-#        This fails with:
-#        ValueError: operands could not be broadcast together with shapes (50,50) (50,784) (50,50)
-#
-#        self.left_connected_layers = left_connected_layers
-#        self.right_connected_layers = right_connected_layers
-#        self.left_connected_weights = left_connected_weights
-#        self.right_connected_weights = right_connected_weights
-#        self.sampling_clamped = sampling_clamped
-#        self.gradient_clamped = gradient_clamped
-#        self.excluded = excluded
-#                 
-        self.left_connected_layers = []
-        self.right_connected_layers = []
-        self.left_connected_weights = []
-        self.right_connected_weights = []
-        self.sampling_clamped = False
-        self.gradient_clamped = False
-        self.excluded = False
+        self.left_connected_layers = left_connected_layers \
+            if left_connected_layers else []
+        self.right_connected_layers = right_connected_layers \
+            if right_connected_layers else []
+        self.left_connected_weights = left_connected_weights \
+            if left_connected_weights else []
+        self.right_connected_weights = right_connected_weights \
+            if right_connected_weights else []
+        self.sampling_clamped = sampling_clamped
+        self.gradient_clamped = gradient_clamped
+        self.excluded = excluded
 
 
 class WeightConnection(object):
@@ -221,7 +211,7 @@ class ComputationGraph(object):
     Also used to modify connections, for example in layerwise training.
 
     """
-    def __init__(self, num_layers, weight_connections=[]):
+    def __init__(self, num_layers, weight_connections=None):
         """
         Instantiates with default connections, unless connections are specified.
 
@@ -234,7 +224,7 @@ class ComputationGraph(object):
 
         """
         self.num_layers = num_layers
-        self.weight_connections = weight_connections
+        self.weight_connections = weight_connections if weight_connections else []
         self.layer_connections = None
 
         # set the default connections if none given
@@ -270,18 +260,18 @@ class ComputationGraph(object):
 
         """
         layer_connections = []
-        for i in range(self.num_layers):
+        for layer_index in range(self.num_layers):
             lc = LayerConnection()
             # loop over all weights
-            for iw, w in enumerate(self.weight_connections):
+            for weight_index, weight in enumerate(self.weight_connections):
                 # if the layer is connected on the shallower side
-                if w.left_layer == i:
-                    lc.right_connected_layers.append(w.right_layer)
-                    lc.right_connected_weights.append(iw)
+                if weight.left_layer == layer_index:
+                    lc.right_connected_layers.append(weight.right_layer)
+                    lc.right_connected_weights.append(weight_index)
                 # or if it's connected on the deeper side
-                elif w.right_layer == i:
-                    lc.left_connected_layers.append(w.left_layer)
-                    lc.left_connected_weights.append(iw)
+                elif weight.right_layer == layer_index:
+                    lc.left_connected_layers.append(weight.left_layer)
+                    lc.left_connected_weights.append(weight_index)
             layer_connections.append(lc)
         self.layer_connections = layer_connections
 
@@ -299,3 +289,9 @@ class ComputationGraph(object):
         """
         for i in range(self.num_layers):
             self.layer_connections[i].sampling_clamped = (i in clamped_layers)
+
+    def set_excluded_layers(self, excluded_layers):
+        """
+        Convenience function to set the excluded layers
+
+        """
