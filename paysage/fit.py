@@ -413,7 +413,7 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
 # alias
 pcd = persistent_contrastive_divergence
 
-def tap(vdata, model, sampler, positive_steps=1, terms=2, init_lr_EMF=0.1, tolerance_EMF=1e-4,
+def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=1e-4,
         max_iters_EMF=25, num_random_samples=1):
     """
     Compute the gradient using the Thouless-Anderson-Palmer (TAP)
@@ -444,15 +444,13 @@ def tap(vdata, model, sampler, positive_steps=1, terms=2, init_lr_EMF=0.1, toler
     """
     if num_random_samples <= 0:
         raise ValueError("Must specify at least one random or persistent sample for Gibbs FE seeding")
-    if terms not in [1, 2, 3]:
-        raise ValueError("Must specify one, two, or three terms in TAP expansion training method")
 
     data_state = State.from_visible(vdata, model)
     sampler.set_positive_state(data_state)
     sampler.update_positive_state(positive_steps)
 
-    return model.TAP_gradient(data_state, None, num_random_samples, 0, [],
-                              init_lr_EMF, tolerance_EMF, max_iters_EMF, terms)
+    return model.TAP_gradient(data_state,num_random_samples, 0, [],
+                              init_lr_EMF, tolerance_EMF, max_iters_EMF)
 
 
 class StochasticGradientDescent(object):

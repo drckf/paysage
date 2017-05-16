@@ -454,14 +454,20 @@ class Model(object):
         return grad
 
 
-    def TAP_gradient(self, data_state, model_state, num_r, num_p, persistent_samples,
-                     init_lr_EMF, tolerance_EMF, max_iters_EMF, terms):
+    def TAP_gradient(self, data_state, num_r, num_p, persistent_samples,
+                     init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Gradient of -\ln P(v) with respect to the model parameters
 
         Args:
             data_state (State object): The observed visible units and sampled hidden units.
-            model_state (State objects): The visible and hidden units sampled from the model.
+            num_r: (int>=0) number of random seeds to use for Gibbs FE minimization
+            num_p: (int>=0) number of persistent seeds to use for Gibbs FE minimization
+            persistent_samples list of magnetizations: persistent magnetization parameters
+                to keep as seeds for Gibbs free energy estimation.
+            init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+            tol float: tolerance for quitting minimization.
+            max_iters int: maximum gradient decsent steps
 
         Returns:
             namedtuple: Gradient: containing gradients of the model parameters.
@@ -471,7 +477,7 @@ class Model(object):
         grad_MFE = self.grad_marginal_free_energy(data_state)
         # compute the gradient of the Helmholtz FE via TAP_gradient
         grad_HFE = self.grad_TAP_free_energy(num_r, num_p, persistent_samples,
-                     init_lr_EMF, tolerance_EMF, max_iters_EMF, terms)
+                     init_lr_EMF, tolerance_EMF, max_iters_EMF)
         return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
 
     def parameter_update(self, deltas):
@@ -550,6 +556,13 @@ class Model(object):
         return grad
 
     def grad_magnetization_GFE(self, mag):
+        """
+        Gradient of the Gibbs free energy with respect to the magnetization parameters
+
+        Args:
+            mag (list of magnetizations of layers):
+              magnetizations at which to compute the deriviates
+        """
         grad = [None for lay in self.layers]
         for l in range(self.num_layers):
             grad[l] = self.layers[l]._grad_magnetization_GFE(mag[l])
@@ -564,6 +577,13 @@ class Model(object):
         return grad
 
     def grad_gibbs_free_energy(self, mag):
+        """
+        Gradient of the Gibbs free energy with respect to the model parameters
+
+        Args:
+            mag (list of magnetizations of layers):
+              magnetizations at which to compute the deriviates
+        """
         grad_GFE = gu.Gradient(
             [self.layers[l]._grad_loc_GFE(mag[l]) for l in range(self.num_layers)],
             [self.weights[w]._grad_GFE(mag[w], mag[w+1])
@@ -572,7 +592,13 @@ class Model(object):
         return grad_GFE
 
     def gibbs_free_energy(self, mag):
-        # Gibbs FE according to TAP2 appoximation
+        """
+        Gibbs FE according to TAP2 appoximation
+
+        Args:
+            mag (list of magnetizations of layers):
+              magnetizations at which to compute the free energy
+        """
         total = 0
         B = [self.layers[l]._gibbs_lagrange_multipliers_1st_moment(mag[l]) for l in range(self.num_layers)]
         A = [self.layers[l]._gibbs_lagrange_multipliers_2nd_moment(mag[l]) for l in range(self.num_layers)]
@@ -587,7 +613,7 @@ class Model(object):
                      be.dot(be.square(way.params.matrix), mag[w+1].c()))
         return total
 
-    def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50, terms=2, method='gd'):
+    def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50, method='gd'):
         """
         Compute the Helmholtz free engergy of the model according to the TAP
         expansion around infinite temperature to second order.
@@ -625,7 +651,6 @@ class Model(object):
             init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
             tol float: tolerance for quitting minimization.
             max_iters: maximum gradient decsent steps.
-            terms: number of terms to use (1, 2, or 3 allowed)
             method: one of 'gd' or 'constraint' picking which Gibbs FE minimization method to use.
 
         Returns:
@@ -633,16 +658,18 @@ class Model(object):
                   (Magnetization, float)
 
         """
-        if terms not in [1, 2, 3]:
-            raise ValueError("Must specify one, two, or three terms in TAP expansion training method")
-
         if method not in ['gd', 'constraint']:
             raise ValueError("Must specify a valid method for minimizing the Gibbs free energy")
 
-        def minimize_gibbs_free_energy_GD(m=None, init_lr=0.01, tol=1e-6, max_iters=1, terms=2):
+        def minimize_gibbs_free_energy_GD(m, init_lr=0.01, tol=1e-6, max_iters=1):
             """
-            Simple gradient descent routine to minimize gibbs_FE
+            Simple gradient descent routine to minimize Gibbs free energy
 
+            Args:
+                m (list of magnetizations of layers): seed for gradient descent
+                init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+                tol float: tolerance for quitting minimization.
+                max_iters int: maximum gradient decsent steps
             """
             mag = deepcopy(m)
             eps = 1e-6
@@ -689,14 +716,14 @@ class Model(object):
                 be.apply_(clip_, m)
 
         if method == 'gd':
-            return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters, terms=terms)
+            return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
         elif method == 'constraint':
             assert False, \
                    "Constraint satisfaction is not currently supported"
-            return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters, terms=terms)
+            return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
 
     def grad_TAP_free_energy(self, num_r, num_p, persistent_samples,
-                             init_lr_EMF, tolerance_EMF, max_iters_EMF, terms):
+                             init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Compute the gradient of the Helmholtz free engergy of the model according to the TAP
         expansion around infinite temperature.
@@ -709,6 +736,11 @@ class Model(object):
         Args:
             num_r: (int>=0) number of random seeds to use for Gibbs FE minimization
             num_p: (int>=0) number of persistent seeds to use for Gibbs FE minimization
+            persistent_samples list of magnetizations: persistent magnetization parameters
+                to keep as seeds for Gibbs free energy estimation.
+            init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+            tol float: tolerance for quitting minimization.
+            max_iters int: maximum gradient decsent steps
 
         Returns:
             namedtuple: Gradient: containing gradients of the model parameters.
@@ -726,8 +758,7 @@ class Model(object):
             (mag,EMF) = self.TAP_free_energy(None,
                                              init_lr_EMF,
                                              tolerance_EMF,
-                                             max_iters_EMF,
-                                             terms)
+                                             max_iters_EMF)
             # Compute the gradients at this minimizing magnetization
             grad_gfe = self.grad_gibbs_free_energy(mag)
             def accum_(x,y): x[:] = be.add(x,y)
@@ -739,8 +770,7 @@ class Model(object):
              self.TAP_free_energy(persistent_samples[s],
                                   init_lr_EMF,
                                   tolerance_EMF,
-                                  max_iters_EMF,
-                                  terms)
+                                  max_iters_EMF)
             # Compute the gradients at this minimizing magnetization
             grad_gfe = self.grad_gibbs_free_energy(persistent_samples[s])
             def accum_(x,y): x[:] = be.add(x,y)

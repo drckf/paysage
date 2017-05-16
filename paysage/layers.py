@@ -365,7 +365,15 @@ class Weights(Layer):
         return -be.batch_dot(vis, self.W(), hid)
 
     def _grad_GFE(self, mag_down, mag_up):
-        return ParamsWeights(-be.outer(mag_down.a(), mag_up.a()) - be.multiply(self.params.matrix, be.outer(mag_down.c(), mag_up.c())))
+        """
+        Gradient of the Gibbs free energy associated with this layer
+
+        Args:
+            mag_down (magnetization object): magnetization of the lower layer linked to w
+            mag_up (magnetization objet): magnetization of the upper layer linked to w
+        """
+        return ParamsWeights(-be.outer(mag_down.a(), mag_up.a()) - \
+                             be.multiply(self.params.matrix, be.outer(mag_down.c(), mag_up.c())))
 
 
 ParamsGaussian = namedtuple("ParamsGaussian", ["loc", "log_var"])
@@ -1185,21 +1193,55 @@ class BernoulliLayer(Layer):
         return ParamsBernoulli(be.mean(self._grad_log_partition_function(B,A), axis=0))
 
     def _gibbs_lagrange_multipliers_1st_moment(self, mag):
+        """
+        The Lagrange multipliers associated with the first moment of the spins.
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+        """
         return be.subtract(self.params.loc, be.log(be.divide(1 - mag._a, mag._a)))
 
     def _gibbs_lagrange_multipliers_2nd_moment(self, mag):
+        """
+        The Lagrange multipliers associated with the second moment of the spins.
+        For a Bernoulli layer this is strictly zero
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+        """
         return be.zeros_like(mag._a)
 
     def _gibbs_free_energy_entropy_term(self, B, A, mag):
+        """
+        The TAP-0 Gibbs free energy term associated strictly with this layer
+
+        Args:
+            B (float tensor like magnetization.a): 1st moment Lagrange multipler field
+            A (float tensor like magnetization.a): strictly zero for Bernoulli layers
+            mag (magnetization object): magnetization of the layer
+        """
         return -be.tsum(self.log_partition_function(B, A)) + \
                 be.dot(B, mag._a) + \
                 be.dot(A, mag._a)
 
     def _grad_magnetization_GFE(self, mag):
+                """
+        Gradient of the Gibbs free energy with respect to the magnetization
+        associated strictly with this layer
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+        """
         return MagnetizationBernoulli(
             be.log(be.divide(1.0 - mag._a, mag._a)) - self.params.loc)
 
     def _grad_loc_GFE(self, mag):
+        """
+        Gradient of the Gibbs free energy associated strictly with this layer
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+        """
         return ParamsBernoulli(-mag._a)
 
     def online_param_update(self, data):
