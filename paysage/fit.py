@@ -335,6 +335,7 @@ class ProgressMonitor(object):
 
         # compute metric dictionary
         metdict = OrderedDict([(m.name, m.value()) for m in self.metrics])
+                
         if show:
             for metric in metdict:
                 print("-{0}: {1:.6f}".format(metric, metdict[metric]))

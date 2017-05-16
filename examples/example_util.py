@@ -49,7 +49,7 @@ def example_plot(grid, show_plot, dim=28):
 
 def show_metrics(rbm, performance):
     print('Final performance metrics:')
-    performance.check_progress(rbm, 0, show=True)
+    performance.check_progress(rbm, show=True)
 
 def compute_reconstructions(rbm, v_data, fit):
     sampler = fit.DrivenSequentialMC(rbm)
