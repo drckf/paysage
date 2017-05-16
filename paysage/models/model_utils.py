@@ -132,7 +132,7 @@ class LayerConnection(object):
     Holds attributes and which layers it is connected to.
 
     """
-    def __init__(self, 
+    def __init__(self,
                  left_connected_layers = [],
                  right_connected_layers = [],
                  left_connected_weights = [],
@@ -156,13 +156,27 @@ class LayerConnection(object):
             None
 
         """
-        self.left_connected_layers = left_connected_layers
-        self.right_connected_layers = right_connected_layers
-        self.left_connected_weights = left_connected_weights
-        self.right_connected_weights = right_connected_weights
-        self.sampling_clamped = sampling_clamped
-        self.gradient_clamped = gradient_clamped
-        self.excluded = excluded
+#
+#        Weird bug!
+#        I added the arguments to the constructor and the following lines.
+#        This fails with:
+#        ValueError: operands could not be broadcast together with shapes (50,50) (50,784) (50,50)
+#
+#        self.left_connected_layers = left_connected_layers
+#        self.right_connected_layers = right_connected_layers
+#        self.left_connected_weights = left_connected_weights
+#        self.right_connected_weights = right_connected_weights
+#        self.sampling_clamped = sampling_clamped
+#        self.gradient_clamped = gradient_clamped
+#        self.excluded = excluded
+#                 
+        self.left_connected_layers = []
+        self.right_connected_layers = []
+        self.left_connected_weights = []
+        self.right_connected_weights = []
+        self.sampling_clamped = False
+        self.gradient_clamped = False
+        self.excluded = False
 
 
 class WeightConnection(object):
