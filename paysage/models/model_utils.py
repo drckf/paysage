@@ -211,52 +211,64 @@ class ComputationGraph(object):
     Also used to modify connections, for example in layerwise training.
 
     """
-    def __init__(self, num_layers, weight_connections=None):
+    def __init__(self, num_layers):
         """
         Instantiates with default connections, unless connections are specified.
 
         Args:
             num_layers: the number of layers
-            weight_connections: a list of WeightConnection (default None)
+            weight_connections (List): a list of WeightConnection (default None)
 
         Returns:
             None
 
         """
         self.num_layers = num_layers
-        self.weight_connections = weight_connections if weight_connections else []
-        self.layer_connections = None
+        self.weight_connections = self.build_weight_connections()
+        # the layer connections are built from the weight_connections attribute
+        self.layer_connections = self.build_layer_connections()
 
-        # set the default connections if none given
-        if not self.weight_connections:
-            self.weight_connections = self.default_weight_connections()
-        # the layer connections are inferred
-        self.set_layer_connections()
-
-    def default_weight_connections(self):
+    def build_weight_connections(self, excluded=[]):
         """
-        Creates the default weight connections.
+        Creates the weight connections.
         Assumes the layers are linearly connected, with the first being visible.
 
         Args:
-            None
+            excluded (List): a list of layer indices excluded from the model
 
         Returns:
-            weight_connections: a list of WeightConnection objects
+            weight_connections (List): a list of WeightConnection objects
 
         """
-        return [WeightConnection(i, i+1) for i in range(self.num_layers-1)]
+        weight_connections = []
+        # set the starting layer
+        left_layer_index = 0
+        while left_layer_index in excluded:
+            left_layer_index += 1
+        # create weight connections until done
+        while True:
+            # find the first available connection
+            right_layer_index = left_layer_index + 1
+            while right_layer_index in excluded:
+                right_layer_index += 1
+            # break if we've exceed the available layers
+            if right_layer_index >= self.num_layers:
+                break
 
-    def set_layer_connections(self):
+            # otherwise, create the weights layer
+            weight_connections.append(WeightConnection(left_layer_index, right_layer_index))
+            left_layer_index = right_layer_index
+        return weight_connections
+
+    def build_layer_connections(self):
         """
-        Creates layer connections from `weight_connections`.
-        Sets the value to the attribute `layer_connections`.
+        Creates layer connections from the `weight_connections` attribute.
 
         Args:
             None
 
         Returns:
-            None
+            layer_connections: a list of LayerConnection objects
 
         """
         layer_connections = []
@@ -273,7 +285,7 @@ class ComputationGraph(object):
                     lc.left_connected_layers.append(weight.left_layer)
                     lc.left_connected_weights.append(weight_index)
             layer_connections.append(lc)
-        self.layer_connections = layer_connections
+        return layer_connections
 
     def set_clamped_sampling(self, clamped_layers):
         """
@@ -287,11 +299,25 @@ class ComputationGraph(object):
             None
 
         """
-        for i in range(self.num_layers):
-            self.layer_connections[i].sampling_clamped = (i in clamped_layers)
+        for layer_index in range(self.num_layers):
+            self.layer_connections[layer_index].sampling_clamped = (layer_index in clamped_layers)
 
     def set_excluded_layers(self, excluded_layers):
         """
-        Convenience function to set the excluded layers
+        Convenience function to set the excluded layers.
+        Sets exactly the given layers as excluded (e.g. unexcludes any others).
+
+        Args:
+            excluded_layers (List): the exact set of layers to exclude
+
+        Returns:
+            None
 
         """
+        # set the exclusions
+        for layer_index in range(self.num_layers):
+            self.layer_connections[layer_index].excluded = (layer_index in excluded_layers)
+
+        # build the connections
+        self.weight_connections = self.build_weight_connections(excluded=excluded_layers)
+        self.layer_connections = self.build_layer_connections()
