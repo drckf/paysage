@@ -681,7 +681,7 @@ class Model(object):
 
         # generate random sample in domain to use as a starting location for gradient descent
         if seed==None :
-            seed = [be.apply(be.rand_like, lay.magnetization) for lay in self.layers]
+            seed = [lay.get_random_magnetization() for lay in self.layers]
             clip_ = partial(be.clip_inplace, a_min=0.005, a_max=0.995)
             for m in seed:
                 be.apply_(clip_, m)

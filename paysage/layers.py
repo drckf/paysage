@@ -1077,8 +1077,12 @@ class BernoulliLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsBernoulli(be.zeros(self.len))
-        #TODO: get rid of this member...
-        self.magnetization = MagnetizationBernoulli(be.zeros(self.len))
+
+    def get_zero_magnetization(self):
+        return MagnetizationBernoulli(be.zeros(self.len))
+
+    def get_random_magnetization(self):
+        return MagnetizationBernoulli(be.rand((self.len,)))
 
     def get_config(self):
         """
