@@ -3,7 +3,7 @@ from collections import OrderedDict
 from . import backends as be
 from . import metrics as M
 from . import schedules
-from .models.model import State
+from .models.model_utils import State
 
 class Sampler(object):
     """Base class for the sequential Monte Carlo samplers"""
