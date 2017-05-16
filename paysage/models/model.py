@@ -462,7 +462,28 @@ class Model(object):
 
         """
         # compute average grad_F_marginal over the minibatch
-        grad_MFE = self.grad_marginal_free_energy(data_state)
+        grad_MFE = gu.Gradient(
+            [None for l in self.layers],
+            [None for w in self.weights]
+        )
+
+        # compute the postive phase of the gradients of the layer parameters
+        for i in range(self.num_layers):
+            grad_MFE.layers[i] = self.layers[i].derivatives(
+                data_state.units[i],
+                [self.layers[j].rescale(data_state.units[j])
+                    for j in self.layer_connections[i]],
+                [self.weights[j].W() if j < i else self.weights[j].W_T()
+                    for j in self.weight_connections[i]],
+            )
+
+        # compute the positive phase of the gradients of the weights
+        for i in range(self.num_layers - 1):
+            grad_MFE.weights[i] = self.weights[i].derivatives(
+                self.layers[i].rescale(data_state.units[i]),
+                self.layers[i+1].rescale(data_state.units[i+1]),
+            )
+
         # compute the gradient of the Helmholtz FE via TAP_gradient
         grad_HFE = self.grad_TAP_free_energy(num_r, num_p, persistent_samples,
                      init_lr_EMF, tolerance_EMF, max_iters_EMF)
@@ -504,44 +525,6 @@ class Model(object):
             energy += self.layers[i+1].energy(data.units[i+1])
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
-
-    def grad_marginal_free_energy(self, data_state, steps=1):
-        """
-        Compute the gradient of the marginal free energy of the model via sampling,
-        i.e. the usual positive phase
-
-        Args:
-            data_state (State object): The current state of each layer.
-
-        Returns:
-            dict: Gradient object parametrized by the model parameters.
-
-        """
-        grad = gu.Gradient(
-            [None for l in self.layers],
-            [None for w in self.weights]
-        )
-        # POSITIVE PHASE (using observed)
-
-        # compute the conditional mean of the hidden layers
-        new_data_state = self.mean_field_iteration(1, data_state, clamped=[0])
-
-        # compute the postive phase of the gradients of the layer parameters
-        for i in range(self.num_layers):
-            grad.layers[i] = self.layers[i].derivatives(
-                new_data_state.units[i],
-                self._connected_rescaled_units(i, new_data_state),
-                self._connected_weights(i)
-            )
-
-        # compute the positive phase of the gradients of the weights
-        for i in range(self.num_layers - 1):
-            grad.weights[i] = self.weights[i].derivatives(
-                self.layers[i].rescale(new_data_state.units[i]),
-                self.layers[i+1].rescale(new_data_state.units[i+1]),
-            )
-
-        return grad
 
     def grad_magnetization_GFE(self, mag):
         """

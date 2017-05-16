@@ -483,7 +483,17 @@ def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=
     sampler.set_positive_state(data_state)
     sampler.update_positive_state(positive_steps)
 
-    return model.TAP_gradient(data_state,num_random_samples, 0, [],
+    # compute the conditional sampling on all visible-side layers,
+    # inclusive over hidden-side layers
+    for i in range(1, model.num_layers - 1):
+        clamped_layers = list(range(i))
+        sampler.update_positive_state(positive_steps, clamped=clamped_layers)
+
+    # make a mean field step to compute the expectation on the last layer
+    clamped_layers = list(range(model.num_layers - 1))
+    grad_data_state = model.mean_field_iteration(1, sampler.pos_state, clamped=clamped_layers)
+
+    return model.TAP_gradient(grad_data_state, num_random_samples, 0, [],
                               init_lr_EMF, tolerance_EMF, max_iters_EMF)
 
 
