@@ -3,6 +3,41 @@ from collections import namedtuple
 from collections import OrderedDict
 from .. import backends as be
 
+
+"""
+Comments for drckf:
+
+A deep boltzmann machine typically has a structure like:
+    
+L_0 : W_0 : L_1 : W_1 : L_2 ~ layer : weight : layer : weight : layer
+
+the "adjacency matrix" for the layers is:
+     L_0 L_1 L_2
+L_0: 0   1   0
+L_1: 1   0   1
+L_2: 0   1   0
+
+so that the layer connections (i.e., the "adjacency list") are:
+0: [1]
+1: [0, 2]
+2: [1]
+
+notice that if the adjacency matrix is A then the connections of layer i
+are given by A[i].nonzero() (works for both numpy and torch tensors -- though,
+they return slightly different objects so need a backend function to standardize
+the result).
+
+the weight connections (i.e., the edge list) are:
+0: [0, 1]
+1: [1, 2]
+
+Thoughts:
+    
+"Gradient Clampling" seems like a natural thing to put in the layer itself,
+because it can be handled easily in the `layer.parameter_step` method.
+
+"""
+
 class State(object):
     """
     A State is a list of tensors that contains the states of the units
@@ -83,42 +118,20 @@ class State(object):
         """
         return copy.deepcopy(state)
 
-
-"""
-
-A deep boltzmann machine typically has a structure like:
-    
-L_0 : W_0 : L_1 : W_1 : L_2 ~ layer : weight : layer : weight : layer
-
-the adjacency matrix for the layers is:
-     L_0 L_1 L_2
-L_0: 0   1   0
-L_1: 1   0   1
-L_2: 0   1   0
-
-so that the layer connections are:
-0: [1]
-1: [0, 2]
-2: [1]
-
-the adjacency matrix for the weights is:
-     L_0 L_1 L_2
-W_0: 1   1   0
-W_1: 0   1   1
-
-so that the weight connections are:
-0: [0, 1]
-1: [1, 2]
-
-"""
-
 class LayerConnection(object):
     """
     Container to manage how a layer is used in a model.
     Holds attributes and which layers it is connected to.
 
     """
-    def __init__(self):
+    def __init__(self, 
+                 left_connected_layers = [],
+                 right_connected_layers = [],
+                 left_connected_weights = [],
+                 right_connected_weights = [],
+                 sampling_clamped = False,
+                 gradient_clamped = False,
+                 excluded = False):
         """
         Constructor
 
@@ -135,13 +148,13 @@ class LayerConnection(object):
             None
 
         """
-        self.left_connected_layers = []
-        self.right_connected_layers = []
-        self.left_connected_weights = []
-        self.right_connected_weights = []
-        self.sampling_clamped = False
-        self.gradient_clamped = False
-        self.excluded = False
+        self.left_connected_layers = left_connected_layers
+        self.right_connected_layers = right_connected_layers
+        self.left_connected_weights = left_connected_weights
+        self.right_connected_weights = right_connected_weights
+        self.sampling_clamped = sampling_clamped
+        self.gradient_clamped = gradient_clamped
+        self.excluded = excluded
 
 
 class WeightConnection(object):
