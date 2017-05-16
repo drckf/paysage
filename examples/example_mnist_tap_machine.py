@@ -43,7 +43,7 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs=10, show_plot=False)
                               tolerance=1e-4,
                               ascent=True)
 
-    sampler = fit.SequentialMC(rbm)
+    sampler = fit.DrivenSequentialMC.from_batch(rbm, data)
 
     sgd = fit.SGD(rbm, data, opt, num_epochs, sampler=sampler, method=fit.tap, monitor=perf)
 
