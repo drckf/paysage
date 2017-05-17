@@ -1,6 +1,6 @@
 from paysage import batch
 from paysage import layers
-from paysage.models import tap_machine
+from paysage.models import model
 from paysage import fit
 from paysage import optimizers
 from paysage import backends as be
@@ -31,8 +31,7 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs=10, show_plot=False)
     vis_layer = layers.BernoulliLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = tap_machine.TAP_rbm([vis_layer, hid_layer], num_persistent_samples=0, num_random_samples=1,
-                              tolerance_EMF=1e-4, max_iters_EMF=25, terms=num_terms)
+    rbm = model.Model([vis_layer, hid_layer])
     rbm.initialize(data, 'glorot_normal')
 
     perf  = fit.ProgressMonitor(data,
@@ -44,7 +43,9 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs=10, show_plot=False)
                               tolerance=1e-4,
                               ascent=True)
 
-    sgd = fit.SGD(rbm, data, opt, num_epochs, method=fit.tap, monitor=perf)
+    sampler = fit.DrivenSequentialMC.from_batch(rbm, data)
+
+    sgd = fit.SGD(rbm, data, opt, num_epochs, sampler=sampler, method=fit.tap, monitor=perf)
 
     # fit the model
     print('Training with stochastic gradient ascent using TAP expansion to ' + str(num_terms) + ' terms.')

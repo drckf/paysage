@@ -447,7 +447,8 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
 # alias
 pcd = persistent_contrastive_divergence
 
-def tap(vdata, model, sampler=None, steps=None):
+def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=1e-4,
+        max_iters_EMF=25, num_random_samples=1):
     """
     Compute the gradient using the Thouless-Anderson-Palmer (TAP)
     mean field approximation.
@@ -457,19 +458,43 @@ def tap(vdata, model, sampler=None, steps=None):
     "A Deterministic and Generalized Framework for Unsupervised Learning
     with Restricted Boltzmann Machines"
 
-
     Args:
         vdata (tensor): observed visible units
         model: a model object
-        sampler (default to None): not required
-        steps (default to None): not requires
+        sampler: for marginal free energy
+        positive_steps: steps to sample MCMC for positive phase
+
+        TAP free energy computation parameters:
+            init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+            tol float: tolerance for quitting minimization.
+            max_iters: maximum gradient decsent steps
+            num_random_samples: number of Gibbs FE seeds to start from random
+            num_persistent_samples: number of persistent magnetization parameters to keep as seeds
+                for Gibbs FE estimation.
 
     Returns:
-        gradient
+        gradient object
 
     """
+    if num_random_samples <= 0:
+        raise ValueError("Must specify at least one random or persistent sample for Gibbs FE seeding")
+
     data_state = State.from_visible(vdata, model)
-    return model.gradient(data_state, None)
+    sampler.set_positive_state(data_state)
+    sampler.update_positive_state(positive_steps)
+
+    # compute the conditional sampling on all visible-side layers,
+    # inclusive over hidden-side layers
+    for i in range(1, model.num_layers - 1):
+        clamped_layers = list(range(i))
+        sampler.update_positive_state(positive_steps, clamped=clamped_layers)
+
+    # make a mean field step to compute the expectation on the last layer
+    clamped_layers = list(range(model.num_layers - 1))
+    grad_data_state = model.mean_field_iteration(1, sampler.pos_state, clamped=clamped_layers)
+
+    return model.TAP_gradient(grad_data_state, num_random_samples, 0, [],
+                              init_lr_EMF, tolerance_EMF, max_iters_EMF)
 
 
 class StochasticGradientDescent(object):
