@@ -1,4 +1,6 @@
 import copy
+import numpy as np
+
 from .. import backends as be
 
 
@@ -249,6 +251,30 @@ class ComputationGraph(object):
         self.excluded_layers = []
         self.excluded_weights = []
 
+    def print_graph(self):
+        """
+        Prints the state of the compute graph.  Used for debugging.
+        """
+        print("*** compute graph ***")
+        print("~~~~~~ layers ~~~~~~")
+        for i, lc in enumerate(self.layer_connections):
+            print("LAYER {}".format(i))
+            print("connected layers:", lc)
+
+        print("~~~~~~ weights ~~~~~~")
+        for i, wc in enumerate(self.weight_connections):
+            print("WEIGHT {}".format(i))
+            print("connected weights:", wc)
+
+        print("~~~~~~ attributes ~~~~~~")
+        print("clamped_sampling:", self.clamped_sampling)
+        print("trainable_layers:", self.trainable_layers)
+        print("trainable_weights:", self.trainable_weights)
+        print("excluded_layers:", self.excluded_layers)
+        print("excluded_weights:", self.excluded_weights)
+
+        print("*** _____________ ***")
+
     def default_incidence_matrix(self):
         """
         Builds the default incidence matrix.
@@ -284,11 +310,25 @@ class ComputationGraph(object):
         self.layer_connections = self.connections.adjacency_list
         self.weight_connections = self.connections.edge_list
 
+    def set_clamped_sampling(self, clamped_sampling):
+        """
+        Convenience function to set the layers for which sampling is clamped.
+        Sets exactly the given layers to have sampling clamped.
+
+        Args:
+            clamped_sampling (List): the exact set of layers which are have sampling clamped.
+
+        Returns:
+            None
+
+        """
+        self.clamped_sampling = clamped_sampling
+
     def set_trainable_layers(self, trainable_layers):
         """
         Convenience function to set the layers which are trainable
         Sets exactly the given layers as trainable.
-        Sets the left-connected weights to untrainable layers as untrainable.
+        Sets weights untrainable if the higher index layer is untrainable.
 
         Args:
             trainable_layers (List): the exact set of layers which are trainable
@@ -301,8 +341,8 @@ class ComputationGraph(object):
         # set weights where an untrainable layer is a higher index to untrainable
         untrainable_layers = list(set(range(len())) - set(trainable_layers))
         untrainable_weights = []
-        for weight_index in self.weight_connections:
-            if weight_index[1] in untrainable_layers:
+        for weight_index, weight_con in enumerate(self.weight_connections):
+            if weight_con[1] in untrainable_layers:
                 untrainable_weights.append(weight_index)
         self.trainable_weights = sorted(list(set(range(len(self.weight_connections)))
                                             - set(untrainable_weights)))

@@ -40,11 +40,12 @@ class Model(object):
 
         # set the weights
         self.weights = [layers.Weights(
-                            (self.layers[w.left_layer].len,
-                             self.layers[w.right_layer].len
+                            (self.layers[weight_index[0]].len,
+                             self.layers[weight_index[1]].len
                             )
-                        ) for w in self.graph.weight_connections]
+                        ) for weight_index in self.graph.weight_connections]
         self.num_weights = len(self.weights)
+        self.graph.print_graph()
 
     def get_config(self) -> dict:
         """
@@ -146,10 +147,10 @@ class Model(object):
             list[tensor]: the weights connecting layer i to its neighbros
 
         """
-        left_weights = [weight_index for weight_index in self.graph.weight_connections \
-                            if weight_index[1] == i]
-        right_weights = [weight_index for weight_index in self.graph.weight_connections \
-                            if weight_index[0] == i]
+        left_weights = [weight_index for weight_index, weight_con in enumerate(self.graph.weight_connections) \
+                            if weight_con[1] == i]
+        right_weights = [weight_index for weight_index, weight_con in enumerate(self.graph.weight_connections) \
+                            if weight_con[0] == i]
         return [self.weights[j].W() for j in left_weights] + [self.weights[j].W_T() for j in right_weights]
 
     def _alternating_update(self, func_name, state, beta=None):
@@ -301,8 +302,8 @@ class Model(object):
         # compute the positive phase of the gradients of the weights
         for i in range(self.num_weights):
             if i in update_weights:
-                iL = self.graph.weight_connections[i].left_layer
-                iR = self.graph.weight_connections[i].right_layer
+                iL = self.graph.weight_connections[i][0]
+                iR = self.graph.weight_connections[i][1]
                 grad.weights[i] = self.weights[i].derivatives(
                     self.layers[iL].rescale(data_state.units[iL]),
                     self.layers[iR].rescale(data_state.units[iR]),
@@ -326,8 +327,8 @@ class Model(object):
         # update the gradients of the weight parameters with the negative phase
         for i in range(self.num_weights):
             if i in update_weights:
-                iL = self.graph.weight_connections[i].left_layer
-                iR = self.graph.weight_connections[i].right_layer
+                iL = self.graph.weight_connections[i][0]
+                iR = self.graph.weight_connections[i][1]
                 grad.weights[i] = be.mapzip(be.subtract,
                     self.weights[i].derivatives(
                         self.layers[iL].rescale(model_state.units[iL]),
@@ -374,11 +375,12 @@ class Model(object):
         energy = 0
         for layer_index in range(self.num_layers):
             if layer_index not in self.graph.excluded_layers:
-            energy += self.layers[layer_index].energy(data.units[layer_index])
+                energy += self.layers[layer_index].energy(data.units[layer_index])
         for weight_index in range(self.num_weights):
-            iL = self.graph.weight_connections[weight_index][1]
-            iR = self.graph.weight_connections[weight_index][0]
-            energy += self.weights[weight_index].energy(data.units[iL], data.units[iR])
+            if weight_index not in self.graph.excluded_weights:
+                iL = self.graph.weight_connections[weight_index][0]
+                iR = self.graph.weight_connections[weight_index][1]
+                energy += self.weights[weight_index].energy(data.units[iL], data.units[iR])
         return energy
 
     def save(self, store: pandas.HDFStore) -> None:
