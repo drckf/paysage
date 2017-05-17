@@ -383,27 +383,65 @@ class Weights(Layer):
 
 ParamsGaussian = namedtuple("ParamsGaussian", ["loc", "log_var"])
 class MagnetizationGaussian(object):
-    def __init__(self, a_0, c_0):
-        self.params = [a_0, c_0]
+    def __init__(self, exp, var):
+        self.params = [exp, var]
 
     def __iter__(self):
         return iter(self.params)
 
-    def a(self):
+    def expectation(self):
         return self.params[0]
-    def c(self):
+    def variance(self):
         return self.params[1]
 
-    # TODO: should these really be here?
-    def _grad_GFE_update_down(self, mag_lower, mag, w, ww):
-        self._a -= be.dot(mag_lower.a(), w) + \
-                be.multiply(be.dot(mag_lower.c(), ww),
-                0.5 - mag.a())
+class GradientMagnetizationGaussian(MagnetizationGaussian):
+    """
+    This class represents a Gaussian layer's contribution to the gradient vector
+    of the Gibbs free energy. The underlying data is isomorphic to the MagnetizationGaussian object.
+    It provides two layer-wise functions used in the TAP method for training RBMs
 
-    def _grad_GFE_update_up(self, mag, mag_upper, w, ww):
-        self._a -= be.dot(w, mag_upper.a()) + \
-                be.multiply(0.5 - mag.a(),
-                be.dot(ww, mag_upper.c()))
+    """
+
+    def __init__(self, exp, var):
+        super().__init__(exp, var)
+
+    def grad_GFE_update_down(self, mag_lower, mag, w, ww):
+        """
+        Computes a layerwise magnetization gradient update according to the gradient
+         of the Gibbs Free energy.
+
+        Args:
+            mag_lower (magnetization object): magnetization of the lower layer
+            mag (magnetization object): magnetization of the current layer
+            w (float tensor): weight matrix mapping down from this layer to the
+                              lower layer
+            ww (float tensor): cached square of the weight matrix
+
+        Returns:
+            None
+        """
+        self.expect -= be.dot(mag_lower.expectation(), w) + \
+                       be.multiply(be.dot(mag_lower.variance(), ww),
+                       0.5 - mag.expectation())
+
+    def grad_GFE_update_up(self, mag, mag_upper, w, ww):
+        """
+        Computes a layerwise magnetization gradient update according to the gradient
+         of the Gibbs Free energy.
+
+        Args:
+            mag (magnetization object): magnetization of the current layer
+            mag_upper (magnetization object): magnetization of the upper layer
+            w (float tensor): weight matrix mapping down to this layer from the
+                              upper layer
+            ww (float tensor): cached square of the weight matrix
+
+        Returns:
+            None
+        """
+        self.expect -= be.dot(w, mag_upper.expectation()) + \
+                       be.multiply(0.5 - mag.expectation(),
+                       be.dot(ww, mag_upper.variance()))
 
 class GaussianLayer(Layer):
     """Layer with Gaussian units"""
