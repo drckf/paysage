@@ -487,6 +487,7 @@ class Model(object):
         # compute the gradient of the Helmholtz FE via TAP_gradient
         grad_HFE = self.grad_TAP_free_energy(num_r, num_p, persistent_samples,
                      init_lr_EMF, tolerance_EMF, max_iters_EMF)
+        
         return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
 
     def parameter_update(self, deltas):
@@ -696,20 +697,21 @@ class Model(object):
     def grad_TAP_free_energy(self, num_r, num_p, persistent_samples,
                              init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
-        Compute the gradient of the Helmholtz free engergy of the model according to the TAP
-        expansion around infinite temperature.
+        Compute the gradient of the Helmholtz free engergy of the model according 
+        to the TAP expansion around infinite temperature.
 
-        This function will use the class members which specify the parameters for the
-        Gibbs FE minimization.
-        The gradients are taken as the average over the gradients computed at each of the
-        minimial magnetizations for the Gibbs FE.
+        This function will use the class members which specify the parameters for 
+        the Gibbs FE minimization.
+        The gradients are taken as the average over the gradients computed at 
+        each of the minimial magnetizations for the Gibbs FE.
 
         Args:
             num_r: (int>=0) number of random seeds to use for Gibbs FE minimization
             num_p: (int>=0) number of persistent seeds to use for Gibbs FE minimization
             persistent_samples list of magnetizations: persistent magnetization parameters
                 to keep as seeds for Gibbs free energy estimation.
-            init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+            init_lr float: initial learning rate which is halved whenever necessary 
+            to enforce descent.
             tol float: tolerance for quitting minimization.
             max_iters int: maximum gradient decsent steps
 
