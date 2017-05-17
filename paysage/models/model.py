@@ -550,7 +550,7 @@ class Model(object):
 
     def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50, method='gd'):
         """
-        Compute the Helmholtz free engergy of the model according to the TAP
+        Compute the Helmholtz free energy of the model according to the TAP
         expansion around infinite temperature to second order.
 
         If the energy is,
