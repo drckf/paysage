@@ -175,14 +175,15 @@ class Model(object):
             and (layer_index not in self.graph.excluded_layers)]
 
         # update the odd then the even layers
-        for layer_set in [sampled_layers[1::2],
-                          sampled_layers[::2]]:
+        for layer_set in [range(1, self.num_layers, 2),
+                          range(0, self.num_layers, 2)]:
             for i in layer_set:
-                func = getattr(self.layers[i], func_name)
-                updated_state.units[i] = func(
-                    self._connected_rescaled_units(i, updated_state),
-                    self._connected_weights(i),
-                    beta)
+                if i in sampled_layers:
+                    func = getattr(self.layers[i], func_name)
+                    updated_state.units[i] = func(
+                        self._connected_rescaled_units(i, updated_state),
+                        self._connected_weights(i),
+                        beta)
 
         return updated_state
 
