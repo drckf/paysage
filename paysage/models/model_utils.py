@@ -317,7 +317,6 @@ class ComputationGraph(object):
         self.excluded_layers = []
         self.excluded_weights = []
 
-
     def default_incidence_matrix(self):
         """
         Builds the default incidence matrix.
@@ -401,6 +400,7 @@ class ComputationGraph(object):
     def exclude_layers(self, incidence_matrix, excluded_layers):
         """
         Exclude a list of layers.
+        Modifies the excluded_layers and excluded_weights attributes
 
         Args:
             incidence_matrix: the incidence matrix for the graph
@@ -412,7 +412,11 @@ class ComputationGraph(object):
         """
         new_incidence_matrix = np.copy(incidence_matrix)
         for excluded_layer in excluded_layers:
-            new_incidence_matrix = excluded_layer(new_incidence_matrix, excluded_layer)
+            new_incidence_matrix = self._exclude_layer(new_incidence_matrix, excluded_layer)
+
+        # set the excluded attributes
+        self.excluded_layers = excluded_layers
+        self.excluded_weights = np.where(~new_incidence_matrix.any(axis=0))[0]
         return new_incidence_matrix
 
 
