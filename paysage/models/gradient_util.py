@@ -14,6 +14,22 @@ Gradient = namedtuple("Gradient", [
 Utility functions for manipulating Gradient objects
 """
 
+def null_grad(model):
+    """
+    Return a gradient object filled with None.
+    
+    Args:
+        model: a Model object
+        
+    Returns:
+        Gradient
+    
+    """
+    return Gradient(
+        [None for layer in model.layers],
+        [None for weight in model.weights]
+        )
+
 def zero_grad(model):
     """
     Return a gradient object filled with zero tensors.

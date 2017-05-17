@@ -392,10 +392,7 @@ class Model(object):
             dict: Gradients of the model parameters.
 
         """
-        grad = gu.Gradient(
-            [None for l in self.layers],
-            [None for w in self.weights]
-        )
+        grad = gu.null_grad(self)
 
         # POSITIVE PHASE (using observed)
 
@@ -462,10 +459,7 @@ class Model(object):
 
         """
         # compute average grad_F_marginal over the minibatch
-        grad_MFE = gu.Gradient(
-            [None for l in self.layers],
-            [None for w in self.weights]
-        )
+        grad_MFE = gu.null_grad(self)
 
         # compute the postive phase of the gradients of the layer parameters
         for i in range(self.num_layers):
@@ -485,7 +479,7 @@ class Model(object):
             )
 
         # compute the gradient of the Helmholtz FE via TAP_gradient
-        grad_HFE = self.grad_TAP_free_energy(num_r, num_p, persistent_samples,
+        grad_HFE = self._grad_TAP_free_energy(num_r, num_p, persistent_samples,
                      init_lr_EMF, tolerance_EMF, max_iters_EMF)
         
         return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
@@ -527,42 +521,6 @@ class Model(object):
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
 
-    def grad_magnetization_GFE(self, mag):
-        """
-        Gradient of the Gibbs free energy with respect to the magnetization parameters
-
-        Args:
-            mag (list of magnetizations of layers):
-              magnetizations at which to compute the deriviates
-        """
-        grad = [None for lay in self.layers]
-        for l in range(self.num_layers):
-            grad[l] = self.layers[l]._grad_magnetization_GFE(mag[l])
-
-        for k in range(self.num_layers - 1):
-            way = self.weights[k]
-            w = way.params.matrix
-            ww = be.square(w)
-            grad[k+1]._grad_GFE_update_down(mag[k], mag[k+1], w, ww)
-            grad[k]._grad_GFE_update_up(mag[k], mag[k+1], w, ww)
-
-        return grad
-
-    def grad_gibbs_free_energy(self, mag):
-        """
-        Gradient of the Gibbs free energy with respect to the model parameters
-
-        Args:
-            mag (list of magnetizations of layers):
-              magnetizations at which to compute the deriviates
-        """
-        grad_GFE = gu.Gradient(
-            [self.layers[l]._grad_loc_GFE(mag[l]) for l in range(self.num_layers)],
-            [self.weights[w]._grad_GFE(mag[w], mag[w+1])
-                for w in range(self.num_layers-1)]
-            )
-        return grad_GFE
-
     def gibbs_free_energy(self, mag):
         """
         Gibbs FE according to TAP2 appoximation
@@ -574,6 +532,7 @@ class Model(object):
         total = 0
         B = [self.layers[l]._gibbs_lagrange_multipliers_1st_moment(mag[l]) for l in range(self.num_layers)]
         A = [self.layers[l]._gibbs_lagrange_multipliers_2nd_moment(mag[l]) for l in range(self.num_layers)]
+        
         for l in range(self.num_layers):
             lay = self.layers[l]
             total += lay._gibbs_free_energy_entropy_term(B[l], A[l], mag[l])
@@ -583,6 +542,7 @@ class Model(object):
             total -= be.dot(mag[w].a(), be.dot(way.params.matrix, mag[w+1].a()))
             total -= 0.5 * be.dot(mag[w].c(), \
                      be.dot(be.square(way.params.matrix), mag[w+1].c()))
+            
         return total
 
     def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50, method='gd'):
@@ -654,7 +614,7 @@ class Model(object):
             #print(gam)
             while (its < max_iters):
                 its += 1
-                grad = self.grad_magnetization_GFE(mag)
+                grad = self._grad_magnetization_GFE(mag)
                 for g in grad:
                     be.apply_(lr_, g)
                 m_provisional = [be.mapzip(be.subtract, grad[l], mag[l]) for l in range(self.num_layers)]
@@ -693,8 +653,44 @@ class Model(object):
             assert False, \
                    "Constraint satisfaction is not currently supported"
             return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
+        
+    def _grad_magnetization_GFE(self, mag):
+        """
+        Gradient of the Gibbs free energy with respect to the magnetization parameters
 
-    def grad_TAP_free_energy(self, num_r, num_p, persistent_samples,
+        Args:
+            mag (list of magnetizations of layers):
+              magnetizations at which to compute the deriviates
+        """
+        grad = [None for lay in self.layers]
+        for l in range(self.num_layers):
+            grad[l] = self.layers[l]._grad_magnetization_GFE(mag[l])
+
+        for k in range(self.num_layers - 1):
+            way = self.weights[k]
+            w = way.params.matrix
+            ww = be.square(w)
+            grad[k+1]._grad_GFE_update_down(mag[k], mag[k+1], w, ww)
+            grad[k]._grad_GFE_update_up(mag[k], mag[k+1], w, ww)
+
+        return grad
+
+    def _grad_gibbs_free_energy(self, mag):
+        """
+        Gradient of the Gibbs free energy with respect to the model parameters
+
+        Args:
+            mag (list of magnetizations of layers):
+              magnetizations at which to compute the deriviates
+        """
+        grad_GFE = gu.Gradient(
+            [self.layers[l]._grad_loc_GFE(mag[l]) for l in range(self.num_layers)],
+            [self.weights[w]._grad_GFE(mag[w], mag[w+1])
+                for w in range(self.num_layers-1)]
+            )
+        return grad_GFE
+
+    def _grad_TAP_free_energy(self, num_r, num_p, persistent_samples,
                              init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Compute the gradient of the Helmholtz free engergy of the model according 
@@ -721,33 +717,27 @@ class Model(object):
         """
 
         # compute the TAP approximation to the Helmholtz free energy:
-        # TODO: this is a good pattern
-        # should make this a function in grad_utils.py
-        # zero_grad: (Model) -> Gradient
-        grad_EMF = gu.Gradient(
-            [be.apply(be.zeros_like, lay.params) for lay in self.layers],
-            [be.apply(be.zeros_like, way.params) for way in self.weights]
-        )
+        grad_EMF = gu.zero_grad(self)
 
         # compute minimizing magnetizations from random initializations
         for s in range(num_r):
-            (mag,EMF) = self.TAP_free_energy(None,
-                                             init_lr_EMF,
-                                             tolerance_EMF,
-                                             max_iters_EMF)
+            mag, EMF = self.TAP_free_energy(None,
+                                            init_lr_EMF,
+                                            tolerance_EMF,
+                                            max_iters_EMF)
             # Compute the gradients at this minimizing magnetization
-            grad_gfe = self.grad_gibbs_free_energy(mag)
+            grad_gfe = self._grad_gibbs_free_energy(mag)
             gu.grad_mapzip_(be.add_, grad_gfe, grad_EMF)
 
         # compute minimizing magnetizations from seeded initializations
         for s in range(num_p): # persistent seeds
-            (self.persistent_samples[s],EMF) = \
+            self.persistent_samples[s], EMF = \
              self.TAP_free_energy(persistent_samples[s],
                                   init_lr_EMF,
                                   tolerance_EMF,
                                   max_iters_EMF)
             # Compute the gradients at this minimizing magnetization
-            grad_gfe = self.grad_gibbs_free_energy(persistent_samples[s])
+            grad_gfe = self._grad_gibbs_free_energy(persistent_samples[s])
             gu.grad_mapzip_(be.add_, grad_gfe, grad_EMF)
 
         # average
