@@ -364,8 +364,40 @@ class ComputationGraph(object):
             L_2:  0   0   0
             L_3:  0   0   1
 
+        Args:
+            incidence_matrix: the incidence matrix for the graph
+            excluded_layer: the layer index to exclude
+
+        Returns:
+            new_incidence_matrix: the modified incidence matrix
 
         """
+        im = IncidenceMatrix(incidence_matrix)
+        new_incidence_matrix = np.copy(incidence_matrix)
+
+        # find all edges touching this vertex
+        affected_weights = np.nonzero(im.incidence_matrix[excluded_layer])[0]
+        # define which vertex to transfer to
+        lower_index_connected_layers = [i for i in im.adjacency_list[excluded_layer] \
+                                        if i < excluded_layer]
+        # if there are none, then we will exclude edges that connect to it
+        try:
+            transfer_layer = max(lower_index_connected_layers)
+        except ValueError:
+            transfer_layer = None
+
+        # loop over the affected weights, excluding them or transfering ownership
+        for weight_index in affected_weights:
+            # if the index is higher
+            # or there is no layer to transfer to, exclude the edge
+            if weight_index[1] == excluded_layer or not transfer_layer:
+                new_incidence_matrix[:, weight_index] = 0
+            # otherwise it is lower, and we can transfer it
+            else:
+                new_incidence_matrix[excluded_layer, weight_index] = 0
+                new_incidence_matrix[transfer_layer, weight_index] = 1
+
+        return incidence_matrix
 
 
 
