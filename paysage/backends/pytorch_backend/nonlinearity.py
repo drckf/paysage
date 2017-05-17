@@ -1,8 +1,12 @@
 import torch
+import math
 from . import matrix
 from . import typedef as T
 
 LOG2 = 0.6931471805599453
+
+def pi() -> T.Scalar:
+    return T.Scalar(math.pi)
 
 def tmul(a: T.Scalar, x: T.FloatTensor) -> T.FloatTensor:
     """

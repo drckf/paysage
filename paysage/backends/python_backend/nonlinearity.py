@@ -5,6 +5,9 @@ from . import typedef as T
 EPSILON = float(numpy.finfo(numpy.float32).eps)
 LOG2 = 0.6931471805599453
 
+def pi() -> T.Scalar:
+    return T.Scalar(math.pi)
+
 def tmul(a: T.Scalar, x: T.Tensor) -> T.Tensor:
     """
     Elementwise multiplication of tensor x by scalar a.
