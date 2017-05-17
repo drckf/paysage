@@ -591,10 +591,12 @@ class Model(object):
                   (Magnetization, float)
 
         """
+        # TODO: do we want to support both?
         if method not in ['gd', 'constraint']:
             raise ValueError("Must specify a valid method for minimizing the Gibbs free energy")
 
-        #TODO: What does this function return?
+        # TODO: What does this function return?
+        # TODO: should this stay as a closure, or should it be a method
         def minimize_gibbs_free_energy_GD(m, init_lr=0.01, tol=1e-6, max_iters=1):
             """
             Simple gradient descent routine to minimize Gibbs free energy
