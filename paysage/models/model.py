@@ -721,6 +721,9 @@ class Model(object):
         """
 
         # compute the TAP approximation to the Helmholtz free energy:
+        # TODO: this is a good pattern
+        # should make this a function in grad_utils.py
+        # zero_grad: (Model) -> Gradient
         grad_EMF = gu.Gradient(
             [be.apply(be.zeros_like, lay.params) for lay in self.layers],
             [be.apply(be.zeros_like, way.params) for way in self.weights]

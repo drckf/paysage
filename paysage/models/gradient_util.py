@@ -14,6 +14,12 @@ Gradient = namedtuple("Gradient", [
 Utility functions for manipulating Gradient objects
 """
 
+def zero_grad(model):
+    return Gradient(
+        [be.apply(be.zeros_like, layer.params) for layer in model.layers],
+        [be.apply(be.zeros_like, weight.params) for weight in model.weights]
+        )
+
 def grad_fold(func, grad):
     """
     Apply a function entrywise over a Gradient objet,
