@@ -347,6 +347,7 @@ class Weights(Layer):
                                   "matrix"))
         return derivs
     
+    # TODO: rename GFE_derivatives to be consistent
     def _grad_GFE(self, vis, hid):
         """
         Gradient of the Gibbs free energy associated with this layer
@@ -1029,6 +1030,7 @@ class IsingLayer(Layer):
 ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
 
 #TODO: make interface that this must implement
+# TODO: a and c are not informative variable names
 class MagnetizationBernoulli(object):
     def __init__(self, a_0):
         self._a = a_0
@@ -1046,10 +1048,12 @@ class MagnetizationBernoulli(object):
 
     def a(self):
         return self._a
+    
     def c(self):
         return self._a - be.square(self._a)
 
     # TODO: should these really be here?
+    # TODO: what does these functions do?
     def _grad_GFE_update_down(self, mag_lower, mag, w, ww):
         self._a -= be.dot(mag_lower.a(), w) + \
                 be.multiply(be.dot(mag_lower.c(), ww),
@@ -1081,9 +1085,11 @@ class BernoulliLayer(Layer):
         self.rand = be.rand
         self.params = ParamsBernoulli(be.zeros(self.len))
 
+    #TODO: docstring
     def get_zero_magnetization(self):
         return MagnetizationBernoulli(be.zeros(self.len))
 
+    #TODO: docstring
     def get_random_magnetization(self):
         return MagnetizationBernoulli(be.rand((self.len,)))
 
@@ -1140,6 +1146,8 @@ class BernoulliLayer(Layer):
         """
         return -be.dot(data, self.params.loc)
 
+    # TODO: use of the term "diagonal" is a bit confusing since B is a tensor
+    # but it is not a diagonal tensor
     def log_partition_function(self, B, A):
         """
         Compute the logarithm of the partition function of the layer
@@ -1198,6 +1206,7 @@ class BernoulliLayer(Layer):
         """
         return ParamsBernoulli(be.mean(self._grad_log_partition_function(B,A), axis=0))
 
+    # TODO: what does this return?
     def _gibbs_lagrange_multipliers_1st_moment(self, mag):
         """
         The Lagrange multipliers associated with the first moment of the spins.
@@ -1207,6 +1216,7 @@ class BernoulliLayer(Layer):
         """
         return be.subtract(self.params.loc, be.log(be.divide(1 - mag._a, mag._a)))
 
+    # TODO: what does this return?
     def _gibbs_lagrange_multipliers_2nd_moment(self, mag):
         """
         The Lagrange multipliers associated with the second moment of the spins.
@@ -1217,6 +1227,7 @@ class BernoulliLayer(Layer):
         """
         return be.zeros_like(mag._a)
 
+    # TODO: what does this return?
     def _gibbs_free_energy_entropy_term(self, B, A, mag):
         """
         The TAP-0 Gibbs free energy term associated strictly with this layer
@@ -1229,6 +1240,7 @@ class BernoulliLayer(Layer):
         return -be.tsum(self.log_partition_function(B, A)) + \
                 be.dot(B, mag._a) + be.dot(A, mag._a)
 
+    # TODO: what does this return?
     def _grad_magnetization_GFE(self, mag):
         """
         Gradient of the Gibbs free energy with respect to the magnetization
@@ -1239,7 +1251,8 @@ class BernoulliLayer(Layer):
         """
         return MagnetizationBernoulli(be.log(be.divide(1.0 - mag._a, mag._a)) - \
                                       self.params.loc)
-
+        
+    # TODO: what does this return?
     def _grad_loc_GFE(self, mag):
         """
         Gradient of the Gibbs free energy with respect to local field parameters
