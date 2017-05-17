@@ -606,10 +606,11 @@ class StochasticGradientDescent(object):
             self.model.graph.set_trainable_layers(trainable_layers)
             self.model.graph.set_excluded_layers(excluded_layers)
 
-            self.model.graph.print_graph()
-
             # train in this configuration
             self.train()
+
+            # reset the exclusions
+            self.model.graph.reset_exclusions()
 
             # reset the learning rate schedule
             self.optimizer.stepsize = lr_schedule_cache

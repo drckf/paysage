@@ -240,7 +240,7 @@ class ComputationGraph(object):
         incidence_matrix = self.default_incidence_matrix()
 
         # set the connections between layers
-        self.update_connections = self.update_connections(incidence_matrix)
+        self.update_connections(incidence_matrix)
 
         # the default properties
         # all layers can be sampled, trained, not excluded
@@ -315,7 +315,7 @@ class ComputationGraph(object):
         """
         self.trainable_layers = trainable_layers
         # set weights where an untrainable layer is a higher index to untrainable
-        untrainable_layers = list(set(range(len())) - set(trainable_layers))
+        untrainable_layers = list(set(range(len(self.layer_connections))) - set(trainable_layers))
         untrainable_weights = []
         for weight_index, weight_con in enumerate(self.weight_connections):
             if weight_con[1] in untrainable_layers:
@@ -344,9 +344,9 @@ class ComputationGraph(object):
         self.excluded_weights = np.where(~new_incidence_matrix.any(axis=0))[0]
 
         # call the update
-        self.update(new_incidence_matrix)
+        self.update_connections(new_incidence_matrix)
 
-    def exclude_layer(self, incidence_matrix, excluded_layer):
+    def _exclude_layer(self, incidence_matrix, excluded_layer):
         """
         Returns an incidence matrix from a given one,
             excluding a single layer.
@@ -400,7 +400,7 @@ class ComputationGraph(object):
         for weight_index in affected_weights:
             # if the index is higher
             # or there is no layer to transfer to, exclude the edge
-            if weight_index[1] == excluded_layer or not transfer_layer:
+            if (self.weight_connections[weight_index][1] == excluded_layer) or not transfer_layer:
                 new_incidence_matrix[:, weight_index] = 0
             # otherwise it is lower, and we can transfer it
             else:
@@ -408,3 +408,21 @@ class ComputationGraph(object):
                 new_incidence_matrix[transfer_layer, weight_index] = 1
 
         return new_incidence_matrix
+
+    def reset_exclusions(self):
+        """
+        Resets excluded layers to None.
+        Useful when changing the layer exclusions
+        Modifies the connections and exclusions attributes.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.excluded_layers = []
+        self.excluded_weights = []
+        incidence_matrix = self.default_incidence_matrix()
+        self.update_connections(incidence_matrix)

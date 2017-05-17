@@ -146,10 +146,14 @@ class Model(object):
             list[tensor]: the weights connecting layer i to its neighbros
 
         """
-        left_weights = [weight_index for weight_index, weight_con in enumerate(self.graph.weight_connections) \
-                            if weight_con[1] == i]
-        right_weights = [weight_index for weight_index, weight_con in enumerate(self.graph.weight_connections) \
-                            if weight_con[0] == i]
+        left_weights = []
+        right_weights = []
+        for weight_index, weight_con in enumerate(self.graph.weight_connections):
+            if i in weight_con:
+                if weight_con[1] == i:
+                    left_weights.append(weight_index)
+                else:
+                    right_weights.append(weight_index)
         return [self.weights[j].W() for j in left_weights] + [self.weights[j].W_T() for j in right_weights]
 
     def _alternating_update(self, func_name, state, beta=None):
