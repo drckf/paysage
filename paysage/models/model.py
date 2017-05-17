@@ -479,7 +479,7 @@ class Model(object):
             )
 
         # compute the gradient of the Helmholtz FE via TAP_gradient
-        grad_HFE = self._grad_TAP_free_energy(num_r, num_p, persistent_samples,
+        grad_HFE = self.grad_TAP_free_energy(num_r, num_p, persistent_samples,
                      init_lr_EMF, tolerance_EMF, max_iters_EMF)
         
         return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
@@ -521,7 +521,6 @@ class Model(object):
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
 
-    # TODO: what does this function return?
     def gibbs_free_energy(self, mag):
         """
         Gibbs FE according to TAP2 appoximation
@@ -529,10 +528,13 @@ class Model(object):
         Args:
             mag (list of magnetizations of layers):
               magnetizations at which to compute the free energy
+
+        Returns:
+            float: Gibbs free energy
         """
         total = 0
-        B = [self.layers[l]._gibbs_lagrange_multipliers_1st_moment(mag[l]) for l in range(self.num_layers)]
-        A = [self.layers[l]._gibbs_lagrange_multipliers_2nd_moment(mag[l]) for l in range(self.num_layers)]
+        B = [self.layers[l]._gibbs_lagrange_multipliers_expectation(mag[l]) for l in range(self.num_layers)]
+        A = [self.layers[l]._gibbs_lagrange_multipliers_variance(mag[l]) for l in range(self.num_layers)]
         
         for l in range(self.num_layers):
             lay = self.layers[l]
@@ -540,9 +542,9 @@ class Model(object):
 
         for w in range(self.num_layers-1):
             way = self.weights[w]
-            total -= be.dot(mag[w].a(), be.dot(way.params.matrix, mag[w+1].a()))
-            total -= 0.5 * be.dot(mag[w].c(), \
-                     be.dot(be.square(way.params.matrix), mag[w+1].c()))
+            total -= be.dot(mag[w].expectation(), be.dot(way.params.matrix, mag[w+1].expectation()))
+            total -= 0.5 * be.dot(mag[w].variance(), \
+                     be.dot(be.square(way.params.matrix), mag[w+1].variance()))
             
         return total
 
@@ -591,21 +593,27 @@ class Model(object):
                   (Magnetization, float)
 
         """
-        # TODO: do we want to support both?
+        # TODO: re-implement support for constraint satisfaction method
         if method not in ['gd', 'constraint']:
             raise ValueError("Must specify a valid method for minimizing the Gibbs free energy")
 
-        # TODO: What does this function return?
-        # TODO: should this stay as a closure, or should it be a method
         def minimize_gibbs_free_energy_GD(m, init_lr=0.01, tol=1e-6, max_iters=1):
             """
             Simple gradient descent routine to minimize Gibbs free energy
 
+            Note: The fact that this method is a closure suggests that it might be moved to a
+                   utility class later
+
             Args:
                 m (list of magnetizations of layers): seed for gradient descent
-                init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+                init_lr float: initial learning rate which is halved whenever necessary
+                               to enforce descent.
                 tol float: tolerance for quitting minimization.
                 max_iters int: maximum gradient decsent steps
+
+            Returns:
+                tuple (list of magnetizations, minimal GFE value)
+
             """
             mag = deepcopy(m)
             eps = 1e-6
@@ -657,8 +665,7 @@ class Model(object):
             assert False, \
                    "Constraint satisfaction is not currently supported"
             return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
-        
-    # TODO: What does this function return?
+
     def _grad_magnetization_GFE(self, mag):
         """
         Gradient of the Gibbs free energy with respect to the magnetization parameters
@@ -666,6 +673,9 @@ class Model(object):
         Args:
             mag (list of magnetizations of layers):
               magnetizations at which to compute the deriviates
+
+        Returns:
+            list (list of gradient magnetization objects for each layer)
         """
         grad = [None for lay in self.layers]
         for l in range(self.num_layers):
@@ -675,12 +685,11 @@ class Model(object):
             way = self.weights[k]
             w = way.params.matrix
             ww = be.square(w)
-            grad[k+1]._grad_GFE_update_down(mag[k], mag[k+1], w, ww)
-            grad[k]._grad_GFE_update_up(mag[k], mag[k+1], w, ww)
+            grad[k+1].grad_GFE_update_down(mag[k], mag[k+1], w, ww)
+            grad[k].grad_GFE_update_up(mag[k], mag[k+1], w, ww)
 
         return grad
 
-    # TODO: What does this function return?
     def _grad_gibbs_free_energy(self, mag):
         """
         Gradient of the Gibbs free energy with respect to the model parameters
@@ -688,15 +697,18 @@ class Model(object):
         Args:
             mag (list of magnetizations of layers):
               magnetizations at which to compute the deriviates
+
+        Returns:
+            namedtuple (Gradient)
         """
         grad_GFE = gu.Gradient(
-            [self.layers[l]._grad_loc_GFE(mag[l]) for l in range(self.num_layers)],
-            [self.weights[w]._grad_GFE(mag[w], mag[w+1])
+            [self.layers[l].GFE_derivatives(mag[l]) for l in range(self.num_layers)],
+            [self.weights[w].GFE_derivatives(mag[w], mag[w+1])
                 for w in range(self.num_layers-1)]
             )
         return grad_GFE
 
-    def _grad_TAP_free_energy(self, num_r, num_p, persistent_samples,
+    def grad_TAP_free_energy(self, num_r, num_p, persistent_samples,
                              init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Compute the gradient of the Helmholtz free engergy of the model according 
@@ -718,7 +730,7 @@ class Model(object):
             max_iters int: maximum gradient decsent steps
 
         Returns:
-            namedtuple: Gradient: containing gradients of the model parameters.
+            namedtuple: (Gradient): containing gradients of the model parameters.
 
         """
 
