@@ -1,6 +1,7 @@
 import os, sys
 from collections import OrderedDict, namedtuple
 import pandas
+import math
 
 from . import penalties
 from . import constraints
@@ -489,7 +490,7 @@ class GaussianLayer(Layer):
 
 
         log(Z_i) = (B_i u_i - A_i + B_i^2 s_i^2 / 2)/(1 + 2 s_i^2 A_i) *
-                   1/2 log((2 pi s_i^2)/ (1 + 2 s_i^2 A_i)
+                   1/2 log((2 pi s_i^2)/ (1 + 2 s_i^2 A_i))
 
         Args:
             A (tensor (num_samples, num_units)): external field
@@ -501,24 +502,68 @@ class GaussianLayer(Layer):
         """
         scale = be.exp(self.params.log_var)
         denom = 1.0 + 2.0 * be.multiply(scale, A)
-        logZ = be.divide(denom, be.multiply(self.params.loc, B) - A + 0.5 * be.multiply(scale, be.square(B))) + \
-               0.5 * be.log(be.divide(denom, 2.0 * be.pi() * scale))
+        logZ = be.divide(denom, be.multiply(self.params.loc, B) - be.multiply(be.square(self.params.loc),A) + 0.5 * be.multiply(scale, be.square(B))) + \
+               0.5 * be.log(be.divide(denom, be.broadcast(2.0 * math.pi * scale, denom)))
         return logZ
 
+    def _grad_u_log_partition_function(self, B, A):
+        """
+        Compute the gradient with respect to u_i of the logarithm of the partition function of the layer
+        with external fields B, A as above.
 
-        Z_i = Tr_{x_i} exp( a_i x_i + B_i x_i - A_i x_i^2)
-        = 1 + \exp(a_i + B_i - A_i)
-
-        log(Z_i) = softplus(a_i + B_i - A_i)
+        (d_u_i) logZ = B_i - 2 u_i A_i / (1 + 2 s_i^2 A_i)
 
         Args:
-            phi (tensor (num_samples, num_units)): external field
+            A (tensor (num_samples, num_units)): external field
+            B (tensor (num_samples, num_units)): diagonal quadratic external field
 
         Returns:
-            logZ (tensor, num_samples, num_units)): log partition function
+            (d_u_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
 
         """
-        return be.softplus(be.add(self.params.loc, be.subtract(A,B)))
+
+        scale = be.exp(self.params.log_var)
+        denom = 1.0 + 2.0 * be.multiply(scale, A)
+
+        return be.divide(denom, B - 2.0 * be.multiply(self.params.loc, A))
+
+    def _grad_s_log_partition_function(self, B, A):
+        """
+        Compute the gradient with respect to u_i of the logarithm of the partition function of the layer
+        with external fields B, A as above.
+
+        denom = 1 + 2 s_i^2 A
+        d_log_s_i^2) logZ = (u_i B_i - A_i + 1/2 B_i^2 s_i^2)/denom + 1/(2 denom^2)
+
+        Args:
+            A (tensor (num_samples, num_units)): external field
+            B (tensor (num_samples, num_units)): diagonal quadratic external field
+
+        Returns:
+            (d_log_s_i^2) logZ (tensor (num_samples, num_units)): gradient of the log partition function
+
+        """
+        scale = be.exp(self.params.log_var)
+        bc_scale = be.broadcast(scale, B)
+        denom = 1.0 + 2.0 * be.multiply(scale, A)
+        return be.divide(denom, be.multiply(self.params.loc, B) - be.multiply(be.square(self.params.loc),A) + 0.5 * be.multiply(be.square(B), bc_scale)) + \
+               0.5 * be.divide(be.square(denom), be.ones_like(B))
+
+    def grad_log_partition_function(self, B, A):
+        """
+        Compute the gradient of the logarithm of the partition function with respect to
+        its local field parameter with external field B and quadratic interaction A.
+
+        Args:
+            A (tensor (num_samples, num_units)): external field
+            B (tensor (num_samples, num_units)): diagonal quadratic interaction
+
+        Returns:
+            (d_u_i) \oplus (d_s_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
+
+        """
+        return ParamsGaussian(be.mean(self._grad_u_log_partition_function(B,A), axis=0),
+                              be.mean(self._grad_s_log_partition_function(B,A), axis=0))
 
     def online_param_update(self, data):
         """
