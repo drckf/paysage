@@ -2122,5 +2122,7 @@ def test_sin():
     assert_close(py_y, torch_y, "sin")
 
 
+# ----- Functional Programs ----- #
+
 if __name__ == "__main__":
     pytest.main([__file__])
