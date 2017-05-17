@@ -335,7 +335,6 @@ class ComputationGraph(object):
             incidence_matrix[i+1, i] = 1
         return incidence_matrix
 
-
     def exclude_layer(self, incidence_matrix, excluded_layer):
         """
         Returns an incidence matrix from a given one,
@@ -397,10 +396,24 @@ class ComputationGraph(object):
                 new_incidence_matrix[excluded_layer, weight_index] = 0
                 new_incidence_matrix[transfer_layer, weight_index] = 1
 
-        return incidence_matrix
+        return new_incidence_matrix
 
+    def exclude_layers(self, incidence_matrix, excluded_layers):
+        """
+        Exclude a list of layers.
 
+        Args:
+            incidence_matrix: the incidence matrix for the graph
+            excluded_layers (list): the layer indices to exclude
 
+        Returns:
+            new_incidence_matrix: the modified incidence matrix
+
+        """
+        new_incidence_matrix = np.copy(incidence_matrix)
+        for excluded_layer in excluded_layers:
+            new_incidence_matrix = excluded_layer(new_incidence_matrix, excluded_layer)
+        return new_incidence_matrix
 
 
 class ComputationGraph(object):
