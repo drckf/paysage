@@ -302,11 +302,9 @@ class ComputationGraph(object):
 
         # build the incidence matrix
         incidence_matrix = self.default_incidence_matrix()
-        self.connections = IncidenceMatrix(incidence_matrix)
 
-        # define the connections between layers
-        self.layer_connections = self.connections.adjacency_list
-        self.weight_connections = self.connections.edge_list
+        # set the connections between layers
+        self.update_connections = self.update_connections(incidence_matrix)
 
         # the default properties
         # all layers can be sampled, trained, not excluded
@@ -333,6 +331,70 @@ class ComputationGraph(object):
             incidence_matrix[i, i] = 1
             incidence_matrix[i+1, i] = 1
         return incidence_matrix
+
+    def update_connections(self, incidence_matrix):
+        """
+        Update the connections in the model.
+        Modifies the connections attributes.
+
+        Args:
+            incidence_matrix: a matrix specifying the connections in the model.
+
+        Returns:
+            None
+
+        """
+        self.connections = IncidenceMatrix(incidence_matrix)
+
+        # define the connections between layers
+        self.layer_connections = self.connections.adjacency_list
+        self.weight_connections = self.connections.edge_list
+
+    def set_trainable_layers(self, trainable_layers):
+        """
+        Convenience function to set the layers which are trainable
+        Sets exactly the given layers as trainable.
+        Sets the left-connected weights to untrainable layers as untrainable.
+
+        Args:
+            trainable_layers (List): the exact set of layers which are trainable
+
+        Returns:
+            None
+
+        """
+        self.trainable_layers = trainable_layers
+        # set weights where an untrainable layer is a higher index to untrainable
+        untrainable_layers = list(set(range(len())) - set(trainable_layers))
+        untrainable_weights = []
+        for weight_index in self.weight_connections:
+            if weight_index[1] in untrainable_layers:
+                untrainable_weights.append(weight_index)
+        self.trainable_weights = sorted(list(set(range(len(self.weight_connections)))
+                                            - set(untrainable_weights)))
+
+    def set_excluded_layers(self, excluded_layers):
+        """
+        Exclude a list of layers.
+        Modifies the excluded_layers and excluded_weights attributes
+
+        Args:
+            excluded_layers (list): the layer indices to exclude
+
+        Returns:
+            None
+
+        """
+        new_incidence_matrix = np.copy(self.connections.incidence_matrix)
+        for excluded_layer in excluded_layers:
+            new_incidence_matrix = self._exclude_layer(new_incidence_matrix, excluded_layer)
+
+        # set the excluded attributes
+        self.excluded_layers = excluded_layers
+        self.excluded_weights = np.where(~new_incidence_matrix.any(axis=0))[0]
+
+        # call the update
+        self.update(new_incidence_matrix)
 
     def exclude_layer(self, incidence_matrix, excluded_layer):
         """
@@ -395,28 +457,6 @@ class ComputationGraph(object):
                 new_incidence_matrix[excluded_layer, weight_index] = 0
                 new_incidence_matrix[transfer_layer, weight_index] = 1
 
-        return new_incidence_matrix
-
-    def exclude_layers(self, incidence_matrix, excluded_layers):
-        """
-        Exclude a list of layers.
-        Modifies the excluded_layers and excluded_weights attributes
-
-        Args:
-            incidence_matrix: the incidence matrix for the graph
-            excluded_layers (list): the layer indices to exclude
-
-        Returns:
-            new_incidence_matrix: the modified incidence matrix
-
-        """
-        new_incidence_matrix = np.copy(incidence_matrix)
-        for excluded_layer in excluded_layers:
-            new_incidence_matrix = self._exclude_layer(new_incidence_matrix, excluded_layer)
-
-        # set the excluded attributes
-        self.excluded_layers = excluded_layers
-        self.excluded_weights = np.where(~new_incidence_matrix.any(axis=0))[0]
         return new_incidence_matrix
 
 
