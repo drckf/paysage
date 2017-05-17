@@ -477,39 +477,34 @@ class GaussianLayer(Layer):
         result = be.square(diff) / be.broadcast(scale, vis)
         return 0.5 * be.mean(result, axis=1)
 
-    def log_partition_function(self, phi):
-       """
-       Compute the logarithm of the partition function of the layer
-       with external field phi.
-
-       Let u_i and s_i be the loc and scale parameters of unit i.
-       Let phi_i be an external field
-
-       Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + \phi_i x_i)
-       = exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i
-
-       log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2
-
-       Args:
-           phi tensor (num_samples, num_units): external field
-
-       Returns:
-           logZ (tensor, num_samples, num_units)): log partition function
-
-       """
-       scale = be.exp(self.params.log_var)
-       logZ = be.multiply(self.params.loc, phi)
-       logZ += be.multiply(scale, be.square(phi))
-       logZ += be.log(be.broadcast(scale, phi))
-       return logZ
-
-    def augmented_log_partition_function(self, B, A):
+    def log_partition_function(self, B, A):
         """
         Compute the logarithm of the partition function of the layer
-        with external field phi augmented with a quadratic factor.
+        with external field B augmented with a diagonal quadratic interaction A.
 
-        Let a_i be the loc parameter of unit i.
-        Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
+        Let u_i and s_i be the loc and scale parameters of unit i.
+
+        Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + B_i x_i - A_i x_i^2)
+            = exp((B_i u_i - A_i + B_i^2 s_i^2 / 2)/(1 + 2 s_i^2 A_i)) sqrt(2 pi) s_i
+
+
+        log(Z_i) = (B_i u_i - A_i + B_i^2 s_i^2 / 2)/(1 + 2 s_i^2 A_i) *
+                   1/2 log((2 pi s_i^2)/ (1 + 2 s_i^2 A_i)
+
+        Args:
+            A (tensor (num_samples, num_units)): external field
+            B (tensor (num_samples, num_units)): diagonal quadratic external field
+
+        Returns:
+            logZ (tensor, num_samples, num_units)): log partition function
+
+        """
+        scale = be.exp(self.params.log_var)
+        denom = 1.0 + 2.0 * be.multiply(scale, A)
+        logZ = be.divide(denom, be.multiply(self.params.loc, B) - A + 0.5 * be.multiply(scale, be.square(B))) + \
+               0.5 * be.log(be.divide(denom, 2.0 * be.pi() * scale))
+        return logZ
+
 
         Z_i = Tr_{x_i} exp( a_i x_i + B_i x_i - A_i x_i^2)
         = 1 + \exp(a_i + B_i - A_i)
