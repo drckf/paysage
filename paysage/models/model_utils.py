@@ -251,30 +251,6 @@ class ComputationGraph(object):
         self.excluded_layers = []
         self.excluded_weights = []
 
-    def print_graph(self):
-        """
-        Prints the state of the compute graph.  Used for debugging.
-        """
-        print("*** compute graph ***")
-        print("~~~~~~ layers ~~~~~~")
-        for i, lc in enumerate(self.layer_connections):
-            print("LAYER {}".format(i))
-            print("connected layers:", lc)
-
-        print("~~~~~~ weights ~~~~~~")
-        for i, wc in enumerate(self.weight_connections):
-            print("WEIGHT {}".format(i))
-            print("connected weights:", wc)
-
-        print("~~~~~~ attributes ~~~~~~")
-        print("clamped_sampling:", self.clamped_sampling)
-        print("trainable_layers:", self.trainable_layers)
-        print("trainable_weights:", self.trainable_weights)
-        print("excluded_layers:", self.excluded_layers)
-        print("excluded_weights:", self.excluded_weights)
-
-        print("*** _____________ ***")
-
     def default_incidence_matrix(self):
         """
         Builds the default incidence matrix.

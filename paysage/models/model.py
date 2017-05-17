@@ -45,7 +45,6 @@ class Model(object):
                             )
                         ) for weight_index in self.graph.weight_connections]
         self.num_weights = len(self.weights)
-        self.graph.print_graph()
 
     def get_config(self) -> dict:
         """
