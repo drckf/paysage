@@ -131,8 +131,7 @@ class Model(object):
             list[tensor]: the rescaled values of the connected units
 
         """
-        connected_layers = self.graph.layer_connections[i].left_connected_layers \
-                        + self.graph.layer_connections[i].right_connected_layers
+        connected_layers = self.graph.layer_connections[i]
         return [self.layers[j].rescale(state.units[j]) for j in connected_layers]
 
     def _connected_weights(self, i):
@@ -147,8 +146,10 @@ class Model(object):
             list[tensor]: the weights connecting layer i to its neighbros
 
         """
-        left_weights = self.graph.layer_connections[i].left_connected_weights
-        right_weights = self.graph.layer_connections[i].right_connected_weights
+        left_weights = [weight_index for weight_index in self.graph.weight_connections \
+                            if weight_index[1] == i]
+        right_weights = [weight_index for weight_index in self.graph.weight_connections \
+                            if weight_index[0] == i]
         return [self.weights[j].W() for j in left_weights] + [self.weights[j].W_T() for j in right_weights]
 
     def _alternating_update(self, func_name, state, beta=None):
@@ -167,40 +168,15 @@ class Model(object):
         """
         updated_state = mu.State.from_state(state)
 
+        # find layers that can be sampled
+        sampled_layers = [layer_index for layer_index in range(self.num_layers) \
+            if (layer_index not in self.graph.clamped_sampling) \
+            and (layer_index not in self.graph.excluded_layers)]
+
         # update the odd then the even layers
-        for layer_set in [range(1, self.num_layers, 2),
-                          range(0, self.num_layers, 2)]:
+        for layer_set in [sampled_layers[1::2],
+                          sampled_layers[::2]]:
             for i in layer_set:
-                if not self.graph.layer_connections[i].sampling_clamped:
-                    func = getattr(self.layers[i], func_name)
-                    updated_state.units[i] = func(
-                        self._connected_rescaled_units(i, updated_state),
-                        self._connected_weights(i),
-                        beta)
-
-        return updated_state
-
-    def _cyclic_update(self, func_name, state, beta=None):
-        """
-        Performs a single Gibbs sampling update, cycling through the layers.
-        Updates 1 -> n -> 0.
-        state -> new state
-
-        Args:
-            func_name (str, function name): layer function name to apply to the units to sample
-            state (State object): the current state of each layer
-            beta (optional, tensor (batch_size, 1)): Inverse temperatures
-
-        Returns:
-            new state
-
-        """
-        updated_state = mu.State.from_state(state)
-
-        # update in sequence
-        update_sequence = list(range(1,self.num_layers)) + list(range(self.num_layers-2,-1,-1))
-        for i in update_sequence:
-            if not self.graph.layer_connections[i].sampling_clamped:
                 func = getattr(self.layers[i], func_name)
                 updated_state.units[i] = func(
                     self._connected_rescaled_units(i, updated_state),
@@ -306,8 +282,10 @@ class Model(object):
             [None for w in self.weights]
         )
 
-        update_layers = range(self.num_layers)
-        update_weights = range(self.num_weights)
+        update_layers = [layer_index for layer_index in range(self.num_layers) \
+            if (layer_index not in self.graph.excluded_layers)]
+        update_weights = [weight_index for weight_index in range(self.num_weights) \
+            if (weight_index not in self.graph.excluded_weights)]
 
         # POSITIVE PHASE (using observed)
 
@@ -375,12 +353,12 @@ class Model(object):
             None
 
         """
-        for i in range(self.num_layers):
-            if self.graph.layer_connections[i].trainable:
-                self.layers[i].parameter_step(deltas.layers[i])
-        for i in range(self.num_weights):
-            if self.graph.weight_connections[i].trainable:
-                self.weights[i].parameter_step(deltas.weights[i])
+        for layer_index in range(self.num_layers):
+            if layer_index in self.graph.trainable_layers:
+                self.layers[layer_index].parameter_step(deltas.layers[layer_index])
+        for weight_index in range(self.num_weights):
+            if weight_index in self.graph.trainable_weights:
+                self.weights[weight_index].parameter_step(deltas.weights[weight_index])
 
     def joint_energy(self, data):
         """
@@ -394,12 +372,13 @@ class Model(object):
 
         """
         energy = 0
-        for i in range(self.num_layers):
-            energy += self.layers[i].energy(data.units[i])
-        for i in range(self.num_weights):
-            iL = self.graph.weight_connections[i].left_layer
-            iR = self.graph.weight_connections[i].right_layer
-            energy += self.weights[i].energy(data.units[iL], data.units[iR])
+        for layer_index in range(self.num_layers):
+            if layer_index not in self.graph.excluded_layers:
+            energy += self.layers[layer_index].energy(data.units[layer_index])
+        for weight_index in range(self.num_weights):
+            iL = self.graph.weight_connections[weight_index][1]
+            iR = self.graph.weight_connections[weight_index][0]
+            energy += self.weights[weight_index].energy(data.units[iL], data.units[iR])
         return energy
 
     def save(self, store: pandas.HDFStore) -> None:
