@@ -1072,8 +1072,8 @@ class GradientMagnetizationBernoulli(MagnetizationBernoulli):
             None
         """
         self.expect -= be.dot(mag_lower.expectation(), w) + \
-                be.multiply(be.dot(mag_lower.variance(), ww),
-                0.5 - mag.expectation())
+                       be.multiply(be.dot(mag_lower.variance(), ww),
+                       0.5 - mag.expectation())
 
     def grad_GFE_update_up(self, mag, mag_upper, w, ww):
         """
@@ -1091,8 +1091,8 @@ class GradientMagnetizationBernoulli(MagnetizationBernoulli):
             None
         """
         self.expect -= be.dot(w, mag_upper.expectation()) + \
-                be.multiply(0.5 - mag.expectation(),
-                be.dot(ww, mag_upper.variance()))
+                       be.multiply(0.5 - mag.expectation(),
+                       be.dot(ww, mag_upper.variance()))
 
 class BernoulliLayer(Layer):
     """Layer with Bernoulli units (i.e., 0 or +1)."""
@@ -1117,26 +1117,26 @@ class BernoulliLayer(Layer):
 
     def get_zero_magnetization(self):
         """
-        MagnetizationBernoulli object with zero expectation.
+        Create a layer magnetization with zero expectations.
 
         Args:
             None
 
         Returns:
-            bernoulli layer
+            BernoulliMagnetization
 
         """
         return MagnetizationBernoulli(be.zeros(self.len))
 
     def get_random_magnetization(self):
         """
-        MagnetizationBernoulli object with random expectation.
+        Create a layer magnetization with random expectations.
 
         Args:
             None
 
         Returns:
-            bernoulli layer
+            BernoulliMagnetization
 
         """
         return MagnetizationBernoulli(be.rand((self.len,)))
