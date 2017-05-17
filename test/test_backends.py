@@ -1481,6 +1481,70 @@ def test_divide():
     py_divide = py_matrix.divide(py_a, py_b)
     torch_divide = torch_matrix.divide(torch_a, torch_b)
     assert_close(py_divide, torch_divide, "divide: (M, N) x (M, N)")
+    
+def test_divide_():
+    N = 100
+    M = 50
+
+    # (N, 1) x (N, M)
+    a_shape = (N, 1)
+    b_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_matrix.divide_(py_a, py_b)
+    torch_matrix.divide_(torch_a, torch_b)
+    assert_close(py_b, torch_b, "divide_: (N, 1) x (N, M)")
+
+    # (1, N) x (M, N)
+    a_shape = (1, N)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_matrix.divide_(py_a, py_b)
+    torch_matrix.divide_(torch_a, torch_b)
+    assert_close(py_b, torch_b, "divide_: (1, N) x (M, N)")
+
+    # (N,) x (M, N)
+    a_shape = (N,)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_matrix.divide(py_a, py_b)
+    torch_matrix.divide(torch_a, torch_b)
+    assert_close(py_b, torch_b, "divide_: (N,) x (M, N)")
+
+    # (M, N) x (M, N)
+    a_shape = (M, N)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_matrix.divide(py_a, py_b)
+    torch_matrix.divide(torch_a, torch_b)
+    assert_close(py_b, torch_b, "divide_: (M, N) x (M, N)")
 
 def test_affine():
     # vector-vector-matrix
