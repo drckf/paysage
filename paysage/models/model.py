@@ -521,6 +521,7 @@ class Model(object):
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
 
+    # TODO: what does this function return?
     def gibbs_free_energy(self, mag):
         """
         Gibbs FE according to TAP2 appoximation
@@ -593,6 +594,7 @@ class Model(object):
         if method not in ['gd', 'constraint']:
             raise ValueError("Must specify a valid method for minimizing the Gibbs free energy")
 
+        #TODO: What does this function return?
         def minimize_gibbs_free_energy_GD(m, init_lr=0.01, tol=1e-6, max_iters=1):
             """
             Simple gradient descent routine to minimize Gibbs free energy
@@ -654,6 +656,7 @@ class Model(object):
                    "Constraint satisfaction is not currently supported"
             return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
         
+    # TODO: What does this function return?
     def _grad_magnetization_GFE(self, mag):
         """
         Gradient of the Gibbs free energy with respect to the magnetization parameters
@@ -675,6 +678,7 @@ class Model(object):
 
         return grad
 
+    # TODO: What does this function return?
     def _grad_gibbs_free_energy(self, mag):
         """
         Gradient of the Gibbs free energy with respect to the model parameters

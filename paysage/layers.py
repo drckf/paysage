@@ -346,6 +346,17 @@ class Weights(Layer):
             self.get_penalty_grad(-be.batch_outer(vis, hid) / len(vis),
                                   "matrix"))
         return derivs
+    
+    def _grad_GFE(self, vis, hid):
+        """
+        Gradient of the Gibbs free energy associated with this layer
+
+        Args:
+            vis (magnetization object): magnetization of the lower layer linked to w
+            hid (magnetization objet): magnetization of the upper layer linked to w
+        """
+        return ParamsWeights(-be.outer(vis.a(), hid.a()) - \
+          be.multiply(self.params.matrix, be.outer(vis.c(), hid.c())))
 
     def energy(self, vis, hid):
         """
@@ -363,17 +374,6 @@ class Weights(Layer):
 
         """
         return -be.batch_dot(vis, self.W(), hid)
-
-    def _grad_GFE(self, mag_down, mag_up):
-        """
-        Gradient of the Gibbs free energy associated with this layer
-
-        Args:
-            mag_down (magnetization object): magnetization of the lower layer linked to w
-            mag_up (magnetization objet): magnetization of the upper layer linked to w
-        """
-        return ParamsWeights(-be.outer(mag_down.a(), mag_up.a()) - \
-                             be.multiply(self.params.matrix, be.outer(mag_down.c(), mag_up.c())))
 
 
 ParamsGaussian = namedtuple("ParamsGaussian", ["loc", "log_var"])
@@ -477,10 +477,13 @@ class GaussianLayer(Layer):
        """
        scale = be.exp(self.params.log_var)
        logZ = be.multiply(self.params.loc, phi)
-       logZ += be.multiply(scale, be.square(phi))
-       logZ += be.log(be.broadcast(scale, phi))
+       logZ += be.multiply(scale, be.square(phi)) / 2
+       logZ += be.log(be.broadcast(scale, phi)) / 2
        return logZ
 
+    # TODO: What is this function? 
+    # The docstring isn't consistent with what it does
+    # and the variable names are not informative
     def augmented_log_partition_function(self, B, A):
         """
         Compute the logarithm of the partition function of the layer
