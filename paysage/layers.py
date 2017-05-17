@@ -377,6 +377,28 @@ class Weights(Layer):
 
 
 ParamsGaussian = namedtuple("ParamsGaussian", ["loc", "log_var"])
+class MagnetizationGaussian(object):
+    def __init__(self, a_0, c_0):
+        self.params = [a_0, c_0]
+
+    def __iter__(self):
+        return iter(self.params)
+
+    def a(self):
+        return self.params[0]
+    def c(self):
+        return self.params[1]
+
+    # TODO: should these really be here?
+    def _grad_GFE_update_down(self, mag_lower, mag, w, ww):
+        self._a -= be.dot(mag_lower.a(), w) + \
+                be.multiply(be.dot(mag_lower.c(), ww),
+                0.5 - mag.a())
+
+    def _grad_GFE_update_up(self, mag, mag_upper, w, ww):
+        self._a -= be.dot(w, mag_upper.a()) + \
+                be.multiply(0.5 - mag.a(),
+                be.dot(ww, mag_upper.c()))
 
 class GaussianLayer(Layer):
     """Layer with Gaussian units"""
