@@ -734,8 +734,7 @@ class Model(object):
                                              max_iters_EMF)
             # Compute the gradients at this minimizing magnetization
             grad_gfe = self.grad_gibbs_free_energy(mag)
-            def accum_(x,y): x[:] = be.add(x,y)
-            gu.grad_mapzip_(accum_, grad_EMF, grad_gfe)
+            gu.grad_mapzip_(be.add_, grad_gfe, grad_EMF)
 
         # compute minimizing magnetizations from seeded initializations
         for s in range(num_p): # persistent seeds
@@ -746,8 +745,7 @@ class Model(object):
                                   max_iters_EMF)
             # Compute the gradients at this minimizing magnetization
             grad_gfe = self.grad_gibbs_free_energy(persistent_samples[s])
-            def accum_(x,y): x[:] = be.add(x,y)
-            gu.grad_mapzip_(accum_, grad_EMF, grad_gfe)
+            gu.grad_mapzip_(be.add_, grad_gfe, grad_EMF)
 
         # average
         scale = partial(be.tmul_, be.float_scalar(1/(num_p + num_r)))
