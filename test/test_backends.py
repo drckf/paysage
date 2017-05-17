@@ -1225,6 +1225,70 @@ def test_subtract():
     py_subtract = py_matrix.subtract(py_a, py_b)
     torch_subtract = torch_matrix.subtract(torch_a, torch_b)
     assert_close(py_subtract, torch_subtract, "subtract: (M, N) x (M, N)")
+    
+def test_subtract_():
+    N = 100
+    M = 50
+
+    # (N, 1) x (N, M)
+    a_shape = (N, 1)
+    b_shape = (N, M)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_matrix.subtract_(py_a, py_b)
+    torch_matrix.subtract_(torch_a, torch_b)
+    assert_close(py_b, torch_b, "subtract_: (N, 1) x (N, M)")
+
+    # (1, N) x (M, N)
+    a_shape = (1, N)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_matrix.subtract_(py_a, py_b)
+    torch_matrix.subtract_(torch_a, torch_b)
+    assert_close(py_b, torch_b, "subtract_: (1, N) x (M, N)")
+
+    # (N,) x (M, N)
+    a_shape = (N,)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_matrix.subtract_(py_a, py_b)
+    torch_matrix.subtract_(torch_a, torch_b)
+    assert_close(py_b, torch_b, "subtract_: (N,) x (M, N)")
+
+    # (M, N) x (M, N)
+    a_shape = (M, N)
+    b_shape = (M, N)
+
+    py_rand.set_seed()
+    py_a = py_rand.rand(a_shape)
+    py_b = py_rand.rand(b_shape)
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_matrix.subtract_(py_a, py_b)
+    torch_matrix.subtract_(torch_a, torch_b)
+    assert_close(py_b, torch_b, "subtract_: (M, N) x (M, N)")
 
 def test_multiply():
     N = 100
