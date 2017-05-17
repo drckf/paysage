@@ -1,8 +1,163 @@
 from paysage import backends as be
 from paysage import layers
 from paysage.models import model
+from paysage.models import gradient_util as gu
 
 import pytest
+
+# ----- Functional Programs with Gradients ----- #
+
+def test_zero_grad():
+    num_visible_units = 100
+    num_hidden_units = 50
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.BernoulliLayer(num_visible_units)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+    rbm = model.Model([vis_layer, hid_layer])
+
+    # create a gradient object filled with zeros
+    gu.zero_grad(rbm)
+
+def test_random_grad():
+    num_visible_units = 100
+    num_hidden_units = 50
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.BernoulliLayer(num_visible_units)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+    rbm = model.Model([vis_layer, hid_layer])
+
+    # create a gradient object filled with random numbers
+    gu.random_grad(rbm)
+
+def test_grad_fold():
+    num_visible_units = 100
+    num_hidden_units = 50
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.BernoulliLayer(num_visible_units)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+    rbm = model.Model([vis_layer, hid_layer])
+
+    # create a gradient object filled with random numbers
+    grad = gu.random_grad(rbm)
+
+    def test_func(x, y):
+        return be.norm(x) + be.norm(y)
+
+    gu.grad_fold(test_func, grad)
+
+def test_grad_accumulate():
+    num_visible_units = 100
+    num_hidden_units = 50
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.BernoulliLayer(num_visible_units)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+    rbm = model.Model([vis_layer, hid_layer])
+
+    # create a gradient object filled with random numbers
+    grad = gu.random_grad(rbm)
+    gu.grad_accumulate(be.norm, grad)
+
+def test_grad_apply():
+    num_visible_units = 100
+    num_hidden_units = 50
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.BernoulliLayer(num_visible_units)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+    rbm = model.Model([vis_layer, hid_layer])
+
+    # create a gradient object filled with random numbers
+    grad = gu.random_grad(rbm)
+    gu.grad_apply(be.square, grad)
+
+def test_grad_apply_():
+    num_visible_units = 100
+    num_hidden_units = 50
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.BernoulliLayer(num_visible_units)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+    rbm = model.Model([vis_layer, hid_layer])
+
+    # create a gradient object filled with random numbers
+    grad = gu.random_grad(rbm)
+    gu.grad_apply_(be.square, grad)
+
+def test_grad_mapzip():
+    num_visible_units = 100
+    num_hidden_units = 50
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.BernoulliLayer(num_visible_units)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+    rbm = model.Model([vis_layer, hid_layer])
+
+    # create a gradient object filled with random numbers
+    grad_1 = gu.random_grad(rbm)
+    grad_2 = gu.random_grad(rbm)
+    gu.grad_mapzip(be.add, grad_1, grad_2)
+
+def test_grad_mapzip_():
+    num_visible_units = 100
+    num_hidden_units = 50
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.BernoulliLayer(num_visible_units)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+    rbm = model.Model([vis_layer, hid_layer])
+
+    # create a gradient object filled with random numbers
+    grad_1 = gu.random_grad(rbm)
+    grad_2 = gu.random_grad(rbm)
+    gu.grad_mapzip_(be.add_, grad_1, grad_2)
+
+def test_grad_magnitude():
+    num_visible_units = 100
+    num_hidden_units = 50
+
+    # set a seed for the random number generator
+    be.set_seed()
+
+    # set up some layer and model objects
+    vis_layer = layers.BernoulliLayer(num_visible_units)
+    hid_layer = layers.BernoulliLayer(num_hidden_units)
+    rbm = model.Model([vis_layer, hid_layer])
+
+    # create a gradient object filled with random numbers
+    grad = gu.zero_grad(rbm)
+    mag = gu.grad_magnitude(grad)
+    assert mag == 0
+
+
+# ----- Layer Methods ----- #
 
 def test_bernoulli_conditional_params():
     num_visible_units = 100
