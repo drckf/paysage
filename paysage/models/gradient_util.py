@@ -14,7 +14,18 @@ Gradient = namedtuple("Gradient", [
 Utility functions for manipulating Gradient objects
 """
 
+#TODO: add a test for zero_grad
 def zero_grad(model):
+    """
+    Return a gradient object filled with zero tensors.
+    
+    Args:
+        model: a Model object
+        
+    Returns:
+        Gradient
+    
+    """
     return Gradient(
         [be.apply(be.zeros_like, layer.params) for layer in model.layers],
         [be.apply(be.zeros_like, weight.params) for weight in model.weights]
