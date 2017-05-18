@@ -4,6 +4,8 @@ from paysage.models import model
 from paysage.models import gradient_util as gu
 
 import pytest
+from copy import deepcopy
+from cytoolz import partial
 
 # ----- Functional Programs with Gradients ----- #
 
@@ -337,21 +339,20 @@ def test_bernoulli_GFE_derivatives():
         lay.params.loc[:] = be.rand_like(lay.params.loc)
 
     (m,TFE) = rbm.TAP_free_energy(None, init_lr=0.1, tol=1e-7,
-                                        max_iters=50, method='gd')
+                                        max_iters=50)
 
     lr = 0.1
     gogogo = True
-    grad = rbm.grad_TAP_free_energy(1, 0, None, 0.1, 1e-7, 50)
+    grad = rbm.grad_TAP_free_energy(0.1, 1e-7, 50)
     while gogogo:
         cop = deepcopy(rbm)
         lr_mul = partial(be.tmul, lr)
         for i in range(rbm.num_layers):
-            cop.layers[i].params =
-                be.mapzip(be.add, rbm.layers[i].params,
+            cop.layers[i].params = be.mapzip(be.add, rbm.layers[i].params,
                           be.apply(lr_mul, grad.layers[i]))
 
         (m,TFE_next) = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7,
-                                                 max_iters=50, method='gd')
+                                                 max_iters=50)
         regress = TFE_next - TFE < 0.0
         if regress:
             if lr < 1e-6:
@@ -716,33 +717,6 @@ def test_gaussian_derivatives():
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in gaussian-gaussian rbm"
 
-def test_gaussian_log_parition_gradient():
-    num_units = 500
-    num_parallel = 1
-    lay = layers.GaussianLayer(num_units)
-    lay.params.loc[:] = be.rand_like(lay.params.loc) * 2.0 - 1.0
-    lay.params.log_var[:] = be.rand_like(lay.params.loc) * 2.0 - 1.0
-    B = be.rand((num_parallel,num_units))
-    A = be.rand_like(B)
-    logZ = be.mean(log_partition_function(lay,A,B), axis=0)
-    lr = 0.01
-    gogogo = True
-    grad = lay.grad_log_partition_function(A,B)
-    while gogogo:
-        cop = deepcopy(lay)
-        cop.params.loc[:] = lay.params.loc + lr * grad.loc
-        cop.params.log_var[:] = lay.params.log_var + lr * grad.log_var
-        logZ_next = be.mean(cop.log_partition_function(A,B), axis=0)
-        regress = logZ_next - logZ < 0.0
-        if True in regress:
-            if lr < 1e-6:
-                assert False, \
-                "gradient of Gaussian log partition function wrong"
-                break
-            else:
-                lr *= 0.5
-        else:
-            break
 
 if __name__ == "__main__":
     pytest.main([__file__])
