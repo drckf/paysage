@@ -359,6 +359,7 @@ class Weights(Layer):
 
         Returns:
             derivs (namedtuple): 'matrix': tensor (contains gradient)
+            
         """
         return ParamsWeights(-be.outer(vis.expectation(), hid.expectation()) - \
           be.multiply(self.params.matrix, be.outer(vis.variance(), hid.variance())))
@@ -1229,6 +1230,7 @@ class MagnetizationBernoulli(object):
     MagnetizationBernoulli.expect, which are a float-valued in [0,1].
     The class presents a getter for the expectation as well as a
     function to compute the variance.
+    
     """
     def __init__(self, exp):
         self.expect = exp
@@ -1260,7 +1262,8 @@ class MagnetizationBernoulli(object):
 class GradientMagnetizationBernoulli(MagnetizationBernoulli):
     """
     This class represents a Bernoulli layer's contribution to the gradient vector
-    of the Gibbs free energy. The underlying data is isomorphic to the MagnetizationBernoulli object.
+    of the Gibbs free energy. 
+    The underlying data is isomorphic to the MagnetizationBernoulli object.
     It provides two layer-wise functions used in the TAP method for training RBMs
 
     """
@@ -1521,8 +1524,8 @@ class BernoulliLayer(Layer):
             gradient magnetization (GradientMagnetizationBernoulli):
                  gradient of GFE on this layer
         """
-        return GradientMagnetizationBernoulli(be.log(be.divide(1.0 - mag.expect, mag.expect)) - \
-                                              self.params.loc)
+        return GradientMagnetizationBernoulli(
+                be.log(be.divide(1.0 - mag.expect, mag.expect)) - self.params.loc)
 
     def GFE_derivatives(self, mag):
         """
