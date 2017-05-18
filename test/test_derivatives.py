@@ -336,7 +336,8 @@ def test_bernoulli_GFE_derivatives():
     for lay in rbm.layers:
         lay.params.loc[:] = be.rand_like(lay.params.loc)
 
-    (m,TFE) = rbm.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50, method='gd')
+    (m,TFE) = rbm.TAP_free_energy(None, init_lr=0.1, tol=1e-7,
+                                        max_iters=50, method='gd')
 
     lr = 0.1
     gogogo = True
@@ -345,13 +346,17 @@ def test_bernoulli_GFE_derivatives():
         cop = deepcopy(rbm)
         lr_mul = partial(be.tmul, lr)
         for i in range(rbm.num_layers):
-            cop.layers[i].params = be.mapzip(be.add, rbm.layers[i].params, be.apply(lr_mul, grad.layers[i]))
+            cop.layers[i].params =
+                be.mapzip(be.add, rbm.layers[i].params,
+                          be.apply(lr_mul, grad.layers[i]))
 
-        (m,TFE_next) = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50, method='gd')
+        (m,TFE_next) = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7,
+                                                 max_iters=50, method='gd')
         regress = TFE_next - TFE < 0.0
         if regress:
             if lr < 1e-6:
-                assert False, "TAP FE gradient is not working properly for Bernoulli models"
+                assert False, \
+                "TAP FE gradient is not working properly for Bernoulli models"
                 break
             else:
                 lr *= 0.5
