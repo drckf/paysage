@@ -18,10 +18,10 @@ def test_zero_grad():
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
     rbm = model.Model([vis_layer, hid_layer])
-    
+
     # create a gradient object filled with zeros
     gu.zero_grad(rbm)
-    
+
 def test_random_grad():
     num_visible_units = 100
     num_hidden_units = 50
@@ -33,10 +33,10 @@ def test_random_grad():
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
     rbm = model.Model([vis_layer, hid_layer])
-    
+
     # create a gradient object filled with random numbers
     gu.random_grad(rbm)
-    
+
 def test_grad_fold():
     num_visible_units = 100
     num_hidden_units = 50
@@ -48,13 +48,13 @@ def test_grad_fold():
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
     rbm = model.Model([vis_layer, hid_layer])
-    
+
     # create a gradient object filled with random numbers
     grad = gu.random_grad(rbm)
-    
+
     def test_func(x, y):
         return be.norm(x) + be.norm(y)
-    
+
     gu.grad_fold(test_func, grad)
 
 def test_grad_accumulate():
@@ -68,7 +68,7 @@ def test_grad_accumulate():
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
     rbm = model.Model([vis_layer, hid_layer])
-    
+
     # create a gradient object filled with random numbers
     grad = gu.random_grad(rbm)
     gu.grad_accumulate(be.norm, grad)
@@ -84,7 +84,7 @@ def test_grad_apply():
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
     rbm = model.Model([vis_layer, hid_layer])
-    
+
     # create a gradient object filled with random numbers
     grad = gu.random_grad(rbm)
     gu.grad_apply(be.square, grad)
@@ -100,7 +100,7 @@ def test_grad_apply_():
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
     rbm = model.Model([vis_layer, hid_layer])
-    
+
     # create a gradient object filled with random numbers
     grad = gu.random_grad(rbm)
     gu.grad_apply_(be.square, grad)
@@ -116,7 +116,7 @@ def test_grad_mapzip():
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
     rbm = model.Model([vis_layer, hid_layer])
-    
+
     # create a gradient object filled with random numbers
     grad_1 = gu.random_grad(rbm)
     grad_2 = gu.random_grad(rbm)
@@ -133,7 +133,7 @@ def test_grad_mapzip_():
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
     rbm = model.Model([vis_layer, hid_layer])
-    
+
     # create a gradient object filled with random numbers
     grad_1 = gu.random_grad(rbm)
     grad_2 = gu.random_grad(rbm)
@@ -150,7 +150,7 @@ def test_grad_magnitude():
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
     rbm = model.Model([vis_layer, hid_layer])
-    
+
     # create a gradient object filled with random numbers
     grad = gu.zero_grad(rbm)
     mag = gu.grad_magnitude(grad)
@@ -257,6 +257,106 @@ def test_bernoulli_derivatives():
 
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in bernoulli-bernoulli rbm"
+
+def test_bernoulli_log_partition_gradient():
+    lay = layers.BernoulliLayer(500)
+    lay.params.loc[:] = be.rand_like(lay.params.loc) * 2.0 - 1.0
+    A = be.rand((1,500))
+    B = be.rand_like(A)
+    grad = lay.grad_log_partition_function(A,B)
+    logZ = be.mean(lay.log_partition_function(A,B), axis=0)
+    lr = 0.01
+    gogogo = True
+    while gogogo:
+        cop = deepcopy(lay)
+        cop.params.loc[:] = lay.params.loc + lr * grad.loc
+        logZ_next = be.mean(cop.log_partition_function(A,B), axis=0)
+        regress = logZ_next - logZ < 0.0
+        if True in regress:
+            if lr < 1e-6:
+                assert False, \
+                "gradient of Bernoulli log partition function is wrong"
+                break
+            else:
+                lr *= 0.5
+        else:
+            break
+
+def test_bernoulli_GFE_magnetization_gradient():
+    num_units = 500
+
+    layer_1 = layers.BernoulliLayer(num_units)
+    layer_2 = layers.BernoulliLayer(num_units)
+    layer_3 = layers.BernoulliLayer(num_units)
+    layer_4 = layers.BernoulliLayer(num_units)
+    rbm = model.Model([layer_1, layer_2, layer_3, layer_4])
+    for i in range(len(rbm.weights)):
+        rbm.weights[i].params.matrix[:] = \
+        0.01 * be.randn(rbm.weights[i].shape)
+
+    for lay in rbm.layers:
+        lay.params.loc[:] = be.rand_like(lay.params.loc)
+
+    mag = [lay.get_random_magnetization() for lay in rbm.layers]
+
+    GFE = rbm.gibbs_free_energy(mag)
+
+    lr = 0.001
+    gogogo = True
+    grad = rbm._grad_magnetization_GFE(mag)
+    while gogogo:
+        cop = deepcopy(mag)
+        for i in range(rbm.num_layers):
+            cop[i].expect[:] = mag[i].expect + lr * grad[i].expect
+
+        GFE_next = rbm.gibbs_free_energy(cop)
+        regress = GFE_next - GFE < 0.0
+        if regress:
+            if lr < 1e-6:
+                assert False,\
+                "Bernoulli GFE magnetization gradient is wrong"
+                break
+            else:
+                lr *= 0.5
+        else:
+            break
+
+def test_bernoulli_GFE_derivatives():
+    num_units = 500
+
+    layer_1 = layers.BernoulliLayer(num_units)
+    layer_2 = layers.BernoulliLayer(num_units)
+    layer_3 = layers.BernoulliLayer(num_units)
+
+    rbm = model.Model([layer_1, layer_2, layer_3])
+    for i in range(len(rbm.weights)):
+        rbm.weights[i].params.matrix[:] = \
+        0.01 * be.randn(rbm.weights[i].shape)
+
+    for lay in rbm.layers:
+        lay.params.loc[:] = be.rand_like(lay.params.loc)
+
+    (m,TFE) = rbm.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50, method='gd')
+
+    lr = 0.1
+    gogogo = True
+    grad = rbm.grad_TAP_free_energy(1, 0, None, 0.1, 1e-7, 50)
+    while gogogo:
+        cop = deepcopy(rbm)
+        lr_mul = partial(be.tmul, lr)
+        for i in range(rbm.num_layers):
+            cop.layers[i].params = be.mapzip(be.add, rbm.layers[i].params, be.apply(lr_mul, grad.layers[i]))
+
+        (m,TFE_next) = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50, method='gd')
+        regress = TFE_next - TFE < 0.0
+        if regress:
+            if lr < 1e-6:
+                assert False, "TAP FE gradient is not working properly for Bernoulli models"
+                break
+            else:
+                lr *= 0.5
+        else:
+            break
 
 
 def test_ising_conditional_params():
