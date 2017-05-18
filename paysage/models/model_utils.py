@@ -160,6 +160,8 @@ class IncidenceMatrix(object):
         self.edge_list = self._edge_list()
         self.adjacency_matrix = self._adjacency_matrix()
         self.adjacency_list = self._adjacency_list()
+        self.low_index_edges = self._low_index_edges()
+        self.high_index_edges = self._high_index_edges()
 
     def _edge_list(self):
         """
@@ -204,6 +206,42 @@ class IncidenceMatrix(object):
             adjacency_list (List): the adjacency list
         """
         return [np.nonzero(row)[0] for row in self.adjacency_matrix]
+
+    def _low_index_edges(self):
+        """
+        Get the list of edges connected to each vertex,
+            where the vertex is the low index.
+        Needs a current edge_list and incidence_matrix.
+
+        Args:
+            None
+
+        Returns:
+            low_index_edges (List): edges connected to each vertex which have
+                the low index.
+
+        """
+        low_index_connections = np.array(self.edge_list).T[0]
+        return [list(np.where(low_index_connections == i)[0]) \
+                for i in range(len(self.incidence_matrix))]
+
+    def _high_index_edges(self):
+        """
+        Get the list of edges connected to each vertex,
+            where the vertex is the high index.
+        Needs a current edge_list and incidence_matrix.
+
+        Args:
+            None
+
+        Returns:
+            high_index_edges (List): edges connected to each vertex which have
+                the high index.
+
+        """
+        high_index_connections = np.array(self.edge_list).T[1]
+        return [list(np.where(high_index_connections == i)[0]) \
+                for i in range(len(self.incidence_matrix))]
 
 
 class ComputationGraph(object):
