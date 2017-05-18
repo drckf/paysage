@@ -439,7 +439,7 @@ class Model(object):
         return grad
 
 
-    def TAP_gradient(self, data_state, num_r, num_p, persistent_samples,
+    def TAP_gradient(self, data_state, num_r,
                      init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Gradient of -\ln P(v) with respect to the model parameters
@@ -447,9 +447,6 @@ class Model(object):
         Args:
             data_state (State object): The observed visible units and sampled hidden units.
             num_r: (int>=0) number of random seeds to use for Gibbs FE minimization
-            num_p: (int>=0) number of persistent seeds to use for Gibbs FE minimization
-            persistent_samples list of magnetizations: persistent magnetization parameters
-                to keep as seeds for Gibbs free energy estimation.
             init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
             tol float: tolerance for quitting minimization.
             max_iters int: maximum gradient decsent steps
@@ -479,8 +476,8 @@ class Model(object):
             )
 
         # compute the gradient of the Helmholtz FE via TAP_gradient
-        grad_HFE = self.grad_TAP_free_energy(num_r, num_p, persistent_samples,
-                     init_lr_EMF, tolerance_EMF, max_iters_EMF)
+        grad_HFE = self.grad_TAP_free_energy(num_r, init_lr_EMF,
+                                             tolerance_EMF, max_iters_EMF)
         
         return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
 
@@ -533,8 +530,10 @@ class Model(object):
             float: Gibbs free energy
         """
         total = 0
-        B = [self.layers[l]._gibbs_lagrange_multipliers_expectation(mag[l]) for l in range(self.num_layers)]
-        A = [self.layers[l]._gibbs_lagrange_multipliers_variance(mag[l]) for l in range(self.num_layers)]
+        B = [self.layers[l]._gibbs_lagrange_multipliers_expectation(mag[l])
+             for l in range(self.num_layers)]
+        A = [self.layers[l]._gibbs_lagrange_multipliers_variance(mag[l])
+             for l in range(self.num_layers)]
         
         for l in range(self.num_layers):
             lay = self.layers[l]
@@ -593,8 +592,8 @@ class Model(object):
                   (Magnetization, float)
 
         """
-        # TODO: re-implement support for constraint satisfaction method
-        if method not in ['gd', 'constraint']:
+        # TODO: re-implement support for constraint satisfaction method as needed
+        if method not in ['gd']:
             raise ValueError("Must specify a valid method for minimizing the Gibbs free energy")
 
         def minimize_gibbs_free_energy_GD(m, init_lr=0.01, tol=1e-6, max_iters=1):
@@ -659,12 +658,7 @@ class Model(object):
             for m in seed:
                 be.apply_(clip_, m)
 
-        if method == 'gd':
-            return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
-        elif method == 'constraint':
-            assert False, \
-                   "Constraint satisfaction is not currently supported"
-            return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
+        return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
 
     def _grad_magnetization_GFE(self, mag):
         """
@@ -708,8 +702,7 @@ class Model(object):
             )
         return grad_GFE
 
-    def grad_TAP_free_energy(self, num_r, num_p, persistent_samples,
-                             init_lr_EMF, tolerance_EMF, max_iters_EMF):
+    def grad_TAP_free_energy(self, num_r, init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Compute the gradient of the Helmholtz free engergy of the model according 
         to the TAP expansion around infinite temperature.
@@ -721,9 +714,6 @@ class Model(object):
 
         Args:
             num_r: (int>=0) number of random seeds to use for Gibbs FE minimization
-            num_p: (int>=0) number of persistent seeds to use for Gibbs FE minimization
-            persistent_samples list of magnetizations: persistent magnetization parameters
-                to keep as seeds for Gibbs free energy estimation.
             init_lr float: initial learning rate which is halved whenever necessary 
             to enforce descent.
             tol float: tolerance for quitting minimization.
@@ -747,19 +737,8 @@ class Model(object):
             grad_gfe = self._grad_gibbs_free_energy(mag)
             gu.grad_mapzip_(be.add_, grad_gfe, grad_EMF)
 
-        # compute minimizing magnetizations from seeded initializations
-        for s in range(num_p): # persistent seeds
-            self.persistent_samples[s], EMF = \
-             self.TAP_free_energy(persistent_samples[s],
-                                  init_lr_EMF,
-                                  tolerance_EMF,
-                                  max_iters_EMF)
-            # Compute the gradients at this minimizing magnetization
-            grad_gfe = self._grad_gibbs_free_energy(persistent_samples[s])
-            gu.grad_mapzip_(be.add_, grad_gfe, grad_EMF)
-
         # average
-        scale = partial(be.tmul_, be.float_scalar(1/(num_p + num_r)))
+        scale = partial(be.tmul_, be.float_scalar(1/num_r))
         gu.grad_apply_(scale, grad_EMF)
 
         return grad_EMF

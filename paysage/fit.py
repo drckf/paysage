@@ -453,6 +453,8 @@ def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=
     Compute the gradient using the Thouless-Anderson-Palmer (TAP)
     mean field approximation.
 
+    Slight modifications on the methods in
+
     Eric W Tramel, Marylou Gabrie, Andre Manoel, Francesco Caltagirone,
     and Florent Krzakala
     "A Deterministic and Generalized Framework for Unsupervised Learning
@@ -469,15 +471,13 @@ def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=
             tol float: tolerance for quitting minimization.
             max_iters: maximum gradient decsent steps
             num_random_samples: number of Gibbs FE seeds to start from random
-            num_persistent_samples: number of persistent magnetization parameters to keep as seeds
-                for Gibbs FE estimation.
 
     Returns:
         gradient object
 
     """
     if num_random_samples <= 0:
-        raise ValueError("Must specify at least one random or persistent sample for Gibbs FE seeding")
+        raise ValueError("Must specify at least one random sample for Gibbs FE seeding")
 
     data_state = State.from_visible(vdata, model)
     sampler.set_positive_state(data_state)
@@ -493,7 +493,7 @@ def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=
     clamped_layers = list(range(model.num_layers - 1))
     grad_data_state = model.mean_field_iteration(1, sampler.pos_state, clamped=clamped_layers)
 
-    return model.TAP_gradient(grad_data_state, num_random_samples, 0, [],
+    return model.TAP_gradient(grad_data_state, num_random_samples,
                               init_lr_EMF, tolerance_EMF, max_iters_EMF)
 
 
