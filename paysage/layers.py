@@ -6,6 +6,10 @@ from . import penalties
 from . import constraints
 from . import backends as be
 
+# CumulantsTAP type is common to all layers
+CumulantsTAP = namedtuple("CumulantsTAP", ["mean", "variance"])
+
+# Params type must be redefined for all Layers
 ParamsLayer = namedtuple("Params", [])
 
 class Layer(object):
@@ -379,7 +383,537 @@ class Weights(Layer):
 
         """
         return -be.batch_dot(vis, self.W(), hid)
+    
+ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
 
+class MagnetizationBernoulli(object):
+    """
+    This class holds the magnetization data of a Bernoulli layer.
+    Such data consists of a vector of expectation values for the layer's units,
+    MagnetizationBernoulli.expect, which are a float-valued in [0,1].
+    The class presents a getter for the expectation as well as a
+    function to compute the variance.
+    
+    """
+    def __init__(self, exp):
+        self.expect = exp
+
+    def __iter__(self):
+        self.beginning = True
+        return self
+
+    def __next__(self):
+        if self.beginning == False:
+            raise StopIteration
+        else:
+            self.beginning = False
+            return self.expect
+
+    def expectation(self):
+        """
+        Returns the vector of expectations of unit values
+        """
+        return self.expect
+
+    def variance(self):
+        """
+        Returns the variance of unit values. For a Bernoulli layer this
+        is determined by the expectation
+        """
+        return self.expect - be.square(self.expect)
+
+class GradientMagnetizationBernoulli(MagnetizationBernoulli):
+    """
+    This class represents a Bernoulli layer's contribution to the gradient vector
+    of the Gibbs free energy. 
+    The underlying data is isomorphic to the MagnetizationBernoulli object.
+    It provides two layer-wise functions used in the TAP method for training RBMs
+
+    """
+
+    def __init__(self, exp):
+        super().__init__(exp)
+
+    def grad_GFE_update_down(self, mag_lower, mag, w, ww):
+        """
+        Computes a layerwise magnetization gradient update according to the gradient
+         of the Gibbs Free energy.
+
+        Args:
+            mag_lower (magnetization object): magnetization of the lower layer
+            mag (magnetization object): magnetization of the current layer
+            w (float tensor): weight matrix mapping down from this layer to the
+                              lower layer
+            ww (float tensor): cached square of the weight matrix
+
+        Returns:
+            None
+        """
+        self.expect -= be.dot(mag_lower.expectation(), w) + \
+                       be.multiply(be.dot(mag_lower.variance(), ww),
+                       0.5 - mag.expectation())
+
+    def grad_GFE_update_up(self, mag, mag_upper, w, ww):
+        """
+        Computes a layerwise magnetization gradient update according to the gradient
+         of the Gibbs Free energy.
+
+        Args:
+            mag (magnetization object): magnetization of the current layer
+            mag_upper (magnetization object): magnetization of the upper layer
+            w (float tensor): weight matrix mapping down to this layer from the
+                              upper layer
+            ww (float tensor): cached square of the weight matrix
+
+        Returns:
+            None
+        """
+        self.expect -= be.dot(w, mag_upper.expectation()) + \
+                       be.multiply(0.5 - mag.expectation(),
+                       be.dot(ww, mag_upper.variance()))
+
+class BernoulliLayer(Layer):
+    """Layer with Bernoulli units (i.e., 0 or +1)."""
+
+    def __init__(self, num_units):
+        """
+        Create a layer with Bernoulli units.
+
+        Args:
+            num_units (int): the size of the layer
+
+        Returns:
+            bernoulli layer
+
+        """
+        super().__init__()
+
+        self.len = num_units
+        self.sample_size = 0
+        self.rand = be.rand
+        self.params = ParamsBernoulli(be.zeros(self.len))
+        
+    def get_magnetization(self, mean):
+        """
+        Compute a CumulantsTAP object for the BernoulliLayer.
+        
+        Args:
+            expect (tensor (num_units,)): expected values of the units
+            
+        returns:
+            CumulantsTAP
+        
+        """
+        return CumulantsTAP(mean, mean - be.square(mean))
+
+    def get_zero_magnetization(self):
+        """
+        Create a layer magnetization with zero expectations.
+
+        Args:
+            None
+
+        Returns:
+            BernoulliMagnetization
+
+        """
+        return self.get_magnetization(be.zeros(self.len))
+
+    def get_random_magnetization(self, epsilon=be.float_scalar(0.005)):
+        """
+        Create a layer magnetization with random expectations.
+
+        Args:
+            None
+
+        Returns:
+            BernoulliMagnetization
+
+        """
+        return self.get_magnetization(be.clip(be.rand((self.len,)), 
+                a_min=epsilon, a_max=be.float_scalar(1-epsilon)))
+
+    def get_config(self):
+        """
+        Get the configuration dictionary of the Bernoulli layer.
+
+        Args:
+            None:
+
+        Returns:
+            configuratiom (dict):
+
+        """
+        base_config = self.get_base_config()
+        base_config["num_units"] = self.len
+        base_config["sample_size"] = self.sample_size
+        return base_config
+
+    @classmethod
+    def from_config(cls, config):
+        """
+        Create a Bernoulli layer from a configuration dictionary.
+
+        Args:
+            config (dict)
+
+        Returns:
+            layer (Bernoulli)
+
+        """
+        layer = cls(config["num_units"])
+        layer.sample_size = config["sample_size"]
+        # TODO : params
+        for k, v in config["penalties"].items():
+            layer.add_penalty({k: penalties.from_config(v)})
+        for k, v in config["constraints"].items():
+            layer.add_constraint({k: getattr(constraints, v)})
+        return layer
+
+    def energy(self, data):
+        """
+        Compute the energy of the Bernoulli layer.
+
+        For sample k,
+        E_k = -\sum_i loc_i * v_i
+
+        Args:
+            vis (tensor (num_samples, num_units)): values of units
+
+        Returns:
+            tensor (num_samples,): energy per sample
+
+        """
+        return -be.dot(data, self.params.loc)
+
+    def log_partition_function(self, external_field, quadratic_field):
+        """
+        Compute the logarithm of the partition function of the layer
+        with external field (B) and quadratic field (A).
+
+        Let a_i be the loc parameter of unit i.
+        Let B_i be an external field
+        Let A_i be a quadratic field
+
+        Z_i = Tr_{x_i} exp( a_i x_i + B_i x_i - A_i x_i^2)
+        = 1 + \exp(a_i + B_i - A_i)
+
+        log(Z_i) = softplus(a_i + B_i - A_i)
+
+        Args:
+            external_field (tensor (num_samples, num_units)): external field
+            quadratic_field (tensor (num_samples, num_units)): quadratic field
+
+        Returns:
+            logZ (tensor (num_samples, num_units)): log partition function
+
+        """
+        return be.softplus(be.add(self.params.loc, 
+                                  be.subtract(quadratic_field, external_field)))
+
+    def _grad_log_partition_function(self, external_field, quadratic_field):
+        """
+        Compute the gradient of the logarithm of the partition function of the layer
+        with external field (B) and quadratic field (A), as above.
+
+        (d_a_i)softplus(a_i + B_i - A_i) = expit(a_i + B_i - A_i)
+
+        Note: This function passes vectorially over a minibatch of fields
+
+        Args:
+            external_field (tensor (num_samples, num_units)): external field
+            quadratic_field (tensor (num_samples, num_units)): quadratic field
+
+        Returns:
+            (d_a_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
+
+        """
+        return be.expit(be.add(be.unsqueeze(self.params.loc,0), 
+                               be.subtract(quadratic_field, external_field)))
+
+    def grad_log_partition_function(self, external_field, quadratic_field):
+        """
+        Compute the gradient of the logarithm of the partition function with respect to
+        its local field parameter with external field (B) and quadratic field (A).
+
+        (d_a_i)softplus(a_i + B_i - A_i) = expit(a_i + B_i - A_i)
+
+        Note: This function returns the mean parameters over a minibatch of input fields
+
+        Args:
+            external_field (tensor (num_samples, num_units)): external field
+            quadratic_field (tensor (num_samples, num_units)): quadratic field
+
+        Returns:
+            (d_a_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
+
+        """
+        return ParamsBernoulli(be.mean(self._grad_log_partition_function(
+                external_field, quadratic_field), axis=0))
+
+    def _gibbs_lagrange_multipliers_expectation(self, mag):
+        """
+        The Lagrange multipliers associated with the first moment of the spins.
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+
+        Returns:
+            lagrange multipler (tensor (num_units))
+
+        """
+        return be.subtract(self.params.loc, be.log(be.divide(1 - mag.expect, mag.expect)))
+
+    def _gibbs_lagrange_multipliers_variance(self, mag):
+        """
+        The Lagrange multipliers associated with the second moment of the spins.
+        For a Bernoulli layer this is strictly zero
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+
+        Returns:
+            lagrange multipler (tensor (num_units))
+        """
+        return be.zeros_like(mag.expect)
+
+    def _gibbs_free_energy_entropy_term(self, expect_lagrange, var_lagrange, mag):
+        """
+        The TAP-0 Gibbs free energy term associated strictly with this layer
+
+        Args:
+            expect_lagrange (float tensor like magnetization.expect): 
+                1st moment Lagrange multipler field
+            var_lagrange (float tensor like magnetization.expect): 
+                strictly zero for Bernoulli layers
+            mag (magnetization object): magnetization of the layer
+
+        Returns:
+            (float): 0th order term of Gibbs free energy
+        """
+        return -be.tsum(self.log_partition_function(expect_lagrange, var_lagrange)) + \
+                be.dot(expect_lagrange, mag.expect) + be.dot(var_lagrange, mag.expect)
+
+    def _grad_magnetization_GFE(self, mag):
+        """
+        Gradient of the Gibbs free energy with respect to the magnetization
+        associated strictly with this layer
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+
+        Return:
+            gradient magnetization (GradientMagnetizationBernoulli):
+                 gradient of GFE on this layer
+        """
+        return GradientMagnetizationBernoulli(
+                be.log(be.divide(1.0 - mag.expect, mag.expect)) - self.params.loc)
+
+    def GFE_derivatives(self, mag):
+        """
+        Gradient of the Gibbs free energy with respect to local field parameters
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+
+        Returns:
+            gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of GFE
+        """
+        return ParamsBernoulli(-mag.expect)
+
+    def online_param_update(self, data):
+        """
+        Update the parameters using an observed batch of data.
+        Used for initializing the layer parameters.
+
+        Notes:
+            Modifies layer.sample_size and layer.params in place.
+
+        Args:
+            data (tensor (num_samples, num_units)): observed values for units
+
+        Returns:
+            None
+
+        """
+        # get the current value of the first moment
+        x = be.expit(self.params.loc)
+
+        # update the sample size
+        n = len(data)
+        new_sample_size = n + self.sample_size
+
+        # update the first moment
+        x *= self.sample_size / new_sample_size
+        x += n * be.mean(data, axis=0) / new_sample_size
+
+        # update the class attributes
+        self.params = ParamsBernoulli(be.logit(x))
+        self.sample_size = new_sample_size
+
+    def shrink_parameters(self, shrinkage=1):
+        """
+        Apply shrinkage to the parameters of the layer.
+        Does nothing for the Bernoulli layer.
+
+        Args:
+            shrinkage (float \in [0,1]): the amount of shrinkage to apply
+
+        Returns:
+            None
+
+        """
+        pass
+
+    def rescale(self, observations):
+        """
+        Rescale is equivalent to the identity function for the Bernoulli layer.
+
+        Args:
+            observations (tensor (num_samples, num_units)):
+                Values of the observed units.
+
+        Returns:
+            tensor: observations
+
+        """
+        return observations
+
+    #TODO: per sample derivatives
+    def derivatives(self, vis, hid, weights, beta=None):
+        """
+        Compute the derivatives of the layer parameters.
+
+        Args:
+            vis (tensor (num_samples, num_units)):
+                The values of the visible units.
+            hid list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the hidden units.
+            weights list[tensor, (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            grad (namedtuple): param_name: tensor (contains gradient)
+
+        """
+        loc = -be.mean(vis, axis=0)
+        loc = self.get_penalty_grad(loc, 'loc')
+        return ParamsBernoulli(loc)
+
+    def _conditional_params(self, scaled_units, weights, beta=None):
+        """
+        Compute the parameters of the layer conditioned on the state
+        of the connected layers.
+
+        Args:
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor, (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            tensor: conditional parameters
+
+        """
+        field = be.dot(scaled_units[0], weights[0])
+        for i in range(1, len(weights)):
+            field += be.dot(scaled_units[i], weights[i])
+        field += be.broadcast(self.params.loc, field)
+        if beta is not None:
+            field = be.multiply(beta, field)
+        return field
+
+    def conditional_mode(self, scaled_units, weights, beta=None):
+        """
+        Compute the mode of the distribution conditioned on the state
+        of the connected layers.
+
+        Args:
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            tensor (num_samples, num_units): The mode of the distribution
+
+        """
+        field = self._conditional_params(scaled_units, weights, beta)
+        return be.float_tensor(field > 0.0)
+
+    def conditional_mean(self, scaled_units, weights, beta=None):
+        """
+        Compute the mean of the distribution conditioned on the state
+        of the connected layers.
+
+        Args:
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            tensor (num_samples, num_units): The mean of the distribution.
+
+        """
+        field = self._conditional_params(scaled_units, weights, beta)
+        return be.expit(field)
+
+    def conditional_sample(self, scaled_units, weights, beta=None):
+        """
+        Draw a random sample from the disribution conditioned on the state
+        of the connected layers.
+
+        Args:
+            scaled_units list[tensor (num_samples, num_connected_units)]:
+                The rescaled values of the connected units.
+            weights list[tensor (num_connected_units, num_units)]:
+                The weights connecting the layers.
+            beta (tensor (num_samples, 1), optional):
+                Inverse temperatures.
+
+        Returns:
+            tensor (num_samples, num_units): Sampled units.
+
+        """
+        field = self._conditional_params(scaled_units, weights, beta)
+        p = be.expit(field)
+        r = self.rand(be.shape(p))
+        return be.float_tensor(r < p)
+
+    def random(self, array_or_shape):
+        """
+        Generate a random sample with the same type as the layer.
+        For a Bernoulli layer, draws 0 or 1 with the field determined
+        by the params attribute.
+
+        Used for generating initial configurations for Monte Carlo runs.
+
+        Args:
+            array_or_shape (array or shape tuple):
+                If tuple, then this is taken to be the shape.
+                If array, then its shape is used.
+
+        Returns:
+            tensor: Random sample with desired shape.
+
+        """
+        try:
+            shape = be.shape(array_or_shape)
+        except Exception:
+            shape = array_or_shape
+
+        r = self.rand(shape)
+        p = be.expit(be.broadcast(self.params.loc, r))
+        return be.float_tensor(r < p)
 
 ParamsGaussian = namedtuple("ParamsGaussian", ["loc", "log_var"])
 
@@ -1005,526 +1539,6 @@ class IsingLayer(Layer):
         r = self.rand(shape)
         p = be.expit(be.broadcast(self.params.loc, r))
         return 2 * be.float_tensor(r < p) - 1
-
-
-ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
-
-class MagnetizationBernoulli(object):
-    """
-    This class holds the magnetization data of a Bernoulli layer.
-    Such data consists of a vector of expectation values for the layer's units,
-    MagnetizationBernoulli.expect, which are a float-valued in [0,1].
-    The class presents a getter for the expectation as well as a
-    function to compute the variance.
-    
-    """
-    def __init__(self, exp):
-        self.expect = exp
-
-    def __iter__(self):
-        self.beginning = True
-        return self
-
-    def __next__(self):
-        if self.beginning == False:
-            raise StopIteration
-        else:
-            self.beginning = False
-            return self.expect
-
-    def expectation(self):
-        """
-        Returns the vector of expectations of unit values
-        """
-        return self.expect
-
-    def variance(self):
-        """
-        Returns the variance of unit values. For a Bernoulli layer this
-        is determined by the expectation
-        """
-        return self.expect - be.square(self.expect)
-
-class GradientMagnetizationBernoulli(MagnetizationBernoulli):
-    """
-    This class represents a Bernoulli layer's contribution to the gradient vector
-    of the Gibbs free energy. 
-    The underlying data is isomorphic to the MagnetizationBernoulli object.
-    It provides two layer-wise functions used in the TAP method for training RBMs
-
-    """
-
-    def __init__(self, exp):
-        super().__init__(exp)
-
-    def grad_GFE_update_down(self, mag_lower, mag, w, ww):
-        """
-        Computes a layerwise magnetization gradient update according to the gradient
-         of the Gibbs Free energy.
-
-        Args:
-            mag_lower (magnetization object): magnetization of the lower layer
-            mag (magnetization object): magnetization of the current layer
-            w (float tensor): weight matrix mapping down from this layer to the
-                              lower layer
-            ww (float tensor): cached square of the weight matrix
-
-        Returns:
-            None
-        """
-        self.expect -= be.dot(mag_lower.expectation(), w) + \
-                       be.multiply(be.dot(mag_lower.variance(), ww),
-                       0.5 - mag.expectation())
-
-    def grad_GFE_update_up(self, mag, mag_upper, w, ww):
-        """
-        Computes a layerwise magnetization gradient update according to the gradient
-         of the Gibbs Free energy.
-
-        Args:
-            mag (magnetization object): magnetization of the current layer
-            mag_upper (magnetization object): magnetization of the upper layer
-            w (float tensor): weight matrix mapping down to this layer from the
-                              upper layer
-            ww (float tensor): cached square of the weight matrix
-
-        Returns:
-            None
-        """
-        self.expect -= be.dot(w, mag_upper.expectation()) + \
-                       be.multiply(0.5 - mag.expectation(),
-                       be.dot(ww, mag_upper.variance()))
-
-class BernoulliLayer(Layer):
-    """Layer with Bernoulli units (i.e., 0 or +1)."""
-
-    def __init__(self, num_units):
-        """
-        Create a layer with Bernoulli units.
-
-        Args:
-            num_units (int): the size of the layer
-
-        Returns:
-            bernoulli layer
-
-        """
-        super().__init__()
-
-        self.len = num_units
-        self.sample_size = 0
-        self.rand = be.rand
-        self.params = ParamsBernoulli(be.zeros(self.len))
-
-    def get_zero_magnetization(self):
-        """
-        Create a layer magnetization with zero expectations.
-
-        Args:
-            None
-
-        Returns:
-            BernoulliMagnetization
-
-        """
-        return MagnetizationBernoulli(be.zeros(self.len))
-
-    def get_random_magnetization(self):
-        """
-        Create a layer magnetization with random expectations.
-
-        Args:
-            None
-
-        Returns:
-            BernoulliMagnetization
-
-        """
-        return MagnetizationBernoulli(be.clip(be.rand((self.len,)), 
-                                              a_min=0.005, a_max=0.995))
-
-    def get_config(self):
-        """
-        Get the configuration dictionary of the Bernoulli layer.
-
-        Args:
-            None:
-
-        Returns:
-            configuratiom (dict):
-
-        """
-        base_config = self.get_base_config()
-        base_config["num_units"] = self.len
-        base_config["sample_size"] = self.sample_size
-        return base_config
-
-    @classmethod
-    def from_config(cls, config):
-        """
-        Create a Bernoulli layer from a configuration dictionary.
-
-        Args:
-            config (dict)
-
-        Returns:
-            layer (Bernoulli)
-
-        """
-        layer = cls(config["num_units"])
-        layer.sample_size = config["sample_size"]
-        # TODO : params
-        for k, v in config["penalties"].items():
-            layer.add_penalty({k: penalties.from_config(v)})
-        for k, v in config["constraints"].items():
-            layer.add_constraint({k: getattr(constraints, v)})
-        return layer
-
-    def energy(self, data):
-        """
-        Compute the energy of the Bernoulli layer.
-
-        For sample k,
-        E_k = -\sum_i loc_i * v_i
-
-        Args:
-            vis (tensor (num_samples, num_units)): values of units
-
-        Returns:
-            tensor (num_samples,): energy per sample
-
-        """
-        return -be.dot(data, self.params.loc)
-
-    def log_partition_function(self, external_field, quadratic_field):
-        """
-        Compute the logarithm of the partition function of the layer
-        with external field (B) and quadratic field (A).
-
-        Let a_i be the loc parameter of unit i.
-        Let B_i be an external field
-        Let A_i be a quadratic field
-
-        Z_i = Tr_{x_i} exp( a_i x_i + B_i x_i - A_i x_i^2)
-        = 1 + \exp(a_i + B_i - A_i)
-
-        log(Z_i) = softplus(a_i + B_i - A_i)
-
-        Args:
-            external_field (tensor (num_samples, num_units)): external field
-            quadratic_field (tensor (num_samples, num_units)): quadratic field
-
-        Returns:
-            logZ (tensor (num_samples, num_units)): log partition function
-
-        """
-        return be.softplus(be.add(self.params.loc, 
-                                  be.subtract(quadratic_field, external_field)))
-
-    def _grad_log_partition_function(self, external_field, quadratic_field):
-        """
-        Compute the gradient of the logarithm of the partition function of the layer
-        with external field (B) and quadratic field (A), as above.
-
-        (d_a_i)softplus(a_i + B_i - A_i) = expit(a_i + B_i - A_i)
-
-        Note: This function passes vectorially over a minibatch of fields
-
-        Args:
-            external_field (tensor (num_samples, num_units)): external field
-            quadratic_field (tensor (num_samples, num_units)): quadratic field
-
-        Returns:
-            (d_a_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
-
-        """
-        return be.expit(be.add(be.unsqueeze(self.params.loc,0), 
-                               be.subtract(quadratic_field, external_field)))
-
-    def grad_log_partition_function(self, external_field, quadratic_field):
-        """
-        Compute the gradient of the logarithm of the partition function with respect to
-        its local field parameter with external field (B) and quadratic field (A).
-
-        (d_a_i)softplus(a_i + B_i - A_i) = expit(a_i + B_i - A_i)
-
-        Note: This function returns the mean parameters over a minibatch of input fields
-
-        Args:
-            external_field (tensor (num_samples, num_units)): external field
-            quadratic_field (tensor (num_samples, num_units)): quadratic field
-
-        Returns:
-            (d_a_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
-
-        """
-        return ParamsBernoulli(be.mean(self._grad_log_partition_function(
-                external_field, quadratic_field), axis=0))
-
-    def _gibbs_lagrange_multipliers_expectation(self, mag):
-        """
-        The Lagrange multipliers associated with the first moment of the spins.
-
-        Args:
-            mag (magnetization object): magnetization of the layer
-
-        Returns:
-            lagrange multipler (tensor (num_units))
-
-        """
-        return be.subtract(self.params.loc, be.log(be.divide(1 - mag.expect, mag.expect)))
-
-    def _gibbs_lagrange_multipliers_variance(self, mag):
-        """
-        The Lagrange multipliers associated with the second moment of the spins.
-        For a Bernoulli layer this is strictly zero
-
-        Args:
-            mag (magnetization object): magnetization of the layer
-
-        Returns:
-            lagrange multipler (tensor (num_units))
-        """
-        return be.zeros_like(mag.expect)
-
-    def _gibbs_free_energy_entropy_term(self, expect_lagrange, var_lagrange, mag):
-        """
-        The TAP-0 Gibbs free energy term associated strictly with this layer
-
-        Args:
-            expect_lagrange (float tensor like magnetization.expect): 
-                1st moment Lagrange multipler field
-            var_lagrange (float tensor like magnetization.expect): 
-                strictly zero for Bernoulli layers
-            mag (magnetization object): magnetization of the layer
-
-        Returns:
-            (float): 0th order term of Gibbs free energy
-        """
-        return -be.tsum(self.log_partition_function(expect_lagrange, var_lagrange)) + \
-                be.dot(expect_lagrange, mag.expect) + be.dot(var_lagrange, mag.expect)
-
-    def _grad_magnetization_GFE(self, mag):
-        """
-        Gradient of the Gibbs free energy with respect to the magnetization
-        associated strictly with this layer
-
-        Args:
-            mag (magnetization object): magnetization of the layer
-
-        Return:
-            gradient magnetization (GradientMagnetizationBernoulli):
-                 gradient of GFE on this layer
-        """
-        return GradientMagnetizationBernoulli(
-                be.log(be.divide(1.0 - mag.expect, mag.expect)) - self.params.loc)
-
-    def GFE_derivatives(self, mag):
-        """
-        Gradient of the Gibbs free energy with respect to local field parameters
-
-        Args:
-            mag (magnetization object): magnetization of the layer
-
-        Returns:
-            gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of GFE
-        """
-        return ParamsBernoulli(-mag.expect)
-
-    def online_param_update(self, data):
-        """
-        Update the parameters using an observed batch of data.
-        Used for initializing the layer parameters.
-
-        Notes:
-            Modifies layer.sample_size and layer.params in place.
-
-        Args:
-            data (tensor (num_samples, num_units)): observed values for units
-
-        Returns:
-            None
-
-        """
-        # get the current value of the first moment
-        x = be.expit(self.params.loc)
-
-        # update the sample size
-        n = len(data)
-        new_sample_size = n + self.sample_size
-
-        # update the first moment
-        x *= self.sample_size / new_sample_size
-        x += n * be.mean(data, axis=0) / new_sample_size
-
-        # update the class attributes
-        self.params = ParamsBernoulli(be.logit(x))
-        self.sample_size = new_sample_size
-
-    def shrink_parameters(self, shrinkage=1):
-        """
-        Apply shrinkage to the parameters of the layer.
-        Does nothing for the Bernoulli layer.
-
-        Args:
-            shrinkage (float \in [0,1]): the amount of shrinkage to apply
-
-        Returns:
-            None
-
-        """
-        pass
-
-    def rescale(self, observations):
-        """
-        Rescale is equivalent to the identity function for the Bernoulli layer.
-
-        Args:
-            observations (tensor (num_samples, num_units)):
-                Values of the observed units.
-
-        Returns:
-            tensor: observations
-
-        """
-        return observations
-
-    #TODO: per sample derivatives
-    def derivatives(self, vis, hid, weights, beta=None):
-        """
-        Compute the derivatives of the layer parameters.
-
-        Args:
-            vis (tensor (num_samples, num_units)):
-                The values of the visible units.
-            hid list[tensor (num_samples, num_connected_units)]:
-                The rescaled values of the hidden units.
-            weights list[tensor, (num_connected_units, num_units)]:
-                The weights connecting the layers.
-            beta (tensor (num_samples, 1), optional):
-                Inverse temperatures.
-
-        Returns:
-            grad (namedtuple): param_name: tensor (contains gradient)
-
-        """
-        loc = -be.mean(vis, axis=0)
-        loc = self.get_penalty_grad(loc, 'loc')
-        return ParamsBernoulli(loc)
-
-    def _conditional_params(self, scaled_units, weights, beta=None):
-        """
-        Compute the parameters of the layer conditioned on the state
-        of the connected layers.
-
-        Args:
-            scaled_units list[tensor (num_samples, num_connected_units)]:
-                The rescaled values of the connected units.
-            weights list[tensor, (num_connected_units, num_units)]:
-                The weights connecting the layers.
-            beta (tensor (num_samples, 1), optional):
-                Inverse temperatures.
-
-        Returns:
-            tensor: conditional parameters
-
-        """
-        field = be.dot(scaled_units[0], weights[0])
-        for i in range(1, len(weights)):
-            field += be.dot(scaled_units[i], weights[i])
-        field += be.broadcast(self.params.loc, field)
-        if beta is not None:
-            field = be.multiply(beta, field)
-        return field
-
-    def conditional_mode(self, scaled_units, weights, beta=None):
-        """
-        Compute the mode of the distribution conditioned on the state
-        of the connected layers.
-
-        Args:
-            scaled_units list[tensor (num_samples, num_connected_units)]:
-                The rescaled values of the connected units.
-            weights list[tensor (num_connected_units, num_units)]:
-                The weights connecting the layers.
-            beta (tensor (num_samples, 1), optional):
-                Inverse temperatures.
-
-        Returns:
-            tensor (num_samples, num_units): The mode of the distribution
-
-        """
-        field = self._conditional_params(scaled_units, weights, beta)
-        return be.float_tensor(field > 0.0)
-
-    def conditional_mean(self, scaled_units, weights, beta=None):
-        """
-        Compute the mean of the distribution conditioned on the state
-        of the connected layers.
-
-        Args:
-            scaled_units list[tensor (num_samples, num_connected_units)]:
-                The rescaled values of the connected units.
-            weights list[tensor (num_connected_units, num_units)]:
-                The weights connecting the layers.
-            beta (tensor (num_samples, 1), optional):
-                Inverse temperatures.
-
-        Returns:
-            tensor (num_samples, num_units): The mean of the distribution.
-
-        """
-        field = self._conditional_params(scaled_units, weights, beta)
-        return be.expit(field)
-
-    def conditional_sample(self, scaled_units, weights, beta=None):
-        """
-        Draw a random sample from the disribution conditioned on the state
-        of the connected layers.
-
-        Args:
-            scaled_units list[tensor (num_samples, num_connected_units)]:
-                The rescaled values of the connected units.
-            weights list[tensor (num_connected_units, num_units)]:
-                The weights connecting the layers.
-            beta (tensor (num_samples, 1), optional):
-                Inverse temperatures.
-
-        Returns:
-            tensor (num_samples, num_units): Sampled units.
-
-        """
-        field = self._conditional_params(scaled_units, weights, beta)
-        p = be.expit(field)
-        r = self.rand(be.shape(p))
-        return be.float_tensor(r < p)
-
-    def random(self, array_or_shape):
-        """
-        Generate a random sample with the same type as the layer.
-        For a Bernoulli layer, draws 0 or 1 with the field determined
-        by the params attribute.
-
-        Used for generating initial configurations for Monte Carlo runs.
-
-        Args:
-            array_or_shape (array or shape tuple):
-                If tuple, then this is taken to be the shape.
-                If array, then its shape is used.
-
-        Returns:
-            tensor: Random sample with desired shape.
-
-        """
-        try:
-            shape = be.shape(array_or_shape)
-        except Exception:
-            shape = array_or_shape
-
-        r = self.rand(shape)
-        p = be.expit(be.broadcast(self.params.loc, r))
-        return be.float_tensor(r < p)
-
 
 ParamsExponential = namedtuple("ParamsExponential", ["loc"])
 

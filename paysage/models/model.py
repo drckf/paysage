@@ -89,6 +89,36 @@ class State(object):
 
         """
         return copy.deepcopy(state)
+    
+    
+class TAPState(object):
+    """A TAPState is a list of TAPParams objects for each layer in the model."""
+    def __init__(self, tap_params):
+        """
+        Create a TAPState.
+        
+        Args:
+            tap_params: list of TAPParams objects
+            
+        Returns:
+            TAPState
+        
+        """
+        self.tap_params = tap_params
+        
+    @classmethod
+    def from_state(cls, state):
+        """
+        Create a TAPState object from an existing TAPState.
+
+        Args:
+            state (TAPState): a TAPState instance
+
+        Returns:
+            TAPState object
+
+        """
+        return copy.deepcopy(state)
 
 
 class Model(object):
@@ -492,7 +522,7 @@ class Model(object):
     
     CALLS:
         
-    TAP_free_energy: 
+    TAP_free_energy: computes magnetization and free energy
         
     _grad_gibbs_free_energy:
     
@@ -554,15 +584,16 @@ class Model(object):
         var_lagrange = [self.layers[l]._gibbs_lagrange_multipliers_variance(mag[l]) 
             for l in range(self.num_layers)]
         
-        for l in range(self.num_layers):
-            lay = self.layers[l]
-            total += lay._gibbs_free_energy_entropy_term(expect_lagrange[l], var_lagrange[l], mag[l])
+        for index in range(self.num_layers):
+            lay = self.layers[index]
+            total += lay._gibbs_free_energy_entropy_term(expect_lagrange[index], 
+                         var_lagrange[index], mag[index])
 
-        for w in range(self.num_layers-1):
-            way = self.weights[w]
-            total -= be.dot(mag[w].expectation(), be.dot(way.W(), mag[w+1].expectation()))
-            total -= 0.5 * be.dot(mag[w].variance(), \
-                     be.dot(be.square(way.W()), mag[w+1].variance()))
+        for index in range(self.num_layers-1):
+            W = self.weights[index].W()
+            total -= be.dot(mag[index].expectation(), be.dot(W, mag[index+1].expectation()))
+            total -= 0.5 * be.dot(mag[index].variance(),
+                     be.dot(be.square(W), mag[index+1].variance()))
             
         return total
 
@@ -635,15 +666,13 @@ class Model(object):
             """
             mag = deepcopy(m)
             eps = 1e-6
-            its = 0
 
             gam = self.gibbs_free_energy(mag)
             lr = init_lr
             clip_ = partial(be.clip_inplace, a_min=eps, a_max=1.0-eps)
             lr_ = partial(be.tmul_, be.float_scalar(lr))
-            #print(gam)
-            while (its < max_iters):
-                its += 1
+            
+            for _ in range(max_iters):
                 grad = self._grad_magnetization_GFE(mag)
                 for g in grad:
                     be.apply_(lr_, g)
@@ -657,14 +686,11 @@ class Model(object):
                 if (gam - gam_provisional < 0):
                     lr *= 0.5
                     lr_ = partial(be.tmul_, be.float_scalar(lr))
-                    #print("decreased lr" + str(its))
                     if (lr < 1e-10):
-                        #print("tol reached on iter" + str(its))
                         break
                 elif (gam - gam_provisional < tol):
                     break
                 else:
-                    #print(gam - gam_provisional)
                     mag = m_provisional
                     gam = gam_provisional
 
