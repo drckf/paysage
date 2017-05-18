@@ -460,10 +460,10 @@ class GaussianLayer(Layer):
         result = be.square(diff) / be.broadcast(scale, vis)
         return 0.5 * be.mean(result, axis=1)
 
-    def log_partition_function(self, phi):
+    def log_partition_function(self, external_field):
        """
        Compute the logarithm of the partition function of the layer
-       with external field phi.
+       with external field (phi).
 
        Let u_i and s_i be the loc and scale parameters of unit i.
        Let phi_i be an external field
@@ -474,16 +474,16 @@ class GaussianLayer(Layer):
        log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2
 
        Args:
-           phi tensor (num_samples, num_units): external field
+           external_field (tensor (num_samples, num_units)z0: external field
 
        Returns:
-           logZ (tensor, num_samples, num_units)): log partition function
+           logZ (tensor, (num_samples, num_units)): log partition function
 
        """
-       scale = be.exp(self.params.log_var)
-       logZ = be.multiply(self.params.loc, phi)
-       logZ += be.multiply(scale, be.square(phi)) / 2
-       logZ += be.log(be.broadcast(scale, phi)) / 2
+       variance = be.exp(self.params.log_var)
+       logZ = be.multiply(self.params.loc, external_field)
+       logZ += be.multiply(variance, be.square(external_field)) / 2
+       logZ += be.log(be.broadcast(variance, external_field)) / 2
        return logZ
 
     def online_param_update(self, data):
@@ -1197,11 +1197,11 @@ class BernoulliLayer(Layer):
     def log_partition_function(self, B, A):
         """
         Compute the logarithm of the partition function of the layer
-        with external field B augmented with a quadratic, diagonal interaction A.
+        with external field B and quadratic interaction A.
 
         Let a_i be the loc parameter of unit i.
-        Let B_i be a local field
-        Let A_i be a diagonal quadratic interaction
+        Let B_i be an external field
+        Let A_i be a quadratic self-interaction
 
         Z_i = Tr_{x_i} exp( a_i x_i + B_i x_i - A_i x_i^2)
         = 1 + \exp(a_i + B_i - A_i)
@@ -1210,13 +1210,13 @@ class BernoulliLayer(Layer):
 
         Args:
             A (tensor (num_samples, num_units)): external field
-            B (tensor (num_samples, num_units)): diagonal quadratic external field
+            B (tensor (num_samples, num_units)): quadratic external field
 
         Returns:
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        return be.softplus(be.add(self.params.loc, be.subtract(A,B)))
+        return be.softplus(be.add(self.params.loc, be.subtract(A, B)))
 
     def _grad_log_partition_function(self, B, A):
         """
@@ -1594,10 +1594,10 @@ class ExponentialLayer(Layer):
         """
         return be.dot(data, self.params.loc)
 
-    def log_partition_function(self, phi):
+    def log_partition_function(self, external_field):
         """
         Compute the logarithm of the partition function of the layer
-        with external field phi.
+        with external field (phi).
 
         Let a_i be the loc parameter of unit i.
         Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.
@@ -1608,13 +1608,13 @@ class ExponentialLayer(Layer):
         log(Z_i) = -log(a_i - phi_i)
 
         Args:
-            phi (tensor (num_samples, num_units)): external field
+            external_field (tensor (num_samples, num_units)): external field
 
         Returns:
             logZ (tensor, num_samples, num_units)): log partition function
 
         """
-        return -be.log(be.subtract(self.params.loc, phi))
+        return -be.log(be.subtract(self.params.loc, external_field))
 
     def online_param_update(self, data):
         """
