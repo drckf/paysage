@@ -464,6 +464,32 @@ class GaussianLayer(Layer):
         self.rand = be.randn
         self.params = ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
 
+    def get_zero_magnetization(self):
+        """
+        Create a layer magnetization with zero expectations and zero variance
+
+        Args:
+            None
+
+        Returns:
+            GaussianMagnetization
+
+        """
+        return MagnetizationGaussian(be.zeros(self.len), be.zeros(self.len))
+
+    def get_random_magnetization(self):
+        """
+        Create a layer magnetization with random expectations and variance.
+
+        Args:
+            None
+
+        Returns:
+            GaussianMagnetization
+
+        """
+        return MagnetizationGaussian(be.rand((self.len,)), be.rand((self.len,)))
+
     def get_config(self):
         """
         Get the configuration dictionary of the Gaussian layer.
@@ -606,6 +632,73 @@ class GaussianLayer(Layer):
         """
         return ParamsGaussian(be.mean(self._grad_u_log_partition_function(B,A), axis=0),
                               be.mean(self._grad_s_log_partition_function(B,A), axis=0))
+
+    def _gibbs_lagrange_multipliers_expectation(self, mag):
+        """
+        The Lagrange multipliers associated with the first moment of the spins.
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+
+        Returns:
+            lagrange multipler (tensor (num_units))
+
+        """
+        return be.subtract(self.params.loc, be.log(be.divide(1 - mag.expect, mag.expect)))
+
+    def _gibbs_lagrange_multipliers_variance(self, mag):
+        """
+        The Lagrange multipliers associated with the second moment of the spins.
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+
+        Returns:
+            lagrange multipler (tensor (num_units))
+        """
+        return be.zeros_like(mag.expect)
+
+    def _gibbs_free_energy_entropy_term(self, B, A, mag):
+        """
+        The TAP-0 Gibbs free energy term associated strictly with this layer
+
+        Args:
+            B (float tensor like magnetization.expect): expectation Lagrange multipler
+            A (float tensor like magnetization.expect): variation Lagrange multiplier
+            mag (magnetization object): magnetization of the layer
+
+        Returns:
+            (float): 0th order term of Gibbs free energy
+        """
+        return -be.tsum(self.log_partition_function(B, A)) + \
+                be.dot(B, mag.expect) + be.dot(A, be.square(mag.expect) + mag.variation())
+
+    def _grad_magnetization_GFE(self, mag):
+        """
+        Gradient of the Gibbs free energy with respect to the magnetization
+        associated strictly with this layer
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+
+        Return:
+            gradient magnetization (GradientMagnetizationBernoulli):
+                 gradient of GFE on this layer
+        """
+        return GradientMagnetizationGaussian(be.log(be.divide(1.0 - mag.expect, mag.expect)) - \
+                                              self.params.loc, TODO)
+
+    def GFE_derivatives(self, mag):
+        """
+        Gradient of the Gibbs free energy with respect to local field parameters
+
+        Args:
+            mag (magnetization object): magnetization of the layer
+
+        Returns:
+            gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of GFE
+        """
+        return ParamsGaussian(-mag.expect, TODO)
 
     def online_param_update(self, data):
         """
