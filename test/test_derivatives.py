@@ -2,10 +2,9 @@ from paysage import backends as be
 from paysage import layers
 from paysage.models import model
 from paysage.models import gradient_util as gu
-from copy import deepcopy
-from functools import partial
 import pytest
 from copy import deepcopy
+from cytoolz import partial
 
 # ----- Functional Programs with Gradients ----- #
 
@@ -351,8 +350,9 @@ def test_bernoulli_GFE_derivatives():
             cop.layers[i].params = be.mapzip(be.add, rbm.layers[i].params,
                           be.apply(lr_mul, grad.layers[i]))
 
+
         m, TFE_next = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50)
-        
+
         regress = TFE_next - TFE < 0.0
         if regress:
             if lr < 1e-6:

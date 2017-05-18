@@ -477,6 +477,7 @@ class Model(object):
 
         # compute the gradient of the Helmholtz FE via TAP_gradient
         grad_HFE = self.grad_TAP_free_energy(init_lr_EMF, tolerance_EMF, max_iters_EMF)
+
         return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
 
     def parameter_update(self, deltas):
