@@ -2,7 +2,8 @@ from paysage import backends as be
 from paysage import layers
 from paysage.models import model
 from paysage.models import gradient_util as gu
-
+from copy import deepcopy
+from functools import partial
 import pytest
 
 # ----- Functional Programs with Gradients ----- #
@@ -336,22 +337,20 @@ def test_bernoulli_GFE_derivatives():
     for lay in rbm.layers:
         lay.params.loc[:] = be.rand_like(lay.params.loc)
 
-    (m,TFE) = rbm.TAP_free_energy(None, init_lr=0.1, tol=1e-7,
-                                        max_iters=50, method='gd')
+    (m,TFE) = rbm.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50)
 
     lr = 0.1
     gogogo = True
-    grad = rbm.grad_TAP_free_energy(1, 0, None, 0.1, 1e-7, 50)
+    grad = rbm.grad_TAP_free_energy(1, 0.1, 1e-7, 50)
     while gogogo:
         cop = deepcopy(rbm)
         lr_mul = partial(be.tmul, lr)
         for i in range(rbm.num_layers):
-            cop.layers[i].params =
+            cop.layers[i].params = \
                 be.mapzip(be.add, rbm.layers[i].params,
                           be.apply(lr_mul, grad.layers[i]))
 
-        (m,TFE_next) = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7,
-                                                 max_iters=50, method='gd')
+        m, TFE_next = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50)
         regress = TFE_next - TFE < 0.0
         if regress:
             if lr < 1e-6:
