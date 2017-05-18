@@ -439,7 +439,7 @@ class Model(object):
         return grad
 
 
-    def TAP_gradient(self, data_state, num_r, num_p, persistent_samples,
+    def TAP_gradient(self, data_state, num_r,
                      init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Gradient of -\ln P(v) with respect to the model parameters
@@ -447,9 +447,6 @@ class Model(object):
         Args:
             data_state (State object): The observed visible units and sampled hidden units.
             num_r: (int>=0) number of random seeds to use for Gibbs FE minimization
-            num_p: (int>=0) number of persistent seeds to use for Gibbs FE minimization
-            persistent_samples list of magnetizations: persistent magnetization parameters
-                to keep as seeds for Gibbs free energy estimation.
             init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
             tol float: tolerance for quitting minimization.
             max_iters int: maximum gradient decsent steps
@@ -660,7 +657,6 @@ class Model(object):
                 be.apply_(clip_, m)
 
         return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
-
 
     def _grad_magnetization_GFE(self, mag):
         """
