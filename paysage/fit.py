@@ -448,7 +448,7 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
 pcd = persistent_contrastive_divergence
 
 def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=1e-4,
-        max_iters_EMF=25, num_random_samples=1):
+        max_iters_EMF=25):
     """
     Compute the gradient using the Thouless-Anderson-Palmer (TAP)
     mean field approximation.
@@ -470,15 +470,11 @@ def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=
             init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
             tol float: tolerance for quitting minimization.
             max_iters: maximum gradient decsent steps
-            num_random_samples: number of Gibbs FE seeds to start from random
 
     Returns:
         gradient object
 
     """
-    if num_random_samples <= 0:
-        raise ValueError("Must specify at least one random sample for Gibbs FE seeding")
-
     data_state = State.from_visible(vdata, model)
     sampler.set_positive_state(data_state)
     sampler.update_positive_state(positive_steps)
@@ -493,8 +489,7 @@ def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=
     clamped_layers = list(range(model.num_layers - 1))
     grad_data_state = model.mean_field_iteration(1, sampler.pos_state, clamped=clamped_layers)
 
-    return model.TAP_gradient(grad_data_state, num_random_samples,
-                              init_lr_EMF, tolerance_EMF, max_iters_EMF)
+    return model.TAP_gradient(grad_data_state, init_lr_EMF, tolerance_EMF, max_iters_EMF)
 
 
 class StochasticGradientDescent(object):

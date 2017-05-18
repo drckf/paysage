@@ -439,15 +439,15 @@ class Model(object):
         return grad
 
 
-    def TAP_gradient(self, data_state, num_r,
-                     init_lr_EMF, tolerance_EMF, max_iters_EMF):
+    def TAP_gradient(self, data_state, init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Gradient of -\ln P(v) with respect to the model parameters
 
         Args:
-            data_state (State object): The observed visible units and sampled hidden units.
-            num_r: (int>=0) number of random seeds to use for Gibbs FE minimization
-            init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+            data_state (State object): The observed visible units and sampled
+             hidden units.
+            init_lr float: initial learning rate which is halved whenever necessary
+             to enforce descent.
             tol float: tolerance for quitting minimization.
             max_iters int: maximum gradient decsent steps
 
@@ -476,7 +476,7 @@ class Model(object):
             )
 
         # compute the gradient of the Helmholtz FE via TAP_gradient
-        grad_HFE = self.grad_TAP_free_energy(num_r, init_lr_EMF,
+        grad_HFE = self.grad_TAP_free_energy(init_lr_EMF,
                                              tolerance_EMF, max_iters_EMF)
         
         return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
@@ -547,7 +547,7 @@ class Model(object):
             
         return total
 
-    def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50, method='gd'):
+    def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50):
         """
         Compute the Helmholtz free energy of the model according to the TAP
         expansion around infinite temperature to second order.
@@ -568,16 +568,20 @@ class Model(object):
         '''
             F(v) := -log\sum_{v,h} \exp{-E(v,h)}.
         '''
-        We add an auxiliary local field q, and introduce the inverse temperature variable \beta to define
+        We add an auxiliary local field q, and introduce the inverse temperature
+         variable \beta to define
         '''
             \beta F(v;q) := -log\sum_{v,h} \exp{-\beta E(v,h) + \beta \langle q, v \rangle}
         '''
-        Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q, the Gibbs free energy.
+        Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q,
+         the Gibbs free energy.
         The TAP formula is Taylor series of \Gamma in \beta, around \beta=0.
-        Setting \beta=1 and regarding the first two terms of the series as an approximation of \Gamma[m],
+        Setting \beta=1 and regarding the first two terms of the series as an
+         approximation of \Gamma[m],
         we can minimize \Gamma in m to obtain an approximation of F(v;q=0) = F(v)
 
-        This implementation uses gradient descent from a random starting location to minimize the function
+        This implementation uses gradient descent from a random starting location
+         to minimize the function
 
         Args:
             seed 'None' or Magnetization: initial seed for the minimization routine.
@@ -585,17 +589,12 @@ class Model(object):
             init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
             tol float: tolerance for quitting minimization.
             max_iters: maximum gradient decsent steps.
-            method: one of 'gd' or 'constraint' picking which Gibbs FE minimization method to use.
 
         Returns:
             tuple (magnetization, TAP-approximated Helmholtz free energy)
                   (Magnetization, float)
 
         """
-        # TODO: re-implement support for constraint satisfaction method as needed
-        if method not in ['gd']:
-            raise ValueError("Must specify a valid method for minimizing the Gibbs free energy")
-
         def minimize_gibbs_free_energy_GD(m, init_lr=0.01, tol=1e-6, max_iters=1):
             """
             Simple gradient descent routine to minimize Gibbs free energy
@@ -702,7 +701,7 @@ class Model(object):
             )
         return grad_GFE
 
-    def grad_TAP_free_energy(self, num_r, init_lr_EMF, tolerance_EMF, max_iters_EMF):
+    def grad_TAP_free_energy(self, init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Compute the gradient of the Helmholtz free engergy of the model according 
         to the TAP expansion around infinite temperature.
@@ -713,7 +712,6 @@ class Model(object):
         each of the minimial magnetizations for the Gibbs FE.
 
         Args:
-            num_r: (int>=0) number of random seeds to use for Gibbs FE minimization
             init_lr float: initial learning rate which is halved whenever necessary 
             to enforce descent.
             tol float: tolerance for quitting minimization.
@@ -724,24 +722,14 @@ class Model(object):
 
         """
 
-        # compute the TAP approximation to the Helmholtz free energy:
-        grad_EMF = gu.zero_grad(self)
+        # compute minimizing magnetization from a random initialization
+        (mag, EMF) = self.TAP_free_energy(None,
+                                          init_lr_EMF,
+                                          tolerance_EMF,
+                                          max_iters_EMF)
 
-        # compute minimizing magnetizations from random initializations
-        for s in range(num_r):
-            mag, EMF = self.TAP_free_energy(None,
-                                            init_lr_EMF,
-                                            tolerance_EMF,
-                                            max_iters_EMF)
-            # Compute the gradients at this minimizing magnetization
-            grad_gfe = self._grad_gibbs_free_energy(mag)
-            gu.grad_mapzip_(be.add_, grad_gfe, grad_EMF)
-
-        # average
-        scale = partial(be.tmul_, be.float_scalar(1/num_r))
-        gu.grad_apply_(scale, grad_EMF)
-
-        return grad_EMF
+        # Return the gradients at this minimizing magnetization
+        return self._grad_gibbs_free_energy(mag)
 
     def save(self, store: pandas.HDFStore) -> None:
         """
