@@ -476,8 +476,7 @@ class Model(object):
             )
 
         # compute the gradient of the Helmholtz FE via TAP_gradient
-        grad_HFE = self.grad_TAP_free_energy(num_r, init_lr_EMF, tolerance_EMF, 
-                                             max_iters_EMF)
+        grad_HFE = self.grad_TAP_free_energy(init_lr_EMF, tolerance_EMF, max_iters_EMF)
         
         return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
 
@@ -701,7 +700,7 @@ class Model(object):
             )
         return grad_GFE
 
-    def grad_TAP_free_energy(self, num_r, init_lr_EMF, tolerance_EMF, max_iters_EMF):
+    def grad_TAP_free_energy(self, init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Compute the gradient of the Helmholtz free engergy of the model according 
         to the TAP expansion around infinite temperature.
@@ -722,25 +721,8 @@ class Model(object):
             namedtuple: (Gradient): containing gradients of the model parameters.
 
         """
-
-        # compute the TAP approximation to the Helmholtz free energy:
-        grad_EMF = gu.zero_grad(self)
-
-        # compute minimizing magnetizations from random initializations
-        for _ in range(num_r):
-            mag, EMF = self.TAP_free_energy(None,
-                                            init_lr_EMF,
-                                            tolerance_EMF,
-                                            max_iters_EMF)
-            # Compute the gradients at this minimizing magnetization
-            grad_gfe = self._grad_gibbs_free_energy(mag)
-            gu.grad_mapzip_(be.add_, grad_gfe, grad_EMF)
-
-        # average
-        scale = partial(be.tmul_, be.float_scalar(1/num_r))
-        gu.grad_apply_(scale, grad_EMF)
-
-        return grad_EMF
+        mag, EMF = self.TAP_free_energy(None, init_lr_EMF, tolerance_EMF, max_iters_EMF)
+        return self._grad_gibbs_free_energy(mag)
 
     def save(self, store: pandas.HDFStore) -> None:
         """

@@ -341,7 +341,7 @@ def test_bernoulli_GFE_derivatives():
 
     lr = 0.1
     gogogo = True
-    grad = rbm.grad_TAP_free_energy(1, 0.1, 1e-7, 50)
+    grad = rbm.grad_TAP_free_energy(0.1, 1e-7, 50)
     while gogogo:
         cop = deepcopy(rbm)
         lr_mul = partial(be.tmul, lr)
