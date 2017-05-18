@@ -296,19 +296,6 @@ class Weights(Layer):
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
-    def get_null_params(self):
-        """
-        Returns a null params.
-
-        Args:
-            None
-
-        Returns:
-            params (namedtuple): all zeros
-
-        """
-        return ParamsWeights(be.zeros(self.shape))
-
     def W(self):
         """
         Get the weight matrix.
@@ -437,19 +424,6 @@ class GaussianLayer(Layer):
         for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
-
-    def get_null_params(self):
-        """
-        Returns a null params.
-
-        Args:
-            None
-
-        Returns:
-            params (namedtuple): all zeros
-
-        """
-        return ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
 
     def energy(self, vis):
         """
@@ -757,19 +731,6 @@ class IsingLayer(Layer):
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
-    def get_null_params(self):
-        """
-        Returns a null params.
-
-        Args:
-            None
-
-        Returns:
-            params (namedtuple): all zeros
-
-        """
-        return ParamsIsing(be.zeros(self.len))
-
     def energy(self, data):
         """
         Compute the energy of the Ising layer.
@@ -1040,19 +1001,6 @@ class BernoulliLayer(Layer):
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
-    def get_null_params(self):
-        """
-        Returns a null params.
-
-        Args:
-            None
-
-        Returns:
-            params (namedtuple): all zeros
-
-        """
-        return ParamsBernoulli(be.zeros(self.len))
-
     def energy(self, data):
         """
         Compute the energy of the Bernoulli layer.
@@ -1322,19 +1270,6 @@ class ExponentialLayer(Layer):
         for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
-
-    def get_null_params(self):
-        """
-        Returns a null params.
-
-        Args:
-            None
-
-        Returns:
-            params (namedtuple): all zeros
-
-        """
-        return ParamsExponential(be.zeros(self.len))
 
     def energy(self, data):
         """

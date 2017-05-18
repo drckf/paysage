@@ -212,10 +212,8 @@ class ComputationGraph(object):
     Layers can have various properties set:
         - Clamped sampling: the layer is not sampled (state unchanged)
         - Trainable: the layer's parameters can be changed
-        - Excluded: the layer is not used in the model
-            (its connections are circumvented)
     Weight layers (connecting two other layers) can have
-        the trainable and excluded properties set.
+        the trainable property set.
 
     The computation graph is defined by an IncidenceMatrix, where
     layers are vertices and weight layers are edges.
@@ -243,13 +241,10 @@ class ComputationGraph(object):
         self.update_connections(incidence_matrix)
 
         # the default properties
-        # all layers can be sampled, trained, not excluded
-        # all weights can be trained, not excluded
+        # all layers can be sampled, trained, all weights can be trained
         self.clamped_sampling = []
         self.trainable_layers = range(len(self.layer_connections))
         self.trainable_weights = range(len(self.weight_connections))
-        self.excluded_layers = []
-        self.excluded_weights = []
 
     def default_incidence_matrix(self):
         """
@@ -322,107 +317,3 @@ class ComputationGraph(object):
                 untrainable_weights.append(weight_index)
         self.trainable_weights = sorted(list(set(range(len(self.weight_connections)))
                                             - set(untrainable_weights)))
-
-    def set_excluded_layers(self, excluded_layers):
-        """
-        Exclude a list of layers.
-        Modifies the excluded_layers and excluded_weights attributes
-
-        Args:
-            excluded_layers (List): the layer indices to exclude
-
-        Returns:
-            None
-
-        """
-        new_incidence_matrix = np.copy(self.connections.incidence_matrix)
-        for excluded_layer in excluded_layers:
-            new_incidence_matrix = self._exclude_layer(new_incidence_matrix, excluded_layer)
-
-        # set the excluded attributes
-        self.excluded_layers = excluded_layers
-        self.excluded_weights = np.where(~new_incidence_matrix.any(axis=0))[0]
-
-        # call the update
-        self.update_connections(new_incidence_matrix)
-
-    def _exclude_layer(self, incidence_matrix, excluded_layer):
-        """
-        Returns an incidence matrix from a given one,
-            excluding a single layer.
-        Excluding a layer does the following:
-            - any edges (weights) connected to layer where it has the higher index
-                are excluded
-            - any edges (weights) connected to the layer where it has the lower index
-                transfer their connection to the next lowest index layer that
-                the layer is connected to.
-
-        Example: 4 layers, 3 weights case
-                 W_0 W_1 W_2
-            L_0:  1   0   0
-            L_1:  1   1   0
-            L_2:  0   1   1
-            L_3:  0   0   1
-
-        exclude layer 2:
-            - W_1 excluded (L_2 is the higher index vertex)
-            - W_2 transfers its connection to L_1 (L_2 was connected to L_1 and L_3).
-        result:
-                 W_0 W_1 W_2
-            L_0:  1   0   0
-            L_1:  1   0   1
-            L_2:  0   0   0
-            L_3:  0   0   1
-
-        Args:
-            incidence_matrix: the incidence matrix for the graph
-            excluded_layer: the layer index to exclude
-
-        Returns:
-            new_incidence_matrix: the modified incidence matrix
-
-        """
-        im = IncidenceMatrix(incidence_matrix)
-        new_incidence_matrix = np.copy(incidence_matrix)
-
-        # find all edges touching this vertex
-        affected_weights = np.nonzero(im.incidence_matrix[excluded_layer])[0]
-        # define which vertex to transfer to
-        lower_index_connected_layers = [i for i in im.adjacency_list[excluded_layer] \
-                                        if i < excluded_layer]
-        # if there are none, then we will exclude edges that connect to it
-        try:
-            transfer_layer = max(lower_index_connected_layers)
-        except ValueError:
-            transfer_layer = None
-
-        # loop over the affected weights, excluding them or transfering ownership
-        for weight_index in affected_weights:
-            # if the index is higher
-            # or there is no layer to transfer to, exclude the edge
-            if (self.weight_connections[weight_index][1] == excluded_layer) or not transfer_layer:
-                new_incidence_matrix[:, weight_index] = 0
-            # otherwise it is lower, and we can transfer it
-            else:
-                new_incidence_matrix[excluded_layer, weight_index] = 0
-                new_incidence_matrix[transfer_layer, weight_index] = 1
-
-        return new_incidence_matrix
-
-    def reset_exclusions(self):
-        """
-        Resets excluded layers to None.
-        Useful when changing the layer exclusions
-        Modifies the connections and exclusions attributes.
-
-        Args:
-            None
-
-        Returns:
-            None
-
-        """
-        self.excluded_layers = []
-        self.excluded_weights = []
-        incidence_matrix = self.default_incidence_matrix()
-        self.update_connections(incidence_matrix)

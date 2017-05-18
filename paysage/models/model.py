@@ -174,8 +174,7 @@ class Model(object):
 
         # find layers that can be sampled
         sampled_layers = [layer_index for layer_index in range(self.num_layers) \
-            if (layer_index not in self.graph.clamped_sampling) \
-            and (layer_index not in self.graph.excluded_layers)]
+            if (layer_index not in self.graph.clamped_sampling)]
 
         # update the odd then the even layers
         for layer_set in [range(1, self.num_layers, 2),
@@ -287,60 +286,47 @@ class Model(object):
             [None for w in self.weights]
         )
 
-        update_layers = [layer_index for layer_index in range(self.num_layers) \
-            if (layer_index not in self.graph.excluded_layers)]
-        update_weights = [weight_index for weight_index in range(self.num_weights) \
-            if (weight_index not in self.graph.excluded_weights)]
-
         # POSITIVE PHASE (using observed)
 
         # compute the postive phase of the gradients of the layer parameters
         for i in range(self.num_layers):
-            if i in update_layers:
-                grad.layers[i] = self.layers[i].derivatives(
-                    data_state.units[i],
-                    self._connected_rescaled_units(i, data_state),
-                    self._connected_weights(i)
-                )
+            grad.layers[i] = self.layers[i].derivatives(
+                data_state.units[i],
+                self._connected_rescaled_units(i, data_state),
+                self._connected_weights(i)
+            )
 
         # compute the positive phase of the gradients of the weights
         for i in range(self.num_weights):
-            if i in update_weights:
-                iL = self.graph.weight_connections[i][0]
-                iR = self.graph.weight_connections[i][1]
-                grad.weights[i] = self.weights[i].derivatives(
-                    self.layers[iL].rescale(data_state.units[iL]),
-                    self.layers[iR].rescale(data_state.units[iR]),
-                )
+            iL = self.graph.weight_connections[i][0]
+            iR = self.graph.weight_connections[i][1]
+            grad.weights[i] = self.weights[i].derivatives(
+                self.layers[iL].rescale(data_state.units[iL]),
+                self.layers[iR].rescale(data_state.units[iR]),
+            )
 
         # NEGATIVE PHASE (using sampled)
 
         # update the gradients of the layer parameters with the negative phase
         for i in range(self.num_layers):
-            if i in update_layers:
-                grad.layers[i] = be.mapzip(be.subtract,
-                    self.layers[i].derivatives(
-                        model_state.units[i],
-                        self._connected_rescaled_units(i, model_state),
-                        self._connected_weights(i)
-                    ),
-                grad.layers[i])
-            else:
-                grad.layers[i] = self.layers[i].get_null_params()
+            grad.layers[i] = be.mapzip(be.subtract,
+                self.layers[i].derivatives(
+                    model_state.units[i],
+                    self._connected_rescaled_units(i, model_state),
+                    self._connected_weights(i)
+                ),
+            grad.layers[i])
 
         # update the gradients of the weight parameters with the negative phase
         for i in range(self.num_weights):
-            if i in update_weights:
-                iL = self.graph.weight_connections[i][0]
-                iR = self.graph.weight_connections[i][1]
-                grad.weights[i] = be.mapzip(be.subtract,
-                    self.weights[i].derivatives(
-                        self.layers[iL].rescale(model_state.units[iL]),
-                        self.layers[iR].rescale(model_state.units[iR]),
-                    ),
-                grad.weights[i])
-            else:
-                grad.weights[i] = self.weights[i].get_null_params()
+            iL = self.graph.weight_connections[i][0]
+            iR = self.graph.weight_connections[i][1]
+            grad.weights[i] = be.mapzip(be.subtract,
+                self.weights[i].derivatives(
+                    self.layers[iL].rescale(model_state.units[iL]),
+                    self.layers[iR].rescale(model_state.units[iR]),
+                ),
+            grad.weights[i])
 
         return grad
 
@@ -378,13 +364,11 @@ class Model(object):
         """
         energy = 0
         for layer_index in range(self.num_layers):
-            if layer_index not in self.graph.excluded_layers:
-                energy += self.layers[layer_index].energy(data.units[layer_index])
+            energy += self.layers[layer_index].energy(data.units[layer_index])
         for weight_index in range(self.num_weights):
-            if weight_index not in self.graph.excluded_weights:
-                iL = self.graph.weight_connections[weight_index][0]
-                iR = self.graph.weight_connections[weight_index][1]
-                energy += self.weights[weight_index].energy(data.units[iL], data.units[iR])
+            iL = self.graph.weight_connections[weight_index][0]
+            iR = self.graph.weight_connections[weight_index][1]
+            energy += self.weights[weight_index].energy(data.units[iL], data.units[iR])
         return energy
 
     def save(self, store: pandas.HDFStore) -> None:
