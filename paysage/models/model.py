@@ -173,12 +173,14 @@ class Model(object):
         updated_state = mu.State.from_state(state)
 
         # find layers that can be sampled
-        sampled_layers = [layer_index for layer_index in range(self.num_layers) \
-            if (layer_index not in self.graph.clamped_sampling)]
+        sampled_layers = self.graph.get_sampled()
+
+        # define the two sampling sets to alternate between
+        layer_set_A = range(1, self.num_layers, 2)
+        layer_set_B = range(0, self.num_layers, 2)
 
         # update the odd then the even layers
-        for layer_set in [range(1, self.num_layers, 2),
-                          range(0, self.num_layers, 2)]:
+        for layer_set in [layer_set_A, layer_set_B]:
             for i in layer_set:
                 if i in sampled_layers:
                     func = getattr(self.layers[i], func_name)
@@ -389,7 +391,7 @@ class Model(object):
         config = self.get_config()
         store.put('model', pandas.DataFrame())
         store.get_storer('model').attrs.config = config
-        # save the weights
+        # save the parameters
         for i in range(self.num_weights):
             key = os.path.join('weights', 'weights'+str(i))
             self.weights[i].save_params(store, key)

@@ -295,6 +295,21 @@ class ComputationGraph(object):
         """
         self.clamped_sampling = clamped_sampling
 
+    def get_sampled(self):
+        """
+        Convenience function that returns the layers for which sampling is
+        not clamped.
+        Complement of the `clamped_sampling` attribute.
+
+        Args:
+            None
+
+        Returns:
+            unclamped_sampling (List): layers for which sampling is not clamped.
+
+        """
+        return [i for i in range(self.num_layers) if i not in self.clamped_sampling]
+
     def set_trainable_layers(self, trainable_layers):
         """
         Convenience function to set the layers which are trainable
