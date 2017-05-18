@@ -382,18 +382,23 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
     # CD resets the sampler from the visible data at each iteration
     sampler.set_positive_state(data_state)
     sampler.set_negative_state(model_state)
+    model.graph.set_clamped_sampling([0])
     sampler.update_positive_state(steps)
+    model.graph.set_clamped_sampling([])
     sampler.update_negative_state(steps)
 
     # compute the conditional sampling on all visible-side layers,
     # inclusive over hidden-side layers
-    for i in range(1, model.num_layers - 1):
-        model.graph.set_clamped_sampling(list(range(i)))
+    allowed_layers = [layer_index for layer_index in range(model.num_layers) \
+                        if layer_index not in model.graph.excluded_layers]
+
+    for i in range(1, len(allowed_layers) - 1):
+        model.graph.set_clamped_sampling(allowed_layers[:i])
         sampler.update_positive_state(steps)
         sampler.update_negative_state(steps)
 
     # make a mean field step to copmute the expectation on the last layer
-    model.graph.set_clamped_sampling(list(range(model.num_layers - 1)))
+    model.graph.set_clamped_sampling(allowed_layers[:-1])
     grad_data_state = model.mean_field_iteration(1, sampler.pos_state)
     grad_model_state = model.mean_field_iteration(1, sampler.neg_state)
 
