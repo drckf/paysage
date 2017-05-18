@@ -131,8 +131,9 @@ class Model(object):
             list[tensor]: the rescaled values of the connected units
 
         """
-        connected_layers = self.graph.layer_connections[i]
-        return [self.layers[j].rescale(state.units[j]) for j in connected_layers]
+        connections = self.graph.layer_connections[i]
+        return [self.layers[conn.layer].rescale(state.units[conn.layer]) \
+                for conn in connections]
 
     def _connected_weights(self, i):
         """
@@ -146,10 +147,10 @@ class Model(object):
             list[tensor]: the weights connecting layer i to its neighbros
 
         """
-        connected_weights = self.graph.connections.high_index_edges[i]
-        connected_weights_T = self.graph.connections.low_index_edges[i]
-        return [self.weights[j].W() for j in connected_weights] \
-            + [self.weights[j].W_T() for j in connected_weights_T]
+        connections = self.graph.layer_connections[i]
+        return [self.weights[conn.weight].W_T() if conn.is_forward \
+                else self.weights[conn.weight].W() \
+                for conn in connections]
 
     def _alternating_update(self, func_name, state, beta=None):
         """

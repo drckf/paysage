@@ -1,5 +1,6 @@
 import copy
 import numpy as np
+from collections import namedtuple
 
 from .. import backends as be
 
@@ -129,44 +130,27 @@ class State(object):
         return copy.deepcopy(state)
 
 
-class IncidenceMatrix(object):
+class Graph(object):
     """
-    Holds the incidence matrix for a graph.
-    Allows operations to extract the adjacency matrix, adjacency list, and edge list.
+    Container for the contents of a graph.
+    Allows operations to extract useful objects,
+        such as the adjacency matrix, adjacency list, and edge list.
 
     """
     def __init__(self, incidence_matrix):
-        self.incidence_matrix = None
-        self.edge_list = None
-        self.adjacency_matrix = None
-        self.adjacency_list = None
-
-        # update the other graph attributes
-        self.update(incidence_matrix)
-
-    def update(self, incidence_matrix):
-        """
-        Update the incidence_matrix, edge list,
-            adjacency matrix, adjacency list, and edge list attributes.
-
-        Args:
-            None
-
-        Returns:
-            None
-
-        """
         self.incidence_matrix = incidence_matrix
+        self.num_vertices = incidence_matrix.shape[0]
+        self.num_edges = incidence_matrix.shape[1]
+
         self.edge_list = self._edge_list()
         self.adjacency_matrix = self._adjacency_matrix()
         self.adjacency_list = self._adjacency_list()
-        self.low_index_edges = self._low_index_edges()
-        self.high_index_edges = self._high_index_edges()
 
     def _edge_list(self):
         """
         Get the edge list.
         Needs a current incidence matrix.
+        Assumes there are exactly 2 vertices per edge.
 
         Args:
             None
@@ -175,7 +159,7 @@ class IncidenceMatrix(object):
             edge_list (List): the list of edges in the graph.
 
         """
-        return [np.nonzero(col)[0] for col in self.incidence_matrix.T]
+        return np.array([np.nonzero(col)[0] for col in self.incidence_matrix.T])
 
     def _adjacency_matrix(self):
         """
@@ -189,7 +173,7 @@ class IncidenceMatrix(object):
             adjacency_matrix (numpy array): the adjacency matrix
 
         """
-        adj = np.zeros(2*[len(self.incidence_matrix)])
+        adj = np.zeros((self.num_vertices, self.num_vertices))
         for edge in self.edge_list:
             adj[edge, edge[::-1]] = 1
         return adj
@@ -207,41 +191,13 @@ class IncidenceMatrix(object):
         """
         return [np.nonzero(row)[0] for row in self.adjacency_matrix]
 
-    def _low_index_edges(self):
-        """
-        Get the list of edges connected to each vertex,
-            where the vertex is the low index.
-        Needs a current edge_list and incidence_matrix.
 
-        Args:
-            None
-
-        Returns:
-            low_index_edges (List): edges connected to each vertex which have
-                the low index.
-
-        """
-        low_index_connections = np.array(self.edge_list).T[0]
-        return [list(np.where(low_index_connections == i)[0]) \
-                for i in range(len(self.incidence_matrix))]
-
-    def _high_index_edges(self):
-        """
-        Get the list of edges connected to each vertex,
-            where the vertex is the high index.
-        Needs a current edge_list and incidence_matrix.
-
-        Args:
-            None
-
-        Returns:
-            high_index_edges (List): edges connected to each vertex which have
-                the high index.
-
-        """
-        high_index_connections = np.array(self.edge_list).T[1]
-        return [list(np.where(high_index_connections == i)[0]) \
-                for i in range(len(self.incidence_matrix))]
+"""
+A tuple parameterizing the connection from one layer to another.
+The `is_forward` attribute is True if the `layer` attribute (the connected layer)
+    has a higher index than the index of this layer.
+"""
+LayerConnection = namedtuple("LayerConnection", ["layer", "weight", "is_forward"])
 
 
 class ComputationGraph(object):
@@ -253,7 +209,7 @@ class ComputationGraph(object):
     Weight layers (connecting two other layers) can have
         the trainable property set.
 
-    The computation graph is defined by an IncidenceMatrix, where
+    The computation graph is defined by an Graph object, where
     layers are vertices and weight layers are edges.
     The incidence matrix defines the connections between layers
     and the corresponding edges.
@@ -270,21 +226,23 @@ class ComputationGraph(object):
             None
 
         """
-        self.num_layers = num_layers
-
         # build the incidence matrix
-        incidence_matrix = self.default_incidence_matrix()
+        incidence_matrix = self.default_incidence_matrix(num_layers)
+        self.num_layers = num_layers
+        self.num_weights = incidence_matrix.shape[1]
 
         # set the connections between layers
-        self.update_connections(incidence_matrix)
+        self.connections = Graph(incidence_matrix)
+        self.layer_connections = self.get_layer_connections()
+        self.weight_connections = self.connections.edge_list
 
         # the default properties
         # all layers can be sampled, trained, all weights can be trained
         self.clamped_sampling = []
-        self.trainable_layers = range(len(self.layer_connections))
-        self.trainable_weights = range(len(self.weight_connections))
+        self.trainable_layers = range(self.num_layers)
+        self.trainable_weights = range(self.num_weights)
 
-    def default_incidence_matrix(self):
+    def default_incidence_matrix(self, num_layers):
         """
         Builds the default incidence matrix.
 
@@ -295,29 +253,40 @@ class ComputationGraph(object):
             incidence_matrix: a matrix specifying the connections in the model.
 
         """
-        incidence_matrix = np.zeros((self.num_layers, self.num_layers-1))
-        for i in range(self.num_layers-1):
+        incidence_matrix = np.zeros((num_layers, num_layers-1))
+        for i in range(num_layers-1):
             incidence_matrix[i, i] = 1
             incidence_matrix[i+1, i] = 1
         return incidence_matrix
 
-    def update_connections(self, incidence_matrix):
+    def get_layer_connections(self):
         """
-        Update the connections in the model.
-        Modifies the connections attributes.
+        Returns a list over layers.
+        Each element of the list is a list of LayerConnection tuples,
+        which are the connections to that layer.
 
         Args:
-            incidence_matrix: a matrix specifying the connections in the model.
-
-        Returns:
             None
 
+        Returns:
+            layer_connections (List): a list over layers, where each entry is
+                a list of LayerConnection tuples of the connections to that layer.
         """
-        self.connections = IncidenceMatrix(incidence_matrix)
-
-        # define the connections between layers
-        self.layer_connections = self.connections.adjacency_list
-        self.weight_connections = self.connections.edge_list
+        layer_connections = []
+        for layer_index in range(self.num_layers):
+            layer_conn = []
+            # find all connected weights, associate to layers
+            connected_weights = np.nonzero(self.connections.incidence_matrix[layer_index])[0]
+            for weight in connected_weights:
+                edge_conn = self.connections.edge_list[weight]
+                # if the connecting layer has a higher index,
+                # set LayerConnection.is_forward = True
+                if edge_conn[0] == layer_index:
+                    layer_conn.append(LayerConnection(edge_conn[1], weight, True))
+                else:
+                    layer_conn.append(LayerConnection(edge_conn[0], weight, False))
+            layer_connections.append(layer_conn)
+        return layer_connections
 
     def set_clamped_sampling(self, clamped_sampling):
         """
@@ -363,10 +332,6 @@ class ComputationGraph(object):
         """
         self.trainable_layers = trainable_layers
         # set weights where an untrainable layer is a higher index to untrainable
-        untrainable_layers = list(set(range(len(self.layer_connections))) - set(trainable_layers))
-        untrainable_weights = []
-        for weight_index, weight_con in enumerate(self.weight_connections):
-            if weight_con[1] in untrainable_layers:
-                untrainable_weights.append(weight_index)
-        self.trainable_weights = sorted(list(set(range(len(self.weight_connections)))
-                                            - set(untrainable_weights)))
+        untrainable_layers = [i for i in range(self.num_layers) if i not in self.trainable_layers]
+        untrainable_weights = np.where(np.in1d(self.connections.edge_list.T[1], untrainable_layers))[0]
+        self.trainable_weights = [i for i in range(self.num_weights) if i not in untrainable_weights]
