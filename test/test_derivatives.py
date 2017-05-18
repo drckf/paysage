@@ -5,6 +5,7 @@ from paysage.models import gradient_util as gu
 from copy import deepcopy
 from functools import partial
 import pytest
+from copy import deepcopy
 
 # ----- Functional Programs with Gradients ----- #
 
@@ -337,7 +338,7 @@ def test_bernoulli_GFE_derivatives():
     for lay in rbm.layers:
         lay.params.loc[:] = be.rand_like(lay.params.loc)
 
-    (m,TFE) = rbm.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50)
+    m, TFE = rbm.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50)
 
     lr = 0.1
     gogogo = True
@@ -351,6 +352,7 @@ def test_bernoulli_GFE_derivatives():
                           be.apply(lr_mul, grad.layers[i]))
 
         m, TFE_next = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50)
+        
         regress = TFE_next - TFE < 0.0
         if regress:
             if lr < 1e-6:
