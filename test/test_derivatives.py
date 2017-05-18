@@ -717,6 +717,34 @@ def test_gaussian_derivatives():
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in gaussian-gaussian rbm"
 
+def test_bernoulli_log_partition_gradient():
+    num_units = 500
+    num_parallel = 1
+    lay = layers.GaussianLayer(num_units)
+    lay.params.loc[:] = be.rand_like(lay.params.loc) * 2.0 - 1.0
+    lay.params.log_var[:] = be.rand_like(lay.params.loc) * 2.0 - 1.0
+    B = be.rand((num_parallel,num_units))
+    A = be.rand_like(B)
+    logZ = be.mean(log_partition_function(lay,A,B), axis=0)
+    lr = 0.01
+    gogogo = True
+    grad = lay.grad_log_partition_function(A,B)
+    while gogogo:
+        cop = deepcopy(lay)
+        cop.params.loc[:] = lay.params.loc + lr * grad.loc
+        cop.params.log_var[:] = lay.params.log_var + lr * grad.log_var
+        logZ_next = be.mean(cop.log_partition_function(A,B), axis=0)
+        regress = logZ_next - logZ < 0.0
+        #print(logZ_next - logZ)
+        if True in regress:
+            if lr < 1e-6:
+                assert False, \
+                "gradient of Bernoulli log partition function is wrong"
+                break
+            else:
+                lr *= 0.5
+        else:
+            break
 
 if __name__ == "__main__":
     pytest.main([__file__])
