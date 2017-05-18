@@ -439,7 +439,7 @@ class Model(object):
         return grad
 
 
-    def TAP_gradient(self, data_state, init_lr_EMF, tolerance_EMF, max_iters_EMF):
+    def TAP_gradient(self, data_state, init_lr, tolerance, max_iters):
         """
         Gradient of -\ln P(v) with respect to the model parameters
 
@@ -452,15 +452,15 @@ class Model(object):
             max_iters int: maximum gradient decsent steps
 
         Returns:
-            namedtuple: Gradient: containing gradients of the model parameters.
+            Gradient (namedtuple): containing gradients of the model parameters.
 
         """
         # compute average grad_F_marginal over the minibatch
-        grad_MFE = gu.null_grad(self)
+        pos_phase = gu.null_grad(self)
 
         # compute the postive phase of the gradients of the layer parameters
         for i in range(self.num_layers):
-            grad_MFE.layers[i] = self.layers[i].derivatives(
+            pos_phase.layers[i] = self.layers[i].derivatives(
                 data_state.units[i],
                 [self.layers[j].rescale(data_state.units[j])
                     for j in self.layer_connections[i]],
@@ -470,19 +470,31 @@ class Model(object):
 
         # compute the positive phase of the gradients of the weights
         for i in range(self.num_layers - 1):
-            grad_MFE.weights[i] = self.weights[i].derivatives(
+            pos_phase.weights[i] = self.weights[i].derivatives(
                 self.layers[i].rescale(data_state.units[i]),
                 self.layers[i+1].rescale(data_state.units[i+1]),
             )
 
         # compute the gradient of the Helmholtz FE via TAP_gradient
-        grad_HFE = self.grad_TAP_free_energy(init_lr_EMF, tolerance_EMF, max_iters_EMF)
+        neg_phase = self.grad_TAP_free_energy(init_lr, tolerance, max_iters)
 
-        return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
+        return gu.grad_mapzip(be.subtract, pos_phase, neg_phase)
     
     
     """
-    Architecture of TAP
+    Architecture of TAP:
+        
+    TAP_gradient: computes the gradient using the TAP approximation
+    
+    CALLS:
+    
+    grad_TAP_free_energy: computes the negative phase portion of the gradient
+    
+    CALLS:
+        
+    TAP_free_energy: 
+        
+    _grad_gibbs_free_energy:
     
     
     """
@@ -660,11 +672,7 @@ class Model(object):
 
         # generate random sample in domain to use as a starting location for gradient descent
         if seed==None:
-            #TODO: move clipping into the layer function
             seed = [lay.get_random_magnetization() for lay in self.layers]
-            clip_ = partial(be.clip_inplace, a_min=0.005, a_max=0.995)
-            for m in seed:
-                be.apply_(clip_, m)
 
         return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
 

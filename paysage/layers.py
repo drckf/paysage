@@ -1140,7 +1140,8 @@ class BernoulliLayer(Layer):
             BernoulliMagnetization
 
         """
-        return MagnetizationBernoulli(be.rand((self.len,)))
+        return MagnetizationBernoulli(be.clip(be.rand((self.len,)), 
+                                              a_min=0.005, a_max=0.995))
 
     def get_config(self):
         """
