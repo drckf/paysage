@@ -584,15 +584,13 @@ class StochasticGradientDescent(object):
 
         """
         # the main loop over layers to train
-        for end_layer in range(2, self.model.num_layers):
+        for end_layer in range(2, self.model.num_layers+1):
             fixed_layer = end_layer - 1 if end_layer > 2 else 0
-            clamped_sampling = range(fixed_layer)
             trainable_layers = range(fixed_layer, end_layer)
             excluded_layers = range(end_layer, self.model.num_layers)
 
             print("~~~~~~~~~~~~~~~~~~~~")
             print("layerwise training")
-            print(" - fixed layers: {}".format(list(clamped_sampling)))
             print(" - training layers: {}".format(list(trainable_layers)))
             print(" - excluding layers: {}".format(list(excluded_layers)))
             print("~~~~~~~~~~~~~~~~~~~~")
@@ -602,7 +600,6 @@ class StochasticGradientDescent(object):
             self.optimizer.stepsize = lr_schedule
 
             # set the compute graph attributes
-            self.model.graph.set_clamped_sampling(clamped_sampling)
             self.model.graph.set_trainable_layers(trainable_layers)
             self.model.graph.set_excluded_layers(excluded_layers)
 
