@@ -530,6 +530,7 @@ class Model(object):
             float: Gibbs free energy
         """
         total = 0
+
         expect_lagrange = [self.layers[l]._gibbs_lagrange_multipliers_expectation(mag[l]) 
             for l in range(self.num_layers)]
         var_lagrange = [self.layers[l]._gibbs_lagrange_multipliers_variance(mag[l]) 

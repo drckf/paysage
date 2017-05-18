@@ -346,8 +346,8 @@ def test_bernoulli_GFE_derivatives():
         cop = deepcopy(rbm)
         lr_mul = partial(be.tmul, lr)
         for i in range(rbm.num_layers):
-            cop.layers[i].params = \
-                be.mapzip(be.add, rbm.layers[i].params,
+
+            cop.layers[i].params = be.mapzip(be.add, rbm.layers[i].params,
                           be.apply(lr_mul, grad.layers[i]))
 
         m, TFE_next = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50)
