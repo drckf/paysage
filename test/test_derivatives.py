@@ -362,7 +362,6 @@ def test_bernoulli_GFE_derivatives():
         else:
             break
 
-
 def test_ising_conditional_params():
     num_visible_units = 100
     num_hidden_units = 50
