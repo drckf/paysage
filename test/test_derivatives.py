@@ -282,6 +282,82 @@ def test_bernoulli_log_partition_gradient():
         else:
             break
 
+def test_bernoulli_GFE_magnetization_gradient():
+    num_units = 500
+
+    layer_1 = layers.BernoulliLayer(num_units)
+    layer_2 = layers.BernoulliLayer(num_units)
+    layer_3 = layers.BernoulliLayer(num_units)
+    layer_4 = layers.BernoulliLayer(num_units)
+    rbm = model.Model([layer_1, layer_2, layer_3, layer_4])
+    for i in range(len(rbm.weights)):
+        rbm.weights[i].params.matrix[:] = \
+        0.01 * be.randn(rbm.weights[i].shape)
+
+    for lay in rbm.layers:
+        lay.params.loc[:] = be.rand_like(lay.params.loc)
+
+    mag = [lay.get_random_magnetization() for lay in rbm.layers]
+
+    GFE = rbm.gibbs_free_energy(mag)
+
+    lr = 0.001
+    gogogo = True
+    grad = rbm._grad_magnetization_GFE(mag)
+    while gogogo:
+        cop = deepcopy(mag)
+        for i in range(rbm.num_layers):
+            cop[i].expect[:] = mag[i].expect + lr * grad[i].expect
+
+        GFE_next = rbm.gibbs_free_energy(cop)
+        regress = GFE_next - GFE < 0.0
+        if regress:
+            if lr < 1e-6:
+                assert False,\
+                "Bernoulli GFE magnetization gradient is wrong"
+                break
+            else:
+                lr *= 0.5
+        else:
+            break
+
+def test_bernoulli_GFE_derivatives():
+    num_units = 500
+
+    layer_1 = layers.BernoulliLayer(num_units)
+    layer_2 = layers.BernoulliLayer(num_units)
+    layer_3 = layers.BernoulliLayer(num_units)
+
+    rbm = model.Model([layer_1, layer_2, layer_3])
+    for i in range(len(rbm.weights)):
+        rbm.weights[i].params.matrix[:] = \
+        0.01 * be.randn(rbm.weights[i].shape)
+
+    for lay in rbm.layers:
+        lay.params.loc[:] = be.rand_like(lay.params.loc)
+
+    (m,TFE) = rbm.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50, method='gd')
+
+    lr = 0.1
+    gogogo = True
+    grad = rbm.grad_TAP_free_energy(1, 0, None, 0.1, 1e-7, 50)
+    while gogogo:
+        cop = deepcopy(rbm)
+        lr_mul = partial(be.tmul, lr)
+        for i in range(rbm.num_layers):
+            cop.layers[i].params = be.mapzip(be.add, rbm.layers[i].params, be.apply(lr_mul, grad.layers[i]))
+
+        (m,TFE_next) = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50, method='gd')
+        regress = TFE_next - TFE < 0.0
+        if regress:
+            if lr < 1e-6:
+                assert False, "TAP FE gradient is not working properly for Bernoulli models"
+                break
+            else:
+                lr *= 0.5
+        else:
+            break
+
 
 def test_ising_conditional_params():
     num_visible_units = 100
