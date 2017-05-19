@@ -5,6 +5,7 @@ import pandas
 from . import penalties
 from . import constraints
 from . import backends as be
+from . import math_utils
 
 ParamsLayer = namedtuple("Params", [])
 
@@ -403,6 +404,7 @@ class GaussianLayer(Layer):
         self.sample_size = 0
         self.rand = be.randn
         self.params = ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
+        self.mean_var_calc = math_utils.MeanVarianceCalculator()
 
     def get_config(self):
         """
@@ -501,25 +503,10 @@ class GaussianLayer(Layer):
             None
 
         """
-        # get the current values of the first and second moments
-        x = self.params.loc
-        x2 = be.exp(self.params.log_var) + x**2
-
-        # update the size of the dataset
-        n = len(data)
-        new_sample_size = n + self.sample_size
-
-        # update the first moment
-        x *= self.sample_size / new_sample_size
-        x += n * be.mean(data, axis=0) / new_sample_size
-
-        # update the second moment
-        x2 *= self.sample_size / new_sample_size
-        x2 += n * be.mean(be.square(data), axis=0) / new_sample_size
-
-        # update the class attributes
-        self.sample_size = new_sample_size
-        self.params = ParamsGaussian(x, be.log(x2 - x**2))
+        self.mean_var_calc.calculate(data)
+        self.sample_size = self.mean_var_calc.num
+        self.params = ParamsGaussian(self.mean_var_calc.mean,
+                                     be.log(self.mean_var_calc.var))
 
     def shrink_parameters(self, shrinkage=0.1):
         """
