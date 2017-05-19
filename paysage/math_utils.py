@@ -44,9 +44,9 @@ class MeanVarianceCalculator(object):
         self.mean = 0
         self.var = 0
 
-    def calculate(self, samples):
+    def update(self, samples):
         """
-        Run an online calculation of the mean and variance.
+        Update the online calculation of the mean and variance.
 
         Notes:
             The unnormalized variance is calculated

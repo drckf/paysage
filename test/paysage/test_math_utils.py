@@ -18,7 +18,7 @@ def test_mean_variance():
     # do the online calculation
     mv = math_utils.MeanVarianceCalculator()
     for i in range(10):
-        mv.calculate(s[i*10000:(i+1)*10000])
+        mv.update(s[i*10000:(i+1)*10000])
 
     assert be.allclose(ref_mean, mv.mean)
     assert be.allclose(ref_var, mv.var)

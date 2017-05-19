@@ -503,7 +503,7 @@ class GaussianLayer(Layer):
             None
 
         """
-        self.mean_var_calc.calculate(data)
+        self.mean_var_calc.update(data)
         self.sample_size = self.mean_var_calc.num
         self.params = ParamsGaussian(self.mean_var_calc.mean,
                                      be.log(self.mean_var_calc.var))

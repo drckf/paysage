@@ -298,13 +298,15 @@ class EnergyZscore(object):
             energy z-score object
 
         """
-        self.data_mean = 0
-        self.random_mean = 0
-        self.random_mean_square = 0
+        self.calc_data = math_utils.MeanVarianceCalculator()
+        self.calc_random = math_utils.MeanVarianceCalculator()
+        # self.data_mean = 0
+        # self.random_mean = 0
+        # self.random_mean_square = 0
 
     def reset(self) -> None:
         """
-        Reset the metric to it's initial state.
+        Reset the metric to its initial state.
 
         Note:
             Modifies norm, random_mean, and random_mean_square in place.
@@ -316,9 +318,11 @@ class EnergyZscore(object):
             None
 
         """
-        self.data_mean = 0
-        self.random_mean = 0
-        self.random_mean_square = 0
+        self.calc_data.reset()
+        self.calc_random.reset()
+        # self.data_mean = 0
+        # self.random_mean = 0
+        # self.random_mean_square = 0
 
     def update(self, update_args: MetricState) -> None:
         """
@@ -335,12 +339,16 @@ class EnergyZscore(object):
             None
 
         """
-        self.data_mean += be.mean(update_args.model
-                                  .joint_energy(update_args.minibatch))
-        self.random_mean += be.mean(update_args.model
-                                     .joint_energy(update_args.random_samples))
-        self.random_mean_square += be.mean(update_args.model
-                                           .joint_energy(update_args.random_samples)**2)
+        energy_data = update_args.model.joint_energy(update_args.minibatch)
+        energy_random = update_args.model.joint_energy(update_args.random_samples)
+        self.calc_data.update(energy_data)
+        self.calc_random.update(energy_random)
+        # self.data_mean += be.mean(update_args.model
+        #                           .joint_energy(update_args.minibatch))
+        # self.random_mean += be.mean(update_args.model
+        #                              .joint_energy(update_args.random_samples))
+        # self.random_mean_square += be.mean(update_args.model
+        #                                    .joint_energy(update_args.random_samples)**2)
 
     def value(self) -> float:
         """
@@ -353,8 +361,8 @@ class EnergyZscore(object):
             energy z-score (float)
 
         """
-        if self.random_mean_square:
-            return (self.data_mean - self.random_mean) / math.sqrt(self.random_mean_square)
+        if self.calc_data.num:
+            return (self.calc_data.mean - self.calc_random.mean) / math.sqrt(self.calc_random.var)
         else:
             return None
 
@@ -410,7 +418,7 @@ class HeatCapacity(object):
 
         """
         energy = update_args.model.joint_energy(update_args.samples)
-        self.calc.calculate(energy)
+        self.calc.update(energy)
 
     def value(self) -> float:
         """
