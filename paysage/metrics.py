@@ -384,6 +384,7 @@ class HeatCapacity(object):
         """
         self.heat_capacity = 0
         self.norm = 0
+        self.mean = 0
 
     def reset(self) -> None:
         """
@@ -401,10 +402,36 @@ class HeatCapacity(object):
         """
         self.heat_capacity = 0
         self.norm = 0
+        self.mean = 0
+
+    def calculate_variance(self, samples):
+        """
+        Welford's algorithm for the variance.
+        B.P. Welford, Technometrics 4(3):419–420.
+
+        A numerically stable online variance calculation.
+        Safer against large cancellations than the direct calculation.
+
+        Notes:
+            The unnormalized variance is calculated
+                (not divided by the number of samples).
+
+        Args:
+            samples: data samples
+
+        Returns:
+            None
+
+        """
+        for s in samples:
+            self.norm += 1
+            mean_update = self.mean + (s - self.mean) / self.norm
+            self.heat_capacity += (s - mean_update)*(s - self.mean)
+            self.mean = mean_update
 
     def update(self, update_args: MetricState) -> None:
         """
-        Update the estimate for the heat capacity
+        Update the estimate for the heat capacity.
 
         Notes:
             Changes heat capacity in place.
@@ -416,11 +443,13 @@ class HeatCapacity(object):
             None
 
         """
-        self.norm += 1
-        self.heat_capacity += be.mean(be.square(update_args.model
-                                   .joint_energy(update_args.samples)))
-        self.heat_capacity -= be.square(be.mean(update_args.model
-                                   .joint_energy(update_args.samples)))
+        energy = update_args.model.joint_energy(update_args.samples)
+        self.calculate_variance(energy)
+        # self.norm += 1
+        # self.heat_capacity += be.mean(be.square(update_args.model
+        #                            .joint_energy(update_args.samples)))
+        # self.heat_capacity -= be.square(be.mean(update_args.model
+        #                            .joint_energy(update_args.samples)))
 
     def value(self) -> float:
         """
@@ -437,4 +466,3 @@ class HeatCapacity(object):
             return self.heat_capacity / self.norm
         else:
             return None
-
