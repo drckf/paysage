@@ -187,6 +187,10 @@ class Model(object):
             layers.Weights((self.layers[i].len, self.layers[i+1].len))
         for i in range(self.num_layers - 1)
         ]
+        
+    #
+    # Methods for saving and loading models. 
+    #
 
     def get_config(self) -> dict:
         """
@@ -224,43 +228,65 @@ class Model(object):
         for ly in config["layers"]:
             layer_list.append(layers.Layer.from_config(ly))
         return cls(layer_list)
-
-    def initialize(self, data, method: str='hinton') -> None:
+    
+    def save(self, store: pandas.HDFStore) -> None:
         """
-        Initialize the parameters of the model.
+        Save a model to an open HDFStore.
+
+        Notes:
+            Performs an IO operation.
 
         Args:
-            data: A Batch object.
-            method (optional): The initialization method.
+            store (pandas.HDFStore)
 
         Returns:
             None
 
         """
-        try:
-            func = getattr(init, method)
-        except AttributeError:
-            print(method + ' is not a valid initialization method for latent models')
-        func(data, self)
-        for l in self.layers:
-            l.enforce_constraints()
-        for w in self.weights:
-            w.enforce_constraints()
+        # save the config as an attribute
+        config = self.get_config()
+        store.put('model', pandas.DataFrame())
+        store.get_storer('model').attrs.config = config
+        # save the weights
+        for i in range(self.num_layers - 1):
+            key = os.path.join('weights', 'weights'+str(i))
+            self.weights[i].save_params(store, key)
+        for i in range(len(self.layers)):
+            key = os.path.join('layers', 'layers'+str(i))
+            self.layers[i].save_params(store, key)
 
-    def random(self, vis):
+    @classmethod
+    def from_saved(cls, store: pandas.HDFStore) -> None:
         """
-        Generate a random sample with the same shape,
-        and of the same type, as the visible units.
+        Build a model by reading from an open HDFStore.
+
+        Notes:
+            Performs an IO operation.
 
         Args:
-            vis: The visible units.
+            store (pandas.HDFStore)
 
         Returns:
-            tensor: Random sample with same shape as vis.
+            None
 
         """
-        return self.layers[0].random(vis)
-
+        # create the model from the config
+        config = store.get_storer('model').attrs.config
+        model = cls.from_config(config)
+        # load the weights
+        for i in range(len(model.weights)):
+            key = os.path.join('weights', 'weights'+str(i))
+            model.weights[i].load_params(store, key)
+        # load the layer parameters
+        for i in range(len(model.layers)):
+            key = os.path.join('layers', 'layers'+str(i))
+            model.layers[i].load_params(store, key)
+        return model
+    
+    #
+    # Methods that define topology
+    #
+    
     def _layer_connections(self):
         """
         Helper function to enumerate the connections between layers.
@@ -322,6 +348,46 @@ class Model(object):
         """
         return [self.weights[j].W() if j < i else self.weights[j].W_T()
                             for j in self.weight_connections[i]]
+    
+    #
+    # Methods for sampling and sample based training 
+    # 
+
+    def initialize(self, data, method: str='hinton') -> None:
+        """
+        Initialize the parameters of the model.
+
+        Args:
+            data: A Batch object.
+            method (optional): The initialization method.
+
+        Returns:
+            None
+
+        """
+        try:
+            func = getattr(init, method)
+        except AttributeError:
+            print(method + ' is not a valid initialization method for latent models')
+        func(data, self)
+        for l in self.layers:
+            l.enforce_constraints()
+        for w in self.weights:
+            w.enforce_constraints()
+
+    def random(self, vis):
+        """
+        Generate a random sample with the same shape,
+        and of the same type, as the visible units.
+
+        Args:
+            vis: The visible units.
+
+        Returns:
+            tensor: Random sample with same shape as vis.
+
+        """
+        return self.layers[0].random(vis)
 
     def _alternating_update(self, func_name, state, beta=None, clamped=[]):
         """
@@ -496,68 +562,7 @@ class Model(object):
             grad.weights[i])
 
         return grad
-
-
-    def TAP_gradient(self, data_state, init_lr, tolerance, max_iters):
-        """
-        Gradient of -\ln P(v) with respect to the model parameters
-
-        Args:
-            data_state (State object): The observed visible units and sampled
-             hidden units.
-            init_lr float: initial learning rate which is halved whenever necessary
-             to enforce descent.
-            tol float: tolerance for quitting minimization.
-            max_iters int: maximum gradient decsent steps
-
-        Returns:
-            Gradient (namedtuple): containing gradients of the model parameters.
-
-        """
-        # compute average grad_F_marginal over the minibatch
-        pos_phase = gu.null_grad(self)
-
-        # compute the postive phase of the gradients of the layer parameters
-        for i in range(self.num_layers):
-            pos_phase.layers[i] = self.layers[i].derivatives(
-                data_state.units[i],
-                [self.layers[j].rescale(data_state.units[j])
-                    for j in self.layer_connections[i]],
-                [self.weights[j].W() if j < i else self.weights[j].W_T()
-                    for j in self.weight_connections[i]],
-            )
-
-        # compute the positive phase of the gradients of the weights
-        for i in range(self.num_layers - 1):
-            pos_phase.weights[i] = self.weights[i].derivatives(
-                self.layers[i].rescale(data_state.units[i]),
-                self.layers[i+1].rescale(data_state.units[i+1]),
-            )
-
-        # compute the gradient of the Helmholtz FE via TAP_gradient
-        neg_phase = self.grad_TAP_free_energy(init_lr, tolerance, max_iters)
-
-        return gu.grad_mapzip(be.subtract, pos_phase, neg_phase)
     
-    
-    """
-    Architecture of TAP:
-        
-    TAP_gradient: computes the gradient using the TAP approximation
-    
-    CALLS:
-    
-    grad_TAP_free_energy: computes the negative phase portion of the gradient
-    
-    CALLS:
-        
-    TAP_free_energy: computes magnetization and free energy
-        
-    _grad_gibbs_free_energy:
-    
-    
-    """
-
     def parameter_update(self, deltas):
         """
         Update the model parameters.
@@ -594,8 +599,29 @@ class Model(object):
             energy += self.layers[i+1].energy(data.units[i+1])
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
+    
+    #
+    # Methods for training with the TAP approximation
+    #
+    
+    """
+    Architecture of TAP:
+        
+    TAP_gradient: computes the gradient using the TAP approximation
+    
+    CALLS:
+    
+    grad_TAP_free_energy: computes the negative phase portion of the gradient
+    
+    CALLS:
+        
+    TAP_free_energy: computes magnetization and free energy
+        
+    _grad_gibbs_free_energy:
+    
+    
+    """
 
-    # TODO: use StateTAP
     def gibbs_free_energy(self, state):
         """
         Gibbs FE according to TAP2 appoximation
@@ -624,6 +650,7 @@ class Model(object):
             
         return total
 
+    # TODO: use StateTAP
     def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50):
         """
         Compute the Helmholtz free energy of the model according to the TAP
@@ -724,11 +751,13 @@ class Model(object):
             return (mag, gam)
 
         # generate random sample in domain to use as a starting location for gradient descent
+        # TODO: use StateTAP
         if seed==None:
             seed = [lay.get_random_magnetization() for lay in self.layers]
 
         return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
 
+    # TODO: use StateTAP
     def _grad_magnetization_GFE(self, mag):
         """
         Gradient of the Gibbs free energy with respect to the magnetization parameters
@@ -753,6 +782,7 @@ class Model(object):
 
         return grad
 
+    # TODO: use StateTAP
     def _grad_gibbs_free_energy(self, mag):
         """
         Gradient of the Gibbs free energy with respect to the model parameters
@@ -771,6 +801,7 @@ class Model(object):
             )
         return grad_GFE
 
+    # TODO: use StateTAP
     def grad_TAP_free_energy(self, init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Compute the gradient of the Helmholtz free engergy of the model according 
@@ -793,57 +824,45 @@ class Model(object):
         """
         mag, EMF = self.TAP_free_energy(None, init_lr_EMF, tolerance_EMF, max_iters_EMF)
         return self._grad_gibbs_free_energy(mag)
+    
 
-    def save(self, store: pandas.HDFStore) -> None:
+    def TAP_gradient(self, data_state, init_lr, tolerance, max_iters):
         """
-        Save a model to an open HDFStore.
-
-        Notes:
-            Performs an IO operation.
+        Gradient of -\ln P(v) with respect to the model parameters
 
         Args:
-            store (pandas.HDFStore)
+            data_state (State object): The observed visible units and sampled
+             hidden units.
+            init_lr float: initial learning rate which is halved whenever necessary
+             to enforce descent.
+            tol float: tolerance for quitting minimization.
+            max_iters int: maximum gradient decsent steps
 
         Returns:
-            None
+            Gradient (namedtuple): containing gradients of the model parameters.
 
         """
-        # save the config as an attribute
-        config = self.get_config()
-        store.put('model', pandas.DataFrame())
-        store.get_storer('model').attrs.config = config
-        # save the weights
+        # compute average grad_F_marginal over the minibatch
+        pos_phase = gu.null_grad(self)
+
+        # compute the postive phase of the gradients of the layer parameters
+        for i in range(self.num_layers):
+            pos_phase.layers[i] = self.layers[i].derivatives(
+                data_state.units[i],
+                [self.layers[j].rescale(data_state.units[j])
+                    for j in self.layer_connections[i]],
+                [self.weights[j].W() if j < i else self.weights[j].W_T()
+                    for j in self.weight_connections[i]],
+            )
+
+        # compute the positive phase of the gradients of the weights
         for i in range(self.num_layers - 1):
-            key = os.path.join('weights', 'weights'+str(i))
-            self.weights[i].save_params(store, key)
-        for i in range(len(self.layers)):
-            key = os.path.join('layers', 'layers'+str(i))
-            self.layers[i].save_params(store, key)
+            pos_phase.weights[i] = self.weights[i].derivatives(
+                self.layers[i].rescale(data_state.units[i]),
+                self.layers[i+1].rescale(data_state.units[i+1]),
+            )
 
-    @classmethod
-    def from_saved(cls, store: pandas.HDFStore) -> None:
-        """
-        Build a model by reading from an open HDFStore.
+        # compute the gradient of the Helmholtz FE via TAP_gradient
+        neg_phase = self.grad_TAP_free_energy(init_lr, tolerance, max_iters)
 
-        Notes:
-            Performs an IO operation.
-
-        Args:
-            store (pandas.HDFStore)
-
-        Returns:
-            None
-
-        """
-        # create the model from the config
-        config = store.get_storer('model').attrs.config
-        model = cls.from_config(config)
-        # load the weights
-        for i in range(len(model.weights)):
-            key = os.path.join('weights', 'weights'+str(i))
-            model.weights[i].load_params(store, key)
-        # load the layer parameters
-        for i in range(len(model.layers)):
-            key = os.path.join('layers', 'layers'+str(i))
-            model.layers[i].load_params(store, key)
-        return model
+        return gu.grad_mapzip(be.subtract, pos_phase, neg_phase)
