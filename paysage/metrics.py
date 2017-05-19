@@ -445,11 +445,6 @@ class HeatCapacity(object):
         """
         energy = update_args.model.joint_energy(update_args.samples)
         self.calculate_variance(energy)
-        # self.norm += 1
-        # self.heat_capacity += be.mean(be.square(update_args.model
-        #                            .joint_energy(update_args.samples)))
-        # self.heat_capacity -= be.square(be.mean(update_args.model
-        #                            .joint_energy(update_args.samples)))
 
     def value(self) -> float:
         """
