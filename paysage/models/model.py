@@ -91,17 +91,17 @@ class State(object):
         return copy.deepcopy(state)
     
     
-class TAPState(object):
-    """A TAPState is a list of TAPParams objects for each layer in the model."""
+class StateTAP(object):
+    """A TAPState is a list of CumulantsTAP objects for each layer in the model."""
     def __init__(self, tap_params):
         """
-        Create a TAPState.
+        Create a StateTAP.
         
         Args:
-            tap_params: list of TAPParams objects
+            tap_params: list of CumulantsTAP objects
             
         Returns:
-            TAPState
+            StateTAP
         
         """
         self.tap_params = tap_params
@@ -109,16 +109,45 @@ class TAPState(object):
     @classmethod
     def from_state(cls, state):
         """
-        Create a TAPState object from an existing TAPState.
+        Create a StateTAP object from an existing StateTAP.
 
         Args:
-            state (TAPState): a TAPState instance
+            state (StateTAP): a StateTAP instance
 
         Returns:
-            TAPState object
+            StateTAP object
 
         """
         return copy.deepcopy(state)
+    
+    @classmethod
+    def from_model(cls, model):
+        """
+        Create a StateTAP object from an existing StateTAP.
+
+        Args:
+            state (StateTAP): a StateTAP instance
+
+        Returns:
+            StateTAP object
+
+        """
+        return cls([layer.get_zero_magnetization() for layer in model.layers])
+    
+    @classmethod
+    def from_model_rand(cls, model):
+        """
+        Create a StateTAP object from an existing StateTAP.
+
+        Args:
+            state (StateTAP): a StateTAP instance
+
+        Returns:
+            StateTAP object
+
+        """
+        return cls([layer.get_random_magnetization() for layer in model.layers])    
+
 
 
 class Model(object):
@@ -566,34 +595,32 @@ class Model(object):
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
 
-    def gibbs_free_energy(self, mag):
+    # TODO: use StateTAP
+    def gibbs_free_energy(self, state):
         """
         Gibbs FE according to TAP2 appoximation
 
         Args:
-            mag (list of magnetizations of layers):
+            staet (StateTAP):
               magnetizations at which to compute the free energy
 
         Returns:
             float: Gibbs free energy
         """
         total = 0
-
-        expect_lagrange = [self.layers[l]._gibbs_lagrange_multipliers_expectation(mag[l]) 
-            for l in range(self.num_layers)]
-        var_lagrange = [self.layers[l]._gibbs_lagrange_multipliers_variance(mag[l]) 
-            for l in range(self.num_layers)]
+        
+        lagrange = [self.layers[l].lagrange_multiplers(state[l]) 
+                    for l in range(self.num_layers)] 
         
         for index in range(self.num_layers):
             lay = self.layers[index]
-            total += lay._gibbs_free_energy_entropy_term(expect_lagrange[index], 
-                         var_lagrange[index], mag[index])
+            total += lay._gibbs_free_energy_entropy_term(lagrange[index].mean, 
+                         lagrange[index].variance, state[index])
 
         for index in range(self.num_layers-1):
             W = self.weights[index].W()
-            total -= be.dot(mag[index].expectation(), be.dot(W, mag[index+1].expectation()))
-            total -= 0.5 * be.dot(mag[index].variance(),
-                     be.dot(be.square(W), mag[index+1].variance()))
+            total -= be.quadratic(state[index].mean, W, state[index+1].mean)
+            total -= 0.5 * be.quadratic(state[index].variance, be.square(W), state[index+1].variance)
             
         return total
 
@@ -732,7 +759,7 @@ class Model(object):
 
         Args:
             mag (list of magnetizations of layers):
-              magnetizations at which to compute the deriviates
+              magnetizations at which to compute the derivatives
 
         Returns:
             namedtuple (Gradient)
