@@ -5,6 +5,23 @@ from paysage import backends as be
 
 import pytest
 
+# ----- MeanCalculator ----- #
+
+def test_mean():
+    # create some random data
+    s = be.rand((100000,))
+
+    # reference result
+    ref_mean = be.mean(s)
+
+    # do the online calculation
+    mv = math_utils.MeanVarianceCalculator()
+    for i in range(10):
+        mv.update(s[i*10000:(i+1)*10000])
+
+    assert be.allclose(ref_mean, mv.mean)
+
+
 # ----- MeanVarianceCalculator ----- #
 
 def test_mean_variance():

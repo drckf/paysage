@@ -295,7 +295,7 @@ class EnergyZscore(object):
             None
 
         Returns:
-            energy z-score object
+            EnergyZscore object
 
         """
         self.calc_data = math_utils.MeanVarianceCalculator()
@@ -304,9 +304,6 @@ class EnergyZscore(object):
     def reset(self) -> None:
         """
         Reset the metric to its initial state.
-
-        Note:
-            Modifies norm, random_mean, and random_mean_square in place.
 
         Args:
             None
@@ -322,9 +319,6 @@ class EnergyZscore(object):
         """
         Update the estimate for the energy z-score using a batch
         of observations and a batch of fantasy particles.
-
-        Notes:
-            Changes norm, random_mean, and random_mean_square in place.
 
         Args:
             update_args: uses all layers of minibatch and random_samples, and model
