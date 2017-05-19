@@ -135,16 +135,12 @@ class EnergyDistance(object):
             energy distance object
 
         """
-        self.energy_distance = 0
-        self.norm = 0
+        self.calc = math_utils.MeanCalculator()
         self.downsample = 100
 
     def reset(self) -> None:
         """
-        Reset the metric to it's initial state.
-
-        Note:
-            Modifies norm and energy_distance in place.
+        Reset the metric to its initial state.
 
         Args:
             None
@@ -153,16 +149,12 @@ class EnergyDistance(object):
             None
 
         """
-        self.energy_distance = 0
-        self.norm = 0
+        self.calc.reset()
 
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the energy distance using a batch
         of observations and a batch of fantasy particles.
-
-        Notes:
-            Changes norm and energy_distance in place.
 
         Args:
             update_args: uses visible layer of minibatch and samples
@@ -171,11 +163,10 @@ class EnergyDistance(object):
             None
 
         """
-        self.norm += 1
-        self.energy_distance += \
-            be.fast_energy_distance(update_args.minibatch.units[0],
-                                    update_args.samples.units[0],
-                                    self.downsample)
+        energy_distance = be.fast_energy_distance(update_args.minibatch.units[0],
+                                                  update_args.samples.units[0],
+                                                  self.downsample)
+        self.calc.update([energy_distance])
 
     def value(self) -> float:
         """
@@ -188,8 +179,8 @@ class EnergyDistance(object):
             energy distance (float)
 
         """
-        if self.norm:
-            return self.energy_distance / self.norm
+        if self.calc.num:
+            return self.calc.mean
         else:
             return None
 
