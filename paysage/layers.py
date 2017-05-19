@@ -645,7 +645,10 @@ class GaussianLayer(Layer):
             lagrange multipler (tensor (num_units))
 
         """
-        return be.subtract(self.params.loc, be.log(be.divide(1 - mag.expect, mag.expect)))
+        scale = be.exp(self.params.log_var)
+        return be.divide(be.multiply(mag.var, scale),
+                                be.subtract(be.multiply(mag.var, self.params.loc),
+                                            be.multiply(mag.expect, scale)))
 
     def _gibbs_lagrange_multipliers_variance(self, mag):
         """
@@ -657,7 +660,8 @@ class GaussianLayer(Layer):
         Returns:
             lagrange multipler (tensor (num_units))
         """
-        return be.zeros_like(mag.expect)
+        scale = be.exp(self.params.log_var)
+        return 0.5 * be.divide(be.multiply(mag.var, scale), be.subtract(scale, mag.var))
 
     def _gibbs_free_energy_entropy_term(self, B, A, mag):
         """
