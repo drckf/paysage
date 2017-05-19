@@ -300,9 +300,6 @@ class EnergyZscore(object):
         """
         self.calc_data = math_utils.MeanVarianceCalculator()
         self.calc_random = math_utils.MeanVarianceCalculator()
-        # self.data_mean = 0
-        # self.random_mean = 0
-        # self.random_mean_square = 0
 
     def reset(self) -> None:
         """
@@ -320,9 +317,6 @@ class EnergyZscore(object):
         """
         self.calc_data.reset()
         self.calc_random.reset()
-        # self.data_mean = 0
-        # self.random_mean = 0
-        # self.random_mean_square = 0
 
     def update(self, update_args: MetricState) -> None:
         """
@@ -343,12 +337,6 @@ class EnergyZscore(object):
         energy_random = update_args.model.joint_energy(update_args.random_samples)
         self.calc_data.update(energy_data)
         self.calc_random.update(energy_random)
-        # self.data_mean += be.mean(update_args.model
-        #                           .joint_energy(update_args.minibatch))
-        # self.random_mean += be.mean(update_args.model
-        #                              .joint_energy(update_args.random_samples))
-        # self.random_mean_square += be.mean(update_args.model
-        #                                    .joint_energy(update_args.random_samples)**2)
 
     def value(self) -> float:
         """
