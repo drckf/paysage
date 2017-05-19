@@ -9,6 +9,7 @@ derived from summary information about the current state of the model
 from collections import namedtuple
 import math
 
+from . import math_utils
 from . import backends as be
 
 # ----- CLASSES ----- #
@@ -376,38 +377,30 @@ class HeatCapacity(object):
         Create HeatCapacity object.
 
         Args:
-            downsample (int; optional): how many samples to use
+            None
 
         Returns:
-            heat capacity object
+            None
 
         """
-        self.heat_capacity = 0
-        self.norm = 0
+        self.calc = math_utils.MeanVarianceCalculator()
 
     def reset(self) -> None:
         """
-        Reset the metric to it's initial state.
-
-        Note:
-            Modifies the heat capacity in place.
+        Reset the metric to its initial state.
 
         Args:
             None
 
         Returns:
-            None
+            The HeatCapacity object.
 
         """
-        self.heat_capacity = 0
-        self.norm = 0
+        self.calc.reset()
 
     def update(self, update_args: MetricState) -> None:
         """
-        Update the estimate for the heat capacity
-
-        Notes:
-            Changes heat capacity in place.
+        Update the estimate for the heat capacity.
 
         Args:
             update_args: uses all layers of random_samples, and model
@@ -416,11 +409,8 @@ class HeatCapacity(object):
             None
 
         """
-        self.norm += 1
-        self.heat_capacity += be.mean(be.square(update_args.model
-                                   .joint_energy(update_args.samples)))
-        self.heat_capacity -= be.square(be.mean(update_args.model
-                                   .joint_energy(update_args.samples)))
+        energy = update_args.model.joint_energy(update_args.samples)
+        self.calc.calculate(energy)
 
     def value(self) -> float:
         """
@@ -433,8 +423,7 @@ class HeatCapacity(object):
             heat capacity (float)
 
         """
-        if self.norm:
-            return self.heat_capacity / self.norm
+        if self.calc.num:
+            return self.calc.var
         else:
             return None
-
