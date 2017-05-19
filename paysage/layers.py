@@ -491,6 +491,23 @@ class BernoulliLayer(Layer):
         """
         return self.get_magnetization(be.clip(be.rand((self.len,)), 
                 a_min=epsilon, a_max=be.float_scalar(1-epsilon)))
+        
+    def clip_magnetization(self, magnetization, a_min=be.float_scalar(1e-6), 
+                           a_max=be.float_scalar(1 - 1e-6)):
+        """
+        Clip the mean of the mean of a CumulantsTAP object.
+        
+        Args:
+            magnetization (CumulantsTAP) to clip
+            a_min (float): the minimum value
+            a_max (float): the maximum value
+            
+        Returns:
+            clipped magnetization (CumulantsTAP)
+        
+        """
+        tmp = be.clip(magnetization.mean,  a_min=a_min, a_max=a_max)
+        return self.get_magnetization(tmp)        
 
     def log_partition_function(self, external_field, quadratic_field):
         """

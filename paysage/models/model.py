@@ -40,6 +40,7 @@ class State(object):
         """
         self.units = tensors
         self.shapes = [be.shape(t) for t in self.units]
+        self.len = len (self.shapes)
 
     @classmethod
     def from_model(cls, batch_size, model):
@@ -105,6 +106,7 @@ class StateTAP(object):
         
         """
         self.tap_params = tap_params
+        self.len = len(self.tap_params)
         
     @classmethod
     def from_state(cls, state):
@@ -624,11 +626,10 @@ class Model(object):
 
     def gibbs_free_energy(self, state):
         """
-        Gibbs FE according to TAP2 appoximation
+        Gibbs Free Energy (GFE) according to TAP2 appoximation
 
         Args:
-            staet (StateTAP):
-              magnetizations at which to compute the free energy
+            state (StateTAP): cumulants of the layers
 
         Returns:
             float: Gibbs free energy
@@ -650,36 +651,35 @@ class Model(object):
             
         return total
 
-    # TODO: use StateTAP
-    def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50):
+    def compute_StateTAP(self, init_lr=0.1, tol=1e-7, max_iters=50):
         """
-        Compute the Helmholtz free energy of the model according to the TAP
-        expansion around infinite temperature to second order.
+        Compute the state of the layers by minimizing the second order TAP 
+        approximation to the Helmholtz free energy.
 
         If the energy is,
         '''
-            E(v, h) := -\langle a,v \rangle - \langle b,h \rangle - \langle v,W \cdot h \rangle,
+        E(v, h) := -\langle a,v \rangle - \langle b,h \rangle - \langle v,W \cdot h \rangle,
         '''
         with Boltzmann probability distribution,
         '''
-            P(v,h) := Z^{-1} \exp{-E(v,h)},
+        P(v,h) := Z^{-1} \exp{-E(v,h)},
         '''
         and the marginal,
         '''
-            P(v) := \sum_{h} P(v,h),
+        P(v) := \sum_{h} P(v,h),
         '''
         then the Helmholtz free energy is,
         '''
-            F(v) := - log Z = -log \sum_{v,h} \exp{-E(v,h)}.
+        F(v) := - log Z = -log \sum_{v,h} \exp{-E(v,h)}.
         '''
         We add an auxiliary local field q, and introduce the inverse temperature
          variable \beta to define
         '''
-            \beta F(v;q) := -log\sum_{v,h} \exp{-\beta E(v,h) + \beta \langle q, v \rangle}
+        \beta F(v;q) := -log\sum_{v,h} \exp{-\beta E(v,h) + \beta \langle q, v \rangle}
         '''
         Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q,
          the Gibbs free energy.
-        The TAP formula is Taylor series of \Gamma in \beta, around \beta=0.
+        The TAP f ormula is Taylor series of \Gamma in \beta, around \beta=0.
         Setting \beta=1 and regarding the first two terms of the series as an
          approximation of \Gamma[m],
         we can minimize \Gamma in m to obtain an approximation of F(v;q=0) = F(v)
@@ -688,97 +688,75 @@ class Model(object):
          to minimize the function
 
         Args:
-            seed 'None' or Magnetization: initial seed for the minimization routine.
-                                          Chosing 'None' will result in a random seed
-            init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+            init_lr float: initial learning rate
             tol float: tolerance for quitting minimization.
             max_iters: maximum gradient decsent steps.
 
         Returns:
-            tuple (magnetization, TAP-approximated Helmholtz free energy)
-                  (Magnetization, float)
+            state of the layers (StateTAP)
 
         """
-
-        def minimize_gibbs_free_energy_GD(m, init_lr=0.01, tol=1e-6, max_iters=1):
-            """
-            Simple gradient descent routine to minimize Gibbs free energy
-
-            Note: The fact that this method is a closure suggests that it might be moved to a
-                   utility class later
-
-            Args:
-                m (list of magnetizations of layers): seed for gradient descent
-                init_lr float: initial learning rate which is halved whenever necessary
-                               to enforce descent.
-                tol float: tolerance for quitting minimization.
-                max_iters int: maximum gradient decsent steps
-
-            Returns:
-                tuple (list of magnetizations, minimal GFE value)
-
-            """
-            mag = deepcopy(m)
-            eps = 1e-6
-
-            gam = self.gibbs_free_energy(mag)
-            lr = init_lr
-            clip_ = partial(be.clip_inplace, a_min=eps, a_max=1.0-eps)
-            lr_ = partial(be.tmul_, be.float_scalar(lr))
-            
-            for _ in range(max_iters):
-                grad = self._grad_magnetization_GFE(mag)
-                for g in grad:
-                    be.apply_(lr_, g)
-                m_provisional = [be.mapzip(be.subtract, grad[l], mag[l]) for l in range(self.num_layers)]
-
-                # Warning: in general a lot of clipping gets done here
-                for m_l in m_provisional:
-                    be.apply_(clip_, m_l)
-
-                gam_provisional = self.gibbs_free_energy(m_provisional)
-                if (gam - gam_provisional < 0):
-                    lr *= 0.5
-                    lr_ = partial(be.tmul_, be.float_scalar(lr))
-                    if (lr < 1e-10):
-                        break
-                elif (gam - gam_provisional < tol):
-                    break
-                else:
-                    mag = m_provisional
-                    gam = gam_provisional
-
-            return (mag, gam)
-
+        decrease = be.float_scalar(0.5)
+        
         # generate random sample in domain to use as a starting location for gradient descent
-        # TODO: use StateTAP
-        if seed==None:
-            seed = [lay.get_random_magnetization() for lay in self.layers]
+        state = StateTAP.from_model_rand(self)
 
-        return minimize_gibbs_free_energy_GD(seed, init_lr, tol, max_iters)
+        free_energy = self.gibbs_free_energy(state)
+        lr = init_lr
+        lr_ = partial(be.tmul_, be.float_scalar(lr))
+        
+        for _ in range(max_iters):
+            # compute the gradient of the Gibbs Free Energy
+            grad = self._grad_magnetization_GFE(state)
+            for g in grad:
+                be.apply_(lr_, g)
+                
+            # take a gradient step to compute a new state
+            new_state = StateTAP([
+            self.layers[l].clip_magnetization(be.mapzip(be.subtract, grad[l], state[l])) 
+            for l in range(self.num_layers)])
+            
+            # compute the new free energy and perform an update
+            new_free_energy = self.gibbs_free_energy(new_state)
+            if (free_energy - new_free_energy < 0):
+                # the step was too large, halve the learning rate
+                lr *= decrease
+                lr_ = partial(be.tmul_, be.float_scalar(lr))
+                if (lr < 1e-10):
+                    break
+            elif (free_energy - new_free_energy < tol):
+                break
+            else:
+                state = new_state
+                free_energy = new_free_energy
+
+        return state
 
     # TODO: use StateTAP
-    def _grad_magnetization_GFE(self, mag):
+    def _grad_magnetization_GFE(self, state):
         """
         Gradient of the Gibbs free energy with respect to the magnetization parameters
 
         Args:
-            mag (list of magnetizations of layers):
-              magnetizations at which to compute the deriviates
+            state (StateTAP): magnetizations at which to compute the deriviates
 
         Returns:
             list (list of gradient magnetization objects for each layer)
+            
         """
         grad = [None for lay in self.layers]
         for l in range(self.num_layers):
-            grad[l] = self.layers[l]._grad_magnetization_GFE(mag[l])
+            grad[l] = self.layers[l]._grad_magnetization_GFE(state[l])
 
         for k in range(self.num_layers - 1):
             way = self.weights[k]
             w = way.W()
             ww = be.square(w)
-            grad[k+1].grad_GFE_update_down(mag[k], mag[k+1], w, ww)
-            grad[k].grad_GFE_update_up(mag[k], mag[k+1], w, ww)
+            
+            # TODO: use layer functions
+            # i think we just need to revese the order of the arugments
+            grad[k+1].grad_GFE_update_down(state[k], state[k+1], w, ww)
+            grad[k].grad_GFE_update_up(state[k], state[k+1], w, ww)
 
         return grad
 
@@ -825,7 +803,6 @@ class Model(object):
         mag, EMF = self.TAP_free_energy(None, init_lr_EMF, tolerance_EMF, max_iters_EMF)
         return self._grad_gibbs_free_energy(mag)
     
-
     def TAP_gradient(self, data_state, init_lr, tolerance, max_iters):
         """
         Gradient of -\ln P(v) with respect to the model parameters
