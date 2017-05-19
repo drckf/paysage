@@ -216,15 +216,11 @@ class EnergyGap(object):
             energy gap object
 
         """
-        self.energy_gap = 0
-        self.norm = 0
+        self.calc = math_utils.MeanCalculator()
 
     def reset(self) -> None:
         """
         Reset the metric to it's initial state.
-
-        Note:
-            Modifies norm and energy_gap in place.
 
         Args:
             None
@@ -233,16 +229,12 @@ class EnergyGap(object):
             None
 
         """
-        self.energy_gap = 0
-        self.norm = 0
+        self.calc.reset()
 
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the energy gap using a batch
         of observations and a batch of fantasy particles.
-
-        Notes:
-            Changes norm and energy_gap in place.
 
         Args:
             update_args: uses all layers of minibatch and random_samples, and model
@@ -251,11 +243,10 @@ class EnergyGap(object):
             None
 
         """
-        self.norm += 1
-        self.energy_gap += be.mean(update_args.model
-                                   .joint_energy(update_args.minibatch))
-        self.energy_gap -= be.mean(update_args.model
-                                   .joint_energy(update_args.random_samples))
+        energy_data = update_args.model.joint_energy(update_args.minibatch)
+        energy_random = update_args.model.joint_energy(update_args.random_samples)
+        self.calc.update(energy_data)
+        self.calc.update(-energy_random)
 
     def value(self):
         """
@@ -268,8 +259,9 @@ class EnergyGap(object):
             energy gap (float)
 
         """
-        if self.norm:
-            return self.energy_gap / self.norm
+        if self.calc.num:
+            # double the mean from double counting the data and random sets
+            return 2*self.calc.mean
         else:
             return None
 
@@ -298,7 +290,7 @@ class EnergyZscore(object):
             EnergyZscore object
 
         """
-        self.calc_data = math_utils.MeanVarianceCalculator()
+        self.calc_data = math_utils.MeanCalculator()
         self.calc_random = math_utils.MeanVarianceCalculator()
 
     def reset(self) -> None:
