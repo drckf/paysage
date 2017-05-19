@@ -9,6 +9,7 @@ derived from summary information about the current state of the model
 from collections import namedtuple
 import math
 
+from . import math_utils
 from . import backends as be
 
 # ----- CLASSES ----- #
@@ -376,65 +377,30 @@ class HeatCapacity(object):
         Create HeatCapacity object.
 
         Args:
-            downsample (int; optional): how many samples to use
+            None
 
         Returns:
-            heat capacity object
+            None
 
         """
-        self.heat_capacity = 0
-        self.norm = 0
-        self.mean = 0
+        self.calc = math_utils.MeanVarianceCalculator()
 
     def reset(self) -> None:
         """
-        Reset the metric to it's initial state.
-
-        Note:
-            Modifies the heat capacity in place.
+        Reset the metric to its initial state.
 
         Args:
             None
 
         Returns:
-            None
+            The HeatCapacity object.
 
         """
-        self.heat_capacity = 0
-        self.norm = 0
-        self.mean = 0
-
-    def calculate_variance(self, samples):
-        """
-        Welford's algorithm for the variance.
-        B.P. Welford, Technometrics 4(3):419–420.
-
-        A numerically stable online variance calculation.
-        Safer against large cancellations than the direct calculation.
-
-        Notes:
-            The unnormalized variance is calculated
-                (not divided by the number of samples).
-
-        Args:
-            samples: data samples
-
-        Returns:
-            None
-
-        """
-        for s in samples:
-            self.norm += 1
-            mean_update = self.mean + (s - self.mean) / self.norm
-            self.heat_capacity += (s - mean_update)*(s - self.mean)
-            self.mean = mean_update
+        self.calc.reset()
 
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the heat capacity.
-
-        Notes:
-            Changes heat capacity in place.
 
         Args:
             update_args: uses all layers of random_samples, and model
@@ -444,7 +410,7 @@ class HeatCapacity(object):
 
         """
         energy = update_args.model.joint_energy(update_args.samples)
-        self.calculate_variance(energy)
+        self.calc.calculate(energy)
 
     def value(self) -> float:
         """
@@ -457,7 +423,7 @@ class HeatCapacity(object):
             heat capacity (float)
 
         """
-        if self.norm:
-            return self.heat_capacity / self.norm
+        if self.calc.num:
+            return self.calc.var
         else:
             return None
