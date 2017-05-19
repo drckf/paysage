@@ -641,7 +641,7 @@ class Model(object):
         
         for index in range(self.num_layers):
             lay = self.layers[index]
-            total += lay._gibbs_free_energy_entropy_term(lagrange[index].mean, 
+            total += lay.TAP_entropy(lagrange[index].mean, 
                          lagrange[index].variance, state[index])
 
         for index in range(self.num_layers-1):
@@ -679,7 +679,7 @@ class Model(object):
         '''
         Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q,
          the Gibbs free energy.
-        The TAP f ormula is Taylor series of \Gamma in \beta, around \beta=0.
+        The TAP formula is Taylor series of \Gamma in \beta, around \beta=0.
         Setting \beta=1 and regarding the first two terms of the series as an
          approximation of \Gamma[m],
         we can minimize \Gamma in m to obtain an approximation of F(v;q=0) = F(v)
@@ -707,7 +707,7 @@ class Model(object):
         
         for _ in range(max_iters):
             # compute the gradient of the Gibbs Free Energy
-            grad = self._grad_magnetization_GFE(state)
+            grad = self._TAP_magnetization_grad(state)
             for g in grad:
                 be.apply_(lr_, g)
                 
@@ -733,7 +733,7 @@ class Model(object):
         return state
 
     # TODO: use StateTAP
-    def _grad_magnetization_GFE(self, state):
+    def _TAP_magnetization_grad(self, state):
         """
         Gradient of the Gibbs free energy with respect to the magnetization parameters
 
@@ -745,8 +745,9 @@ class Model(object):
             
         """
         grad = [None for lay in self.layers]
+        
         for l in range(self.num_layers):
-            grad[l] = self.layers[l]._grad_magnetization_GFE(state[l])
+            grad[l] = self.layers[l].TAP_magnetization_grad(state[l])
 
         for k in range(self.num_layers - 1):
             way = self.weights[k]

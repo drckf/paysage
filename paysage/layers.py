@@ -569,7 +569,7 @@ class BernoulliLayer(Layer):
         variance = be.zeros_like(cumulants.variance)
         return CumulantsTAP(mean, variance)
 
-    def _gibbs_free_energy_entropy_term(self, mean_lagrange, var_lagrange, mag):
+    def TAP_entropy(self, mean_lagrange, var_lagrange, mag):
         """
         The TAP-0 Gibbs free energy term associated strictly with this layer
 
@@ -586,10 +586,16 @@ class BernoulliLayer(Layer):
         return -be.tsum(self.log_partition_function(mean_lagrange, var_lagrange)) + \
                 be.dot(mean_lagrange, mag.mean) + be.dot(var_lagrange, mag.mean)
 
-    def _grad_magnetization_GFE(self, cumulants):
+    
+    # TODO: currently, there are three functions here
+    # one that computes the part from the components of the gradients associated with the fields
+    # and two that compute the parts that result from interactions with the connected layers
+    # this should be merged into one function that takes lists of connected layers / weights
+    # to be consistent with the other derivatives functions and drjrw's graph methods
+    def TAP_magnetization_grad(self, cumulants):
         """
         Gradient of the Gibbs free energy with respect to the magnetization
-        associated strictly with this layer
+        associated strictly with this layer.
 
         Args:
             cumulants (CumulantsTAP object): magnetization of the layer
@@ -598,9 +604,28 @@ class BernoulliLayer(Layer):
             gradient magnetization (CumulantsTAP):
                  gradient of GFE on this layer
         """
-        return CumulantsTAP(be.logit(cumulants.mean) - self.params.loc)
+        mean = be.logit(cumulants.mean) - self.params.loc
+        variance = be.zeros_like(mean)
+        return CumulantsTAP(mean, variance)
     
     def grad_GFE_update(self, grad, vis, hid, w, ww):
+        """
+        Computes a layerwise magnetization gradient update according to the gradient
+         of the Gibbs Free energy.
+         
+        m^T W + v^T W^2 * (0.5 - m_lower)
+
+        Args:
+            mag_lower (magnetization object): magnetization of the lower layer
+            mag (magnetization object): magnetization of the current layer
+            w (float tensor): weight matrix mapping down from this layer to the
+                              lower layer
+            ww (float tensor): cached square of the weight matrix
+
+        Returns:
+            None
+            
+        """
         tmp = grad.mean - be.dot(vis.mean, w) + be.multiply(be.dot(vis.mean, ww), 0.5 - hid.mean)
         return tmp
         
