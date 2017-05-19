@@ -53,15 +53,11 @@ class ReconstructionError(object):
             ReconstructionERror
 
         """
-        self.mean_square_error = 0
-        self.norm = 0
+        self.calc = math_utils.MeanCalculator()
 
     def reset(self) -> None:
         """
-        Reset the metric to it's initial state.
-
-        Notes:
-            Changes norm and mean_square_error in place.
+        Reset the metric to its initial state.
 
         Args:
             None
@@ -70,16 +66,12 @@ class ReconstructionError(object):
             None
 
         """
-        self.mean_square_error = 0
-        self.norm = 0
+        self.calc.reset()
 
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the reconstruction error using a batch
         of observations and a batch of reconstructions.
-
-        Notes:
-            Changes norm and mean_square_error in place.
 
         Args:
             update_args: uses visible layer of minibatch and reconstructions
@@ -89,10 +81,9 @@ class ReconstructionError(object):
             None
 
         """
-        self.norm += len(update_args.minibatch.units[0])
-        self.mean_square_error += be.tsum(
-            (update_args.minibatch.units[0] -
-             update_args.reconstructions.units[0])**2)
+        mse = (update_args.minibatch.units[0] -
+               update_args.reconstructions.units[0])**2
+        self.calc.update(be.tsum(mse, axis=1))
 
     def value(self) -> float:
         """
@@ -105,8 +96,8 @@ class ReconstructionError(object):
             reconstruction error (float)
 
         """
-        if self.norm:
-            return math.sqrt(self.mean_square_error / self.norm)
+        if self.calc.num:
+            return math.sqrt(self.calc.mean)
         else:
             return None
 
@@ -211,7 +202,7 @@ class EnergyGap(object):
 
     def reset(self) -> None:
         """
-        Reset the metric to it's initial state.
+        Reset the metric to its initial state.
 
         Args:
             None
