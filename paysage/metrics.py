@@ -80,8 +80,10 @@ class ReconstructionError(object):
             None
 
         """
-        mse = (update_args.minibatch.units[0] -
-               update_args.reconstructions.units[0])**2
+        mse = be.square(
+                be.subtract(update_args.reconstructions.units[0], 
+                            update_args.minibatch.units[0])
+                )
         self.calc.update(be.tsum(mse, axis=1))
 
     def value(self) -> float:
@@ -317,7 +319,8 @@ class EnergyZscore(object):
 
         """
         if self.calc_data.num:
-            return (self.calc_data.mean - self.calc_random.mean) / math.sqrt(self.calc_random.var)
+            z = (self.calc_data.mean - self.calc_random.mean) / math.sqrt(self.calc_random.var)
+            return z
         else:
             return None
 
