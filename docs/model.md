@@ -1,7 +1,35 @@
 # Documentation for Model (model.py)
 
+## class partial
+partial(func, *args, **keywords) - new function with partial application<br />of the given arguments and keywords.
+
+
 ## class Model
 General model class.<br />(i.e., Restricted Boltzmann Machines).<br /><br />Example usage:<br />'''<br />vis = BernoulliLayer(nvis)<br />hid = BernoulliLayer(nhid)<br />rbm = Model([vis, hid])<br />'''
+### TAP\_free\_energy
+```py
+
+def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-07, max_iters=50, method='gd')
+
+```
+
+
+
+Compute the Helmholtz free energy of the model according to the TAP<br />expansion around infinite temperature to second order.<br /><br />If the energy is,<br />'''<br /> ~ E(v, h) := -\langle a,v angle - \langle b,h angle - \langle v,W \cdot h angle,<br />'''<br />with Boltzmann probability distribution,<br />'''<br /> ~ P(v,h)  := 1/\sum_{v,h} \exp{-E(v,h)} * \exp{-E(v,h)},<br />'''<br />and the marginal,<br />'''<br /> ~ P(v) ~ := \sum_{h} P(v,h),<br />'''<br />then the Helmholtz free energy is,<br />'''<br /> ~ F(v) := -log\sum_{v,h} \exp{-E(v,h)}.<br />'''<br />We add an auxiliary local field q, and introduce the inverse temperature variable eta to define<br />'''<br /> ~ eta F(v;q) := -log\sum_{v,h} \exp{-eta E(v,h) + eta \langle q, v angle}<br />'''<br />Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q, the Gibbs free energy.<br />The TAP formula is Taylor series of \Gamma in eta, around eta=0.<br />Setting eta=1 and regarding the first two terms of the series as an approximation of \Gamma[m],<br />we can minimize \Gamma in m to obtain an approximation of F(v;q=0) = F(v)<br /><br />This implementation uses gradient descent from a random starting location to minimize the function<br /><br />Args:<br /> ~ seed 'None' or Magnetization: initial seed for the minimization routine.<br /> ~  ~  ~  ~  ~  ~  ~  ~   Chosing 'None' will result in a random seed<br /> ~ init_lr float: initial learning rate which is halved whenever necessary to enforce descent.<br /> ~ tol float: tolerance for quitting minimization.<br /> ~ max_iters: maximum gradient decsent steps.<br /> ~ method: one of 'gd' or 'constraint' picking which Gibbs FE minimization method to use.<br /><br />Returns:<br /> ~ tuple (magnetization, TAP-approximated Helmholtz free energy)<br /> ~  ~   (Magnetization, float)
+
+
+### TAP\_gradient
+```py
+
+def TAP_gradient(self, data_state, num_r, num_p, persistent_samples, init_lr_EMF, tolerance_EMF, max_iters_EMF)
+
+```
+
+
+
+Gradient of -\ln P(v) with respect to the model parameters<br /><br />Args:<br /> ~ data_state (State object): The observed visible units and sampled hidden units.<br /> ~ num_r: (int>=0) number of random seeds to use for Gibbs FE minimization<br /> ~ num_p: (int>=0) number of persistent seeds to use for Gibbs FE minimization<br /> ~ persistent_samples list of magnetizations: persistent magnetization parameters<br /> ~  ~ to keep as seeds for Gibbs free energy estimation.<br /> ~ init_lr float: initial learning rate which is halved whenever necessary to enforce descent.<br /> ~ tol float: tolerance for quitting minimization.<br /> ~ max_iters int: maximum gradient decsent steps<br /><br />Returns:<br /> ~ namedtuple: Gradient: containing gradients of the model parameters.
+
+
 ### \_\_init\_\_
 ```py
 
@@ -36,6 +64,30 @@ def get_config(self) -> dict
 
 
 Get a configuration for the model.<br /><br />Notes:<br /> ~ Includes metadata on the layers.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ A dictionary configuration for the model.
+
+
+### gibbs\_free\_energy
+```py
+
+def gibbs_free_energy(self, mag)
+
+```
+
+
+
+Gibbs FE according to TAP2 appoximation<br /><br />Args:<br /> ~ mag (list of magnetizations of layers):<br /> ~   magnetizations at which to compute the free energy<br /><br />Returns:<br /> ~ float: Gibbs free energy
+
+
+### grad\_TAP\_free\_energy
+```py
+
+def grad_TAP_free_energy(self, num_r, num_p, persistent_samples, init_lr_EMF, tolerance_EMF, max_iters_EMF)
+
+```
+
+
+
+Compute the gradient of the Helmholtz free engergy of the model according <br />to the TAP expansion around infinite temperature.<br /><br />This function will use the class members which specify the parameters for <br />the Gibbs FE minimization.<br />The gradients are taken as the average over the gradients computed at <br />each of the minimial magnetizations for the Gibbs FE.<br /><br />Args:<br /> ~ num_r: (int>=0) number of random seeds to use for Gibbs FE minimization<br /> ~ num_p: (int>=0) number of persistent seeds to use for Gibbs FE minimization<br /> ~ persistent_samples list of magnetizations: persistent magnetization parameters<br /> ~  ~ to keep as seeds for Gibbs free energy estimation.<br /> ~ init_lr float: initial learning rate which is halved whenever necessary <br /> ~ to enforce descent.<br /> ~ tol float: tolerance for quitting minimization.<br /> ~ max_iters int: maximum gradient decsent steps<br /><br />Returns:<br /> ~ namedtuple: (Gradient): containing gradients of the model parameters.
 
 
 ### gradient
@@ -154,4 +206,18 @@ Create a State object.<br /><br />Args:<br /> ~ tensors: a list of tensors<br />
 
 ## class List
 list() -> new empty list<br />list(iterable) -> new list initialized from iterable's items
+
+
+## functions
+
+### deepcopy
+```py
+
+def deepcopy(x, memo=None, _nil=[])
+
+```
+
+
+
+Deep copy operation on arbitrary Python objects.<br /><br />See the module's __doc__ string for more info.
 
