@@ -28,6 +28,7 @@ def plot_image_grid(image_array, shape, vmin=0, vmax=1, filename=None, show=True
                 ax=axes[i][j], cmap="gray_r", cbar=False, vmin=vmin, vmax=vmax)
             axes[i][j].set(yticks=[])
             axes[i][j].set(xticks=[])
+    plt.tight_layout(pad=0.5, h_pad=0.2, w_pad=0.2)
     if show:
         plt.show(f)
     if filename is not None:

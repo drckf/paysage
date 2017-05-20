@@ -58,9 +58,10 @@ def compute_reconstructions(rbm, v_data, fit):
     sampler.update_positive_state(1, clamped=[])
     v_model = rbm.deterministic_iteration(1, sampler.pos_state).units[0]
 
-    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
-    return numpy.array([[be.to_numpy_array(v_data[i]),
+    idx = numpy.random.choice(range(len(v_model)), 10, replace=False)
+    grid = numpy.array([[be.to_numpy_array(v_data[i]),
                          be.to_numpy_array(v_model[i])] for i in idx])
+    return grid.swapaxes(0,1)
 
 def show_reconstructions(rbm, v_data, fit, show_plot, dim=28):
     print("\nPlot a random sample of reconstructions")
@@ -78,9 +79,10 @@ def compute_fantasy_particles(rbm, v_data, fit):
     sampler.update_negative_state(1000)
 
     v_model = rbm.deterministic_iteration(1, sampler.neg_state).units[0]
-    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
+    idx = numpy.random.choice(range(len(v_model)), 25, replace=False)
 
-    return numpy.array([[be.to_numpy_array(v_model[i])] for i in idx])
+    grid = numpy.array([be.to_numpy_array(v_model[i]) for i in idx])
+    return grid.reshape(5,5,-1)
 
 def show_fantasy_particles(rbm, v_data, fit, show_plot, dim=28):
     print("\nPlot a random sample of fantasy particles")
@@ -89,9 +91,10 @@ def show_fantasy_particles(rbm, v_data, fit, show_plot, dim=28):
 
 def compute_weights(rbm):
     idx = numpy.random.choice(range(rbm.weights[0].shape[1]),
-                              5, replace=False)
-    return numpy.array([[be.to_numpy_array(rbm.weights[0].W()[:, i])]
+                              25, replace=False)
+    grid = numpy.array([be.to_numpy_array(rbm.weights[0].W()[:, i])
                         for i in idx])
+    return grid.reshape(5,5,-1)
 
 def show_weights(rbm, show_plot, dim=28):
     print("\nPlot a random sample of the weights")
