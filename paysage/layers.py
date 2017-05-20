@@ -722,6 +722,7 @@ class IsingLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsIsing(be.zeros(self.len))
+        self.mean_calc = math_utils.MeanCalculator()
 
     def get_config(self):
         """
@@ -814,20 +815,9 @@ class IsingLayer(Layer):
             None
 
         """
-        # get the current value of the first moment
-        x = be.tanh(self.params.loc)
-
-        # update the sample sizes
-        n = len(data)
-        new_sample_size = n + self.sample_size
-
-        # updat the first moment
-        x *= self.sample_size / new_sample_size
-        x += n * be.mean(data, axis=0) / new_sample_size
-
-        # update the class attributes
-        self.params = ParamsIsing(be.atanh(x))
-        self.sample_size = new_sample_size
+        self.mean_calc.update(data)
+        self.sample_size = self.mean_calc.num
+        self.params = ParamsIsing(be.atanh(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
         """
@@ -1101,6 +1091,7 @@ class BernoulliLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsBernoulli(be.zeros(self.len))
+        self.mean_calc = math_utils.MeanCalculator()
 
     def get_zero_magnetization(self):
         """
@@ -1326,20 +1317,9 @@ class BernoulliLayer(Layer):
             None
 
         """
-        # get the current value of the first moment
-        x = be.expit(self.params.loc)
-
-        # update the sample size
-        n = len(data)
-        new_sample_size = n + self.sample_size
-
-        # update the first moment
-        x *= self.sample_size / new_sample_size
-        x += n * be.mean(data, axis=0) / new_sample_size
-
-        # update the class attributes
-        self.params = ParamsBernoulli(be.logit(x))
-        self.sample_size = new_sample_size
+        self.mean_calc.update(data)
+        self.sample_size = self.mean_calc.num
+        self.params = ParamsBernoulli(be.logit(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
         """
@@ -1527,6 +1507,7 @@ class ExponentialLayer(Layer):
         self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsExponential(be.zeros(self.len))
+        self.mean_calc = math_utils.MeanCalculator()
 
     def get_config(self):
         """
@@ -1618,20 +1599,9 @@ class ExponentialLayer(Layer):
             None
 
         """
-        # get the current value of the first moment
-        x = be.reciprocal(self.params.loc)
-
-        # update the sample size
-        n = len(data)
-        new_sample_size = n + self.sample_size
-
-        # update the first moment
-        x *= self.sample_size / new_sample_size
-        x += n * be.mean(data, axis=0) / new_sample_size
-
-        # update the class attributes
-        self.params = ParamsExponential(be.reciprocal(x))
-        self.sample_size = new_sample_size
+        self.mean_calc.update(data)
+        self.sample_size = self.mean_calc.num
+        self.params = ParamsExponential(be.reciprocal(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
         """
