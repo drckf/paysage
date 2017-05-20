@@ -11,18 +11,17 @@ class MeanCalculator(object):
     An online mean calculator.
 
     """
-    def __init__(self, func=be.mean):
+    def __init__(self):
         """
         Create a MeanCalculator object.
 
         Args:
-            func: the function to apply to samples.  Default is mean.
+            None
 
         Returns:
             The MeanCalculator object.
 
         """
-        self.func = func
         self.num = 0
         self.mean = 0
 
@@ -59,7 +58,7 @@ class MeanCalculator(object):
         """
         num_samples = len(samples)
         self.num += num_samples
-        self.mean = self.mean + (self.func(samples, **kwargs) - self.mean) * num_samples / self.num
+        self.mean = self.mean + (be.mean(samples, **kwargs) - self.mean) * num_samples / self.num
 
 
 class MeanVarianceCalculator(object):

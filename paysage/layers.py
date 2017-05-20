@@ -717,7 +717,7 @@ class IsingLayer(Layer):
         self.len = num_units
         self.rand = be.rand
         self.params = ParamsIsing(be.zeros(self.len))
-        self.mean_calc = math_utils.MeanCalculator(func=be.tsum)
+        self.mean_calc = math_utils.MeanCalculator()
 
     def get_config(self):
         """
@@ -1082,7 +1082,7 @@ class BernoulliLayer(Layer):
         self.len = num_units
         self.rand = be.rand
         self.params = ParamsBernoulli(be.zeros(self.len))
-        self.mean_calc = math_utils.MeanCalculator(func=be.tsum)
+        self.mean_calc = math_utils.MeanCalculator()
 
     def get_zero_magnetization(self):
         """
@@ -1584,7 +1584,7 @@ class ExponentialLayer(Layer):
             None
 
         """
-        self.mean_calc.update(data)
+        self.mean_calc.update(data, axis=0)
         self.params = ParamsExponential(be.reciprocal(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
