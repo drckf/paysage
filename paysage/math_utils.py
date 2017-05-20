@@ -4,6 +4,63 @@ This module defines math utilities.
 
 """
 
+from paysage import backends as be
+
+class MeanCalculator(object):
+    """
+    An online mean calculator.
+
+    """
+    def __init__(self):
+        """
+        Create a MeanCalculator object.
+
+        Args:
+            None
+
+        Returns:
+            The MeanCalculator object.
+
+        """
+        self.num = 0
+        self.mean = 0
+
+    def reset(self) -> None:
+        """
+        Resets the calculation to the initial state.
+
+        Note:
+            Modifies the metric in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.num = 0
+        self.mean = 0
+
+    def update(self, samples, **kwargs) -> None:
+        """
+        Update the online calculation of the mean.
+
+        Notes:
+            Modifies the metrics in place.
+
+        Args:
+            samples: data samples
+
+        Returns:
+            None
+
+        """
+        num_samples = len(samples)
+        self.num += num_samples
+        self.mean = self.mean + (be.mean(samples, **kwargs) - self.mean) * num_samples / self.num
+
+
 class MeanVarianceCalculator(object):
     """
     An online numerically stable mean and variance calculator.
@@ -31,7 +88,7 @@ class MeanVarianceCalculator(object):
         Resets the calculation to the initial state.
 
         Note:
-            Modifies the metric in place.
+            Modifies the metrics in place.
 
         Args:
             None
@@ -44,13 +101,12 @@ class MeanVarianceCalculator(object):
         self.mean = 0
         self.var = 0
 
-    def calculate(self, samples):
+    def update(self, samples) -> None:
         """
-        Run an online calculation of the mean and variance.
+        Update the online calculation of the mean and variance.
 
         Notes:
-            The unnormalized variance is calculated
-                (not divided by the number of samples).
+            Modifies the metrics in place.
 
         Args:
             samples: data samples

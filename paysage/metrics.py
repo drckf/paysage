@@ -53,15 +53,11 @@ class ReconstructionError(object):
             ReconstructionERror
 
         """
-        self.mean_square_error = 0
-        self.norm = 0
+        self.calc = math_utils.MeanCalculator()
 
     def reset(self) -> None:
         """
-        Reset the metric to it's initial state.
-
-        Notes:
-            Changes norm and mean_square_error in place.
+        Reset the metric to its initial state.
 
         Args:
             None
@@ -70,29 +66,25 @@ class ReconstructionError(object):
             None
 
         """
-        self.mean_square_error = 0
-        self.norm = 0
+        self.calc.reset()
 
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the reconstruction error using a batch
         of observations and a batch of reconstructions.
 
-        Notes:
-            Changes norm and mean_square_error in place.
-
         Args:
             update_args: uses visible layer of minibatch and reconstructions
-
 
         Returns:
             None
 
         """
-        self.norm += len(update_args.minibatch.units[0])
-        self.mean_square_error += be.tsum(
-            (update_args.minibatch.units[0] -
-             update_args.reconstructions.units[0])**2)
+        mse = be.square(
+                be.subtract(update_args.reconstructions.units[0], 
+                            update_args.minibatch.units[0])
+                )
+        self.calc.update(be.tsum(mse, axis=1))
 
     def value(self) -> float:
         """
@@ -105,8 +97,8 @@ class ReconstructionError(object):
             reconstruction error (float)
 
         """
-        if self.norm:
-            return math.sqrt(self.mean_square_error / self.norm)
+        if self.calc.num:
+            return math.sqrt(self.calc.mean)
         else:
             return None
 
@@ -135,16 +127,12 @@ class EnergyDistance(object):
             energy distance object
 
         """
-        self.energy_distance = 0
-        self.norm = 0
+        self.calc = math_utils.MeanCalculator()
         self.downsample = 100
 
     def reset(self) -> None:
         """
-        Reset the metric to it's initial state.
-
-        Note:
-            Modifies norm and energy_distance in place.
+        Reset the metric to its initial state.
 
         Args:
             None
@@ -153,16 +141,12 @@ class EnergyDistance(object):
             None
 
         """
-        self.energy_distance = 0
-        self.norm = 0
+        self.calc.reset()
 
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the energy distance using a batch
         of observations and a batch of fantasy particles.
-
-        Notes:
-            Changes norm and energy_distance in place.
 
         Args:
             update_args: uses visible layer of minibatch and samples
@@ -171,11 +155,10 @@ class EnergyDistance(object):
             None
 
         """
-        self.norm += 1
-        self.energy_distance += \
-            be.fast_energy_distance(update_args.minibatch.units[0],
-                                    update_args.samples.units[0],
-                                    self.downsample)
+        energy_distance = be.fast_energy_distance(update_args.minibatch.units[0],
+                                                  update_args.samples.units[0],
+                                                  self.downsample)
+        self.calc.update([energy_distance])
 
     def value(self) -> float:
         """
@@ -188,8 +171,8 @@ class EnergyDistance(object):
             energy distance (float)
 
         """
-        if self.norm:
-            return self.energy_distance / self.norm
+        if self.calc.num:
+            return self.calc.mean
         else:
             return None
 
@@ -216,15 +199,11 @@ class EnergyGap(object):
             energy gap object
 
         """
-        self.energy_gap = 0
-        self.norm = 0
+        self.calc = math_utils.MeanCalculator()
 
     def reset(self) -> None:
         """
-        Reset the metric to it's initial state.
-
-        Note:
-            Modifies norm and energy_gap in place.
+        Reset the metric to its initial state.
 
         Args:
             None
@@ -233,16 +212,12 @@ class EnergyGap(object):
             None
 
         """
-        self.energy_gap = 0
-        self.norm = 0
+        self.calc.reset()
 
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the energy gap using a batch
         of observations and a batch of fantasy particles.
-
-        Notes:
-            Changes norm and energy_gap in place.
 
         Args:
             update_args: uses all layers of minibatch and random_samples, and model
@@ -251,11 +226,10 @@ class EnergyGap(object):
             None
 
         """
-        self.norm += 1
-        self.energy_gap += be.mean(update_args.model
-                                   .joint_energy(update_args.minibatch))
-        self.energy_gap -= be.mean(update_args.model
-                                   .joint_energy(update_args.random_samples))
+        energy_data = update_args.model.joint_energy(update_args.minibatch)
+        energy_random = update_args.model.joint_energy(update_args.random_samples)
+        self.calc.update(energy_data)
+        self.calc.update(-energy_random)
 
     def value(self):
         """
@@ -268,8 +242,9 @@ class EnergyGap(object):
             energy gap (float)
 
         """
-        if self.norm:
-            return self.energy_gap / self.norm
+        if self.calc.num:
+            # double the mean from double counting the data and random sets
+            return 2*self.calc.mean
         else:
             return None
 
@@ -295,19 +270,15 @@ class EnergyZscore(object):
             None
 
         Returns:
-            energy z-score object
+            EnergyZscore object
 
         """
-        self.data_mean = 0
-        self.random_mean = 0
-        self.random_mean_square = 0
+        self.calc_data = math_utils.MeanCalculator()
+        self.calc_random = math_utils.MeanVarianceCalculator()
 
     def reset(self) -> None:
         """
-        Reset the metric to it's initial state.
-
-        Note:
-            Modifies norm, random_mean, and random_mean_square in place.
+        Reset the metric to its initial state.
 
         Args:
             None
@@ -316,17 +287,13 @@ class EnergyZscore(object):
             None
 
         """
-        self.data_mean = 0
-        self.random_mean = 0
-        self.random_mean_square = 0
+        self.calc_data.reset()
+        self.calc_random.reset()
 
     def update(self, update_args: MetricState) -> None:
         """
         Update the estimate for the energy z-score using a batch
         of observations and a batch of fantasy particles.
-
-        Notes:
-            Changes norm, random_mean, and random_mean_square in place.
 
         Args:
             update_args: uses all layers of minibatch and random_samples, and model
@@ -335,12 +302,10 @@ class EnergyZscore(object):
             None
 
         """
-        self.data_mean += be.mean(update_args.model
-                                  .joint_energy(update_args.minibatch))
-        self.random_mean += be.mean(update_args.model
-                                     .joint_energy(update_args.random_samples))
-        self.random_mean_square += be.mean(update_args.model
-                                           .joint_energy(update_args.random_samples)**2)
+        energy_data = update_args.model.joint_energy(update_args.minibatch)
+        energy_random = update_args.model.joint_energy(update_args.random_samples)
+        self.calc_data.update(energy_data)
+        self.calc_random.update(energy_random)
 
     def value(self) -> float:
         """
@@ -353,8 +318,9 @@ class EnergyZscore(object):
             energy z-score (float)
 
         """
-        if self.random_mean_square:
-            return (self.data_mean - self.random_mean) / math.sqrt(self.random_mean_square)
+        if self.calc_data.num:
+            z = (self.calc_data.mean - self.calc_random.mean) / math.sqrt(self.calc_random.var)
+            return z
         else:
             return None
 
@@ -410,7 +376,7 @@ class HeatCapacity(object):
 
         """
         energy = update_args.model.joint_energy(update_args.samples)
-        self.calc.calculate(energy)
+        self.calc.update(energy)
 
     def value(self) -> float:
         """

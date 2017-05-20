@@ -5,6 +5,7 @@ import pandas
 from . import penalties
 from . import constraints
 from . import backends as be
+from . import math_utils
 
 ParamsLayer = namedtuple("Params", [])
 
@@ -400,9 +401,9 @@ class GaussianLayer(Layer):
         super().__init__()
 
         self.len = num_units
-        self.sample_size = 0
         self.rand = be.randn
         self.params = ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
+        self.mean_var_calc = math_utils.MeanVarianceCalculator()
 
     def get_config(self):
         """
@@ -417,7 +418,6 @@ class GaussianLayer(Layer):
         """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
-        base_config["sample_size"] = self.sample_size
         return base_config
 
     @classmethod
@@ -433,7 +433,6 @@ class GaussianLayer(Layer):
 
         """
         layer = cls(config["num_units"])
-        layer.sample_size = config["sample_size"]
         # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
@@ -492,7 +491,7 @@ class GaussianLayer(Layer):
         Used for initializing the layer parameters.
 
         Notes:
-            Modifies layer.sample_size and layer.params in place.
+            Modifies layer.params in place.
 
         Args:
             data (tensor (num_samples, num_units)): observed values for units
@@ -501,25 +500,9 @@ class GaussianLayer(Layer):
             None
 
         """
-        # get the current values of the first and second moments
-        x = self.params.loc
-        x2 = be.exp(self.params.log_var) + x**2
-
-        # update the size of the dataset
-        n = len(data)
-        new_sample_size = n + self.sample_size
-
-        # update the first moment
-        x *= self.sample_size / new_sample_size
-        x += n * be.mean(data, axis=0) / new_sample_size
-
-        # update the second moment
-        x2 *= self.sample_size / new_sample_size
-        x2 += n * be.mean(be.square(data), axis=0) / new_sample_size
-
-        # update the class attributes
-        self.sample_size = new_sample_size
-        self.params = ParamsGaussian(x, be.log(x2 - x**2))
+        self.mean_var_calc.update(data)
+        self.params = ParamsGaussian(self.mean_var_calc.mean,
+                                     be.log(self.mean_var_calc.var))
 
     def shrink_parameters(self, shrinkage=0.1):
         """
@@ -732,9 +715,9 @@ class IsingLayer(Layer):
         super().__init__()
 
         self.len = num_units
-        self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsIsing(be.zeros(self.len))
+        self.mean_calc = math_utils.MeanCalculator()
 
     def get_config(self):
         """
@@ -749,7 +732,6 @@ class IsingLayer(Layer):
         """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
-        base_config["sample_size"] = self.sample_size
         return base_config
 
     @classmethod
@@ -765,7 +747,6 @@ class IsingLayer(Layer):
 
         """
         layer = cls(config["num_units"])
-        layer.sample_size = config["sample_size"]
         # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
@@ -818,7 +799,7 @@ class IsingLayer(Layer):
         Used for initializing the layer parameters.
 
         Notes:
-            Modifies layer.sample_size and layer.params in place.
+            Modifies layer.params in place.
 
         Args:
             data (tensor (num_samples, num_units)): observed values for units
@@ -827,20 +808,8 @@ class IsingLayer(Layer):
             None
 
         """
-        # get the current value of the first moment
-        x = be.tanh(self.params.loc)
-
-        # update the sample sizes
-        n = len(data)
-        new_sample_size = n + self.sample_size
-
-        # updat the first moment
-        x *= self.sample_size / new_sample_size
-        x += n * be.mean(data, axis=0) / new_sample_size
-
-        # update the class attributes
-        self.params = ParamsIsing(be.atanh(x))
-        self.sample_size = new_sample_size
+        self.mean_calc.update(data, axis=0)
+        self.params = ParamsIsing(be.atanh(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
         """
@@ -1111,9 +1080,9 @@ class BernoulliLayer(Layer):
         super().__init__()
 
         self.len = num_units
-        self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsBernoulli(be.zeros(self.len))
+        self.mean_calc = math_utils.MeanCalculator()
 
     def get_zero_magnetization(self):
         """
@@ -1154,7 +1123,6 @@ class BernoulliLayer(Layer):
         """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
-        base_config["sample_size"] = self.sample_size
         return base_config
 
     @classmethod
@@ -1170,7 +1138,6 @@ class BernoulliLayer(Layer):
 
         """
         layer = cls(config["num_units"])
-        layer.sample_size = config["sample_size"]
         # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
@@ -1330,7 +1297,7 @@ class BernoulliLayer(Layer):
         Used for initializing the layer parameters.
 
         Notes:
-            Modifies layer.sample_size and layer.params in place.
+            Modifies layer.params in place.
 
         Args:
             data (tensor (num_samples, num_units)): observed values for units
@@ -1339,20 +1306,8 @@ class BernoulliLayer(Layer):
             None
 
         """
-        # get the current value of the first moment
-        x = be.expit(self.params.loc)
-
-        # update the sample size
-        n = len(data)
-        new_sample_size = n + self.sample_size
-
-        # update the first moment
-        x *= self.sample_size / new_sample_size
-        x += n * be.mean(data, axis=0) / new_sample_size
-
-        # update the class attributes
-        self.params = ParamsBernoulli(be.logit(x))
-        self.sample_size = new_sample_size
+        self.mean_calc.update(data, axis=0)
+        self.params = ParamsBernoulli(be.logit(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
         """
@@ -1537,9 +1492,9 @@ class ExponentialLayer(Layer):
         super().__init__()
 
         self.len = num_units
-        self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsExponential(be.zeros(self.len))
+        self.mean_calc = math_utils.MeanCalculator()
 
     def get_config(self):
         """
@@ -1554,7 +1509,6 @@ class ExponentialLayer(Layer):
         """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
-        base_config["sample_size"] = self.sample_size
         return base_config
 
     @classmethod
@@ -1570,7 +1524,6 @@ class ExponentialLayer(Layer):
 
         """
         layer = cls(config["num_units"])
-        layer.sample_size = config["sample_size"]
         # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
@@ -1622,7 +1575,7 @@ class ExponentialLayer(Layer):
         Used for initializing the layer parameters.
 
         Notes:
-            Modifies layer.sample_size and layer.params in place.
+            Modifies layer.params in place.
 
         Args:
             data (tensor (num_samples, num_units)): observed values for units
@@ -1631,20 +1584,8 @@ class ExponentialLayer(Layer):
             None
 
         """
-        # get the current value of the first moment
-        x = be.reciprocal(self.params.loc)
-
-        # update the sample size
-        n = len(data)
-        new_sample_size = n + self.sample_size
-
-        # update the first moment
-        x *= self.sample_size / new_sample_size
-        x += n * be.mean(data, axis=0) / new_sample_size
-
-        # update the class attributes
-        self.params = ParamsExponential(be.reciprocal(x))
-        self.sample_size = new_sample_size
+        self.mean_calc.update(data, axis=0)
+        self.params = ParamsExponential(be.reciprocal(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
         """
