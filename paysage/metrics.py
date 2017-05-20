@@ -76,7 +76,6 @@ class ReconstructionError(object):
         Args:
             update_args: uses visible layer of minibatch and reconstructions
 
-
         Returns:
             None
 
