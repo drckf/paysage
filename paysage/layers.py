@@ -401,7 +401,6 @@ class GaussianLayer(Layer):
         super().__init__()
 
         self.len = num_units
-        self.sample_size = 0
         self.rand = be.randn
         self.params = ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
         self.mean_var_calc = math_utils.MeanVarianceCalculator()
@@ -419,7 +418,6 @@ class GaussianLayer(Layer):
         """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
-        base_config["sample_size"] = self.sample_size
         return base_config
 
     @classmethod
@@ -435,7 +433,6 @@ class GaussianLayer(Layer):
 
         """
         layer = cls(config["num_units"])
-        layer.sample_size = config["sample_size"]
         # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
@@ -494,7 +491,7 @@ class GaussianLayer(Layer):
         Used for initializing the layer parameters.
 
         Notes:
-            Modifies layer.sample_size and layer.params in place.
+            Modifies layer.params in place.
 
         Args:
             data (tensor (num_samples, num_units)): observed values for units
@@ -504,7 +501,6 @@ class GaussianLayer(Layer):
 
         """
         self.mean_var_calc.update(data)
-        self.sample_size = self.mean_var_calc.num
         self.params = ParamsGaussian(self.mean_var_calc.mean,
                                      be.log(self.mean_var_calc.var))
 
@@ -719,7 +715,6 @@ class IsingLayer(Layer):
         super().__init__()
 
         self.len = num_units
-        self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsIsing(be.zeros(self.len))
         self.mean_calc = math_utils.MeanCalculator()
@@ -737,7 +732,6 @@ class IsingLayer(Layer):
         """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
-        base_config["sample_size"] = self.sample_size
         return base_config
 
     @classmethod
@@ -753,7 +747,6 @@ class IsingLayer(Layer):
 
         """
         layer = cls(config["num_units"])
-        layer.sample_size = config["sample_size"]
         # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
@@ -806,7 +799,7 @@ class IsingLayer(Layer):
         Used for initializing the layer parameters.
 
         Notes:
-            Modifies layer.sample_size and layer.params in place.
+            Modifies layer.params in place.
 
         Args:
             data (tensor (num_samples, num_units)): observed values for units
@@ -816,7 +809,6 @@ class IsingLayer(Layer):
 
         """
         self.mean_calc.update(data)
-        self.sample_size = self.mean_calc.num
         self.params = ParamsIsing(be.atanh(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
@@ -1088,7 +1080,6 @@ class BernoulliLayer(Layer):
         super().__init__()
 
         self.len = num_units
-        self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsBernoulli(be.zeros(self.len))
         self.mean_calc = math_utils.MeanCalculator()
@@ -1132,7 +1123,6 @@ class BernoulliLayer(Layer):
         """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
-        base_config["sample_size"] = self.sample_size
         return base_config
 
     @classmethod
@@ -1148,7 +1138,6 @@ class BernoulliLayer(Layer):
 
         """
         layer = cls(config["num_units"])
-        layer.sample_size = config["sample_size"]
         # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
@@ -1308,7 +1297,7 @@ class BernoulliLayer(Layer):
         Used for initializing the layer parameters.
 
         Notes:
-            Modifies layer.sample_size and layer.params in place.
+            Modifies layer.params in place.
 
         Args:
             data (tensor (num_samples, num_units)): observed values for units
@@ -1318,7 +1307,6 @@ class BernoulliLayer(Layer):
 
         """
         self.mean_calc.update(data)
-        self.sample_size = self.mean_calc.num
         self.params = ParamsBernoulli(be.logit(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
@@ -1504,7 +1492,6 @@ class ExponentialLayer(Layer):
         super().__init__()
 
         self.len = num_units
-        self.sample_size = 0
         self.rand = be.rand
         self.params = ParamsExponential(be.zeros(self.len))
         self.mean_calc = math_utils.MeanCalculator()
@@ -1522,7 +1509,6 @@ class ExponentialLayer(Layer):
         """
         base_config = self.get_base_config()
         base_config["num_units"] = self.len
-        base_config["sample_size"] = self.sample_size
         return base_config
 
     @classmethod
@@ -1538,7 +1524,6 @@ class ExponentialLayer(Layer):
 
         """
         layer = cls(config["num_units"])
-        layer.sample_size = config["sample_size"]
         # TODO : params
         for k, v in config["penalties"].items():
             layer.add_penalty({k: penalties.from_config(v)})
@@ -1590,7 +1575,7 @@ class ExponentialLayer(Layer):
         Used for initializing the layer parameters.
 
         Notes:
-            Modifies layer.sample_size and layer.params in place.
+            Modifies layer.params in place.
 
         Args:
             data (tensor (num_samples, num_units)): observed values for units
@@ -1600,7 +1585,6 @@ class ExponentialLayer(Layer):
 
         """
         self.mean_calc.update(data)
-        self.sample_size = self.mean_calc.num
         self.params = ParamsExponential(be.reciprocal(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
