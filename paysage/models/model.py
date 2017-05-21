@@ -754,22 +754,21 @@ class Model(object):
                     )
         return grad
 
-    # TODO: use StateTAP
-    def _grad_gibbs_free_energy(self, mag):
+    def _grad_gibbs_free_energy(self, state):
         """
         Gradient of the Gibbs free energy with respect to the model parameters
 
         Args:
-            mag (list of magnetizations of layers):
+            state (StateTAP):
               magnetizations at which to compute the derivatives
 
         Returns:
             namedtuple (Gradient)
         """
         grad_GFE = gu.Gradient(
-            [self.layers[l].GFE_derivatives(mag[l]) for l in range(self.num_layers)],
-            [self.weights[w].GFE_derivatives(mag[w], mag[w+1])
-                for w in range(self.num_layers-1)]
+            [self.layers[l].GFE_derivatives(state.cumulants[l]) for l in range(self.num_layers)],
+            [self.weights[w].GFE_derivatives(state.cumulants[w], state.cumulants[w+1]) 
+            for w in range(self.num_layers-1)]
             )
         return grad_GFE
 
