@@ -491,6 +491,22 @@ class GaussianLayer(Layer):
         """
         return MagnetizationGaussian(be.rand((self.len,)), be.rand((self.len,)))
 
+    def get_random_layer(self):
+        """
+        Create a layer with random parameters of same size.
+
+        Args:
+            None
+
+        Returns:
+            GaussianLayer
+
+        """
+        lay = GaussianLayer(self.len)
+        lay.params.loc[:] = 0.01*(be.rand_like(lay.params.loc) * 2.0 - 1.0)
+        lay.params.log_var[:] = 0.01*(be.rand_like(lay.params.log_var) * 2.0 - 1.0)
+        return lay
+
     def get_config(self):
         """
         Get the configuration dictionary of the Gaussian layer.
@@ -1359,6 +1375,21 @@ class BernoulliLayer(Layer):
 
         """
         return MagnetizationBernoulli(be.rand((self.len,)))
+
+    def get_random_layer(self):
+        """
+        Create a layer with random parameters of same size.
+
+        Args:
+            None
+
+        Returns:
+            BernoulliLayer
+
+        """
+        lay = BernoulliLayer(self.len)
+        lay.params.loc[:] = be.rand_like(lay.params.loc)
+        return lay
 
     def get_config(self):
         """
