@@ -48,3 +48,6 @@ print(entropy)
 gfe = rbm.gibbs_free_energy(state)
 print(gfe)
 
+new_state = rbm.compute_StateTAP(init_lr=0.1, tol=1e-7, max_iters=50)
+print(rbm.gibbs_free_energy(new_state))
+

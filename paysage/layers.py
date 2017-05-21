@@ -597,17 +597,17 @@ class BernoulliLayer(Layer):
             gradient of GFE w.r.t. magnetization (CumulantsTAP)
         
         """
-        mean = be.logit(viz.mean) - self.params.loc
+        mean = be.logit(vis.mean) - self.params.loc
         variance = be.zeros_like(mean)
         
-        for l in len(hid):
+        for l in range(len(hid)):
             # let len(mean) = N and len(hid[l].mean) = N_l
             # weights[l] is a matrix of shape (N_l, N)
             w_l = weights[l]
             w2_l = be.square(w_l)
             
             mean -= be.dot(hid[l].mean, w_l) + \
-                    be.multiply(be.dot(hid[l].variance(), w2_l), 0.5 - vis.mean())
+                    be.multiply(be.dot(hid[l].variance, w2_l), 0.5 - vis.mean)
 
         return CumulantsTAP(mean, variance)                     
 

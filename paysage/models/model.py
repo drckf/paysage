@@ -747,7 +747,7 @@ class Model(object):
         for i in range(self.num_layers):
             grad[i] = self.layers[i].TAP_magnetization_grad(
                     state.cumulants[i],
-                    [self.layers[j].state.cumulants[j] for j in self.layer_connections[i]],
+                    [state.cumulants[j] for j in self.layer_connections[i]],
                     [self.weights[j].W() if j < i else self.weights[j].W_T() 
                     for j in self.weight_connections[i]]
                     )
