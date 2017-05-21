@@ -94,19 +94,19 @@ class State(object):
     
 class StateTAP(object):
     """A TAPState is a list of CumulantsTAP objects for each layer in the model."""
-    def __init__(self, tap_params):
+    def __init__(self, cumulants):
         """
         Create a StateTAP.
         
         Args:
-            tap_params: list of CumulantsTAP objects
+            cumulants: list of CumulantsTAP objects
             
         Returns:
             StateTAP
         
         """
-        self.tap_params = tap_params
-        self.len = len(self.tap_params)
+        self.cumulants = cumulants
+        self.len = len(self.cumulants)
         
     @classmethod
     def from_state(cls, state):
@@ -636,18 +636,19 @@ class Model(object):
         """
         total = 0
         
-        lagrange = [self.layers[l].lagrange_multiplers(state[l]) 
+        lagrange = [self.layers[l].lagrange_multiplers(state.cumulants[l]) 
                     for l in range(self.num_layers)] 
         
         for index in range(self.num_layers):
             lay = self.layers[index]
             total += lay.TAP_entropy(lagrange[index].mean, 
-                         lagrange[index].variance, state[index])
+                         lagrange[index].variance, state.cumulants[index])
 
+        # TODO: use connected layers
         for index in range(self.num_layers-1):
             W = self.weights[index].W()
-            total -= be.quadratic(state[index].mean, W, state[index+1].mean)
-            total -= 0.5 * be.quadratic(state[index].variance, be.square(W), state[index+1].variance)
+            total -= be.quadratic(state.cumulants[index].mean, W, state.cumulants[index+1].mean)
+            total -= 0.5 * be.quadratic(state.cumulants[index].variance, be.square(W), state.cumulants[index+1].variance)
             
         return total
 
@@ -713,7 +714,7 @@ class Model(object):
                 
             # take a gradient step to compute a new state
             new_state = StateTAP([
-            self.layers[l].clip_magnetization(be.mapzip(be.subtract, grad[l], state[l])) 
+            self.layers[l].clip_magnetization(be.mapzip(be.subtract, grad[l], state.cumulants[l])) 
             for l in range(self.num_layers)])
             
             # compute the new free energy and perform an update
@@ -732,7 +733,6 @@ class Model(object):
 
         return state
 
-    # TODO: use StateTAP
     def _TAP_magnetization_grad(self, state):
         """
         Gradient of the Gibbs free energy with respect to the magnetization parameters
@@ -745,20 +745,13 @@ class Model(object):
             
         """
         grad = [None for lay in self.layers]
-        
-        for l in range(self.num_layers):
-            grad[l] = self.layers[l].TAP_magnetization_grad(state[l])
-
-        for k in range(self.num_layers - 1):
-            way = self.weights[k]
-            w = way.W()
-            ww = be.square(w)
-            
-            # TODO: use layer functions
-            # i think we just need to revese the order of the arugments
-            grad[k+1].grad_GFE_update_down(state[k], state[k+1], w, ww)
-            grad[k].grad_GFE_update_up(state[k], state[k+1], w, ww)
-
+        for i in range(self.num_layers):
+            grad[i] = self.layers[i].TAP_magnetization_grad(
+                    state.cumulants[i],
+                    [self.layers[j].state.cumulants[j] for j in self.layer_connections[i]],
+                    [self.weights[j].W() if j < i else self.weights[j].W_T() 
+                    for j in self.weight_connections[i]]
+                    )
         return grad
 
     # TODO: use StateTAP

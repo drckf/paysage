@@ -604,7 +604,7 @@ class BernoulliLayer(Layer):
         variance = be.zeros_like(mean)
         
         for l in len(hid):
-            # let len(mean) = N and len( len(hid[l].mean) = N_l
+            # let len(mean) = N and len(hid[l].mean) = N_l
             # weights[l] is a matrix of shape (N_l, N)
             w_l = weights[l]
             w2_l = be.square(w_l)
