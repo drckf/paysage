@@ -587,7 +587,8 @@ class GaussianLayer(Layer):
         """
         scale = be.exp(self.params.log_var)
         denom = 1.0 + 2.0 * be.multiply(scale, A)
-        logZ = be.divide(denom, be.multiply(self.params.loc, B) - be.multiply(be.square(self.params.loc),A) + 0.5 * be.multiply(scale, be.square(B))) + \
+        logZ = be.divide(denom, be.multiply(self.params.loc, B) - \
+               be.multiply(be.square(self.params.loc),A) + 0.5 * be.multiply(scale, be.square(B))) + \
                0.5 * be.log(be.divide(denom, be.broadcast(2.0 * math.pi * scale, denom)))
         return logZ
 
@@ -631,7 +632,8 @@ class GaussianLayer(Layer):
         scale = be.exp(self.params.log_var)
         bc_scale = be.broadcast(scale, B)
         denom = 1.0 + 2.0 * be.multiply(scale, A)
-        return be.divide(denom, be.multiply(self.params.loc, B) - be.multiply(be.square(self.params.loc),A) + 0.5 * be.multiply(be.square(B), bc_scale)) + \
+        return be.divide(denom, be.multiply(self.params.loc, B) - \
+               be.multiply(be.square(self.params.loc),A) + 0.5 * be.multiply(be.square(B), bc_scale)) + \
                0.5 * be.divide(be.square(denom), be.ones_like(B))
 
     def grad_log_partition_function(self, B, A):
@@ -662,9 +664,9 @@ class GaussianLayer(Layer):
 
         """
         scale = be.exp(self.params.log_var)
-        return be.divide(be.multiply(mag.var, scale),
-                                be.subtract(be.multiply(mag.var, self.params.loc),
-                                            be.multiply(mag.expect, scale)))
+        return be.divide(be.multiply(mag.variance(), scale),
+                                be.subtract(be.multiply(mag.variance(), self.params.loc),
+                                            be.multiply(mag.expectation(), scale)))
 
     def _gibbs_lagrange_multipliers_variance(self, mag):
         """
@@ -677,7 +679,7 @@ class GaussianLayer(Layer):
             lagrange multipler (tensor (num_units))
         """
         scale = be.exp(self.params.log_var)
-        return 0.5 * be.divide(be.multiply(mag.var, scale), be.subtract(scale, mag.var))
+        return 0.5 * be.divide(be.multiply(mag.variance(), scale), be.subtract(scale, mag.variance()))
 
     def _gibbs_free_energy_entropy_term(self, B, A, mag):
         """
@@ -692,7 +694,7 @@ class GaussianLayer(Layer):
             (float): 0th order term of Gibbs free energy
         """
         return -be.tsum(self.log_partition_function(B, A)) + \
-                be.dot(B, mag.expect) + be.dot(A, be.square(mag.expect) + mag.variation())
+                be.dot(B, mag.expectation()) + be.dot(A, be.square(mag.expectation()) + mag.variance())
 
     def _grad_magnetization_GFE(self, mag):
         """
@@ -703,11 +705,22 @@ class GaussianLayer(Layer):
             mag (magnetization object): magnetization of the layer
 
         Return:
-            gradient magnetization (GradientMagnetizationBernoulli):
+            gradient magnetization (GradientMagnetizationGaussian):
                  gradient of GFE on this layer
         """
-        return GradientMagnetizationGaussian(be.log(be.divide(1.0 - mag.expect, mag.expect)) - \
-                                              self.params.loc, TODO)
+        a = mag.expectation()
+        c = mag.variance()
+        u = self.params.loc
+        s = be.exp(self.params.log_var)
+        ss = be.square(s)
+        sss = be.multiply(ss,s)
+        aa = be.square(a)
+        cc = be.square(c)
+        uu = be.square(u)
+        factor = s - 2.0*c
+        expectation_deriv = be.divide(c,2.0*a) + be.divide(s, a - u) + be.divide(2.0*a, factor)
+        variance_deriv = -be.divide(cc, 0.5*(aa + c)) + be.divide(s,0.5*be.ones_like(s)) + 2.0*be.divide(be.square(factor),aa) - be.divide(factor,be.ones_like(a))
+        return GradientMagnetizationGaussian(expectation_deriv, variance_deriv)
 
     def GFE_derivatives(self, mag):
         """
@@ -719,7 +732,22 @@ class GaussianLayer(Layer):
         Returns:
             gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of GFE
         """
-        return ParamsGaussian(-mag.expect, TODO)
+        a = mag.expectation()
+        c = mag.variance()
+        u = self.params.loc
+        s = be.exp(self.params.log_var)
+        ss = be.square(s)
+        sss = be.multiply(ss,s)
+        aa = be.square(a)
+        cc = be.square(c)
+        uu = be.square(u)
+        f = s - 2.0*c
+        ff = be.square(f)
+        numer = -4.0*be.multiply(aa,cc) - 4.0*be.multiply(c,cc) + 4.0*be.multiply(aa,be.multiply(c,s)) -\
+                 3.0*be.multiply(aa,ss) + be.multiply(c,ss) + 2.0*be.multiply(a,be.multiply(ff,u)) - be.multiply(ff,uu)
+        denom = 2.0*be.multiply(ff,ss)
+        return ParamsGaussian(be.divide(s, be.subtract(mag.expectation(), self.params.loc)),
+                              be.divide(denom, numer))
 
     def online_param_update(self, data):
         """
