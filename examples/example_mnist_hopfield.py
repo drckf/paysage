@@ -52,9 +52,9 @@ def example_mnist_hopfield(paysage_path=None, num_epochs=10, show_plot=False):
     # evaluate the model
     util.show_metrics(rbm, perf)
     valid = data.get('validate')
-    util.show_reconstructions(rbm, valid, fit, show_plot)
-    util.show_fantasy_particles(rbm, valid, fit, show_plot)
-    util.show_weights(rbm, show_plot)
+    util.show_reconstructions(rbm, valid, fit, show_plot, n_recon=10, vertical=False)
+    util.show_fantasy_particles(rbm, valid, fit, show_plot, n_fantasy=25)
+    util.show_weights(rbm, show_plot, n_weights=25)
 
     # close the HDF5 store
     data.close()
