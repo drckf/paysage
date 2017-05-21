@@ -585,93 +585,34 @@ class BernoulliLayer(Layer):
         return -be.tsum(self.log_partition_function(mean_lagrange, var_lagrange)) + \
                 be.dot(mean_lagrange, mag.mean) + be.dot(var_lagrange, mag.mean)
 
-    
-    # TODO: currently, there are three functions here
-    # one that computes the part from the components of the gradients associated with the fields
-    # and two that compute the parts that result from interactions with the connected layers
-    # this should be merged into one function that takes lists of connected layers / weights
-    # to be consistent with the other derivatives functions and drjrw's graph methods
-    def TAP_magnetization_grad(self, cumulants):
+    def TAP_magnetization_grad(self, vis, hid, weights):
         """
         Gradient of the Gibbs free energy with respect to the magnetization
         associated strictly with this layer.
 
         Args:
-            cumulants (CumulantsTAP object): magnetization of the layer
+            vis (CumulantsTAP object): magnetization of the layer
+            hid list[CumulantsTAP]: magnetizations of the connected layers
+            weights list[tensor, (num_connected_units, num_units)]:
+                The weights connecting the layers.
 
         Return:
-            gradient magnetization (CumulantsTAP):
-                 gradient of GFE on this layer
+            gradient of GFE w.r.t. magnetization (CumulantsTAP)
+        
         """
-        mean = be.logit(cumulants.mean) - self.params.loc
+        mean = be.logit(viz.mean) - self.params.loc
         variance = be.zeros_like(mean)
-        return CumulantsTAP(mean, variance)
-    
-    def grad_GFE_update(self, grad, vis, hid, w, ww):
-        """
-        Computes a layerwise magnetization gradient update according to the gradient
-         of the Gibbs Free energy.
-         
-        m^T W + v^T W^2 * (0.5 - m_lower)
-
-        Args:
-            mag_lower (magnetization object): magnetization of the lower layer
-            mag (magnetization object): magnetization of the current layer
-            w (float tensor): weight matrix mapping down from this layer to the
-                              lower layer
-            ww (float tensor): cached square of the weight matrix
-
-        Returns:
-            None
+        
+        for l in len(hid):
+            # let len(mean) = N and len( len(hid[l].mean) = N_l
+            # weights[l] is a matrix of shape (N_l, N)
+            w_l = weights[l]
+            w2_l = be.square(w_l)
             
-        """
-        tmp = grad.mean - be.dot(vis.mean, w) + be.multiply(be.dot(vis.mean, ww), 0.5 - hid.mean)
-        return tmp
-        
-    def grad_GFE_update_down(self, mag_lower, mag, w, ww):
-        """
-        Computes a layerwise magnetization gradient update according to the gradient
-         of the Gibbs Free energy.
-         
-        m^T W + v^T W^2 * (0.5 - m_lower)
+            mean -= be.dot(hid[l].mean, w_l) + \
+                    be.multiply(be.dot(hid[l].variance(), w2_l), 0.5 - vis.mean())
 
-        Args:
-            mag_lower (magnetization object): magnetization of the lower layer
-            mag (magnetization object): magnetization of the current layer
-            w (float tensor): weight matrix mapping down from this layer to the
-                              lower layer
-            ww (float tensor): cached square of the weight matrix
-
-        Returns:
-            None
-        """
-        # tmp should be the mean
-        tmp = be.dot(mag_lower.expectation(), w) + \
-                       be.multiply(be.dot(mag_lower.variance(), ww),
-                       0.5 - mag.expectation())
-        return tmp
-
-    def grad_GFE_update_up(self, mag, mag_upper, w, ww):
-        """
-        Computes a layerwise magnetization gradient update according to the gradient
-         of the Gibbs Free energy.
-
-        Args:
-            mag (magnetization object): magnetization of the current layer
-            mag_upper (magnetization object): magnetization of the upper layer
-            w (float tensor): weight matrix mapping down to this layer from the
-                              upper layer
-            ww (float tensor): cached square of the weight matrix
-
-        Returns:
-            None
-        """
-        # tmp should be the mean
-        tmp = be.dot(w, mag_upper.expectation()) + \
-                       be.multiply(0.5 - mag.expectation(),
-                       be.dot(ww, mag_upper.variance()))
-        return tmp               
-        
+        return CumulantsTAP(mean, variance)                     
 
     def GFE_derivatives(self, cumulants):
         """
