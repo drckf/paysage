@@ -69,7 +69,7 @@ Base class for the optimizer methods.
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<generator object constant at 0x1074a90a0>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<generator object constant at 0x113e197d8>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -109,7 +109,7 @@ Vanilla gradient optimizer
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<generator object constant at 0x1074a90f8>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<generator object constant at 0x113e19830>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -161,7 +161,7 @@ Stochastic gradient descent with momentum.<br />Qian, N. (1999).<br />On the mom
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<generator object constant at 0x1074a9150>, momentum=0.9, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<generator object constant at 0x113e19888>, momentum=0.9, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -213,7 +213,7 @@ Stochastic gradient descent with RMSProp.<br />Geoffrey Hinton's Coursera Course
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<generator object constant at 0x1074a91a8>, mean_square_weight=0.9, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<generator object constant at 0x113e198e0>, mean_square_weight=0.9, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -269,7 +269,7 @@ Stochastic gradient descent with Adaptive Moment Estimation algorithm.<br /><br 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<generator object constant at 0x1074a9200>, mean_weight=0.9, mean_square_weight=0.999, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<generator object constant at 0x113e19938>, mean_weight=0.9, mean_square_weight=0.999, tolerance=1e-07, ascent=False)
 
 ```
 
