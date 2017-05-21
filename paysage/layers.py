@@ -564,26 +564,23 @@ class BernoulliLayer(Layer):
             lagrange multipliers (CumulantsTAP)
 
         """
-        mean = be.subtract(self.params.loc, be.logit(cumulants.mean, cumulants.mean))
+        mean = be.subtract(self.params.loc, be.logit(cumulants.mean))
         variance = be.zeros_like(cumulants.variance)
         return CumulantsTAP(mean, variance)
 
-    def TAP_entropy(self, mean_lagrange, var_lagrange, mag):
+    def TAP_entropy(self, lagrange, cumulants):
         """
         The TAP-0 Gibbs free energy term associated strictly with this layer
 
         Args:
-            expect_lagrange (float tensor like magnetization.expect): 
-                1st moment Lagrange multipler field
-            var_lagrange (float tensor like magnetization.expect): 
-                strictly zero for Bernoulli layers
-            mag (magnetization object): magnetization of the layer
+            lagrange (CumulantsTAP): Lagrange multiplers
+            cumulants (CumulantsTAP): magnetization of the layer
 
         Returns:
             (float): 0th order term of Gibbs free energy
         """
-        return -be.tsum(self.log_partition_function(mean_lagrange, var_lagrange)) + \
-                be.dot(mean_lagrange, mag.mean) + be.dot(var_lagrange, mag.mean)
+        return -be.tsum(self.log_partition_function(lagrange.mean, lagrange.variance)) + \
+                be.dot(lagrange.mean, cumulants.mean) + be.dot(lagrange.variance, cumulants.mean)
 
     def TAP_magnetization_grad(self, vis, hid, weights):
         """
@@ -1243,7 +1240,6 @@ class IsingLayer(Layer):
 
         """
         return MagnetizationBernoulli(be.rand((self.len,)))
->>>>>>> master
 
     def get_config(self):
         """
