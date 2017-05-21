@@ -643,7 +643,6 @@ class Model(object):
             lay = self.layers[index]
             total += lay.TAP_entropy(lagrange[index], state.cumulants[index])
 
-        # TODO: use connected layers
         for index in range(self.num_layers-1):
             w = self.weights[index].W_T()
             total -= be.quadratic(state.cumulants[index].mean, w, state.cumulants[index+1].mean)

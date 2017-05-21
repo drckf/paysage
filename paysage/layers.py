@@ -358,15 +358,15 @@ class Weights(Layer):
         Gradient of the Gibbs free energy associated with this layer
 
         Args:
-            vis (magnetization object): magnetization of the lower layer linked to w
-            hid (magnetization objet): magnetization of the upper layer linked to w
+            vis (CumulantsTAP): magnetization of the lower layer linked to w
+            hid (CumulantsTAP): magnetization of the upper layer linked to w
 
         Returns:
             derivs (namedtuple): 'matrix': tensor (contains gradient)
 
         """
-        return ParamsWeights(-be.outer(vis.expectation(), hid.expectation()) - \
-          be.multiply(self.params.matrix, be.outer(vis.variance(), hid.variance())))
+        return ParamsWeights(-be.outer(vis.mean, hid.mean) - \
+          be.multiply(self.params.matrix, be.outer(vis.variance, hid.variance)))
 
     def energy(self, vis, hid):
         """
