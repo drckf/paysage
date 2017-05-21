@@ -772,7 +772,6 @@ class Model(object):
             )
         return grad_GFE
 
-    # TODO: use StateTAP
     def grad_TAP_free_energy(self, init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Compute the gradient of the Helmholtz free engergy of the model according 
@@ -793,8 +792,8 @@ class Model(object):
             namedtuple: (Gradient): containing gradients of the model parameters.
 
         """
-        mag, EMF = self.TAP_free_energy(None, init_lr_EMF, tolerance_EMF, max_iters_EMF)
-        return self._grad_gibbs_free_energy(mag)
+        state = self.compute_StateTAP(init_lr_EMF, tolerance_EMF, max_iters_EMF)
+        return self._grad_gibbs_free_energy(state)
     
     def TAP_gradient(self, data_state, init_lr, tolerance, max_iters):
         """
