@@ -406,8 +406,8 @@ class BernoulliLayer(Layer):
 
         self.len = num_units
         self.rand = be.randn
-        self.params = ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
-        self.mean_var_calc = math_utils.MeanVarianceCalculator()
+        self.params = ParamsBernoulli(be.zeros(self.len))
+        self.mean_calc = math_utils.MeanCalculator()
 
     #
     # Methods for saving and reading layers
@@ -659,9 +659,8 @@ class BernoulliLayer(Layer):
             None
 
         """
-        self.mean_var_calc.update(data)
-        self.params = ParamsGaussian(self.mean_var_calc.mean,
-                                     be.log(self.mean_var_calc.var))
+        self.mean_calc.update(data, axis=0)
+        self.params = ParamsBernoulli(be.logit(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
         """
