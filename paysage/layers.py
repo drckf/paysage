@@ -421,9 +421,8 @@ class GradientMagnetizationGaussian(MagnetizationGaussian):
         Returns:
             None
         """
-        self.expect -= be.dot(mag_lower.expectation(), w) + \
-                       be.multiply(be.dot(mag_lower.variance(), ww),
-                       0.5 - mag.expectation())
+        self.params[0] -= be.dot(mag_lower.expectation(), w)
+        self.params[1] -= 0.5*be.dot(mag_lower.variance(), ww)
 
     def grad_GFE_update_up(self, mag, mag_upper, w, ww):
         """
@@ -440,9 +439,8 @@ class GradientMagnetizationGaussian(MagnetizationGaussian):
         Returns:
             None
         """
-        self.expect -= be.dot(w, mag_upper.expectation()) + \
-                       be.multiply(0.5 - mag.expectation(),
-                       be.dot(ww, mag_upper.variance()))
+        self.params[0] -= be.dot(w, mag_upper.expectation())
+        self.params[1] -= 0.5*be.dot(ww, mag_upper.variance())
 
 class GaussianLayer(Layer):
     """Layer with Gaussian units"""
