@@ -633,7 +633,7 @@ class GaussianLayer(Layer):
         bc_scale = be.broadcast(scale, B)
         denom = 1.0 + 2.0 * be.multiply(scale, A)
         return be.divide(denom, be.multiply(self.params.loc, B) - \
-               be.multiply(be.square(self.params.loc),A) + 0.5 * be.multiply(be.square(B), bc_scale)) + \
+               be.multiply(be.square(self.params.loc),A) + 0.5 * be.multiply(be.square(B), bc_scale)) +\
                0.5 * be.divide(be.square(denom), be.ones_like(B))
 
     def grad_log_partition_function(self, B, A):
@@ -646,7 +646,8 @@ class GaussianLayer(Layer):
             B (tensor (num_samples, num_units)): diagonal quadratic interaction
 
         Returns:
-            (d_u_i) \oplus (d_s_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
+            (d_u_i) \oplus (d_s_i) logZ (tensor (num_samples, num_units)): gradient of
+             the log partition function
 
         """
         return ParamsGaussian(be.mean(self._grad_u_log_partition_function(B,A), axis=0),
@@ -679,7 +680,8 @@ class GaussianLayer(Layer):
             lagrange multipler (tensor (num_units))
         """
         scale = be.exp(self.params.log_var)
-        return 0.5 * be.divide(be.multiply(mag.variance(), scale), be.subtract(scale, mag.variance()))
+        return 0.5 * be.divide(be.multiply(mag.variance(), scale),
+                               be.subtract(scale, mag.variance()))
 
     def _gibbs_free_energy_entropy_term(self, B, A, mag):
         """
@@ -694,7 +696,8 @@ class GaussianLayer(Layer):
             (float): 0th order term of Gibbs free energy
         """
         return -be.tsum(self.log_partition_function(B, A)) + \
-                be.dot(B, mag.expectation()) + be.dot(A, be.square(mag.expectation()) + mag.variance())
+                be.dot(B, mag.expectation()) + be.dot(A, be.square(mag.expectation()) +\
+                mag.variance())
 
     def _grad_magnetization_GFE(self, mag):
         """
@@ -717,9 +720,9 @@ class GaussianLayer(Layer):
         aa = be.square(a)
         cc = be.square(c)
         uu = be.square(u)
-        factor = s - 2.0*c
-        expectation_deriv = be.divide(c,2.0*a) + be.divide(s, a - u) + be.divide(2.0*a, factor)
-        variance_deriv = -be.divide(cc, 0.5*(aa + c)) + be.divide(s,0.5*be.ones_like(s)) + 2.0*be.divide(be.square(factor),aa) - be.divide(factor,be.ones_like(a))
+        expectation_deriv = be.divide(c,2.0*a) + be.divide(s, a - u) + be.divide(f,2.0*a)
+        variance_deriv = -be.divide(cc, 0.5*(aa + c)) + be.divide(s,0.5*be.ones_like(s)) +\
+                          2.0*be.divide(be.square(f),aa) - be.divide(f,be.ones_like(a))
         return GradientMagnetizationGaussian(expectation_deriv, variance_deriv)
 
     def GFE_derivatives(self, mag):
