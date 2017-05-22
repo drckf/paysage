@@ -90,8 +90,7 @@ class State(object):
 
         """
         return copy.deepcopy(state)
-    
-    
+
 class StateTAP(object):
     """A TAPState is a list of CumulantsTAP objects for each layer in the model."""
     def __init__(self, cumulants):
@@ -107,7 +106,7 @@ class StateTAP(object):
         """
         self.cumulants = cumulants
         self.len = len(self.cumulants)
-        
+
     @classmethod
     def from_state(cls, state):
         """
@@ -121,7 +120,7 @@ class StateTAP(object):
 
         """
         return copy.deepcopy(state)
-    
+
     @classmethod
     def from_model(cls, model):
         """
@@ -135,7 +134,7 @@ class StateTAP(object):
 
         """
         return cls([layer.get_zero_magnetization() for layer in model.layers])
-    
+
     @classmethod
     def from_model_rand(cls, model):
         """
@@ -189,7 +188,7 @@ class Model(object):
             layers.Weights((self.layers[i].len, self.layers[i+1].len))
         for i in range(self.num_layers - 1)
         ]
-        
+
     #
     # Methods for saving and loading models. 
     #
@@ -230,7 +229,7 @@ class Model(object):
         for ly in config["layers"]:
             layer_list.append(layers.Layer.from_config(ly))
         return cls(layer_list)
-    
+
     def save(self, store: pandas.HDFStore) -> None:
         """
         Save a model to an open HDFStore.
@@ -284,11 +283,11 @@ class Model(object):
             key = os.path.join('layers', 'layers'+str(i))
             model.layers[i].load_params(store, key)
         return model
-    
+
     #
     # Methods that define topology
     #
-    
+
     def _layer_connections(self):
         """
         Helper function to enumerate the connections between layers.
@@ -350,7 +349,7 @@ class Model(object):
         """
         return [self.weights[j].W() if j < i else self.weights[j].W_T()
                             for j in self.weight_connections[i]]
-    
+
     #
     # Methods for sampling and sample based training 
     # 
@@ -564,7 +563,7 @@ class Model(object):
             grad.weights[i])
 
         return grad
-    
+
     def parameter_update(self, deltas):
         """
         Update the model parameters.
@@ -601,7 +600,7 @@ class Model(object):
             energy += self.layers[i+1].energy(data.units[i+1])
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
-    
+
     #
     # Methods for training with the TAP approximation
     #
@@ -617,19 +616,19 @@ class Model(object):
             float: Gibbs free energy
         """
         total = 0
-        
+
         lagrange = [self.layers[l].lagrange_multiplers(state.cumulants[l]) 
                     for l in range(self.num_layers)] 
-        
+
         for index in range(self.num_layers):
             lay = self.layers[index]
             total += lay.TAP_entropy(lagrange[index], state.cumulants[index])
-        
+
         for index in range(self.num_layers-1):
             w = self.weights[index].W_T()
             total -= be.quadratic(state.cumulants[index].mean, w, state.cumulants[index+1].mean)
             total -= 0.5 * be.quadratic(state.cumulants[index].variance, be.square(w), state.cumulants[index+1].variance)
-            
+
         return total
 
     def compute_StateTAP(self, init_lr=0.1, tol=1e-7, max_iters=50):
@@ -678,25 +677,24 @@ class Model(object):
 
         """
         decrease = be.float_scalar(0.5)
-        
+
         # generate random sample in domain to use as a starting location for gradient descent
         state = StateTAP.from_model_rand(self)
 
         free_energy = self.gibbs_free_energy(state)
         lr = init_lr
         lr_ = partial(be.tmul_, be.float_scalar(lr))
-        
+
         for _ in range(max_iters):
             # compute the gradient of the Gibbs Free Energy
             grad = self._TAP_magnetization_grad(state)
             for g in grad:
                 be.apply_(lr_, g)
-                
+
             # take a gradient step to compute a new state
             new_state = StateTAP([
             self.layers[l].clip_magnetization(be.mapzip(be.subtract, grad[l], state.cumulants[l])) 
             for l in range(self.num_layers)])
-            
             # compute the new free energy and perform an update
             new_free_energy = self.gibbs_free_energy(new_state)
             if (free_energy - new_free_energy < 0):
@@ -750,7 +748,7 @@ class Model(object):
             [self.weights[w].GFE_derivatives(state.cumulants[w], state.cumulants[w+1]) 
             for w in range(self.num_layers-1)]
             )
-        
+
         return grad_GFE
 
     def grad_TAP_free_energy(self, init_lr_EMF, tolerance_EMF, max_iters_EMF):
@@ -775,7 +773,7 @@ class Model(object):
         """
         state = self.compute_StateTAP(init_lr_EMF, tolerance_EMF, max_iters_EMF)
         return self._grad_gibbs_free_energy(state)
-    
+
     def TAP_gradient(self, data_state, init_lr, tolerance, max_iters):
         """
         Gradient of -\ln P(v) with respect to the model parameters

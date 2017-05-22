@@ -384,8 +384,8 @@ class Weights(Layer):
 
         """
         return -be.batch_dot(vis, self.W(), hid)
-    
-    
+
+
 ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
 
 class BernoulliLayer(Layer):
@@ -412,7 +412,7 @@ class BernoulliLayer(Layer):
     #
     # Methods for saving and reading layers
     #
-    
+
     def get_config(self):
         """
         Get the configuration dictionary of the Bernoulli layer.
@@ -447,11 +447,11 @@ class BernoulliLayer(Layer):
         for k, v in config["constraints"].items():
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
-    
+
     # 
     # Methods for the TAP approximation
     # 
-    
+
     def get_magnetization(self, mean):
         """
         Compute a CumulantsTAP object for the BernoulliLayer.
