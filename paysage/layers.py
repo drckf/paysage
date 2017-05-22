@@ -405,7 +405,7 @@ class BernoulliLayer(Layer):
         super().__init__()
 
         self.len = num_units
-        self.rand = be.randn
+        self.rand = be.rand
         self.params = ParamsBernoulli(be.zeros(self.len))
         self.mean_calc = math_utils.MeanCalculator()
 
