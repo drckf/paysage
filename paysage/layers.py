@@ -385,6 +385,7 @@ class Weights(Layer):
         """
         return -be.batch_dot(vis, self.W(), hid)
     
+    
 ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
 
 class BernoulliLayer(Layer):
@@ -826,6 +827,7 @@ class BernoulliLayer(Layer):
         p = be.expit(be.broadcast(self.params.loc, r))
         return be.float_tensor(r < p)
 
+
 ParamsGaussian = namedtuple("ParamsGaussian", ["loc", "log_var"])
 
 class GaussianLayer(Layer):
@@ -846,7 +848,7 @@ class GaussianLayer(Layer):
 
         self.len = num_units
         self.rand = be.rand
-        self.params = ParamsIsing(be.zeros(self.len))
+        self.params = ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
         self.mean_calc = math_utils.MeanCalculator()
 
     def get_config(self):
@@ -944,8 +946,9 @@ class GaussianLayer(Layer):
             None
 
         """
-        self.mean_calc.update(data, axis=0)
-        self.params = ParamsIsing(be.atanh(self.mean_calc.mean))
+        self.mean_var_calc.update(data)
+        self.params = ParamsGaussian(self.mean_var_calc.mean,
+                                     be.log(self.mean_var_calc.var))
 
     def shrink_parameters(self, shrinkage=0.1):
         """
@@ -1136,59 +1139,7 @@ class GaussianLayer(Layer):
         mean = self.params.loc
         var = be.exp(self.params.log_var)
         r = self.rand(shape)
-        p = be.expit(be.broadcast(self.params.loc, r))
-        return 2 * be.float_tensor(r < p) - 1
 
-
-ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
-
-class MagnetizationBernoulli(object):
-    """
-    This class holds the magnetization data of a Bernoulli layer.
-    Such data consists of a vector of expectation values for the layer's units,
-    MagnetizationBernoulli.expect, which are a float-valued in [0,1].
-    The class presents a getter for the expectation as well as a
-    function to compute the variance.
-
-    """
-    def __init__(self, exp):
-        self.expect = exp
-
-    def __iter__(self):
-        self.beginning = True
-        return self
-
-    def __next__(self):
-        if self.beginning == False:
-            raise StopIteration
-        else:
-            self.beginning = False
-            return self.expect
-
-    def expectation(self):
-        """
-        Returns the vector of expectations of unit values
-        """
-        return self.expect
-
-    def variance(self):
-        """
-        Returns the variance of unit values. For a Bernoulli layer this
-        is determined by the expectation
-        """
-        return self.expect - be.square(self.expect)
-
-class GradientMagnetizationBernoulli(MagnetizationBernoulli):
-    """
-    This class represents a Bernoulli layer's contribution to the gradient vector
-    of the Gibbs free energy.
-    The underlying data is isomorphic to the MagnetizationBernoulli object.
-    It provides two layer-wise functions used in the TAP method for training RBMs
-
-    """
-
-    def __init__(self, exp):
-        super().__init__(exp)
         return be.add(mean, be.multiply(be.sqrt(var), r))
 
 
@@ -1212,7 +1163,7 @@ class IsingLayer(Layer):
 
         self.len = num_units
         self.rand = be.rand
-        self.params = ParamsBernoulli(be.zeros(self.len))
+        self.params = ParamsIsing(be.zeros(self.len))
         self.mean_calc = math_utils.MeanCalculator()
 
     def get_zero_magnetization(self):
@@ -1330,7 +1281,7 @@ class IsingLayer(Layer):
 
         """
         self.mean_calc.update(data, axis=0)
-        self.params = ParamsBernoulli(be.logit(self.mean_calc.mean))
+        self.params = ParamsIsing(be.atanh(self.mean_calc.mean))
 
     def shrink_parameters(self, shrinkage=1):
         """
@@ -1495,6 +1446,7 @@ class IsingLayer(Layer):
         r = self.rand(shape)
         p = be.expit(be.broadcast(self.params.loc, r))
         return 2 * be.float_tensor(r < p) - 1
+
 
 ParamsExponential = namedtuple("ParamsExponential", ["loc"])
 

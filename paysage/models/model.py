@@ -605,24 +605,6 @@ class Model(object):
     #
     # Methods for training with the TAP approximation
     #
-    
-    """
-    Architecture of TAP:
-        
-    TAP_gradient: computes the gradient using the TAP approximation
-    
-    CALLS:
-    
-    grad_TAP_free_energy: computes the negative phase portion of the gradient
-    
-    CALLS:
-        
-    TAP_free_energy: computes magnetization and free energy
-        
-    _grad_gibbs_free_energy:
-    
-    
-    """
 
     def gibbs_free_energy(self, state):
         """
@@ -642,7 +624,7 @@ class Model(object):
         for index in range(self.num_layers):
             lay = self.layers[index]
             total += lay.TAP_entropy(lagrange[index], state.cumulants[index])
-
+        
         for index in range(self.num_layers-1):
             w = self.weights[index].W_T()
             total -= be.quadratic(state.cumulants[index].mean, w, state.cumulants[index+1].mean)
@@ -768,6 +750,7 @@ class Model(object):
             [self.weights[w].GFE_derivatives(state.cumulants[w], state.cumulants[w+1]) 
             for w in range(self.num_layers-1)]
             )
+        
         return grad_GFE
 
     def grad_TAP_free_energy(self, init_lr_EMF, tolerance_EMF, max_iters_EMF):

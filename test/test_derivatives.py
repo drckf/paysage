@@ -321,7 +321,7 @@ def test_bernoulli_GFE_magnetization_gradient():
         else:
             break
 
-"""
+
 def test_bernoulli_GFE_derivatives():
     num_units = 500
 
@@ -336,24 +336,25 @@ def test_bernoulli_GFE_derivatives():
 
     for lay in rbm.layers:
         lay.params.loc[:] = be.rand_like(lay.params.loc)
-
-    m, TFE = rbm.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50)
+        
+    state = rbm.compute_StateTAP(init_lr=0.1, tol=1e-7, max_iters=50)
+    GFE = rbm.gibbs_free_energy(state)
 
     lr = 0.1
     gogogo = True
     grad = rbm.grad_TAP_free_energy(0.1, 1e-7, 50)
     while gogogo:
         cop = deepcopy(rbm)
-        lr_mul = partial(be.tmul, lr)
-        for i in range(rbm.num_layers):
+        lr_mul = partial(be.tmul, -lr)
 
-            cop.layers[i].params = be.mapzip(be.add, rbm.layers[i].params,
-                          be.apply(lr_mul, grad.layers[i]))
+        delta = gu.grad_apply(lr_mul, grad)
+        cop.parameter_update(delta)
 
+        cop_state = cop.compute_StateTAP(init_lr=0.1, tol=1e-7, max_iters=50)
+        cop_GFE = cop.gibbs_free_energy(cop_state)
 
-        m, TFE_next = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7, max_iters=50)
-
-        regress = TFE_next - TFE < 0.0
+        regress = cop_GFE - GFE < 0.0
+        print(lr, cop_GFE, GFE, cop_GFE - GFE, regress)
         if regress:
             if lr < 1e-6:
                 assert False, \
@@ -363,7 +364,7 @@ def test_bernoulli_GFE_derivatives():
                 lr *= 0.5
         else:
             break
-
+        
 def test_ising_conditional_params():
     num_visible_units = 100
     num_hidden_units = 50
@@ -715,7 +716,7 @@ def test_gaussian_derivatives():
 
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in gaussian-gaussian rbm"
-"""
+    
 
 if __name__ == "__main__":
     pytest.main([__file__])
