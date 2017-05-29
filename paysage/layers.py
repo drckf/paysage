@@ -366,7 +366,7 @@ class Weights(Layer):
 
         """
         return ParamsWeights(-be.outer(vis.mean, hid.mean) - \
-          0.5*be.multiply(self.params.matrix, be.outer(vis.variance, hid.variance)))
+          2.0*be.multiply(self.params.matrix, be.outer(vis.variance, hid.variance)))
 
     def energy(self, vis, hid):
         """
@@ -607,8 +607,8 @@ class BernoulliLayer(Layer):
             w_l = weights[l]
             w2_l = be.square(w_l)
             
-            mean -= be.dot(hid[l].mean, w_l) + \
-                    be.multiply(be.dot(hid[l].variance, w2_l), 0.25 - 0.5*vis.mean)
+            mean -= 2.0*be.dot(hid[l].mean, w_l) + \
+                    be.multiply(be.dot(hid[l].variance, w2_l), 1.0 - 2.0*vis.mean)
 
         return CumulantsTAP(mean, variance)                     
 
