@@ -414,48 +414,6 @@ class BernoulliLayer(Layer):
     # Methods for saving and reading layers
     #
 
-    def get_zero_magnetization(self):
-        """
-        Create a layer magnetization with zero expectations and zero variance
-
-        Args:
-            None
-
-        Returns:
-            GaussianMagnetization
-
-        """
-        return MagnetizationGaussian(be.zeros(self.len), be.zeros(self.len))
-
-    def get_random_magnetization(self):
-        """
-        Create a layer magnetization with random expectations and variance.
-
-        Args:
-            None
-
-        Returns:
-            GaussianMagnetization
-
-        """
-        return MagnetizationGaussian(be.rand((self.len,)), be.rand((self.len,)))
-
-    def get_random_layer(self):
-        """
-        Create a layer with random parameters of same size.
-
-        Args:
-            None
-
-        Returns:
-            GaussianLayer
-
-        """
-        lay = GaussianLayer(self.len)
-        lay.params.loc[:] = 0.01*(be.rand_like(lay.params.loc) * 2.0 - 1.0)
-        lay.params.log_var[:] = 0.01*(be.rand_like(lay.params.log_var) * 2.0 - 1.0)
-        return lay
-
     def get_config(self):
         """
         Get the configuration dictionary of the Bernoulli layer.
@@ -491,20 +449,20 @@ class BernoulliLayer(Layer):
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
-    # 
+    #
     # Methods for the TAP approximation
-    # 
+    #
 
     def get_magnetization(self, mean):
         """
         Compute a CumulantsTAP object for the BernoulliLayer.
-        
+
         Args:
             expect (tensor (num_units,)): expected values of the units
-            
+
         returns:
             CumulantsTAP
-        
+
         """
         return CumulantsTAP(mean, mean - be.square(mean))
 
@@ -532,25 +490,25 @@ class BernoulliLayer(Layer):
             BernoulliMagnetization
 
         """
-        return self.get_magnetization(be.clip(be.rand((self.len,)), 
+        return self.get_magnetization(be.clip(be.rand((self.len,)),
                 a_min=epsilon, a_max=be.float_scalar(1-epsilon)))
 
-    def clip_magnetization(self, magnetization, a_min=be.float_scalar(1e-6), 
+    def clip_magnetization(self, magnetization, a_min=be.float_scalar(1e-6),
                            a_max=be.float_scalar(1 - 1e-6)):
         """
         Clip the mean of the mean of a CumulantsTAP object.
-        
+
         Args:
             magnetization (CumulantsTAP) to clip
             a_min (float): the minimum value
             a_max (float): the maximum value
-            
+
         Returns:
             clipped magnetization (CumulantsTAP)
-        
+
         """
-        tmp = be.clip(magnetization.mean,  a_min=a_min, a_max=a_max)
-        return self.get_magnetization(tmp)        
+        tmp = be.clip(magnetization.mean, a_min=a_min, a_max=a_max)
+        return self.get_magnetization(tmp)
 
     def log_partition_function(self, external_field, quadratic_field):
         """
@@ -666,7 +624,7 @@ class BernoulliLayer(Layer):
         """
         return ParamsBernoulli(-cumulants.mean)
 
-    # 
+    #
     # Methods for sampling and sample-based training
     #
 
@@ -892,6 +850,47 @@ class GaussianLayer(Layer):
         self.params = ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
         self.mean_var_calc = math_utils.MeanVarianceCalculator()
 
+    def get_zero_magnetization(self):
+        """
+        Create a layer magnetization with zero expectations and zero variance
+
+        Args:
+            None
+
+        Returns:
+            GaussianMagnetization
+        """
+        return MagnetizationGaussian(be.zeros(self.len), be.zeros(self.len))
+
+    def get_random_magnetization(self):
+        """
+        Create a layer magnetization with random expectations and variance.
+
+        Args:
+            None
+
+        Returns:
+            GaussianMagnetization
+
+        """
+        return MagnetizationGaussian(be.rand((self.len,)), be.rand((self.len,)))
+
+    def get_random_layer(self):
+        """
+        Create a layer with random parameters of same size.
+
+        Args:
+            None
+
+        Returns:
+            GaussianLayer
+
+        """
+        lay = GaussianLayer(self.len)
+        lay.params.loc[:] = 0.01*(be.rand_like(lay.params.loc) * 2.0 - 1.0)
+        lay.params.log_var[:] = 0.01*(be.rand_like(lay.params.log_var) * 2.0 - 1.0)
+        return lay
+
     def get_config(self):
         """
         Get the configuration dictionary of the Gaussian layer.
@@ -945,6 +944,39 @@ class GaussianLayer(Layer):
         diff = vis - be.broadcast(self.params.loc, vis)
         result = be.square(diff) / be.broadcast(scale, vis)
         return 0.5 * be.mean(result, axis=1)
+
+    #
+    # Methods for the TAP approximation
+    #
+
+    def get_zero_magnetization(self):
+        """
+        Create a layer magnetization with zero expectations.
+
+        Args:
+            None
+
+        Returns:
+            CumulantsTAP
+
+        """
+        return CumulantsTAP(be.zeros(self.len), be.zeros(self.len))
+
+    def get_random_magnetization(self, epsilon=be.float_scalar(0.005)):
+        """
+        Create a layer magnetization with random expectations.
+
+        Args:
+            None
+
+        Returns:
+            CumulantsTAP
+
+        """
+        return CumulantsTAP(be.clip(be.rand((self.len,)),
+                a_min=epsilon, a_max=be.float_scalar(1-epsilon)),
+                be.clip(be.rand((self.len,)),
+                a_min=epsilon, a_max=be.float_scalar(1-epsilon)))
 
     def log_partition_function(self, B, A):
         """
@@ -1398,47 +1430,6 @@ class IsingLayer(Layer):
         self.rand = be.rand
         self.params = ParamsIsing(be.zeros(self.len))
         self.mean_calc = math_utils.MeanCalculator()
-
-    def get_zero_magnetization(self):
-        """
-        Create a layer magnetization with zero expectations.
-
-        Args:
-            None
-
-        Returns:
-            BernoulliMagnetization
-
-        """
-        return MagnetizationBernoulli(be.zeros(self.len))
-
-    def get_random_magnetization(self):
-        """
-        Create a layer magnetization with random expectations.
-
-        Args:
-            None
-
-        Returns:
-            BernoulliMagnetization
-
-        """
-        return MagnetizationBernoulli(be.rand((self.len,)))
-
-    def get_random_layer(self):
-        """
-        Create a layer with random parameters of same size.
-
-        Args:
-            None
-
-        Returns:
-            BernoulliLayer
-
-        """
-        lay = BernoulliLayer(self.len)
-        lay.params.loc[:] = be.rand_like(lay.params.loc)
-        return lay
 
     def get_config(self):
         """

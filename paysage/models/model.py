@@ -135,19 +135,19 @@ class StateTAP(object):
         """
         return cls([layer.get_zero_magnetization() for layer in model.layers])
 
-    @classmethod
-    def from_model_rand(cls, model):
+    @staticmethod
+    def from_model_rand(model):
         """
-        Create a StateTAP object from an existing StateTAP.
+        Create a random StateTAP object from an existing model.
 
         Args:
-            state (StateTAP): a StateTAP instance
+            model(StateTAP): a StateTAP instance
 
         Returns:
             StateTAP object
 
         """
-        return cls([layer.get_random_magnetization() for layer in model.layers])    
+        return StateTAP([layer.get_random_magnetization() for layer in model.layers])
 
 
 
@@ -659,8 +659,8 @@ class Model(object):
             float: Gibbs free energy
         """
         total = 0
-        lagrange = [self.layers[l].lagrange_multiplers(state.cumulants[l]) 
-                    for l in range(self.num_layers)] 
+        lagrange = [self.layers[l].lagrange_multiplers(state.cumulants[l])
+                    for l in range(self.num_layers)]
 
         for index in range(self.num_layers):
             lay = self.layers[index]
@@ -731,12 +731,13 @@ class Model(object):
         for _ in range(max_iters):
             # compute the gradient of the Gibbs Free Energy
             grad = self._TAP_magnetization_grad(state)
-            for g in grad:
+            for g in grad.cumulants:
                 be.apply_(lr_, g)
 
             # take a gradient step to compute a new state
             new_state = StateTAP([
-            self.layers[l].clip_magnetization(be.mapzip(be.subtract, grad[l], state.cumulants[l])) 
+            self.layers[l].clip_magnetization(
+                           be.mapzip(be.subtract, grad.cumulants[l], state.cumulants[l]))
             for l in range(self.num_layers)])
             # compute the new free energy and perform an update
             new_free_energy = self.gibbs_free_energy(new_state)
@@ -762,18 +763,16 @@ class Model(object):
             state (StateTAP): magnetizations at which to compute the deriviates
 
         Returns:
-            list (list of gradient magnetization objects for each layer)
+            StateTAP object representing the gradient
             
         """
-        grad = [None for lay in self.layers]
-        for i in range(self.num_layers):
-            grad[i] = self.layers[i].TAP_magnetization_grad(
+        return StateTAP([
+            self.layers[i].TAP_magnetization_grad(
                     state.cumulants[i],
                     [state.cumulants[j] for j in self.layer_connections[i]],
-                    [self.weights[j].W() if j < i else self.weights[j].W_T() 
+                    [self.weights[j].W() if j < i else self.weights[j].W_T()
                     for j in self.weight_connections[i]]
-                    )
-        return grad
+            ) for i in range(self.num_layers)])
 
     def _grad_gibbs_free_energy(self, state):
         """
