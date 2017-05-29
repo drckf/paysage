@@ -299,17 +299,18 @@ def test_bernoulli_GFE_magnetization_gradient():
     for lay in rbm.layers:
         lay.params.loc[:] = be.rand_like(lay.params.loc)
 
-    mag = [lay.get_random_magnetization() for lay in rbm.layers]
+    mag = model.StateTAP.from_model_rand(rbm)
 
     GFE = rbm.gibbs_free_energy(mag)
 
     lr = 0.001
     gogogo = True
-    grad = rbm._grad_magnetization_GFE(mag)
+    grad = rbm._TAP_magnetization_grad(mag)
+
     while gogogo:
         cop = deepcopy(mag)
         for i in range(rbm.num_layers):
-            cop[i].expect[:] = mag[i].expect + lr * grad[i].expect
+            cop.cumulants[i].mean[:] = mag.cumulants[i].mean + lr * grad.cumulants[i].mean
 
         GFE_next = rbm.gibbs_free_energy(cop)
         regress = GFE_next - GFE < 0.0
@@ -338,8 +339,8 @@ def test_bernoulli_GFE_derivatives():
     for lay in rbm.layers:
         lay.params.loc[:] = be.rand_like(lay.params.loc)
 
-    (m,TFE) = rbm.TAP_free_energy(None, init_lr=0.1, tol=1e-7,
-                                        max_iters=50)
+    state = rbm.compute_StateTAP(0.1, 1e-7, 50)
+    TFE = rbm.gibbs_free_energy(state)
 
     lr = 0.1
     gogogo = True
@@ -351,8 +352,9 @@ def test_bernoulli_GFE_derivatives():
             cop.layers[i].params = be.mapzip(be.add, rbm.layers[i].params,
                           be.apply(lr_mul, grad.layers[i]))
 
-        (m,TFE_next) = cop.TAP_free_energy(None, init_lr=0.1, tol=1e-7,
-                                                 max_iters=50)
+        state_next = cop.compute_StateTAP(0.1, 1e-7, 50)
+        TFE_next = cop.gibbs_free_energy(state_next)
+
         regress = TFE_next - TFE < 0.0
         if regress:
             if lr < 1e-6:
@@ -725,7 +727,7 @@ def test_bernoulli_log_partition_gradient():
     lay.params.log_var[:] = be.rand_like(lay.params.loc) * 2.0 - 1.0
     B = be.rand((num_parallel,num_units))
     A = be.rand_like(B)
-    logZ = be.mean(log_partition_function(lay,A,B), axis=0)
+    logZ = be.mean(lay.log_partition_function(A,B), axis=0)
     lr = 0.01
     gogogo = True
     grad = lay.grad_log_partition_function(A,B)
