@@ -625,9 +625,10 @@ class Model(object):
             total += lay.TAP_entropy(lagrange[index], state.cumulants[index])
 
         for index in range(self.num_layers-1):
-            w = self.weights[index].W_T()
-            total -= be.quadratic(state.cumulants[index].mean, w, state.cumulants[index+1].mean)
-            total -= 0.5 * be.quadratic(state.cumulants[index].variance, be.square(w), state.cumulants[index+1].variance)
+            w = self.weights[index].W()
+            total -= be.quadratic(state.cumulants[index].mean, state.cumulants[index+1].mean, w)
+            total -= 0.5 * be.quadratic(state.cumulants[index].variance,
+                           state.cumulants[index+1].variance, be.square(w))
 
         return total
 
