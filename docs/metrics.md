@@ -173,7 +173,7 @@ def __init__(self)
 
 
 
-Create HeatCapacity object.<br /><br />Args:<br /> ~ downsample (int; optional): how many samples to use<br /><br />Returns:<br /> ~ heat capacity object
+Create HeatCapacity object.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### reset
@@ -185,7 +185,7 @@ def reset(self) -> None
 
 
 
-Reset the metric to it's initial state.<br /><br />Note:<br /> ~ Modifies the heat capacity in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Reset the metric to its initial state.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ The HeatCapacity object.
 
 
 ### update
@@ -197,7 +197,7 @@ def update(self, update_args: paysage.metrics.MetricState) -> None
 
 
 
-Update the estimate for the heat capacity<br /><br />Notes:<br /> ~ Changes heat capacity in place.<br /><br />Args:<br /> ~ update_args: uses all layers of random_samples, and model<br /><br />Returns:<br /> ~ None
+Update the estimate for the heat capacity.<br /><br />Args:<br /> ~ update_args: uses all layers of random_samples, and model<br /><br />Returns:<br /> ~ None
 
 
 ### value

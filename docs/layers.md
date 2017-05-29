@@ -1,5 +1,109 @@
 # Documentation for Layers (layers.py)
 
+## class GradientMagnetizationBernoulli
+This class represents a Bernoulli layer's contribution to the gradient vector<br />of the Gibbs free energy.<br />The underlying data is isomorphic to the MagnetizationBernoulli object.<br />It provides two layer-wise functions used in the TAP method for training RBMs
+### \_\_init\_\_
+```py
+
+def __init__(self, exp)
+
+```
+
+
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+
+### expectation
+```py
+
+def expectation(self)
+
+```
+
+
+
+Returns the vector of expectations of unit values
+
+
+### grad\_GFE\_update\_down
+```py
+
+def grad_GFE_update_down(self, mag_lower, mag, w, ww)
+
+```
+
+
+
+Computes a layerwise magnetization gradient update according to the gradient<br /> of the Gibbs Free energy.<br /><br />Args:<br /> ~ mag_lower (magnetization object): magnetization of the lower layer<br /> ~ mag (magnetization object): magnetization of the current layer<br /> ~ w (float tensor): weight matrix mapping down from this layer to the<br /> ~  ~  ~  ~  ~   lower layer<br /> ~ ww (float tensor): cached square of the weight matrix<br /><br />Returns:<br /> ~ None
+
+
+### grad\_GFE\_update\_up
+```py
+
+def grad_GFE_update_up(self, mag, mag_upper, w, ww)
+
+```
+
+
+
+Computes a layerwise magnetization gradient update according to the gradient<br /> of the Gibbs Free energy.<br /><br />Args:<br /> ~ mag (magnetization object): magnetization of the current layer<br /> ~ mag_upper (magnetization object): magnetization of the upper layer<br /> ~ w (float tensor): weight matrix mapping down to this layer from the<br /> ~  ~  ~  ~  ~   upper layer<br /> ~ ww (float tensor): cached square of the weight matrix<br /><br />Returns:<br /> ~ None
+
+
+### variance
+```py
+
+def variance(self)
+
+```
+
+
+
+Returns the variance of unit values. For a Bernoulli layer this<br />is determined by the expectation
+
+
+
+
+## class MagnetizationBernoulli
+This class holds the magnetization data of a Bernoulli layer.<br />Such data consists of a vector of expectation values for the layer's units,<br />MagnetizationBernoulli.expect, which are a float-valued in [0,1].<br />The class presents a getter for the expectation as well as a<br />function to compute the variance.
+### \_\_init\_\_
+```py
+
+def __init__(self, exp)
+
+```
+
+
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+
+### expectation
+```py
+
+def expectation(self)
+
+```
+
+
+
+Returns the vector of expectations of unit values
+
+
+### variance
+```py
+
+def variance(self)
+
+```
+
+
+
+Returns the variance of unit values. For a Bernoulli layer this<br />is determined by the expectation
+
+
+
+
 ## class ParamsExponential
 ParamsExponential(loc,)
 
@@ -174,6 +278,18 @@ def load_params(self, store, key)
 Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
+### log\_partition\_function
+```py
+
+def log_partition_function(self, phi)
+
+```
+
+
+
+Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let a_i be the loc parameter of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = Tr_{x_i} exp( -a_i x_i + phi_i x_i)<br />= 1 / (a_i - phi_i)<br /><br />log(Z_i) = -log(a_i - phi_i)<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
+
+
 ### online\_param\_update
 ```py
 
@@ -254,6 +370,18 @@ ParamsBernoulli(loc,)
 
 ## class BernoulliLayer
 Layer with Bernoulli units (i.e., 0 or +1).
+### GFE\_derivatives
+```py
+
+def GFE_derivatives(self, mag)
+
+```
+
+
+
+Gradient of the Gibbs free energy with respect to local field parameters<br /><br />Args:<br /> ~ mag (magnetization object): magnetization of the layer<br /><br />Returns:<br /> ~ gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of GFE
+
+
 ### \_\_init\_\_
 ```py
 
@@ -410,6 +538,42 @@ def get_penalty_grad(self, deriv, param_name)
 Get the gradient of the penalties on a parameter.<br /><br />E.g., L2 penalty gradient = penalty * parameter_i<br /><br />Args:<br /> ~ deriv (tensor): derivative of the parameter<br /> ~ param_name: name of the parameter<br /><br />Returns:<br /> ~ tensor: derivative including penalty
 
 
+### get\_random\_magnetization
+```py
+
+def get_random_magnetization(self)
+
+```
+
+
+
+Create a layer magnetization with random expectations.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ BernoulliMagnetization
+
+
+### get\_zero\_magnetization
+```py
+
+def get_zero_magnetization(self)
+
+```
+
+
+
+Create a layer magnetization with zero expectations.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ BernoulliMagnetization
+
+
+### grad\_log\_partition\_function
+```py
+
+def grad_log_partition_function(self, B, A)
+
+```
+
+
+
+Compute the gradient of the logarithm of the partition function with respect to<br />its local field parameter with external field B and quadratic interaction A.<br /><br />(d_a_i)softplus(a_i + B_i - A_i) = expit(a_i + B_i - A_i)<br /><br />Note: This function returns the mean parameters over a minibatch of input fields<br /><br />Args:<br /> ~ A (tensor (num_samples, num_units)): external field<br /> ~ B (tensor (num_samples, num_units)): diagonal quadratic external field<br /><br />Returns:<br /> ~ (d_a_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
+
+
 ### load\_params
 ```py
 
@@ -420,6 +584,18 @@ def load_params(self, store, key)
 
 
 Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+
+
+### log\_partition\_function
+```py
+
+def log_partition_function(self, B, A)
+
+```
+
+
+
+Compute the logarithm of the partition function of the layer<br />with external field B augmented with a quadratic, diagonal interaction A.<br /><br />Let a_i be the loc parameter of unit i.<br />Let B_i be a local field<br />Let A_i be a diagonal quadratic interaction<br /><br />Z_i = Tr_{x_i} exp( a_i x_i + B_i x_i - A_i x_i^2)<br />= 1 + \exp(a_i + B_i - A_i)<br /><br />log(Z_i) = softplus(a_i + B_i - A_i)<br /><br />Args:<br /> ~ A (tensor (num_samples, num_units)): external field<br /> ~ B (tensor (num_samples, num_units)): diagonal quadratic external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
 
 
 ### online\_param\_update
@@ -668,6 +844,18 @@ def load_params(self, store, key)
 
 
 Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
+
+
+### log\_partition\_function
+```py
+
+def log_partition_function(self, phi)
+
+```
+
+
+
+Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let u_i and s_i be the loc and scale parameters of unit i.<br />Let phi_i be an external field<br /><br />Z_i = \int d x_i exp( -(x_i - u_i)^2 / (2 s_i^2) + \phi_i x_i)<br />= exp(b_i u_i + b_i^2 s_i^2 / 2) sqrt(2 pi) s_i<br /><br />log(Z_i) = log(s_i) + phi_i u_i + phi_i^2 s_i^2 / 2<br /><br />Args:<br /> ~ phi tensor (num_samples, num_units): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
 
 
 ### online\_param\_update
@@ -930,6 +1118,18 @@ def load_params(self, store, key)
 Load the parameters from an HDFStore.<br /><br />Notes:<br /> ~ Performs an IO operation.<br /><br />Args:<br /> ~ store (pandas.HDFStore): the readable stream for the params.<br /> ~ key (str): the path for the layer params.<br /><br />Returns:<br /> ~ None
 
 
+### log\_partition\_function
+```py
+
+def log_partition_function(self, phi)
+
+```
+
+
+
+Compute the logarithm of the partition function of the layer<br />with external field phi.<br /><br />Let a_i be the loc parameter of unit i.<br />Let phi_i = \sum_j W_{ij} y_j, where y is the vector of connected units.<br /><br />Z_i = Tr_{x_i} exp( a_i x_i + phi_i x_i)<br />= 2 cosh(a_i + phi_i)<br /><br />log(Z_i) = logcosh(a_i + phi_i)<br /><br />Args:<br /> ~ phi (tensor (num_samples, num_units)): external field<br /><br />Returns:<br /> ~ logZ (tensor, num_samples, num_units)): log partition function
+
+
 ### online\_param\_update
 ```py
 
@@ -1006,6 +1206,18 @@ Apply shrinkage to the parameters of the layer.<br />Does nothing for the Ising 
 
 ## class Weights
 Layer class for weights
+### GFE\_derivatives
+```py
+
+def GFE_derivatives(self, vis, hid)
+
+```
+
+
+
+Gradient of the Gibbs free energy associated with this layer<br /><br />Args:<br /> ~ vis (magnetization object): magnetization of the lower layer linked to w<br /> ~ hid (magnetization objet): magnetization of the upper layer linked to w<br /><br />Returns:<br /> ~ derivs (namedtuple): 'matrix': tensor (contains gradient)
+
+
 ### W
 ```py
 

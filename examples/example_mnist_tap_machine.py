@@ -15,7 +15,6 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs=10, show_plot=False)
     num_hidden_units = 256
     batch_size = 100
     learning_rate = schedules.power_law_decay(initial=0.1, coefficient=0.1)
-    num_terms = 2
 
     (_, _, shuffled_filepath) = \
             util.default_paths(paysage_path)
@@ -48,15 +47,14 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs=10, show_plot=False)
     sgd = fit.SGD(rbm, data, opt, num_epochs, sampler=sampler, method=fit.tap, monitor=perf)
 
     # fit the model
-    print('Training with stochastic gradient ascent using TAP expansion to ' + str(num_terms) + ' terms.')
+    print('Training with stochastic gradient ascent using TAP expansion')
     sgd.train()
 
     util.show_metrics(rbm, perf)
     valid = data.get('validate')
-    util.show_reconstructions(rbm, valid, fit, show_plot)
-    util.show_fantasy_particles(rbm, valid, fit, show_plot)
-    util.show_weights(rbm, show_plot)
-
+    util.show_reconstructions(rbm, valid, fit, show_plot, n_recon=10, vertical=False)
+    util.show_fantasy_particles(rbm, valid, fit, show_plot, n_fantasy=25)
+    util.show_weights(rbm, show_plot, n_weights=25)
     # close the HDF5 store
     data.close()
     print("Done")

@@ -51,23 +51,31 @@ def show_metrics(rbm, performance):
     print('Final performance metrics:')
     performance.check_progress(rbm, show=True)
 
-def compute_reconstructions(rbm, v_data, fit):
+def compute_reconstructions(rbm, v_data, fit, n_recon=10, vertical=False):
     sampler = fit.DrivenSequentialMC(rbm)
     data_state = State.from_visible(v_data, rbm)
     sampler.set_positive_state(data_state)
     sampler.update_positive_state(1, clamped=[])
     v_model = rbm.deterministic_iteration(1, sampler.pos_state).units[0]
 
-    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
-    return numpy.array([[be.to_numpy_array(v_data[i]),
+    idx = numpy.random.choice(range(len(v_model)), n_recon, replace=False)
+    grid = numpy.array([[be.to_numpy_array(v_data[i]),
                          be.to_numpy_array(v_model[i])] for i in idx])
+    if vertical:
+        return grid
+    else:
+        return grid.swapaxes(0,1)
 
-def show_reconstructions(rbm, v_data, fit, show_plot, dim=28):
+def show_reconstructions(rbm, v_data, fit, show_plot, dim=28, n_recon=10, vertical=False):
     print("\nPlot a random sample of reconstructions")
-    grid = compute_reconstructions(rbm, v_data, fit)
+    grid = compute_reconstructions(rbm, v_data, fit, n_recon, vertical)
     example_plot(grid, show_plot, dim=dim)
 
-def compute_fantasy_particles(rbm, v_data, fit):
+def compute_fantasy_particles(rbm, v_data, fit, n_fantasy=25):
+    from math import sqrt
+    grid_size = int(sqrt(n_fantasy))
+    assert grid_size == sqrt(n_fantasy), "n_fantasy must be the square of an integer"
+    
     random_samples = rbm.random(v_data)
     model_state = State.from_visible(random_samples, rbm)
 
@@ -78,22 +86,28 @@ def compute_fantasy_particles(rbm, v_data, fit):
     sampler.update_negative_state(1000)
 
     v_model = rbm.deterministic_iteration(1, sampler.neg_state).units[0]
-    idx = numpy.random.choice(range(len(v_model)), 5, replace=False)
+    idx = numpy.random.choice(range(len(v_model)), n_fantasy, replace=False)
 
-    return numpy.array([[be.to_numpy_array(v_model[i])] for i in idx])
+    grid = numpy.array([be.to_numpy_array(v_model[i]) for i in idx])
+    return grid.reshape(grid_size, grid_size, -1)
 
-def show_fantasy_particles(rbm, v_data, fit, show_plot, dim=28):
+def show_fantasy_particles(rbm, v_data, fit, show_plot, dim=28, n_fantasy=25):
     print("\nPlot a random sample of fantasy particles")
-    grid = compute_fantasy_particles(rbm, v_data, fit)
+    grid = compute_fantasy_particles(rbm, v_data, fit, n_fantasy)
     example_plot(grid, show_plot, dim=dim)
 
-def compute_weights(rbm):
+def compute_weights(rbm, n_weights=25):
+    from math import sqrt
+    grid_size = int(sqrt(n_weights))
+    assert grid_size == sqrt(n_weights), "n_weights must be the square of an integer"
+    
     idx = numpy.random.choice(range(rbm.weights[0].shape[1]),
-                              5, replace=False)
-    return numpy.array([[be.to_numpy_array(rbm.weights[0].W()[:, i])]
+                              n_weights, replace=False)
+    grid = numpy.array([be.to_numpy_array(rbm.weights[0].W()[:, i])
                         for i in idx])
+    return grid.reshape(grid_size, grid_size, -1)
 
-def show_weights(rbm, show_plot, dim=28):
+def show_weights(rbm, show_plot, dim=28, n_weights=25):
     print("\nPlot a random sample of the weights")
-    grid = compute_weights(rbm)
+    grid = compute_weights(rbm, n_weights)
     example_plot(grid, show_plot, dim=dim)

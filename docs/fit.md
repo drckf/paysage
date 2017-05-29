@@ -5,7 +5,7 @@ Stochastic gradient descent with minibatches
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, batch, optimizer, epochs, method=<function persistent_contrastive_divergence at 0x1074a00d0>, sampler=<class 'paysage.fit.SequentialMC'>, mcsteps=1, monitor=None)
+def __init__(self, model, batch, optimizer, epochs, method=<function persistent_contrastive_divergence at 0x113e390d0>, sampler=<class 'paysage.fit.SequentialMC'>, mcsteps=1, monitor=None)
 
 ```
 
@@ -33,7 +33,7 @@ An accelerated sequential Monte Carlo sampler
 ### \_\_init\_\_
 ```py
 
-def __init__(self, model, beta_momentum=0.9, beta_std=0.6, schedule=<generator object constant at 0x1073b6c50>)
+def __init__(self, model, beta_momentum=0.9, beta_std=0.6, schedule=<generator object constant at 0x113d1c3b8>)
 
 ```
 
@@ -333,11 +333,11 @@ PCD-k algorithm for approximate maximum likelihood inference.<br /><br />Tielema
 ### tap
 ```py
 
-def tap(vdata, model, sampler=None, steps=None)
+def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=0.0001, max_iters_EMF=25, num_random_samples=1)
 
 ```
 
 
 
-Compute the gradient using the Thouless-Anderson-Palmer (TAP)<br />mean field approximation.<br /><br />Eric W Tramel, Marylou Gabrie, Andre Manoel, Francesco Caltagirone,<br />and Florent Krzakala<br />"A Deterministic and Generalized Framework for Unsupervised Learning<br />with Restricted Boltzmann Machines"<br /><br /><br />Args:<br /> ~ vdata (tensor): observed visible units<br /> ~ model: a model object<br /> ~ sampler (default to None): not required<br /> ~ steps (default to None): not requires<br /><br />Returns:<br /> ~ gradient
+Compute the gradient using the Thouless-Anderson-Palmer (TAP)<br />mean field approximation.<br /><br />Eric W Tramel, Marylou Gabrie, Andre Manoel, Francesco Caltagirone,<br />and Florent Krzakala<br />"A Deterministic and Generalized Framework for Unsupervised Learning<br />with Restricted Boltzmann Machines"<br /><br />Args:<br /> ~ vdata (tensor): observed visible units<br /> ~ model: a model object<br /> ~ sampler: for marginal free energy<br /> ~ positive_steps: steps to sample MCMC for positive phase<br /><br /> ~ TAP free energy computation parameters:<br /> ~  ~ init_lr float: initial learning rate which is halved whenever necessary to enforce descent.<br /> ~  ~ tol float: tolerance for quitting minimization.<br /> ~  ~ max_iters: maximum gradient decsent steps<br /> ~  ~ num_random_samples: number of Gibbs FE seeds to start from random<br /> ~  ~ num_persistent_samples: number of persistent magnetization parameters to keep as seeds<br /> ~  ~  ~ for Gibbs FE estimation.<br /><br />Returns:<br /> ~ gradient object
 
