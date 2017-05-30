@@ -850,31 +850,6 @@ class GaussianLayer(Layer):
         self.params = ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
         self.mean_var_calc = math_utils.MeanVarianceCalculator()
 
-    def get_zero_magnetization(self):
-        """
-        Create a layer magnetization with zero expectations and zero variance
-
-        Args:
-            None
-
-        Returns:
-            GaussianMagnetization
-        """
-        return MagnetizationGaussian(be.zeros(self.len), be.zeros(self.len))
-
-    def get_random_magnetization(self):
-        """
-        Create a layer magnetization with random expectations and variance.
-
-        Args:
-            None
-
-        Returns:
-            GaussianMagnetization
-
-        """
-        return MagnetizationGaussian(be.rand((self.len,)), be.rand((self.len,)))
-
     def get_random_layer(self):
         """
         Create a layer with random parameters of same size.
@@ -1068,51 +1043,65 @@ class GaussianLayer(Layer):
         return ParamsGaussian(be.mean(self._grad_u_log_partition_function(B,A), axis=0),
                               be.mean(self._grad_s_log_partition_function(B,A), axis=0))
 
-    def _gibbs_lagrange_multipliers_expectation(self, mag):
+    def _lagrange_multipliers_mean(self, mag):
         """
         The Lagrange multipliers associated with the first moment of the spins.
 
         Args:
-            mag (magnetization object): magnetization of the layer
+            mag (CumulantsTAP): magnetizations of the layer
 
         Returns:
             lagrange multipler (tensor (num_units))
 
         """
         scale = be.exp(self.params.log_var)
-        return be.divide(be.multiply(mag.variance(), scale),
-                                be.subtract(be.multiply(mag.variance(), self.params.loc),
-                                            be.multiply(mag.expectation(), scale)))
+        return be.divide(be.multiply(mag.variance, scale),
+                                be.subtract(be.multiply(mag.variance, self.params.loc),
+                                            be.multiply(mag.mean, scale)))
 
-    def _gibbs_lagrange_multipliers_variance(self, mag):
+    def _lagrange_multipliers_variance(self, mag):
         """
         The Lagrange multipliers associated with the second moment of the spins.
 
         Args:
-            mag (magnetization object): magnetization of the layer
+            mag (CumulantsTAP): magnetization of the layer
 
         Returns:
             lagrange multipler (tensor (num_units))
         """
         scale = be.exp(self.params.log_var)
-        return 0.5 * be.divide(be.multiply(mag.variance(), scale),
-                               be.subtract(scale, mag.variance()))
+        return 0.5 * be.divide(be.multiply(mag.variance, scale),
+                               be.subtract(scale, mag.variance))
 
-    def _gibbs_free_energy_entropy_term(self, B, A, mag):
+    def lagrange_multiplers(self, cumulants):
+        """
+        The Lagrange multipliers associated with the first and second
+        cumulants of the units.
+
+        Args:
+            cumulants (CumulantsTAP object): cumulants
+
+        Returns:
+            lagrange multipliers (CumulantsTAP)
+
+        """
+        return CumulantsTAP(self._lagrange_multipliers_mean(cumulants),
+                            self._lagrange_multipliers_variance(cumulants))
+
+    def TAP_entropy(self, lagrange, cumulants):
         """
         The TAP-0 Gibbs free energy term associated strictly with this layer
 
         Args:
-            B (float tensor like magnetization.expect): expectation Lagrange multipler
-            A (float tensor like magnetization.expect): variation Lagrange multiplier
-            mag (magnetization object): magnetization of the layer
+            lagrange (CumulantsTAP): Lagrange multiplers
+            cumulants (CumulantsTAP): magnetization of the layer
 
         Returns:
             (float): 0th order term of Gibbs free energy
         """
-        return -be.tsum(self.log_partition_function(B, A)) + \
-                be.dot(B, mag.expectation()) + be.dot(A, be.square(mag.expectation()) +\
-                mag.variance())
+        return -be.tsum(self.log_partition_function(lagrange.mean, lagrange.variance)) + \
+                be.dot(lagrange.mean, cumulants.mean) + \
+                be.dot(lagrange.variance, be.square(cumulants.mean) + cumulants.variance)
 
     def _grad_magnetization_GFE(self, mag):
         """
@@ -1179,8 +1168,8 @@ class GaussianLayer(Layer):
         Returns:
             gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of GFE
         """
-        a = mag.expectation()
-        c = mag.variance()
+        a = mag.mean
+        c = mag.variance
         u = self.params.loc
         s = be.exp(self.params.log_var)
         ss = be.square(s)
@@ -1193,7 +1182,7 @@ class GaussianLayer(Layer):
         numer = -4.0*be.multiply(aa,cc) - 4.0*be.multiply(c,cc) + 4.0*be.multiply(aa,be.multiply(c,s)) -\
                  3.0*be.multiply(aa,ss) + be.multiply(c,ss) + 2.0*be.multiply(a,be.multiply(ff,u)) - be.multiply(ff,uu)
         denom = 2.0*be.multiply(ff,ss)
-        return ParamsGaussian(be.divide(s, be.subtract(mag.expectation(), self.params.loc)),
+        return ParamsGaussian(be.divide(s, be.subtract(a, self.params.loc)),
                               be.divide(denom, numer))
 
     def online_param_update(self, data):
