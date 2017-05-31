@@ -40,7 +40,7 @@ class State(object):
         """
         self.units = tensors
         self.shapes = [be.shape(t) for t in self.units]
-        self.len = len (self.shapes)
+        self.len = len(self.shapes)
 
     @classmethod
     def from_model(cls, batch_size, model):
