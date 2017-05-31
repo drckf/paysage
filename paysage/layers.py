@@ -410,6 +410,21 @@ class BernoulliLayer(Layer):
         self.params = ParamsBernoulli(be.zeros(self.len))
         self.mean_calc = math_utils.MeanCalculator()
 
+    def get_random_layer(self):
+        """
+        Create a layer with random parameters of same size.
+
+        Args:
+            None
+
+        Returns:
+            BernoulliLayer
+
+        """
+        lay = BernoulliLayer(self.len)
+        lay.params.loc[:] = 0.01*(be.rand_like(lay.params.loc) * 2.0 - 1.0)
+        return lay
+
     #
     # Methods for saving and reading layers
     #
