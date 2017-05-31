@@ -2,6 +2,7 @@ import os, sys
 from collections import OrderedDict, namedtuple
 import pandas
 import math
+import numpy
 
 from . import penalties
 from . import constraints
@@ -967,6 +968,25 @@ class GaussianLayer(Layer):
                 a_min=epsilon, a_max=be.float_scalar(1-epsilon)),
                 be.clip(be.rand((self.len,)),
                 a_min=epsilon, a_max=be.float_scalar(1-epsilon)))
+
+    def clip_magnetization(self, magnetization, min_mean=-numpy.inf,
+                           max_mean=numpy.inf, min_var=1e-6, max_var=numpy.inf):
+        """
+        Clip the mean of the CumulantsTAP object.
+
+        Args:
+            magnetization (CumulantsTAP) to clip
+            min_mean (float): the minimum value of mean
+            max_mean (float): the maximum value of mean
+            min_var (float): the minimum value of variance
+            max_var (float): the maximum value of variance
+
+        Returns:
+            clipped magnetization (CumulantsTAP)
+
+        """
+        return CumulantsTAP(be.clip(magnetization.mean, a_min=min_mean, a_max=max_mean),
+                            be.clip(magnetization.variance, a_min=min_var, a_max=max_var))
 
     def log_partition_function(self, B, A):
         """
