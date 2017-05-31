@@ -94,18 +94,18 @@ class State(object):
 class StateTAP(object):
     """
     A StateTAP is a list of CumulantsTAP objects for each layer in the model.
-    
+
     """
     def __init__(self, cumulants):
         """
         Create a StateTAP.
-        
+
         Args:
             cumulants: list of CumulantsTAP objects
-            
+
         Returns:
             StateTAP
-        
+
         """
         self.cumulants = cumulants
         self.len = len(self.cumulants)
@@ -150,7 +150,7 @@ class StateTAP(object):
             StateTAP object
 
         """
-        return cls([layer.get_random_magnetization() for layer in model.layers])    
+        return cls([layer.get_random_magnetization() for layer in model.layers])
 
 
 
@@ -193,7 +193,7 @@ class Model(object):
         ]
 
     #
-    # Methods for saving and loading models. 
+    # Methods for saving and loading models.
     #
 
     def get_config(self) -> dict:
@@ -354,8 +354,8 @@ class Model(object):
                             for j in self.weight_connections[i]]
 
     #
-    # Methods for sampling and sample based training 
-    # 
+    # Methods for sampling and sample based training
+    #
 
     def initialize(self, data, method: str='hinton') -> None:
         """
@@ -620,8 +620,8 @@ class Model(object):
         """
         total = 0
 
-        lagrange = [self.layers[l].lagrange_multiplers(state.cumulants[l]) 
-                    for l in range(self.num_layers)] 
+        lagrange = [self.layers[l].lagrange_multiplers(state.cumulants[l])
+                    for l in range(self.num_layers)]
 
         for index in range(self.num_layers):
             lay = self.layers[index]
@@ -637,7 +637,7 @@ class Model(object):
 
     def compute_StateTAP(self, init_lr=0.1, tol=1e-7, max_iters=50):
         """
-        Compute the state of the layers by minimizing the second order TAP 
+        Compute the state of the layers by minimizing the second order TAP
         approximation to the Helmholtz free energy.
 
         If the energy is,
@@ -697,17 +697,19 @@ class Model(object):
 
             # take a gradient step to compute a new state
             new_state = StateTAP([
-            self.layers[l].clip_magnetization(be.mapzip(be.subtract, grad[l], state.cumulants[l])) 
-            for l in range(self.num_layers)])
+                self.layers[l].clip_magnetization(
+                    be.mapzip(be.subtract, grad[l], state.cumulants[l])
+                )
+                for l in range(self.num_layers)])
             # compute the new free energy and perform an update
             new_free_energy = self.gibbs_free_energy(new_state)
-            if (free_energy - new_free_energy < 0):
+            if free_energy - new_free_energy < 0:
                 # the step was too large, halve the learning rate
                 lr *= decrease
                 lr_ = partial(be.tmul_, be.float_scalar(lr))
-                if (lr < 1e-10):
+                if lr < 1e-10:
                     break
-            elif (free_energy - new_free_energy < tol):
+            elif free_energy - new_free_energy < tol:
                 break
             else:
                 state = new_state
@@ -724,14 +726,14 @@ class Model(object):
 
         Returns:
             list (list of gradient magnetization objects for each layer)
-            
+
         """
         grad = [None for lay in self.layers]
         for i in range(self.num_layers):
             grad[i] = self.layers[i].TAP_magnetization_grad(
                     state.cumulants[i],
                     [state.cumulants[j] for j in self.layer_connections[i]],
-                    [self.weights[j].W() if j < i else self.weights[j].W_T() 
+                    [self.weights[j].W() if j < i else self.weights[j].W_T()
                     for j in self.weight_connections[i]]
                     )
         return grad
@@ -749,7 +751,7 @@ class Model(object):
         """
         grad_GFE = gu.Gradient(
             [self.layers[l].GFE_derivatives(state.cumulants[l]) for l in range(self.num_layers)],
-            [self.weights[w].GFE_derivatives(state.cumulants[w], state.cumulants[w+1]) 
+            [self.weights[w].GFE_derivatives(state.cumulants[w], state.cumulants[w+1])
             for w in range(self.num_layers-1)]
             )
 
@@ -757,16 +759,16 @@ class Model(object):
 
     def grad_TAP_free_energy(self, init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
-        Compute the gradient of the Helmholtz free engergy of the model according 
+        Compute the gradient of the Helmholtz free engergy of the model according
         to the TAP expansion around infinite temperature.
 
-        This function will use the class members which specify the parameters for 
+        This function will use the class members which specify the parameters for
         the Gibbs FE minimization.
-        The gradients are taken as the average over the gradients computed at 
+        The gradients are taken as the average over the gradients computed at
         each of the minimial magnetizations for the Gibbs FE.
 
         Args:
-            init_lr float: initial learning rate which is halved whenever necessary 
+            init_lr float: initial learning rate which is halved whenever necessary
             to enforce descent.
             tol float: tolerance for quitting minimization.
             max_iters int: maximum gradient decsent steps

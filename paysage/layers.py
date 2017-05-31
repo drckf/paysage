@@ -14,8 +14,10 @@ CumulantsTAP = namedtuple("CumulantsTAP", ["mean", "variance"])
 ParamsLayer = namedtuple("Params", [])
 
 class Layer(object):
-    """A general layer class with common functionality."""
+    """
+    A general layer class with common functionality.
 
+    """
     def __init__(self, *args, **kwargs):
         """
         Basic layer initialization method.
@@ -244,8 +246,10 @@ class Layer(object):
 ParamsWeights = namedtuple("ParamsWeights", ["matrix"])
 
 class Weights(Layer):
-    """Layer class for weights"""
+    """
+    Layer class for weights.
 
+    """
     def __init__(self, shape):
         """
         Create a weight layer.
@@ -358,8 +362,8 @@ class Weights(Layer):
         Gradient of the Gibbs free energy associated with this layer
 
         Args:
-            vis (CumulantsTAP): magnetization of the lower layer linked to w
-            hid (CumulantsTAP): magnetization of the upper layer linked to w
+            vis (CumulantsTAP): magnetization of the shallower layer linked to w
+            hid (CumulantsTAP): magnetization of the deeper layer linked to w
 
         Returns:
             derivs (namedtuple): 'matrix': tensor (contains gradient)
@@ -389,8 +393,10 @@ class Weights(Layer):
 ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
 
 class BernoulliLayer(Layer):
-    """Layer with Bernoulli units (i.e., 0 or +1)."""
+    """
+    Layer with Bernoulli units (i.e., 0 or +1).
 
+    """
     def __init__(self, num_units):
         """
         Create a layer with Bernoulli units.
@@ -448,20 +454,20 @@ class BernoulliLayer(Layer):
             layer.add_constraint({k: getattr(constraints, v)})
         return layer
 
-    # 
+    #
     # Methods for the TAP approximation
-    # 
+    #
 
     def get_magnetization(self, mean):
         """
         Compute a CumulantsTAP object for the BernoulliLayer.
-        
+
         Args:
             expect (tensor (num_units,)): expected values of the units
-            
+
         returns:
             CumulantsTAP
-        
+
         """
         return CumulantsTAP(mean, mean - be.square(mean))
 
@@ -489,25 +495,25 @@ class BernoulliLayer(Layer):
             BernoulliMagnetization
 
         """
-        return self.get_magnetization(be.clip(be.rand((self.len,)), 
+        return self.get_magnetization(be.clip(be.rand((self.len,)),
                 a_min=epsilon, a_max=be.float_scalar(1-epsilon)))
-        
-    def clip_magnetization(self, magnetization, a_min=be.float_scalar(1e-6), 
+
+    def clip_magnetization(self, magnetization, a_min=be.float_scalar(1e-6),
                            a_max=be.float_scalar(1 - 1e-6)):
         """
         Clip the mean of the mean of a CumulantsTAP object.
-        
+
         Args:
             magnetization (CumulantsTAP) to clip
             a_min (float): the minimum value
             a_max (float): the maximum value
-            
+
         Returns:
             clipped magnetization (CumulantsTAP)
-        
+
         """
         tmp = be.clip(magnetization.mean,  a_min=a_min, a_max=a_max)
-        return self.get_magnetization(tmp)        
+        return self.get_magnetization(tmp)
 
     def log_partition_function(self, external_field, quadratic_field):
         """
@@ -552,7 +558,7 @@ class BernoulliLayer(Layer):
         """
         tmp = be.expit(be.add(be.unsqueeze(self.params.loc,0), be.subtract(quadratic_field, external_field)))
         return ParamsBernoulli(be.mean(tmp, axis=0))
-    
+
     def lagrange_multiplers(self, cumulants):
         """
         The Lagrange multipliers associated with the first and second
@@ -596,21 +602,21 @@ class BernoulliLayer(Layer):
 
         Return:
             gradient of GFE w.r.t. magnetization (CumulantsTAP)
-        
+
         """
         mean = be.logit(vis.mean) - self.params.loc
         variance = be.zeros_like(mean)
-        
+
         for l in range(len(hid)):
             # let len(mean) = N and len(hid[l].mean) = N_l
             # weights[l] is a matrix of shape (N_l, N)
             w_l = weights[l]
             w2_l = be.square(w_l)
-            
+
             mean -= be.dot(hid[l].mean, w_l) + \
                     be.multiply(be.dot(hid[l].variance, w2_l), 0.5 - vis.mean)
 
-        return CumulantsTAP(mean, variance)                     
+        return CumulantsTAP(mean, variance)
 
     def GFE_derivatives(self, cumulants):
         """
@@ -623,11 +629,11 @@ class BernoulliLayer(Layer):
             gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of GFE
         """
         return ParamsBernoulli(-cumulants.mean)
-    
-    # 
+
+    #
     # Methods for sampling and sample-based training
     #
-    
+
     def energy(self, data):
         """
         Compute the energy of the Bernoulli layer.
@@ -830,8 +836,10 @@ class BernoulliLayer(Layer):
 ParamsGaussian = namedtuple("ParamsGaussian", ["loc", "log_var"])
 
 class GaussianLayer(Layer):
-    """Layer with Gaussian units"""
+    """
+    Layer with Gaussian units.
 
+    """
     def __init__(self, num_units):
         """
         Create a layer with Gaussian units.
@@ -1145,8 +1153,10 @@ class GaussianLayer(Layer):
 ParamsIsing = namedtuple("ParamsIsing", ["loc"])
 
 class IsingLayer(Layer):
-    """Layer with Ising units (i.e., -1 or +1)."""
+    """
+    Layer with Ising units (i.e., -1 or +1).
 
+    """
     def __init__(self, num_units):
         """
         Create a layer with Ising units.
@@ -1450,8 +1460,10 @@ class IsingLayer(Layer):
 ParamsExponential = namedtuple("ParamsExponential", ["loc"])
 
 class ExponentialLayer(Layer):
-    """Layer with Exponential units (non-negative)."""
+    """
+    Layer with Exponential units (non-negative).
 
+    """
     def __init__(self, num_units):
         """
         Create a layer with Exponential units.
