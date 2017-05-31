@@ -92,7 +92,10 @@ class State(object):
         return copy.deepcopy(state)
 
 class StateTAP(object):
-    """A TAPState is a list of CumulantsTAP objects for each layer in the model."""
+    """
+    A StateTAP is a list of CumulantsTAP objects for each layer in the model.
+    
+    """
     def __init__(self, cumulants):
         """
         Create a StateTAP.
@@ -124,10 +127,10 @@ class StateTAP(object):
     @classmethod
     def from_model(cls, model):
         """
-        Create a StateTAP object from an existing StateTAP.
+        Create a StateTAP object from a model.
 
         Args:
-            state (StateTAP): a StateTAP instance
+            model (Model): a Model instance
 
         Returns:
             StateTAP object
@@ -138,10 +141,10 @@ class StateTAP(object):
     @classmethod
     def from_model_rand(cls, model):
         """
-        Create a StateTAP object from an existing StateTAP.
+        Create a StateTAP object from a model.
 
         Args:
-            state (StateTAP): a StateTAP instance
+            model (Model): a Model instance
 
         Returns:
             StateTAP object
