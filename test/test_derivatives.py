@@ -847,5 +847,35 @@ def test_gaussian_TAP_entropy_derivatives():
             else:
                 break
 
+def test_gaussian_TAP_entropy_magnetization_grad():
+    num_units = 100
+    for q in range(1000):
+        lay = layers.GaussianLayer(num_units)
+        lay = lay.get_random_layer()
+        mag = lay.get_random_magnetization()
+        lagrange = lay.lagrange_multipliers(mag)
+        entropy = lay.TAP_entropy(lagrange, mag)
+        grad = lay._TAP_entropy_magnetization_grad(mag)
+        lr = 0.01
+        gogogo = True
+        while gogogo:
+            cop = deepcopy(mag)
+
+            cop.mean[:] = mag.mean + lr * grad.mean
+            cop.variance[:] = mag.variance + lr * grad.variance
+
+            entropy_next = lay.TAP_entropy(lay.lagrange_multipliers(cop), cop)
+            regress = entropy_next - entropy < 0.0
+            if regress:
+                if lr < 1e-6:
+                    assert False, \
+                    "gaussian TAP entropy magnetization gradient function is wrong"
+                    break
+                else:
+                    lr *= 0.5
+
+            else:
+                break
+
 if __name__ == "__main__":
     pytest.main([__file__])
