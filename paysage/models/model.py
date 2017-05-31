@@ -659,7 +659,7 @@ class Model(object):
             float: Gibbs free energy
         """
         total = 0
-        lagrange = [self.layers[l].lagrange_multiplers(state.cumulants[l])
+        lagrange = [self.layers[l].lagrange_multipliers(state.cumulants[l])
                     for l in range(self.num_layers)]
 
         for index in range(self.num_layers):

@@ -568,7 +568,7 @@ class BernoulliLayer(Layer):
         tmp = be.expit(be.add(be.unsqueeze(self.params.loc,0), be.subtract(quadratic_field, external_field)))
         return ParamsBernoulli(be.mean(tmp, axis=0))
 
-    def lagrange_multiplers(self, cumulants):
+    def lagrange_multipliers(self, cumulants):
         """
         The Lagrange multipliers associated with the first and second
         cumulants of the units.
@@ -1088,7 +1088,7 @@ class GaussianLayer(Layer):
         clipd = be.clip(be.multiply(mag.variance, scale), a_min=1e-6)
         return 0.5 * be.divide(clipd, be.subtract(scale, mag.variance))
 
-    def lagrange_multiplers(self, cumulants):
+    def lagrange_multipliers(self, cumulants):
         """
         The Lagrange multipliers associated with the first and second
         cumulants of the units.
