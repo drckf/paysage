@@ -564,6 +564,47 @@ class Model(object):
 
         return grad
 
+    def parameter_update(self, deltas):
+        """
+        Update the model parameters.
+
+        Notes:
+            Modifies the model parameters in place.
+
+        Args:
+            deltas (Gradient)
+
+        Returns:
+            None
+
+        """
+        for i in range(self.num_layers):
+            self.layers[i].parameter_step(deltas.layers[i])
+        for i in range(self.num_layers - 1):
+            self.weights[i].parameter_step(deltas.weights[i])
+
+    def joint_energy(self, data):
+        """
+        Compute the joint energy of the model based on a state.
+
+        Args:
+            data (State object): the current state of each layer
+
+        Returns:
+            tensor (num_samples,): Joint energies.
+
+        """
+        energy = 0
+        for i in range(self.num_layers - 1):
+            energy += self.layers[i].energy(data.units[i])
+            energy += self.layers[i+1].energy(data.units[i+1])
+            energy += self.weights[i].energy(data.units[i], data.units[i+1])
+        return energy
+
+    #
+    # Methods for training with the TAP approximation
+    #
+
     def TAP_gradient(self, data_state, init_lr_EMF, tolerance_EMF, max_iters_EMF):
         """
         Gradient of -\ln P(v) with respect to the model parameters
@@ -607,46 +648,18 @@ class Model(object):
         return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
 
 
-    def parameter_update(self, deltas):
+    def clip_inplace_StateTAP(self, state):
         """
-        Update the model parameters.
-
-        Notes:
-            Modifies the model parameters in place.
+        Clips the StateTAP magnetizations according to their given layers' specifications
 
         Args:
-            deltas (Gradient)
+            state (StateTAP): cumulants of the layers
 
         Returns:
             None
-
         """
         for i in range(self.num_layers):
-            self.layers[i].parameter_step(deltas.layers[i])
-        for i in range(self.num_layers - 1):
-            self.weights[i].parameter_step(deltas.weights[i])
-
-    def joint_energy(self, data):
-        """
-        Compute the joint energy of the model based on a state.
-
-        Args:
-            data (State object): the current state of each layer
-
-        Returns:
-            tensor (num_samples,): Joint energies.
-
-        """
-        energy = 0
-        for i in range(self.num_layers - 1):
-            energy += self.layers[i].energy(data.units[i])
-            energy += self.layers[i+1].energy(data.units[i+1])
-            energy += self.weights[i].energy(data.units[i], data.units[i+1])
-        return energy
-
-    #
-    # Methods for training with the TAP approximation
-    #
+            state.cumulants[i] = self.layers[i].clip_magnetization(state.cumulants[i])
 
     def gibbs_free_energy(self, state):
         """
@@ -723,6 +736,7 @@ class Model(object):
 
         # generate random sample in domain to use as a starting location for gradient descent
         state = StateTAP.from_model_rand(self)
+        self.clip_inplace_StateTAP(state)
 
         free_energy = self.gibbs_free_energy(state)
         lr = init_lr
