@@ -625,7 +625,7 @@ class BernoulliLayer(Layer):
             mean -= be.dot(hid[l].mean, w_l) + \
                     be.multiply(be.dot(hid[l].variance, w2_l), 0.5 - vis.mean)
 
-        return CumulantsTAP(mean, variance)                     
+        return CumulantsTAP(mean, variance)
 
     def TAP_entropy_derivatives(self, cumulants):
         """
@@ -1118,20 +1118,20 @@ class GaussianLayer(Layer):
                 be.dot(lagrange.mean, cumulants.mean) + \
                 be.dot(lagrange.variance, be.square(cumulants.mean) + cumulants.variance)
 
-    def _grad_magnetization_GFE(self, mag):
+    def _TAP_entropy_magnetization_grad(self, mag):
         """
-        Gradient of the Gibbs free energy with respect to the magnetization
+        Gradient of the TAP-0 entropy term with respect to the magnetization
         associated strictly with this layer
 
         Args:
             mag (magnetization object): magnetization of the layer
 
         Return:
-            gradient magnetization (GradientMagnetizationGaussian):
-                 gradient of GFE on this layer
+            gradient of entropy term w.r.t. magnetization (CumulantsTAP)
+
         """
-        a = mag.expectation()
-        c = mag.variance()
+        a = mag.mean
+        c = mag.variance
         u = self.params.loc
         s = be.exp(self.params.log_var)
         ss = be.square(s)
@@ -1139,10 +1139,11 @@ class GaussianLayer(Layer):
         aa = be.square(a)
         cc = be.square(c)
         uu = be.square(u)
+        f = s - 2.0*c
         expectation_deriv = be.divide(c,2.0*a) + be.divide(s, a - u) + be.divide(f,2.0*a)
         variance_deriv = -be.divide(cc, 0.5*(aa + c)) + be.divide(s,0.5*be.ones_like(s)) +\
                           2.0*be.divide(be.square(f),aa) - be.divide(f,be.ones_like(a))
-        return GradientMagnetizationGaussian(expectation_deriv, variance_deriv)
+        return CumulantsTAP(expectation_deriv, variance_deriv)
 
     def TAP_magnetization_grad(self, vis, hid, weights):
         """
@@ -1159,8 +1160,7 @@ class GaussianLayer(Layer):
             gradient of GFE w.r.t. magnetization (CumulantsTAP)
 
         """
-        mean = be.logit(vis.mean) - self.params.loc
-        variance = be.zeros_like(mean)
+        grad = self._TAP_entropy_magnetization_grad(vis)
 
         for l in range(len(hid)):
             # let len(mean) = N and len(hid[l].mean) = N_l
@@ -1168,10 +1168,10 @@ class GaussianLayer(Layer):
             w_l = weights[l]
             w2_l = be.square(w_l)
 
-            mean -= be.dot(hid[l].mean, w_l)
-            variance -= be.dot(hid[l].variance, w2_l)
+            grad.mean[:] -= be.dot(hid[l].mean, w_l)
+            grad.variance[:] -= be.dot(hid[l].variance, w2_l)
 
-        return CumulantsTAP(mean, variance)
+        return grad
 
     def TAP_entropy_derivatives(self, mag):
         """
