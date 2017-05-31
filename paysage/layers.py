@@ -1055,8 +1055,8 @@ class GaussianLayer(Layer):
 
         """
         scale = be.exp(self.params.log_var)
-        return be.divide(be.multiply(mag.variance, scale),
-                                be.subtract(be.multiply(mag.variance, self.params.loc),
+        clipd = be.clip(be.multiply(mag.variance, scale), a_min=1e-6)
+        return be.divide(clipd, be.subtract(be.multiply(mag.variance, self.params.loc),
                                             be.multiply(mag.mean, scale)))
 
     def _lagrange_multipliers_variance(self, mag):
@@ -1070,8 +1070,8 @@ class GaussianLayer(Layer):
             lagrange multipler (tensor (num_units))
         """
         scale = be.exp(self.params.log_var)
-        return 0.5 * be.divide(be.multiply(mag.variance, scale),
-                               be.subtract(scale, mag.variance))
+        clipd = be.clip(be.multiply(mag.variance, scale), a_min=1e-6)
+        return 0.5 * be.divide(clipd, be.subtract(scale, mag.variance))
 
     def lagrange_multiplers(self, cumulants):
         """
