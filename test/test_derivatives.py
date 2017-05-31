@@ -737,7 +737,6 @@ def test_bernoulli_log_partition_gradient():
         cop.params.log_var[:] = lay.params.log_var + lr * grad.log_var
         logZ_next = be.mean(cop.log_partition_function(A,B), axis=0)
         regress = logZ_next - logZ < 0.0
-        #print(logZ_next - logZ)
         if True in regress:
             if lr < 1e-6:
                 assert False, \
@@ -745,6 +744,45 @@ def test_bernoulli_log_partition_gradient():
                 break
             else:
                 lr *= 0.5
+        else:
+            break
+
+def test_gaussian_grad_gibbs_free_energy():
+    num_units = 20
+    layer_1 = layers.GaussianLayer(num_units)
+    layer_2 = layers.GaussianLayer(num_units)
+    layer_3 = layers.GaussianLayer(num_units)
+
+    rbm = model.Model([layer_1, layer_2, layer_3])
+    for i in range(len(rbm.weights)):
+        rbm.weights[i].params.matrix[:] = \
+        0.01 * be.randn(rbm.weights[i].shape)
+
+    for lay in rbm.layers:
+        lay = lay.get_random_layer()
+
+    mag = model.StateTAP.from_model_rand(rbm)
+    GFE = rbm.gibbs_free_energy(mag)
+
+    lr = 0.1
+    gogogo = True
+    grad = rbm._grad_gibbs_free_energy(mag)
+    while gogogo:
+        cop = deepcopy(rbm)
+        lr_mul = partial(be.tmul, lr)
+        for i in range(rbm.num_layers):
+            cop.layers[i].params = be.mapzip(be.add, rbm.layers[i].params, be.apply(lr_mul, grad.layers[i]))
+
+        GFE_next = cop.gibbs_free_energy(mag)
+        regress = GFE_next - GFE < 0.0
+        if regress:
+            if lr < 1e-6:
+                assert False, \
+                "gradient of gaussian GFE function is wrong"
+                break
+            else:
+                lr *= 0.5
+
         else:
             break
 
