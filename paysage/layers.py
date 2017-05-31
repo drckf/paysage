@@ -399,7 +399,7 @@ class BernoulliLayer(Layer):
             num_units (int): the size of the layer
 
         Returns:
-            bernoulli layer
+            Bernoulli layer
 
         """
         super().__init__()
@@ -421,7 +421,7 @@ class BernoulliLayer(Layer):
             None:
 
         Returns:
-            configuratiom (dict):
+            configuration (dict):
 
         """
         base_config = self.get_base_config()
@@ -840,7 +840,7 @@ class GaussianLayer(Layer):
             num_units (int): the size of the layer
 
         Returns:
-            gaussian layer
+            Gaussian layer
 
         """
         super().__init__()
@@ -1199,7 +1199,7 @@ class IsingLayer(Layer):
             None:
 
         Returns:
-            configuratiom (dict):
+            configuration (dict):
 
         """
         base_config = self.get_base_config()
@@ -1478,7 +1478,7 @@ class ExponentialLayer(Layer):
             None:
 
         Returns:
-            configuratiom (dict):
+            configuration (dict):
 
         """
         base_config = self.get_base_config()
