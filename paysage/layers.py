@@ -627,9 +627,9 @@ class BernoulliLayer(Layer):
 
         return CumulantsTAP(mean, variance)                     
 
-    def GFE_derivatives(self, cumulants):
+    def TAP_entropy_derivatives(self, cumulants):
         """
-        Gradient of the Gibbs free energy with respect to local field parameters
+        Gradient of the TAP-0 entropy term with respect to local field parameters
 
         Args:
             cumulants (CumulantsTAP object): magnetization of the layer
@@ -1173,15 +1173,15 @@ class GaussianLayer(Layer):
 
         return CumulantsTAP(mean, variance)
 
-    def GFE_derivatives(self, mag):
+    def TAP_entropy_derivatives(self, mag):
         """
-        Gradient of the Gibbs free energy with respect to local field parameters
+        Gradient of the TAP-0 entropy term with respect to local field parameters
 
         Args:
             mag (magnetization object): magnetization of the layer
 
         Returns:
-            gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of GFE
+            gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of entropy term
         """
         a = mag.mean
         c = mag.variance

@@ -764,7 +764,7 @@ class Model(object):
 
         Returns:
             StateTAP object representing the gradient
-            
+
         """
         return StateTAP([
             self.layers[i].TAP_magnetization_grad(
@@ -786,8 +786,8 @@ class Model(object):
             namedtuple (Gradient)
         """
         grad_GFE = gu.Gradient(
-            [self.layers[l].GFE_derivatives(state.cumulants[l]) for l in range(self.num_layers)],
-            [self.weights[w].GFE_derivatives(state.cumulants[w], state.cumulants[w+1]) 
+            [self.layers[l].TAP_entropy_derivatives(state.cumulants[l]) for l in range(self.num_layers)],
+            [self.weights[w].GFE_derivatives(state.cumulants[w], state.cumulants[w+1])
             for w in range(self.num_layers-1)]
             )
 
