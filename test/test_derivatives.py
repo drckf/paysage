@@ -406,6 +406,36 @@ def test_bernoulli_TAP_derivatives():
         else:
             break
 
+def test_bernoulli_TAP_entropy_derivatives():
+    num_units = 100
+    num_passed = 0
+    num_failed = 0
+    for q in range(10):
+        lay = layers.BernoulliLayer(num_units)
+        lay = lay.get_random_layer()
+        mag = lay.get_random_magnetization()
+        lagrange = lay.lagrange_multipliers(mag)
+        entropy = lay.TAP_entropy(lagrange, mag)
+        grad = lay.TAP_entropy_derivatives(mag)
+        lr = 0.01
+        gogogo = True
+        while gogogo:
+            cop = deepcopy(lay)
+            lr_mul = partial(be.tmul, lr)
+            cop.params = be.mapzip(be.add, cop.params, be.apply(lr_mul, grad))
+            entropy_next = cop.TAP_entropy(cop.lagrange_multipliers(mag), mag)
+            regress = entropy_next - entropy < 0.0
+            if regress:
+                if lr < 1e-6:
+                    assert False, \
+                    "Bernoulli TAP entropy derivatives function is wrong"
+                    break
+                else:
+                    lr *= 0.5
+
+            else:
+                break
+
 
 def test_ising_conditional_params():
     num_visible_units = 100
@@ -786,6 +816,36 @@ def test_gaussian_log_partition_gradient():
                 lr *= 0.5
         else:
             break
+
+def test_gaussian_TAP_entropy_derivatives():
+    num_units = 100
+    num_passed = 0
+    num_failed = 0
+    for q in range(10):
+        lay = layers.GaussianLayer(num_units)
+        lay = lay.get_random_layer()
+        mag = lay.get_random_magnetization()
+        lagrange = lay.lagrange_multipliers(mag)
+        entropy = lay.TAP_entropy(lagrange, mag)
+        grad = lay.TAP_entropy_derivatives(mag)
+        lr = 0.01
+        gogogo = True
+        while gogogo:
+            cop = deepcopy(lay)
+            lr_mul = partial(be.tmul, lr)
+            cop.params = be.mapzip(be.add, cop.params, be.apply(lr_mul, grad))
+            entropy_next = cop.TAP_entropy(cop.lagrange_multipliers(mag), mag)
+            regress = entropy_next - entropy < 0.0
+            if regress:
+                if lr < 1e-6:
+                    assert False, \
+                    "gaussian TAP entropy derivatives function is wrong"
+                    break
+                else:
+                    lr *= 0.5
+
+            else:
+                break
 
 if __name__ == "__main__":
     pytest.main([__file__])
