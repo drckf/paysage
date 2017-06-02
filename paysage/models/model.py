@@ -172,18 +172,17 @@ class Model(object):
         sampled_layers = self.graph.get_sampled()
 
         # define the two sampling sets to alternate between
-        layer_set_A = range(1, self.num_layers, 2)
-        layer_set_B = range(0, self.num_layers, 2)
+        layer_set_A = [i for i in range(1, self.num_layers, 2) if i in sampled_layers]
+        layer_set_B = [i for i in range(0, self.num_layers, 2) if i in sampled_layers]
 
         # update the odd then the even layers
         for layer_set in [layer_set_A, layer_set_B]:
             for i in layer_set:
-                if i in sampled_layers:
-                    func = getattr(self.layers[i], func_name)
-                    updated_state.units[i] = func(
-                        self._connected_rescaled_units(i, updated_state),
-                        self._connected_weights(i),
-                        beta)
+                func = getattr(self.layers[i], func_name)
+                updated_state.units[i] = func(
+                    self._connected_rescaled_units(i, updated_state),
+                    self._connected_weights(i),
+                    beta)
 
         return updated_state
 
