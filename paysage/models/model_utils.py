@@ -44,7 +44,7 @@ the weight connections (i.e., the "edge list") are:
 
 Thoughts:
 
-"Gradient Clampling" seems like a natural thing to put in the layer itself,
+"Gradient Clamping" seems like a natural thing to put in the layer itself,
 because it can be handled easily in the `layer.parameter_step` method.
 
 """
