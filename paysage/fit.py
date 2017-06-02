@@ -493,6 +493,7 @@ def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=
     """
     data_state = State.from_visible(vdata, model)
     sampler.set_positive_state(data_state)
+    model.graph.set_clamped_sampling([0])
     sampler.update_positive_state(positive_steps)
 
     # compute the conditional sampling on all visible-side layers,
