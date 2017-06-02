@@ -1,11 +1,76 @@
 import os
 import pandas
+from cytoolz import partial
+from copy import deepcopy
+from typing import List
 
 from .. import layers
 from .. import backends as be
 from .initialize import init_model as init
 from . import gradient_util as gu
 from . import model_utils as mu
+
+class StateTAP(object):
+    """
+    A StateTAP is a list of CumulantsTAP objects for each layer in the model.
+
+    """
+    def __init__(self, cumulants):
+        """
+        Create a StateTAP.
+
+        Args:
+            cumulants: list of CumulantsTAP objects
+
+        Returns:
+            StateTAP
+
+        """
+        self.cumulants = cumulants
+        self.len = len(self.cumulants)
+
+    @classmethod
+    def from_state(cls, state):
+        """
+        Create a StateTAP object from an existing StateTAP.
+
+        Args:
+            state (StateTAP): a StateTAP instance
+
+        Returns:
+            StateTAP object
+
+        """
+        return copy.deepcopy(state)
+
+    @classmethod
+    def from_model(cls, model):
+        """
+        Create a StateTAP object from a model.
+
+        Args:
+            model (Model): a Model instance
+
+        Returns:
+            StateTAP object
+
+        """
+        return cls([layer.get_zero_magnetization() for layer in model.layers])
+
+    @classmethod
+    def from_model_rand(cls, model):
+        """
+        Create a StateTAP object from a model.
+
+        Args:
+            model (Model): a Model instance
+
+        Returns:
+            StateTAP object
+
+        """
+        return cls([layer.get_random_magnetization() for layer in model.layers])
+
 
 
 class Model(object):
@@ -46,6 +111,10 @@ class Model(object):
                         ) for weight_index in self.graph.weight_connections]
         self.num_weights = len(self.weights)
 
+    #
+    # Methods for saving and loading models.
+    #
+
     def get_config(self) -> dict:
         """
         Get a configuration for the model.
@@ -83,6 +152,101 @@ class Model(object):
             layer_list.append(layers.Layer.from_config(ly))
         return cls(layer_list)
 
+    def save(self, store: pandas.HDFStore) -> None:
+        """
+        Save a model to an open HDFStore.
+
+        Notes:
+            Performs an IO operation.
+
+        Args:
+            store (pandas.HDFStore)
+
+        Returns:
+            None
+
+        """
+        # save the config as an attribute
+        config = self.get_config()
+        store.put('model', pandas.DataFrame())
+        store.get_storer('model').attrs.config = config
+        # save the parameters
+        for i in range(self.num_weights):
+            key = os.path.join('weights', 'weights'+str(i))
+            self.weights[i].save_params(store, key)
+        for i in range(self.num_layers):
+            key = os.path.join('layers', 'layers'+str(i))
+            self.layers[i].save_params(store, key)
+
+    @classmethod
+    def from_saved(cls, store: pandas.HDFStore) -> None:
+        """
+        Build a model by reading from an open HDFStore.
+
+        Notes:
+            Performs an IO operation.
+
+        Args:
+            store (pandas.HDFStore)
+
+        Returns:
+            None
+
+        """
+        # create the model from the config
+        config = store.get_storer('model').attrs.config
+        model = cls.from_config(config)
+        # load the weights
+        for i in range(len(model.weights)):
+            key = os.path.join('weights', 'weights'+str(i))
+            model.weights[i].load_params(store, key)
+        # load the layer parameters
+        for i in range(len(model.layers)):
+            key = os.path.join('layers', 'layers'+str(i))
+            model.layers[i].load_params(store, key)
+        return model
+
+    #
+    # Methods that define topology
+    #
+
+    def _connected_rescaled_units(self, i, state):
+        """
+        Helper function to retrieve the rescaled units connected to layer i.
+
+        Args:
+            i (int): the index of the layer of interest
+            state (State): the current state of the units
+
+        Returns:
+            list[tensor]: the rescaled values of the connected units
+
+        """
+        connections = self.graph.layer_connections[i]
+        return [self.layers[conn.layer].rescale(state.units[conn.layer]) \
+                for conn in connections]
+
+    def _connected_weights(self, i):
+        """
+        Helper function to retrieve the values of the weights connecting
+        layer i to its neighbors.
+
+        Args:
+            i (int): the index of the layer of interest
+
+        Returns:
+            list[tensor]: the weights connecting layer i to its neighbros
+
+        """
+        connections = self.graph.layer_connections[i]
+        return [self.weights[conn.weight].W_T() if conn.is_forward \
+                else self.weights[conn.weight].W() \
+                for conn in connections]
+
+    #
+    # Methods for sampling and sample based training
+    #
+
     def initialize(self, data, method: str='hinton') -> None:
         """
         Initialize the parameters of the model.
@@ -118,39 +282,6 @@ class Model(object):
 
         """
         return self.layers[0].random(vis)
-
-    def _connected_rescaled_units(self, i, state):
-        """
-        Helper function to retrieve the rescaled units connected to layer i.
-
-        Args:
-            i (int): the index of the layer of interest
-            state (State): the current state of the units
-
-        Returns:
-            list[tensor]: the rescaled values of the connected units
-
-        """
-        connections = self.graph.layer_connections[i]
-        return [self.layers[conn.layer].rescale(state.units[conn.layer]) \
-                for conn in connections]
-
-    def _connected_weights(self, i):
-        """
-        Helper function to retrieve the values of the weights connecting
-        layer i to its neighbors.
-
-        Args:
-            i (int): the index of the layer of interest
-
-        Returns:
-            list[tensor]: the weights connecting layer i to its neighbros
-
-        """
-        connections = self.graph.layer_connections[i]
-        return [self.weights[conn.weight].W_T() if conn.is_forward \
-                else self.weights[conn.weight].W() \
-                for conn in connections]
 
     def _alternating_update(self, func_name, state, beta=None):
         """
@@ -278,10 +409,7 @@ class Model(object):
             dict: Gradients of the model parameters.
 
         """
-        grad = gu.Gradient(
-            [None for l in self.layers],
-            [None for w in self.weights]
-        )
+        grad = gu.null_grad(self)
 
         # POSITIVE PHASE (using observed)
 
@@ -368,56 +496,218 @@ class Model(object):
             energy += self.weights[weight_index].energy(data.units[iL], data.units[iR])
         return energy
 
-    def save(self, store: pandas.HDFStore) -> None:
-        """
-        Save a model to an open HDFStore.
+    #
+    # Methods for training with the TAP approximation
+    #
 
-        Notes:
-            Performs an IO operation.
+    def gibbs_free_energy(self, state):
+        """
+        Gibbs Free Energy (GFE) according to TAP2 appoximation
 
         Args:
-            store (pandas.HDFStore)
+            state (StateTAP): cumulants of the layers
 
         Returns:
-            None
+            float: Gibbs free energy
+        """
+        total = 0
+
+        lagrange = [self.layers[l].lagrange_multiplers(state.cumulants[l])
+                    for l in range(self.num_layers)]
+
+        for index in range(self.num_layers):
+            lay = self.layers[index]
+            total += lay.TAP_entropy(lagrange[index], state.cumulants[index])
+
+        for index in range(self.num_weights):
+            w = self.weights[index].W()
+            total -= be.quadratic(state.cumulants[index].mean, state.cumulants[index+1].mean, w)
+            total -= 0.5 * be.quadratic(state.cumulants[index].variance,
+                           state.cumulants[index+1].variance, be.square(w))
+
+        return total
+
+    def compute_StateTAP(self, init_lr=0.1, tol=1e-7, max_iters=50):
+        """
+        Compute the state of the layers by minimizing the second order TAP
+        approximation to the Helmholtz free energy.
+
+        If the energy is,
+        '''
+        E(v, h) := -\langle a,v \rangle - \langle b,h \rangle - \langle v,W \cdot h \rangle,
+        '''
+        with Boltzmann probability distribution,
+        '''
+        P(v,h) := Z^{-1} \exp{-E(v,h)},
+        '''
+        and the marginal,
+        '''
+        P(v) := \sum_{h} P(v,h),
+        '''
+        then the Helmholtz free energy is,
+        '''
+        F(v) := - log Z = -log \sum_{v,h} \exp{-E(v,h)}.
+        '''
+        We add an auxiliary local field q, and introduce the inverse temperature
+         variable \beta to define
+        '''
+        \beta F(v;q) := -log\sum_{v,h} \exp{-\beta E(v,h) + \beta \langle q, v \rangle}
+        '''
+        Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q,
+         the Gibbs free energy.
+        The TAP formula is Taylor series of \Gamma in \beta, around \beta=0.
+        Setting \beta=1 and regarding the first two terms of the series as an
+         approximation of \Gamma[m],
+        we can minimize \Gamma in m to obtain an approximation of F(v;q=0) = F(v)
+
+        This implementation uses gradient descent from a random starting location
+         to minimize the function
+
+        Args:
+            init_lr float: initial learning rate
+            tol float: tolerance for quitting minimization.
+            max_iters: maximum gradient decsent steps.
+
+        Returns:
+            state of the layers (StateTAP)
 
         """
-        # save the config as an attribute
-        config = self.get_config()
-        store.put('model', pandas.DataFrame())
-        store.get_storer('model').attrs.config = config
-        # save the parameters
-        for i in range(self.num_weights):
-            key = os.path.join('weights', 'weights'+str(i))
-            self.weights[i].save_params(store, key)
+        decrease = be.float_scalar(0.5)
+
+        # generate random sample in domain to use as a starting location for gradient descent
+        state = StateTAP.from_model_rand(self)
+
+        free_energy = self.gibbs_free_energy(state)
+        lr = init_lr
+        lr_ = partial(be.tmul_, be.float_scalar(lr))
+
+        for _ in range(max_iters):
+            # compute the gradient of the Gibbs Free Energy
+            grad = self._TAP_magnetization_grad(state)
+            for g in grad:
+                be.apply_(lr_, g)
+
+            # take a gradient step to compute a new state
+            new_state = StateTAP([
+                self.layers[l].clip_magnetization(
+                    be.mapzip(be.subtract, grad[l], state.cumulants[l])
+                )
+                for l in range(self.num_layers)])
+            # compute the new free energy and perform an update
+            new_free_energy = self.gibbs_free_energy(new_state)
+            if free_energy - new_free_energy < 0:
+                # the step was too large, halve the learning rate
+                lr *= decrease
+                lr_ = partial(be.tmul_, be.float_scalar(lr))
+                if lr < 1e-10:
+                    break
+            elif free_energy - new_free_energy < tol:
+                break
+            else:
+                state = new_state
+                free_energy = new_free_energy
+
+        return state
+
+    def _TAP_magnetization_grad(self, state):
+        """
+        Gradient of the Gibbs free energy with respect to the magnetization parameters
+
+        Args:
+            state (StateTAP): magnetizations at which to compute the deriviates
+
+        Returns:
+            list (list of gradient magnetization objects for each layer)
+
+        """
+        grad = [None for lay in self.layers]
         for i in range(self.num_layers):
-            key = os.path.join('layers', 'layers'+str(i))
-            self.layers[i].save_params(store, key)
+            grad[i] = self.layers[i].TAP_magnetization_grad(
+                state.cumulants[i],
+                [state.cumulants[conn.layer] for conn in self.graph.layer_connections[i]],
+                self._connected_weights(i)
+            )
+        return grad
 
-    @classmethod
-    def from_saved(cls, store: pandas.HDFStore) -> None:
+    def _grad_gibbs_free_energy(self, state):
         """
-        Build a model by reading from an open HDFStore.
-
-        Notes:
-            Performs an IO operation.
+        Gradient of the Gibbs free energy with respect to the model parameters
 
         Args:
-            store (pandas.HDFStore)
+            state (StateTAP):
+              magnetizations at which to compute the derivatives
 
         Returns:
-            None
+            namedtuple (Gradient)
+        """
+        grad_GFE = gu.Gradient(
+            [self.layers[l].GFE_derivatives(state.cumulants[l]) for l in range(self.num_layers)],
+            [self.weights[w].GFE_derivatives(state.cumulants[w], state.cumulants[w+1])
+            for w in range(self.num_weights)]
+            )
+
+        return grad_GFE
+
+    def grad_TAP_free_energy(self, init_lr_EMF, tolerance_EMF, max_iters_EMF):
+        """
+        Compute the gradient of the Helmholtz free engergy of the model according
+        to the TAP expansion around infinite temperature.
+
+        This function will use the class members which specify the parameters for
+        the Gibbs FE minimization.
+        The gradients are taken as the average over the gradients computed at
+        each of the minimial magnetizations for the Gibbs FE.
+
+        Args:
+            init_lr float: initial learning rate which is halved whenever necessary
+            to enforce descent.
+            tol float: tolerance for quitting minimization.
+            max_iters int: maximum gradient decsent steps
+
+        Returns:
+            namedtuple: (Gradient): containing gradients of the model parameters.
 
         """
-        # create the model from the config
-        config = store.get_storer('model').attrs.config
-        model = cls.from_config(config)
-        # load the weights
-        for i in range(len(model.weights)):
-            key = os.path.join('weights', 'weights'+str(i))
-            model.weights[i].load_params(store, key)
-        # load the layer parameters
-        for i in range(len(model.layers)):
-            key = os.path.join('layers', 'layers'+str(i))
-            model.layers[i].load_params(store, key)
-        return model
+        state = self.compute_StateTAP(init_lr_EMF, tolerance_EMF, max_iters_EMF)
+        return self._grad_gibbs_free_energy(state)
+
+    def TAP_gradient(self, data_state, init_lr, tolerance, max_iters):
+        """
+        Gradient of -\ln P(v) with respect to the model parameters
+
+        Args:
+            data_state (State object): The observed visible units and sampled
+             hidden units.
+            init_lr float: initial learning rate which is halved whenever necessary
+             to enforce descent.
+            tol float: tolerance for quitting minimization.
+            max_iters int: maximum gradient decsent steps
+
+        Returns:
+            Gradient (namedtuple): containing gradients of the model parameters.
+
+        """
+        # compute average grad_F_marginal over the minibatch
+        pos_phase = gu.null_grad(self)
+
+        # compute the postive phase of the gradients of the layer parameters
+        for i in range(self.num_layers):
+            pos_phase.layers[i] = self.layers[i].derivatives(
+                data_state.units[i],
+                self._connected_rescaled_units(i, data_state),
+                self._connected_weights(i)
+            )
+
+        # compute the positive phase of the gradients of the weights
+        for i in range(self.num_weights):
+            iL = self.graph.weight_connections[i][0]
+            iR = self.graph.weight_connections[i][1]
+            pos_phase.weights[i] = self.weights[i].derivatives(
+                self.layers[iL].rescale(data_state.units[iL]),
+                self.layers[iR].rescale(data_state.units[iR]),
+            )
+
+        # compute the gradient of the Helmholtz FE via TAP_gradient
+        neg_phase = self.grad_TAP_free_energy(init_lr, tolerance, max_iters)
+
+        return gu.grad_mapzip(be.subtract, pos_phase, neg_phase)

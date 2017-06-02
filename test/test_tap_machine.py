@@ -3,7 +3,7 @@ import os
 from paysage import backends as be
 from paysage import batch
 from paysage import layers
-from paysage.models import tap_machine
+from paysage.models import model
 from paysage import fit
 from paysage import optimizers
 from paysage import schedules
@@ -44,7 +44,7 @@ def test_tap_machine(paysage_path=None):
     vis_layer = layers.BernoulliLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = tap_machine.TAP_rbm([vis_layer, hid_layer], tolerance_EMF=1e-2, max_iters_EMF=50)
+    rbm = model.Model([vis_layer, hid_layer])
     rbm.initialize(data)
 
     # obtain initial estimate of the reconstruction error
@@ -59,7 +59,9 @@ def test_tap_machine(paysage_path=None):
                               tolerance=1e-3,
                               ascent=True)
 
-    solver = fit.SGD(rbm, data, opt, num_epochs, method=fit.tap, monitor=perf)
+    sampler = fit.SequentialMC(rbm)
+
+    solver = fit.SGD(rbm, data, opt, num_epochs, sampler=sampler, method=fit.tap, monitor=perf)
 
     # fit the model
     print('training with stochastic gradient ascent')

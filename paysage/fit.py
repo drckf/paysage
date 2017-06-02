@@ -463,29 +463,51 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
 # alias
 pcd = persistent_contrastive_divergence
 
-def tap(vdata, model, sampler=None, steps=None):
+def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=1e-4,
+        max_iters_EMF=25):
     """
     Compute the gradient using the Thouless-Anderson-Palmer (TAP)
     mean field approximation.
+
+    Slight modifications on the methods in
 
     Eric W Tramel, Marylou Gabrie, Andre Manoel, Francesco Caltagirone,
     and Florent Krzakala
     "A Deterministic and Generalized Framework for Unsupervised Learning
     with Restricted Boltzmann Machines"
 
-
     Args:
         vdata (tensor): observed visible units
         model: a model object
-        sampler (default to None): not required
-        steps (default to None): not requires
+        sampler: for marginal free energy
+        positive_steps: steps to sample MCMC for positive phase
+
+        TAP free energy computation parameters:
+            init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+            tol float: tolerance for quitting minimization.
+            max_iters: maximum gradient decsent steps
 
     Returns:
-        gradient
+        gradient object
 
     """
     data_state = State.from_visible(vdata, model)
-    return model.gradient(data_state, None)
+    sampler.set_positive_state(data_state)
+    sampler.update_positive_state(positive_steps)
+
+    # compute the conditional sampling on all visible-side layers,
+    # inclusive over hidden-side layers
+    layer_list = range(model.num_layers)
+
+    for i in range(1, len(layer_list) - 1):
+        model.graph.set_clamped_sampling(layer_list[:i])
+        sampler.update_positive_state(positive_steps)
+
+    # make a mean field step to compute the expectation on the last layer
+    model.graph.set_clamped_sampling(layer_list[:-1])
+    grad_data_state = model.mean_field_iteration(1, sampler.pos_state)
+
+    return model.TAP_gradient(grad_data_state, init_lr_EMF, tolerance_EMF, max_iters_EMF)
 
 
 class StochasticGradientDescent(object):

@@ -210,8 +210,7 @@ def mapzip(func, a, b):
 def mapzip_(func_, a, b):
     """
     Applies an in place function over the zip of iterables a and b,
-    storing the result in a. That is,
-    a[i] = func(a[i], b[i]).
+    func(a[i], b[i]).
 
     For example:
 

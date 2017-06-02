@@ -863,6 +863,23 @@ def add(a: T.Tensor, b: T.Tensor) -> T.Tensor:
         return a + b
     else:
         return broadcast(a, b) + b
+    
+def add_(a: T.Tensor, b: T.Tensor) -> None:
+    """
+    Add tensor a to tensor b using broadcasting.
+    
+    Notes:
+        Modifies b in place.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        None
+
+    """
+    ne.evaluate("a + b", out=b)
 
 def subtract(a: T.Tensor, b: T.Tensor) -> T.Tensor:
     """
@@ -881,6 +898,23 @@ def subtract(a: T.Tensor, b: T.Tensor) -> T.Tensor:
         return b - a
     else:
         return b - broadcast(a, b)
+    
+def subtract_(a: T.Tensor, b: T.Tensor) -> None:
+    """
+    Subtract tensor a from tensor b using broadcasting.
+    
+    Notes:
+        Modifies b in place.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        None
+
+    """
+    ne.evaluate("b - a", out=b)
 
 def multiply(a: T.Tensor, b: T.Tensor) -> T.Tensor:
     """
@@ -899,6 +933,23 @@ def multiply(a: T.Tensor, b: T.Tensor) -> T.Tensor:
         return a * b
     else:
         return broadcast(a, b) * b
+    
+def multiply_(a: T.Tensor, b: T.Tensor) -> None:
+    """
+    Multiply tensor b with tensor a using broadcasting.
+    
+    Notes:
+        Modifies b in place.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        None
+
+    """
+    ne.evaluate("a * b", out=b)
 
 def divide(a: T.Tensor, b: T.Tensor) -> T.Tensor:
     """
@@ -917,6 +968,23 @@ def divide(a: T.Tensor, b: T.Tensor) -> T.Tensor:
         return b / a
     else:
         return b / broadcast(a, b)
+    
+def divide_(a: T.Tensor, b: T.Tensor) -> None:
+    """
+    Divide tensor b by tensor a using broadcasting.
+    
+    Notes:
+        Modifies b in place.
+
+    Args:
+        a: A tensor (non-zero)
+        b: A tensor
+
+    Returns:
+        tensor: b / a
+
+    """
+    ne.evaluate("b / a", out=b)
 
 def affine(a: T.Tensor, b: T.Tensor, W: T.Tensor) -> T.Tensor:
     """

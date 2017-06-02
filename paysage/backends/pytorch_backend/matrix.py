@@ -961,6 +961,27 @@ def add(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
         return a + b
     else:
         return broadcast(a, b) + b
+    
+def add_(a: T.FloatTensor, b: T.FloatTensor) -> None:
+    """
+    Add tensor a to tensor b using broadcasting.
+    
+    Notes:
+        Modifies b in place.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        None
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+        b.add_(a)
+    else:
+        b.add_(broadcast(a, b))    
 
 def subtract(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
     """
@@ -979,6 +1000,27 @@ def subtract(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
         return b - a
     else:
         return b - broadcast(a, b)
+    
+def subtract_(a: T.FloatTensor, b: T.FloatTensor) -> None:
+    """
+    Subtract tensor a from tensor b using broadcasting.
+    
+    Notes:
+        Modifies b in place.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        None
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+         b.sub_(a)
+    else:
+         b.sub_(broadcast(a, b))
 
 def multiply(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
     """
@@ -997,6 +1039,27 @@ def multiply(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
         return a * b
     else:
         return broadcast(a, b) * b
+    
+def multiply_(a: T.FloatTensor, b: T.FloatTensor) -> None:
+    """
+    Multiply tensor b with tensor a using broadcasting.
+    
+    Notes:
+        Modifies b in place.
+
+    Args:
+        a: A tensor
+        b: A tensor
+
+    Returns:
+        None
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+        b.mul_(a)
+    else:
+        b.mul_(broadcast(a, b))
 
 def divide(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
     """
@@ -1015,6 +1078,27 @@ def divide(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
         return b / a
     else:
         return b / broadcast(a, b)
+    
+def divide_(a: T.FloatTensor, b: T.FloatTensor) -> None:
+    """
+    Divide tensor b by tensor a using broadcasting.
+    
+    Notes:
+        Modifies b in place.
+
+    Args:
+        a: A tensor (non-zero)
+        b: A tensor
+
+    Returns:
+        None
+
+    """
+    if shape(a) == shape(b):
+        # no broadcasting necessary
+        b.div_(a)
+    else:
+        b.div_(broadcast(a, b))
 
 def affine(a: T.FloatTensor,
            b: T.FloatTensor,

@@ -33,6 +33,19 @@ def rand(shape: T.Tuple[int]) -> T.FloatTensor:
     """
     return torch.rand(shape)
 
+def rand_like(tensor: T.TorchTensor) -> T.FloatTensor:
+    """
+    Generate a tensor of the same shape as the specified tensor
+
+    Args:
+        tensor: tensor with desired shape.
+
+    Returns:
+        tensor: Random numbers between 0 and 1.
+
+    """
+    return torch.rand(tuple(tensor.size()))
+
 def randn(shape: T.Tuple[int]) -> T.FloatTensor:
     """
     Generate a tensor of the specified shape filled with random numbers

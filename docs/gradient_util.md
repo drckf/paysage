@@ -101,3 +101,39 @@ def namedtuple(typename, field_names, verbose=False, rename=False)
 
 Returns a new subclass of tuple with named fields.<br /><br />>>> Point = namedtuple('Point', ['x', 'y'])<br />>>> Point.__doc__ ~  ~  ~  ~    # docstring for the new class<br />'Point(x, y)'<br />>>> p = Point(11, y=22) ~  ~  ~  # instantiate with positional args or keywords<br />>>> p[0] + p[1] ~  ~  ~  ~  ~  # indexable like a plain tuple<br />33<br />>>> x, y = p ~  ~  ~  ~  ~  ~ # unpack like a regular tuple<br />>>> x, y<br />(11, 22)<br />>>> p.x + p.y ~  ~  ~  ~  ~    # fields also accessible by name<br />33<br />>>> d = p._asdict() ~  ~  ~  ~  # convert to a dictionary<br />>>> d['x']<br />11<br />>>> Point(**d) ~  ~  ~  ~  ~   # convert from a dictionary<br />Point(x=11, y=22)<br />>>> p._replace(x=100) ~  ~  ~    # _replace() is like str.replace() but targets named fields<br />Point(x=100, y=22)
 
+
+### null\_grad
+```py
+
+def null_grad(model)
+
+```
+
+
+
+Return a gradient object filled with None.<br /><br />Args:<br /> ~ model: a Model object<br /> ~ <br />Returns:<br /> ~ Gradient
+
+
+### random\_grad
+```py
+
+def random_grad(model)
+
+```
+
+
+
+Return a gradient object filled with random numbers.<br /><br />Args:<br /> ~ model: a Model object<br /> ~ <br />Returns:<br /> ~ Gradient
+
+
+### zero\_grad
+```py
+
+def zero_grad(model)
+
+```
+
+
+
+Return a gradient object filled with zero tensors.<br /><br />Args:<br /> ~ model: a Model object<br /> ~ <br />Returns:<br /> ~ Gradient
+
