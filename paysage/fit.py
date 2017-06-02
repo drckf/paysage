@@ -507,6 +507,9 @@ def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=
     model.graph.set_clamped_sampling(layer_list[:-1])
     grad_data_state = model.mean_field_iteration(1, sampler.pos_state)
 
+    # reset the sampling clamping
+    model.graph.set_clamped_sampling([])
+
     return model.TAP_gradient(grad_data_state, init_lr_EMF, tolerance_EMF, max_iters_EMF)
 
 
@@ -595,7 +598,6 @@ class StochasticGradientDescent(object):
                 break
 
         return None
-
 
     def train_layerwise(self):
         """
