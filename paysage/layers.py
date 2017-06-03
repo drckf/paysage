@@ -1040,11 +1040,11 @@ class GaussianLayer(Layer):
 
     def _grad_s_log_partition_function(self, B, A):
         """
-        Compute the gradient with respect to u_i of the logarithm of the partition function of the layer
+        Compute the gradient with respect to s_i of the logarithm of the partition function of the layer
         with external fields B, A as above.
 
         denom = 1 + 2 s_i^2 A
-        d_log_s_i^2) logZ = (u_i B_i - A_i + 1/2 B_i^2 s_i^2)/denom + 1/(2 denom^2)
+        (d_log_s_i^2) logZ = (u_i B_i - A_i + 1/2 B_i^2 s_i^2)/denom + 1/(2 denom^2)
 
         Args:
             A (tensor (num_samples, num_units)): external field
@@ -1052,6 +1052,7 @@ class GaussianLayer(Layer):
 
         Returns:
             (d_log_s_i^2) logZ (tensor (num_samples, num_units)): gradient of the log partition function
+             with respect to the log variance
 
         """
         scale = be.exp(self.params.log_var)
@@ -1071,7 +1072,7 @@ class GaussianLayer(Layer):
             B (tensor (num_samples, num_units)): diagonal quadratic interaction
 
         Returns:
-            (d_u_i) \oplus (d_s_i) logZ (tensor (num_samples, num_units)): gradient of
+            (d_u_i) \oplus (d_log_s_i) logZ (tensor (num_samples, num_units)): gradient of
              the log partition function
 
         """
@@ -1160,9 +1161,11 @@ class GaussianLayer(Layer):
         cc = be.square(c)
         uu = be.square(u)
         f = s - 2.0*c
-        expectation_deriv = be.divide(c,2.0*a) + be.divide(s, a - u) + be.divide(f,2.0*a)
-        variance_deriv = -be.divide(cc, 0.5*(aa + c)) + be.divide(s,0.5*be.ones_like(s)) +\
-                          2.0*be.divide(be.square(f),aa) - be.divide(f,be.ones_like(a))
+        ff = be.square(f)
+        be.clip_inplace(ff, a_min=1e-6)
+        expectation_deriv = be.divide(c, 2.0*a) + be.divide(s, a - u) + be.divide(f, 2.0*a)
+        variance_deriv = -be.divide(cc, 0.5*(aa + c)) + be.divide(s, 0.5*be.ones_like(s)) +\
+                          2.0*be.divide(ff, aa) - be.divide(f, be.ones_like(a))
         return CumulantsTAP(expectation_deriv, variance_deriv)
 
     def TAP_magnetization_grad(self, vis, hid, weights):
@@ -1195,13 +1198,13 @@ class GaussianLayer(Layer):
 
     def TAP_entropy_derivatives(self, mag):
         """
-        Gradient of the TAP-0 entropy term with respect to local field parameters
+        Gradient of the TAP-0 entropy term with respect to layer parameters
 
         Args:
             mag (magnetization object): magnetization of the layer
 
         Returns:
-            gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of entropy term
+            gradient parameters (ParamsGaussian): gradient w.r.t. layer parameters
         """
         a = mag.mean
         c = mag.variance
@@ -1216,7 +1219,7 @@ class GaussianLayer(Layer):
         ff = be.square(f)
         numer = -4.0*be.multiply(aa,cc) - 4.0*be.multiply(c,cc) + 4.0*be.multiply(aa,be.multiply(c,s)) -\
                  3.0*be.multiply(aa,ss) + be.multiply(c,ss) + 2.0*be.multiply(a,be.multiply(ff,u)) - be.multiply(ff,uu)
-        denom = 2.0*be.multiply(ff,ss)
+        denom = 2.0*be.multiply(ff,s)
         return ParamsGaussian(be.divide(s, be.subtract(a, self.params.loc)),
                               be.divide(denom, numer))
 
