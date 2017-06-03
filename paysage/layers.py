@@ -863,7 +863,7 @@ class GaussianLayer(Layer):
 
         self.len = num_units
         self.rand = be.rand
-        self.params = ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
+        self.params = ParamsGaussian(be.zeros(self.len), 0.01 * be.rand((self.len,)) + 1e-4)
         self.mean_var_calc = math_utils.MeanVarianceCalculator()
 
     def get_random_layer(self):
@@ -1012,6 +1012,9 @@ class GaussianLayer(Layer):
         """
         scale = be.exp(self.params.log_var)
         denom = 1.0 + 2.0 * be.multiply(scale, A)
+        check = be.tabs(denom) < 1e-7
+        if True in check:
+            print("WTF8")
         logZ = be.divide(denom, be.multiply(self.params.loc, B) - \
                be.multiply(be.square(self.params.loc),A) + 0.5 * be.multiply(scale, be.square(B))) + \
                0.5 * be.log(be.divide(denom, be.broadcast(2.0 * math.pi * scale, denom)))
@@ -1035,7 +1038,9 @@ class GaussianLayer(Layer):
 
         scale = be.exp(self.params.log_var)
         denom = 1.0 + 2.0 * be.multiply(scale, A)
-
+        check = be.tabs(denom) < 1e-7
+        if True in check:
+            print("WTF9")
         return be.divide(denom, B - 2.0 * be.multiply(self.params.loc, A))
 
     def _grad_s_log_partition_function(self, B, A):
@@ -1058,6 +1063,9 @@ class GaussianLayer(Layer):
         scale = be.exp(self.params.log_var)
         bc_scale = be.broadcast(scale, B)
         denom = 1.0 + 2.0 * be.multiply(scale, A)
+        check = be.tabs(denom) < 1e-7
+        if True in check:
+            print("WTF10")
         return be.divide(denom, be.multiply(self.params.loc, B) - \
                be.multiply(be.square(self.params.loc),A) + 0.5 * be.multiply(be.square(B), bc_scale)) +\
                0.5 * be.divide(be.square(denom), be.ones_like(B))
@@ -1163,6 +1171,22 @@ class GaussianLayer(Layer):
         f = s - 2.0*c
         ff = be.square(f)
         be.clip_inplace(ff, a_min=1e-6)
+        check = s < 1e-7
+        if True in check:
+            print("WTF1")
+            print(be.tmin(self.params.log_var))
+        check = c < 1e-7
+        if True in check:
+            print("WTF2")
+        check = be.tabs(f) < 1e-7
+        if True in check:
+            print("WTF4")
+        check = cc < 1e-7
+        if True in check:
+            print("WTF5")
+        check = ff < 1e-7
+        if True in check:
+            print("WTF6")
         expectation_deriv = be.divide(c, 2.0*a) + be.divide(s, a - u) + be.divide(f, 2.0*a)
         variance_deriv = -be.divide(cc, 0.5*(aa + c)) + be.divide(s, 0.5*be.ones_like(s)) +\
                           2.0*be.divide(ff, aa) - be.divide(f, be.ones_like(a))
@@ -1220,6 +1244,13 @@ class GaussianLayer(Layer):
         numer = -4.0*be.multiply(aa,cc) - 4.0*be.multiply(c,cc) + 4.0*be.multiply(aa,be.multiply(c,s)) -\
                  3.0*be.multiply(aa,ss) + be.multiply(c,ss) + 2.0*be.multiply(a,be.multiply(ff,u)) - be.multiply(ff,uu)
         denom = 2.0*be.multiply(ff,s)
+        check = s < 1e-7
+        if True in check:
+            print("WTF3")
+        be.clip_inplace(denom, a_min=1e-6)
+        check = denom < 1e-7
+        if True in check:
+            print("WTF7")
         return ParamsGaussian(be.divide(s, be.subtract(a, self.params.loc)),
                               be.divide(denom, numer))
 
