@@ -235,13 +235,29 @@ class Model(object):
             i (int): the index of the layer of interest
 
         Returns:
-            list[tensor]: the weights connecting layer i to its neighbros
+            list[tensor]: the weights connecting layer i to its neighbors
 
         """
         connections = self.graph.layer_connections[i]
         return [self.weights[conn.weight].W_T() if conn.is_forward \
                 else self.weights[conn.weight].W() \
                 for conn in connections]
+
+    def _connected_cumulants(self, i, state):
+        """
+        Helper function to retrieve the cumulants,
+        CumulantsTAP attributes of StateTAP objects.
+
+        Args:
+            i (int): the index of the layer of interest
+            state (StateTAP): the current TAP state of the units
+
+        Returns:
+            list[tensor]: the cumulants of connected layers to the layer.
+
+        """
+        connections = self.graph.layer_connections[i]
+        return [state.cumulants[conn.layer] for conn in connections]
 
     #
     # Methods for sampling and sample based training
@@ -624,7 +640,7 @@ class Model(object):
         for i in range(self.num_layers):
             grad[i] = self.layers[i].TAP_magnetization_grad(
                 state.cumulants[i],
-                [state.cumulants[conn.layer] for conn in self.graph.layer_connections[i]],
+                self._connected_cumulants(i, state),
                 self._connected_weights(i)
             )
         return grad
@@ -641,9 +657,12 @@ class Model(object):
             namedtuple (Gradient)
         """
         grad_GFE = gu.Gradient(
-            [self.layers[l].GFE_derivatives(state.cumulants[l]) for l in range(self.num_layers)],
-            [self.weights[w].GFE_derivatives(state.cumulants[w], state.cumulants[w+1])
-            for w in range(self.num_weights)]
+            [self.layers[i].GFE_derivatives(state.cumulants[i]) for i in range(self.num_layers)],
+            [self.weights[i].GFE_derivatives(
+                state.cumulants[self.graph.weight_connections[i][0]],
+                state.cumulants[self.graph.weight_connections[i][1]],
+                )
+            for i in range(self.num_weights)]
             )
 
         return grad_GFE
