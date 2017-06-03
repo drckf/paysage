@@ -12,10 +12,12 @@ if config['backend'] == 'python':
     from .python_backend.matrix import *
     from .python_backend.nonlinearity import *
     from .python_backend.rand import *
+    from .python_backend.typedef import *
 elif config['backend'] == 'pytorch':
     from .pytorch_backend.matrix import *
     from .pytorch_backend.nonlinearity import *
     from .pytorch_backend.rand import *
+    from .python_backend.typedef import *
 else:
     raise ValueError(
     "Unknown backend {}".format(config['backend'])

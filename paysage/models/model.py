@@ -2,7 +2,7 @@ import os
 import pandas
 from cytoolz import partial
 from copy import deepcopy
-from typing import List
+from typing import List, Optional
 
 from .. import layers
 from .. import backends as be
@@ -30,7 +30,7 @@ class StateTAP(object):
         self.len = len(self.cumulants)
 
     @classmethod
-    def from_state(cls, state):
+    def from_state(cls, state: mu.State) -> mu.State:
         """
         Create a StateTAP object from an existing StateTAP.
 
@@ -86,7 +86,7 @@ class Model(object):
     '''
 
     """
-    def __init__(self, layer_list):
+    def __init__(self, layer_list: List):
         """
         Create a model.
 
@@ -210,7 +210,7 @@ class Model(object):
     # Methods that define topology
     #
 
-    def _connected_rescaled_units(self, i, state):
+    def _connected_rescaled_units(self, i: int, state: mu.State) -> List:
         """
         Helper function to retrieve the rescaled units connected to layer i.
 
@@ -226,7 +226,7 @@ class Model(object):
         return [self.layers[conn.layer].rescale(state.units[conn.layer]) \
                 for conn in connections]
 
-    def _connected_weights(self, i):
+    def _connected_weights(self, i:int) -> List:
         """
         Helper function to retrieve the values of the weights connecting
         layer i to its neighbors.
@@ -243,7 +243,7 @@ class Model(object):
                 else self.weights[conn.weight].W() \
                 for conn in connections]
 
-    def _connected_cumulants(self, i, state):
+    def _connected_cumulants(self, i: int, state: mu.State) -> List:
         """
         Helper function to retrieve the cumulants,
         CumulantsTAP attributes of StateTAP objects.
@@ -299,7 +299,8 @@ class Model(object):
         """
         return self.layers[0].random(vis)
 
-    def _alternating_update(self, func_name, state, beta=None):
+    def _alternating_update(self, func_name: str, state: mu.State,
+                            beta=None) -> mu.State:
         """
         Performs a single Gibbs sampling update in alternating layers.
         state -> new state
@@ -315,25 +316,25 @@ class Model(object):
         """
         updated_state = mu.State.from_state(state)
 
-        # find layers that can be sampled
-        sampled_layers = self.graph.get_sampled()
-
-        # define the two sampling sets to alternate between
-        layer_set_A = [i for i in range(1, self.num_layers, 2) if i in sampled_layers]
-        layer_set_B = [i for i in range(0, self.num_layers, 2) if i in sampled_layers]
+        # define even and odd sampling sets to alternate between, including
+        # only layers that can be sampled
+        (odd_layers, even_layers) = (range(1, self.num_layers, 2),
+                                     range(0, self.num_layers, 2))
+        layer_order = [i for i in list(odd_layers) + list(even_layers)
+                       if i in self.graph.get_sampled()]
 
         # update the odd then the even layers
-        for layer_set in [layer_set_A, layer_set_B]:
-            for i in layer_set:
-                func = getattr(self.layers[i], func_name)
-                updated_state.units[i] = func(
-                    self._connected_rescaled_units(i, updated_state),
-                    self._connected_weights(i),
-                    beta)
+        for i in layer_order:
+            func = getattr(self.layers[i], func_name)
+            updated_state.units[i] = func(
+                self._connected_rescaled_units(i, updated_state),
+                self._connected_weights(i),
+                beta)
 
         return updated_state
 
-    def markov_chain(self, n, state, beta=None) -> mu.State:
+    def markov_chain(self, n: int, state: mu.State,
+                     beta=None) -> mu.State:
         """
         Perform multiple Gibbs sampling steps in alternating layers.
         state -> new state
@@ -359,7 +360,8 @@ class Model(object):
                                                  beta)
         return new_state
 
-    def mean_field_iteration(self, n, state, beta=None):
+    def mean_field_iteration(self, n: int,
+                             state: mu.State, beta=None) -> mu.State:
         """
         Perform multiple mean-field updates in alternating layers
         states -> new state
@@ -385,7 +387,8 @@ class Model(object):
                                                  beta)
         return new_state
 
-    def deterministic_iteration(self, n, state, beta=None):
+    def deterministic_iteration(self, n: int, state: mu.State,
+                                beta=None) -> mu.State:
         """
         Perform multiple deterministic (maximum probability) updates
         in alternating layers.
