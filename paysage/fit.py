@@ -1,9 +1,11 @@
 import time
 from collections import OrderedDict
+from itertools import tee
+
 from . import backends as be
 from . import metrics as M
 from . import schedules
-from .models.model import State
+from .models.model_utils import State
 
 class Sampler(object):
     """Base class for the sequential Monte Carlo samplers"""
@@ -104,7 +106,7 @@ class SequentialMC(Sampler):
         """
         super().__init__(model)
 
-    def update_positive_state(self, steps, clamped=[0]):
+    def update_positive_state(self, steps):
         """
         Update the positive state of the particles.
 
@@ -122,9 +124,9 @@ class SequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
-        self.pos_state = self.updater(steps, self.pos_state, clamped=clamped)
+        self.pos_state = self.updater(steps, self.pos_state)
 
-    def update_negative_state(self, steps, clamped=[]):
+    def update_negative_state(self, steps):
         """
         Update the negative state of the particles.
 
@@ -142,7 +144,7 @@ class SequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
-        self.neg_state = self.updater(steps, self.neg_state, clamped=clamped)
+        self.neg_state = self.updater(steps, self.neg_state)
 
 
 class DrivenSequentialMC(Sampler):
@@ -220,7 +222,7 @@ class DrivenSequentialMC(Sampler):
         """Return beta in the appropriate tensor format."""
         return be.float_tensor(self.beta)
 
-    def update_positive_state(self, steps, clamped=[0]):
+    def update_positive_state(self, steps):
         """
         Update the state of the particles.
 
@@ -238,9 +240,9 @@ class DrivenSequentialMC(Sampler):
             raise AttributeError(
                 'You must call the initialize(self, array_or_shape)'
                 +' method to set the initial state of the Markov Chain')
-        self.pos_state = self.updater(steps, self.pos_state, beta=None, clamped=clamped)
+        self.pos_state = self.updater(steps, self.pos_state, beta=None)
 
-    def update_negative_state(self, steps, clamped=[]):
+    def update_negative_state(self, steps):
         """
         Update the negative state of the particles.
 
@@ -261,7 +263,7 @@ class DrivenSequentialMC(Sampler):
                 +' method to set the initial state of the Markov Chain')
         for _ in range(steps):
             self._update_beta()
-            self.neg_state = self.updater(1, self.neg_state, self._beta(), clamped=clamped)
+            self.neg_state = self.updater(1, self.neg_state, self._beta())
 
 
 class ProgressMonitor(object):
@@ -320,7 +322,7 @@ class ProgressMonitor(object):
             sampler.set_negative_state(model_state)
 
             # update the states
-            sampler.update_positive_state(1, clamped=[])
+            sampler.update_positive_state(1)
             sampler.update_negative_state(self.update_steps)
 
             metric_state = M.MetricState(minibatch=data_state,
@@ -335,7 +337,7 @@ class ProgressMonitor(object):
 
         # compute metric dictionary
         metdict = OrderedDict([(m.name, m.value()) for m in self.metrics])
-                
+
         if show:
             for metric in metdict:
                 print("-{0}: {1:.6f}".format(metric, metdict[metric]))
@@ -361,6 +363,7 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
 
     Notes:
         Modifies the state of the sampler.
+        Modifies the sampling attributes of the model's compute graph.
 
     Args:
         vdata (tensor): observed visible units
@@ -379,20 +382,27 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
     # CD resets the sampler from the visible data at each iteration
     sampler.set_positive_state(data_state)
     sampler.set_negative_state(model_state)
+    model.graph.set_clamped_sampling([0])
     sampler.update_positive_state(steps)
+    model.graph.set_clamped_sampling([])
     sampler.update_negative_state(steps)
 
     # compute the conditional sampling on all visible-side layers,
     # inclusive over hidden-side layers
-    for i in range(1, model.num_layers - 1):
-        clamped_layers = list(range(i))
-        sampler.update_positive_state(steps, clamped=clamped_layers)
-        sampler.update_negative_state(steps, clamped=clamped_layers)
+    layer_list = range(model.num_layers)
+
+    for i in range(1, len(layer_list) - 1):
+        model.graph.set_clamped_sampling(layer_list[:i])
+        sampler.update_positive_state(steps)
+        sampler.update_negative_state(steps)
 
     # make a mean field step to copmute the expectation on the last layer
-    clamped_layers = list(range(model.num_layers - 1))
-    grad_data_state = model.mean_field_iteration(1, sampler.pos_state, clamped=clamped_layers)
-    grad_model_state = model.mean_field_iteration(1, sampler.neg_state, clamped=clamped_layers)
+    model.graph.set_clamped_sampling(layer_list[:-1])
+    grad_data_state = model.mean_field_iteration(1, sampler.pos_state)
+    grad_model_state = model.mean_field_iteration(1, sampler.neg_state)
+
+    # reset the sampling clamping
+    model.graph.set_clamped_sampling([])
 
     # compute the gradient
     return model.gradient(grad_data_state, grad_model_state)
@@ -412,6 +422,7 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
 
     Notes:
         Modifies the state of the sampler.
+        Modifies the sampling attributes of the model's compute graph.
 
     Args:
         vdata (tensor): observed visible units
@@ -431,15 +442,20 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
     # step through the hidden layers, up to the last
     # for each, compute the conditional sampling on all visible-side layers,
     # inclusive over hidden-side layers
-    for i in range(1, model.num_layers - 1):
-        clamped_layers = list(range(i))
-        sampler.update_positive_state(steps, clamped=clamped_layers)
-        sampler.update_negative_state(steps, clamped=clamped_layers)
+    layer_list = range(model.num_layers)
+
+    for i in range(1, len(layer_list) - 1):
+        model.graph.set_clamped_sampling(layer_list[:i])
+        sampler.update_positive_state(steps)
+        sampler.update_negative_state(steps)
 
     # make a mean field step to copmute the expectation on the last layer
-    clamped_layers = list(range(model.num_layers - 1))
-    grad_data_state = model.mean_field_iteration(1, sampler.pos_state, clamped=clamped_layers)
-    grad_model_state = model.mean_field_iteration(1, sampler.neg_state, clamped=clamped_layers)
+    model.graph.set_clamped_sampling(layer_list[:-1])
+    grad_data_state = model.mean_field_iteration(1, sampler.pos_state)
+    grad_model_state = model.mean_field_iteration(1, sampler.neg_state)
+
+    # reset the sampling clamping
+    model.graph.set_clamped_sampling([])
 
     # compute the gradient
     return model.gradient(grad_data_state, grad_model_state)
@@ -477,17 +493,22 @@ def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=
     """
     data_state = State.from_visible(vdata, model)
     sampler.set_positive_state(data_state)
-    sampler.update_positive_state(positive_steps)
 
-    # compute the conditional sampling on all visible-side layers,
+    # step through the hidden layers, up to the last
+    # for each, compute the conditional sampling on all visible-side layers,
     # inclusive over hidden-side layers
-    for i in range(1, model.num_layers - 1):
-        clamped_layers = list(range(i))
-        sampler.update_positive_state(positive_steps, clamped=clamped_layers)
+    layer_list = range(model.num_layers)
+
+    for i in range(1, len(layer_list) - 1):
+        model.graph.set_clamped_sampling(layer_list[:i])
+        sampler.update_positive_state(positive_steps)
 
     # make a mean field step to compute the expectation on the last layer
-    clamped_layers = list(range(model.num_layers - 1))
-    grad_data_state = model.mean_field_iteration(1, sampler.pos_state, clamped=clamped_layers)
+    model.graph.set_clamped_sampling(layer_list[:-1])
+    grad_data_state = model.mean_field_iteration(1, sampler.pos_state)
+
+    # reset the sampling clamping
+    model.graph.set_clamped_sampling([])
 
     return model.TAP_gradient(grad_data_state, init_lr_EMF, tolerance_EMF, max_iters_EMF)
 
@@ -549,8 +570,15 @@ class StochasticGradientDescent(object):
                 except StopIteration:
                     break
 
-                self.optimizer.update(self.model,
-                self.grad_approx(v_data, self.model, self.sampler, self.mcsteps))
+                self.optimizer.update(
+                    self.model,
+                    self.grad_approx(
+                        v_data,
+                        self.model,
+                        self.sampler,
+                        self.mcsteps
+                    )
+                )
 
                 t += 1
 
@@ -570,6 +598,48 @@ class StochasticGradientDescent(object):
                 break
 
         return None
+
+    def train_layerwise(self):
+        """
+        Train the model layerwise.
+
+        Notes:
+            Updates the model parameters in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        # the main loop over layers to train
+        for end_layer in range(2, self.model.num_layers+1):
+            fixed_layer = end_layer - 1 if end_layer > 2 else 0
+            trainable_layers = list(range(fixed_layer, end_layer))
+            if end_layer > 2:
+                trainable_layers = [0] + trainable_layers
+
+            print("~~~~~~~~~~~~~~~~~~~~")
+            print("layerwise training")
+            print(" - training layers: {}".format(list(trainable_layers)))
+            print("~~~~~~~~~~~~~~~~~~~~")
+
+            # fork the learning rate schedule, set one copy
+            lr_schedule, lr_schedule_cache = tee(self.optimizer.stepsize, 2)
+            self.optimizer.stepsize = lr_schedule
+
+            # set the compute graph attributes
+            self.model.graph.set_trainable_layers(trainable_layers)
+
+            # train in this configuration
+            self.train()
+
+            # reset the learning rate schedule
+            self.optimizer.stepsize = lr_schedule_cache
+
+        return None
+
 
 # alias
 sgd = SGD = StochasticGradientDescent

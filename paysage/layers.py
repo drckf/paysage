@@ -16,8 +16,10 @@ CumulantsTAP = namedtuple("CumulantsTAP", ["mean", "variance"])
 ParamsLayer = namedtuple("Params", [])
 
 class Layer(object):
-    """A general layer class with common functionality."""
+    """
+    A general layer class with common functionality.
 
+    """
     def __init__(self, *args, **kwargs):
         """
         Basic layer initialization method.
@@ -246,8 +248,10 @@ class Layer(object):
 ParamsWeights = namedtuple("ParamsWeights", ["matrix"])
 
 class Weights(Layer):
-    """Layer class for weights"""
+    """
+    Layer class for weights.
 
+    """
     def __init__(self, shape):
         """
         Create a weight layer.
@@ -360,8 +364,8 @@ class Weights(Layer):
         Gradient of the Gibbs free energy associated with this layer
 
         Args:
-            vis (CumulantsTAP): magnetization of the lower layer linked to w
-            hid (CumulantsTAP): magnetization of the upper layer linked to w
+            vis (CumulantsTAP): magnetization of the shallower layer linked to w
+            hid (CumulantsTAP): magnetization of the deeper layer linked to w
 
         Returns:
             derivs (namedtuple): 'matrix': tensor (contains gradient)
@@ -391,8 +395,10 @@ class Weights(Layer):
 ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
 
 class BernoulliLayer(Layer):
-    """Layer with Bernoulli units (i.e., 0 or +1)."""
+    """
+    Layer with Bernoulli units (i.e., 0 or +1).
 
+    """
     def __init__(self, num_units):
         """
         Create a layer with Bernoulli units.
@@ -401,7 +407,7 @@ class BernoulliLayer(Layer):
             num_units (int): the size of the layer
 
         Returns:
-            bernoulli layer
+            Bernoulli layer
 
         """
         super().__init__()
@@ -438,7 +444,7 @@ class BernoulliLayer(Layer):
             None:
 
         Returns:
-            configuratiom (dict):
+            configuration (dict):
 
         """
         base_config = self.get_base_config()
@@ -612,7 +618,7 @@ class BernoulliLayer(Layer):
 
         Return:
             gradient of GFE w.r.t. magnetization (CumulantsTAP)
-        
+
         """
         mean = be.logit(vis.mean) - self.params.loc
         variance = be.zeros_like(mean)
@@ -846,8 +852,10 @@ class BernoulliLayer(Layer):
 ParamsGaussian = namedtuple("ParamsGaussian", ["loc", "log_var"])
 
 class GaussianLayer(Layer):
-    """Layer with Gaussian units"""
+    """
+    Layer with Gaussian units.
 
+    """
     def __init__(self, num_units):
         """
         Create a layer with Gaussian units.
@@ -856,7 +864,7 @@ class GaussianLayer(Layer):
             num_units (int): the size of the layer
 
         Returns:
-            gaussian layer
+            Gaussian layer
 
         """
         super().__init__()
@@ -1469,8 +1477,10 @@ class GaussianLayer(Layer):
 ParamsIsing = namedtuple("ParamsIsing", ["loc"])
 
 class IsingLayer(Layer):
-    """Layer with Ising units (i.e., -1 or +1)."""
+    """
+    Layer with Ising units (i.e., -1 or +1).
 
+    """
     def __init__(self, num_units):
         """
         Create a layer with Ising units.
@@ -1497,7 +1507,7 @@ class IsingLayer(Layer):
             None:
 
         Returns:
-            configuratiom (dict):
+            configuration (dict):
 
         """
         base_config = self.get_base_config()
@@ -1748,8 +1758,10 @@ class IsingLayer(Layer):
 ParamsExponential = namedtuple("ParamsExponential", ["loc"])
 
 class ExponentialLayer(Layer):
-    """Layer with Exponential units (non-negative)."""
+    """
+    Layer with Exponential units (non-negative).
 
+    """
     def __init__(self, num_units):
         """
         Create a layer with Exponential units.
@@ -1776,7 +1788,7 @@ class ExponentialLayer(Layer):
             None:
 
         Returns:
-            configuratiom (dict):
+            configuration (dict):
 
         """
         base_config = self.get_base_config()
