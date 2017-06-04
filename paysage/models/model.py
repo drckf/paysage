@@ -612,9 +612,10 @@ class Model(object):
 
         for index in range(self.num_weights):
             w = self.weights[index].W()
-            total -= be.quadratic(state.cumulants[index].mean, state.cumulants[index+1].mean, w)
-            total -= 0.5 * be.quadratic(state.cumulants[index].variance,
-                           state.cumulants[index+1].variance, be.square(w))
+            lay = self.layers[index]
+            total -= be.quadratic(lay.rescale(state.cumulants[index].mean), lay.rescale(state.cumulants[index+1].mean), w)
+            total -= 0.5 * be.quadratic(lay.rescale(state.cumulants[index].variance),
+                           lay.rescale(state.cumulants[index+1].variance), be.square(w))
 
         return total
 
