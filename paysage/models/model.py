@@ -258,6 +258,25 @@ class Model(object):
         connections = self.graph.layer_connections[i]
         return [state.cumulants[conn.layer] for conn in connections]
 
+    def _connected_rescaled_cumulants(self, i: int, state: mu.State) -> List:
+        """
+        Helper function to retrieve the cumulants,
+        CumulantsTAP attributes of StateTAP objects.
+
+        Args:
+            i (int): the index of the layer of interest
+            state (StateTAP): the current TAP state of the units
+
+        Returns:
+            list[tensor]: the cumulants of connected layers to the layer,
+             rescaled according to tthe respective layer.
+
+        """
+        connections = self.graph.layer_connections[i]
+
+        return [be.apply(self.layers[c].rescale, state.cumulants[connections[c].layer])
+                for c in range(len(connections))]
+
     #
     # Methods for sampling and sample based training
     #
