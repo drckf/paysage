@@ -518,7 +518,7 @@ class Model(object):
     # Methods for training with the TAP approximation
     #
 
-        def TAP_gradient(self, data_state, init_lr, tolerance, max_iters):
+    def TAP_gradient(self, data_state, init_lr, tolerance, max_iters):
         """
         Gradient of -\ln P(v) with respect to the model parameters
 
