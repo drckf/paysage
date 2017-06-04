@@ -714,8 +714,8 @@ class Model(object):
         """
         return StateTAP([
             self.layers[i].TAP_magnetization_grad(
-                state.cumulants[i],
-                self._connected_cumulants(i, state),
+                be.apply(self.layers[i].rescale, state.cumulants[i]),
+                self._connected_rescaled_cumulants(i, state),
                 self._connected_weights(i))
             for i in range(self.num_layers)])
 
