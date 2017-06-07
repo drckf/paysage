@@ -269,13 +269,31 @@ class Model(object):
 
         Returns:
             list[tensor]: the cumulants of connected layers to the layer,
-             rescaled according to tthe respective layer.
+             rescaled according to the respective layer.
 
         """
         connections = self.graph.layer_connections[i]
 
         return [be.apply(self.layers[c].rescale, state.cumulants[connections[c].layer])
                 for c in range(len(connections))]
+
+    def _rescaled_cumulants(self, i: int, state: mu.State) -> List:
+        """
+        Helper function to retrieve the cumulants,
+        CumulantsTAP attributes of StateTAP objects.
+
+        Args:
+            i (int): the index of the layer of interest
+            state (StateTAP): the current TAP state of the units
+
+        Returns:
+            tensor: the cumulants of layers to the layer,
+             rescaled according to tthe respective layer.
+
+        """
+        connections = self.graph.layer_connections[i]
+
+        return be.apply(self.layers[i].rescale, state.cumulants[i])
 
     #
     # Methods for sampling and sample based training
@@ -613,9 +631,11 @@ class Model(object):
         for index in range(self.num_weights):
             w = self.weights[index].W()
             lay = self.layers[index]
-            total -= be.quadratic(lay.rescale(state.cumulants[index].mean), lay.rescale(state.cumulants[index+1].mean), w)
+            lay2 = self.layers[index+1]
+            total -= be.quadratic(lay.rescale(state.cumulants[index].mean),
+                     lay2.rescale(state.cumulants[index+1].mean), w)
             total -= 0.5 * be.quadratic(lay.rescale(state.cumulants[index].variance),
-                           lay.rescale(state.cumulants[index+1].variance), be.square(w))
+                           lay2.rescale(state.cumulants[index+1].variance), be.square(w))
 
         return total
 
@@ -733,11 +753,33 @@ class Model(object):
         grad_GFE = gu.Gradient(
             [self.layers[i].TAP_entropy_derivatives(state.cumulants[i]) for i in range(self.num_layers)],
             [self.weights[i].GFE_derivatives(
-                state.cumulants[self.graph.weight_connections[i][0]],
-                state.cumulants[self.graph.weight_connections[i][1]],
+                self._rescaled_cumulants(self.graph.weight_connections[i][0], state),
+                self._rescaled_cumulants(self.graph.weight_connections[i][1], state)
                 )
             for i in range(self.num_weights)]
             )
+
+        # Add in derivative terms coming from rescaling:
+        for i in range(self.num_weights):
+            w = self.weights[i].W()
+            l_0 = self.graph.weight_connections[i][0]
+            l_1 = self.graph.weight_connections[i][1]
+            lay_0 = self.layers[l_0]
+            lay_1 = self.layers[l_1]
+
+            term = be.quadratic(lay_0.rescale(state.cumulants[l_0].mean),
+                        lay_1.rescale(state.cumulants[l_1].mean), w)
+            term += 0.5 * be.quadratic(lay_0.rescale(state.cumulants[l_0].variance),
+                        lay_1.rescale(state.cumulants[l_1].variance), be.square(w))
+
+            d_0 = lay_0.rescale_derivatives()
+            d_1 = lay_1.rescale_derivatives()
+
+            term_mul = partial(be.tmul, term)
+            grad_GFE.layers[l_0] = be.mapzip(be.subtract, be.apply(term_mul, d_0),
+                                             grad_GFE.layers[l_0])
+            grad_GFE.layers[l_1] = be.mapzip(be.subtract, be.apply(term_mul, d_1),
+                                             grad_GFE.layers[l_1])
 
         return grad_GFE
 
