@@ -712,6 +712,21 @@ class BernoulliLayer(Layer):
         """
         return observations
 
+    def rescale_derivatives(self):
+        """
+        Return the derivatives with respect to the layer parameters
+        of the rescaling function.
+
+        d(rescale(obs)) = rescale(obs) \otimes rescale_derivatives()
+
+        Args:
+            None
+
+        Returns:
+            ParamsBernoulli
+        """
+        return ParamsBernoulli(be.zeros_like(self.params.loc))
+
     #TODO: per sample derivatives
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -1318,6 +1333,22 @@ class GaussianLayer(Layer):
         scale = be.exp(self.params.log_var)
         return be.divide(scale, observations)
 
+    def rescale_derivatives(self):
+        """
+        Return the derivatives with respect to the layer parameters
+        of the rescaling function.
+
+        d(rescale(obs)) = rescale(obs) \otimes rescale_derivatives()
+
+        Args:
+            None
+
+        Returns:
+            ParamsGaussian
+        """
+        return ParamsGaussian(be.zeros_like(self.params.loc),
+                              -1.0*be.ones_like(self.params.log_var))
+
     #TODO: per sample derivatives
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -1618,6 +1649,21 @@ class IsingLayer(Layer):
         """
         return observations
 
+    def rescale_derivatives(self, observations):
+        """
+        Return the derivatives with respect to the layer parameters
+        of the rescaling function.
+
+        d(rescale(obs)) = rescale(obs) \otimes rescale_derivatives()
+
+        Args:
+            None
+
+        Returns:
+            ParamsIsing
+        """
+        return ParamsIsing(be.zeros_like(self.params.loc))
+
     #TODO: per sample derivatives
     def derivatives(self, vis, hid, weights, beta=None):
         """
@@ -1898,6 +1944,21 @@ class ExponentialLayer(Layer):
 
         """
         return observations
+
+    def rescale_derivatives(self):
+        """
+        Return the derivatives with respect to the layer parameters
+        of the rescaling function.
+
+        d(rescale(obs)) = rescale(obs) \otimes rescale_derivatives()
+
+        Args:
+            None
+
+        Returns:
+            ParamsExponential
+        """
+        return ParamsExponential(be.zeros_like(self.params.loc))
 
     #TODO: per sample derivatives
     def derivatives(self, vis, hid, weights, beta=None):
