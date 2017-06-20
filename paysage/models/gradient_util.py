@@ -62,26 +62,6 @@ def random_grad(model):
         [be.apply(be.rand_like, weight.params) for weight in model.weights]
         )
 
-def grad_fold(func, grad):
-    """
-    Apply a function entrywise over a Gradient objet,
-    combining the result.
-
-    Args:
-        func (callable): function with two arguments
-        grad (Gradient)
-
-    returns:
-        float
-
-    """
-    result = 0
-    for layer in grad.layers:
-        result += be.fold(func, layer)
-    for weight in grad.weights:
-        result += be.fold(func, weight)
-    return result
-
 def grad_accumulate(func, grad):
     """
     Apply a function entrywise over a Gradient object,

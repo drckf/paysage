@@ -39,26 +39,6 @@ def test_random_grad():
     # create a gradient object filled with random numbers
     gu.random_grad(rbm)
 
-def test_grad_fold():
-    num_visible_units = 100
-    num_hidden_units = 50
-
-    # set a seed for the random number generator
-    be.set_seed()
-
-    # set up some layer and model objects
-    vis_layer = layers.BernoulliLayer(num_visible_units)
-    hid_layer = layers.BernoulliLayer(num_hidden_units)
-    rbm = model.Model([vis_layer, hid_layer])
-
-    # create a gradient object filled with random numbers
-    grad = gu.random_grad(rbm)
-
-    def test_func(x, y):
-        return be.norm(be.float_tensor(numpy.array([x]))) + be.norm(y)
-
-    gu.grad_fold(test_func, grad)
-
 def test_grad_accumulate():
     num_visible_units = 100
     num_hidden_units = 50
