@@ -1379,23 +1379,3 @@ def fast_energy_distance(minibatch: T.FloatTensor,
     d3 = d3 / (n*m)
 
     return 2.0 * d3 - d2 - d1
-
-def replace_nan(x: T.FloatTensor, value: float = 0) -> T.FloatTensor:
-    """
-    Obtain a copy of the tensor with NaN replaced with a value,
-    as well as the mask of elements for persisted values or NaN.
-
-    Args:
-        x: A tensor.
-        value: The value to replace NaN with in tensor.
-
-    Returns:
-        t: a copy of the input tensor where NaN is replaced with a value.
-        mask: a tensor denoting whether each element
-              is a number (1/T) or NaN (0/F).
-
-    """
-    mask = (x==x)
-    t = value * torch.ones(x.size())
-    t.masked_copy_(mask, torch.masked_select(x, mask))
-    return t, mask.float()
