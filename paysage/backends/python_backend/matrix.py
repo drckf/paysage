@@ -442,7 +442,14 @@ def tmax(x: T.Tensor, axis: int=None, keepdims: bool=False)-> T.FloatingPoint:
             tensor: The maximum of the tensor along the specified axis.
 
     """
-    return numpy.max(x, axis=axis, keepdims=keepdims)
+    if axis is not None:
+        tmp = numpy.max(x, axis=axis, keepdims=True)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
+    else:
+        return numpy.max(x)
 
 def tmin(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
@@ -462,9 +469,16 @@ def tmin(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
             tensor: The minimum of the tensor along the specified axis.
 
     """
-    return numpy.min(x, axis=axis, keepdims=keepdims)
+    if axis is not None:
+        tmp = numpy.min(x, axis=axis, keepdims=True)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
+    else:
+        return numpy.min(x)
 
-def mean(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
+def mean(x: T.Tensor, axis: int = None, keepdims: bool = False) -> T.FloatingPoint:
     """
     Return the mean of the elements of a tensor along the specified axis.
 
@@ -482,7 +496,14 @@ def mean(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
             tensor: The mean of the tensor along the specified axis.
 
     """
-    return numpy.mean(x, axis=axis, keepdims=keepdims)
+    if axis is not None:
+        tmp = numpy.mean(x, axis=axis, keepdims=True)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
+    else:
+        return numpy.mean(x)
 
 def var(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
@@ -502,7 +523,14 @@ def var(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
             tensor: The variance of the tensor along the specified axis.
 
     """
-    return numpy.var(x, axis=axis, keepdims=keepdims, ddof=1)
+    if axis is not None:
+        tmp = numpy.var(x, axis=axis, keepdims=True, ddof=1)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
+    else:
+        return numpy.var(x, ddof=1)
 
 def std(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
@@ -522,7 +550,14 @@ def std(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
             tensor: The standard deviation of the tensor along the specified axis.
 
     """
-    return numpy.std(x, axis=axis, keepdims=keepdims, ddof=1)
+    if axis is not None:
+        tmp = numpy.std(x, axis=axis, keepdims=True, ddof=1)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
+    else:
+        return numpy.std(x, ddof=1)
 
 def tsum(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
@@ -542,7 +577,14 @@ def tsum(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
             tensor: The sum of the tensor along the specified axis.
 
     """
-    return numpy.sum(x, axis=axis, keepdims=keepdims)
+    if axis is not None:
+        tmp = numpy.sum(x, axis=axis, keepdims=True)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
+    else:
+        return numpy.sum(x)
 
 def tprod(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
@@ -562,7 +604,14 @@ def tprod(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
             tensor: The product of the tensor along the specified axis.
 
     """
-    return numpy.prod(x, axis=axis, keepdims=keepdims)
+    if axis is not None:
+        tmp = numpy.prod(x, axis=axis, keepdims=True)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
+    else:
+        return numpy.prod(x)
 
 def tany(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.Boolean:
     """
@@ -584,7 +633,14 @@ def tany(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.Boolean:
                                 along axis
 
     """
-    return numpy.any(x, axis=axis, keepdims=keepdims)
+    if axis is not None:
+        tmp = numpy.any(x, axis=axis, keepdims=True)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
+    else:
+        return numpy.any(x)
 
 def tall(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.Boolean:
     """
@@ -606,7 +662,14 @@ def tall(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.Boolean:
                                 along axis
 
     """
-    return numpy.all(x, axis=axis, keepdims=keepdims)
+    if axis is not None:
+        tmp = numpy.all(x, axis=axis, keepdims=True)
+        if keepdims:
+            return tmp
+        else:
+            return flatten(tmp)
+    else:
+        return numpy.all(x)
 
 def equal(x: T.Tensor, y: T.Tensor) -> T.Boolean:
     """
@@ -863,11 +926,11 @@ def add(a: T.Tensor, b: T.Tensor) -> T.Tensor:
         return a + b
     else:
         return broadcast(a, b) + b
-    
+
 def add_(a: T.Tensor, b: T.Tensor) -> None:
     """
     Add tensor a to tensor b using broadcasting.
-    
+
     Notes:
         Modifies b in place.
 
@@ -898,11 +961,11 @@ def subtract(a: T.Tensor, b: T.Tensor) -> T.Tensor:
         return b - a
     else:
         return b - broadcast(a, b)
-    
+
 def subtract_(a: T.Tensor, b: T.Tensor) -> None:
     """
     Subtract tensor a from tensor b using broadcasting.
-    
+
     Notes:
         Modifies b in place.
 
@@ -933,11 +996,11 @@ def multiply(a: T.Tensor, b: T.Tensor) -> T.Tensor:
         return a * b
     else:
         return broadcast(a, b) * b
-    
+
 def multiply_(a: T.Tensor, b: T.Tensor) -> None:
     """
     Multiply tensor b with tensor a using broadcasting.
-    
+
     Notes:
         Modifies b in place.
 
@@ -968,11 +1031,11 @@ def divide(a: T.Tensor, b: T.Tensor) -> T.Tensor:
         return b / a
     else:
         return b / broadcast(a, b)
-    
+
 def divide_(a: T.Tensor, b: T.Tensor) -> None:
     """
     Divide tensor b by tensor a using broadcasting.
-    
+
     Notes:
         Modifies b in place.
 

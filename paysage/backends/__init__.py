@@ -27,39 +27,6 @@ else:
 # ----- COMMON FUNCTIONALITY ----- #
 
 
-def fold(func, a):
-    """
-    Combines the result of a function over iterable a.
-
-    For example:
-
-    '''
-    from collections import namedtuple
-    from operator import add
-
-    coords = namedtuple("coordinates", ["x", "y"])
-
-    a = coords(1,2)
-    b = fold(add, a) # 3
-
-    a = list(a)
-    b = fold(add, a) # 3
-
-    '''
-
-    Args:
-        func (callable): a function with two arguments
-        a (iterable: e.g., list or named tuple)
-
-    Returns:
-        float
-
-    """
-    result = 0
-    for x in a:
-        result = func(result, x)
-    return result
-
 def accumulate(func, a):
     """
     Accumulates the result of a function over iterable a.
