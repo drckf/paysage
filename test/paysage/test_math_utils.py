@@ -41,7 +41,8 @@ def test_mean_variance():
     assert be.allclose(be.float_tensor(np.array([ref_mean])),
                        be.float_tensor(np.array([mv.mean])))
     assert be.allclose(be.float_tensor(np.array([ref_var])),
-                       be.float_tensor(np.array([mv.var])))
+                       be.float_tensor(np.array([mv.var])),
+                       rtol=1e-4, atol=1e-7)
 
 if __name__ == "__main__":
     pytest.main([__file__])
