@@ -2,6 +2,7 @@ from paysage import backends as be
 from paysage import layers
 from paysage.models import model
 from paysage.models import gradient_util as gu
+import numpy
 import pytest
 from copy import deepcopy
 from cytoolz import partial
@@ -54,7 +55,7 @@ def test_grad_fold():
     grad = gu.random_grad(rbm)
 
     def test_func(x, y):
-        return be.norm(x) + be.norm(y)
+        return be.norm(be.float_tensor(numpy.array([x]))) + be.norm(y)
 
     gu.grad_fold(test_func, grad)
 
@@ -336,7 +337,7 @@ def test_bernoulli_GFE_derivatives():
 
     for lay in rbm.layers:
         lay.params.loc[:] = be.rand_like(lay.params.loc)
-        
+
     state = rbm.compute_StateTAP(init_lr=0.1, tol=1e-7, max_iters=50)
     GFE = rbm.gibbs_free_energy(state)
 
@@ -364,7 +365,7 @@ def test_bernoulli_GFE_derivatives():
                 lr *= 0.5
         else:
             break
-        
+
 def test_ising_conditional_params():
     num_visible_units = 100
     num_hidden_units = 50
@@ -627,10 +628,10 @@ def test_gaussian_conditional_params():
     hid_mean_func, hid_var_func = rbm.layers[1]._conditional_params(
         [vdata_scaled], [rbm.weights[0].W()])
 
-    assert be.allclose(visible_var, vis_var_func),\
+    assert be.allclose(visible_var, vis_var_func[0]),\
     "visible variance wrong in gaussian-gaussian rbm"
 
-    assert be.allclose(hidden_var, hid_var_func),\
+    assert be.allclose(hidden_var, hid_var_func[0]),\
     "hidden variance wrong in gaussian-gaussian rbm"
 
     assert be.allclose(visible_mean, vis_mean_func),\
@@ -716,7 +717,7 @@ def test_gaussian_derivatives():
 
     assert be.allclose(d_W, weight_derivs.matrix), \
     "derivative of weights wrong in gaussian-gaussian rbm"
-    
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
