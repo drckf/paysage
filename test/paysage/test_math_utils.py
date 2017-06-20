@@ -19,7 +19,8 @@ def test_mean():
     for i in range(10):
         mv.update(s[i*10000:(i+1)*10000])
 
-    assert be.allclose(ref_mean, mv.mean)
+    assert be.allclose(be.float_tensor(np.array([ref_mean])),
+                       be.float_tensor(np.array([mv.mean])))
 
 
 # ----- MeanVarianceCalculator ----- #
@@ -37,8 +38,10 @@ def test_mean_variance():
     for i in range(10):
         mv.update(s[i*10000:(i+1)*10000])
 
-    assert be.allclose(ref_mean, mv.mean)
-    assert be.allclose(ref_var, mv.var)
+    assert be.allclose(be.float_tensor(np.array([ref_mean])),
+                       be.float_tensor(np.array([mv.mean])))
+    assert be.allclose(be.float_tensor(np.array([ref_var])),
+                       be.float_tensor(np.array([mv.var])))
 
 if __name__ == "__main__":
     pytest.main([__file__])

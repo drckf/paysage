@@ -17,13 +17,13 @@ Utility functions for manipulating Gradient objects
 def null_grad(model):
     """
     Return a gradient object filled with None.
-    
+
     Args:
         model: a Model object
-        
+
     Returns:
         Gradient
-    
+
     """
     return Gradient(
         [None for layer in model.layers],
@@ -33,29 +33,29 @@ def null_grad(model):
 def zero_grad(model):
     """
     Return a gradient object filled with zero tensors.
-    
+
     Args:
         model: a Model object
-        
+
     Returns:
         Gradient
-    
+
     """
     return Gradient(
         [be.apply(be.zeros_like, layer.params) for layer in model.layers],
         [be.apply(be.zeros_like, weight.params) for weight in model.weights]
         )
-    
+
 def random_grad(model):
     """
     Return a gradient object filled with random numbers.
-    
+
     Args:
         model: a Model object
-        
+
     Returns:
         Gradient
-    
+
     """
     return Gradient(
         [be.apply(be.rand_like, layer.params) for layer in model.layers],
@@ -77,14 +77,14 @@ def grad_fold(func, grad):
     """
     result = 0
     for layer in grad.layers:
-        result = be.fold(func, layer)
+        result += be.fold(func, layer)
     for weight in grad.weights:
-        result = be.fold(func, weight)
+        result += be.fold(func, weight)
     return result
 
 def grad_accumulate(func, grad):
     """
-    Apply a funciton entrywise over a Gradient object,
+    Apply a function entrywise over a Gradient object,
     accumulating the result.
 
     Args:
@@ -97,9 +97,9 @@ def grad_accumulate(func, grad):
     """
     result = 0
     for layer in grad.layers:
-        result = be.accumulate(func, layer)
+        result += be.accumulate(func, layer)
     for weight in grad.weights:
-        result = be.accumulate(func, weight)
+        result += be.accumulate(func, weight)
     return result
 
 def grad_apply(func, grad):

@@ -961,11 +961,11 @@ def add(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
         return a + b
     else:
         return broadcast(a, b) + b
-    
+
 def add_(a: T.FloatTensor, b: T.FloatTensor) -> None:
     """
     Add tensor a to tensor b using broadcasting.
-    
+
     Notes:
         Modifies b in place.
 
@@ -981,7 +981,7 @@ def add_(a: T.FloatTensor, b: T.FloatTensor) -> None:
         # no broadcasting necessary
         b.add_(a)
     else:
-        b.add_(broadcast(a, b))    
+        b.add_(broadcast(a, b))
 
 def subtract(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
     """
@@ -1000,11 +1000,11 @@ def subtract(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
         return b - a
     else:
         return b - broadcast(a, b)
-    
+
 def subtract_(a: T.FloatTensor, b: T.FloatTensor) -> None:
     """
     Subtract tensor a from tensor b using broadcasting.
-    
+
     Notes:
         Modifies b in place.
 
@@ -1039,11 +1039,11 @@ def multiply(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
         return a * b
     else:
         return broadcast(a, b) * b
-    
+
 def multiply_(a: T.FloatTensor, b: T.FloatTensor) -> None:
     """
     Multiply tensor b with tensor a using broadcasting.
-    
+
     Notes:
         Modifies b in place.
 
@@ -1078,11 +1078,11 @@ def divide(a: T.FloatTensor, b: T.FloatTensor) -> T.FloatTensor:
         return b / a
     else:
         return b / broadcast(a, b)
-    
+
 def divide_(a: T.FloatTensor, b: T.FloatTensor) -> None:
     """
     Divide tensor b by tensor a using broadcasting.
-    
+
     Notes:
         Modifies b in place.
 
@@ -1379,3 +1379,23 @@ def fast_energy_distance(minibatch: T.FloatTensor,
     d3 = d3 / (n*m)
 
     return 2.0 * d3 - d2 - d1
+
+def replace_nan(x: T.FloatTensor, value: float = 0) -> T.FloatTensor:
+    """
+    Obtain a copy of the tensor with NaN replaced with a value,
+    as well as the mask of elements for persisted values or NaN.
+
+    Args:
+        x: A tensor.
+        value: The value to replace NaN with in tensor.
+
+    Returns:
+        t: a copy of the input tensor where NaN is replaced with a value.
+        mask: a tensor denoting whether each element
+              is a number (1/T) or NaN (0/F).
+
+    """
+    mask = (x==x)
+    t = value * torch.ones(x.size())
+    t.masked_copy_(mask, torch.masked_select(x, mask))
+    return t, mask.float()
