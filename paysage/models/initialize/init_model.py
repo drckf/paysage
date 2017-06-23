@@ -36,7 +36,7 @@ def hinton(batch, model):
                         0.01 * be.randn(model.weights[i].shape)
     while True:
         try:
-            v_data = batch.get(mode='train')
+            v_data = batch.get(mode='train')[0]
         except StopIteration:
             break
         model.layers[0].online_param_update(v_data)
@@ -77,7 +77,7 @@ def glorot_normal(batch, model):
                         sigma * be.randn(model.weights[i].shape)
     while True:
         try:
-            v_data = batch.get(mode='train')
+            v_data = batch.get(mode='train')[0]
         except StopIteration:
             break
         model.layers[0].online_param_update(v_data)

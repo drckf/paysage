@@ -27,7 +27,7 @@ class State(object):
     ]
 
     """
-    def __init__(self, tensors):
+    def __init__(self, tensors, targets=False):
         """
         Create a State object.
 
@@ -39,10 +39,11 @@ class State(object):
 
         """
         self.units = tensors
+        self.targets = targets
         self.shapes = [be.shape(t) for t in self.units]
 
     @classmethod
-    def from_model(cls, batch_size, model):
+    def from_model(cls, batch_size, model, targets=False):
         """
         Create a State object.
 
@@ -55,11 +56,12 @@ class State(object):
 
         """
         shapes = [(batch_size, l.len) for l in model.layers]
-        units = [model.layers[i].random(shapes[i]) for i in range(model.num_layers)]
-        return cls(units)
+        units = [model.layers[i].random(shapes[i])
+                 for i in range(model.num_layers)]
+        return cls(units, targets)
 
     @classmethod
-    def from_visible(cls, vis, model):
+    def from_visible(cls, data, model):
         """
         Create a state object with given visible unit values.
 
@@ -71,9 +73,15 @@ class State(object):
             state object
 
         """
-        batch_size = be.shape(vis)[0]
-        state = cls.from_model(batch_size, model)
-        state.units[0] = vis
+        if isinstance(data, tuple):
+            batch_size = be.shape(data[0])[0]
+            state = cls.from_model(batch_size, model, targets=True)
+            state.units[0] = data[0] # input
+            state.units[-1] = data[1] # target
+        else:
+            batch_size = be.shape(data)[0]
+            state = cls.from_model(batch_size, model, targets=False)
+            state.units[0] = data
         return state
 
     @classmethod
@@ -200,7 +208,10 @@ class Model(object):
             tensor: Random sample with same shape as vis.
 
         """
-        return self.layers[0].random(vis)
+        if isinstance(vis, tuple):
+            return self.layers[0].random(vis[0]), self.layers[-1].random(vis[1])
+        else:
+            return self.layers[0].random(vis)
 
     def _layer_connections(self):
         """
@@ -270,7 +281,8 @@ class Model(object):
         state -> new state
 
         Args:
-            func_name (str, function name): layer function name to apply to the units to sample
+            func_name (str, function name):
+                layer function name to apply to the units to sample
             state (State object): the current state of each layer
             beta (optional, tensor (batch_size, 1)): Inverse temperatures
             clamped (list): list of layer indices to clamp (no update)
@@ -285,12 +297,12 @@ class Model(object):
         for layer_set in [range(1, self.num_layers, 2),
                           range(0, self.num_layers, 2)]:
             for i in layer_set:
+                # print(func_name, clamped)
                 if i not in clamped:
                     func = getattr(self.layers[i], func_name)
-                    updated_state.units[i] = func(
-                        self._connected_rescaled_units(i, updated_state),
-                        self._connected_weights(i),
-                        beta)
+                    units = self._connected_rescaled_units(i, updated_state)
+                    weights = self._connected_weights(i)
+                    updated_state.units[i] = func(units, weights, beta)
 
         return updated_state
 
@@ -342,6 +354,7 @@ class Model(object):
             new state
 
         """
+
         new_state = State.from_state(state)
         for _ in range(n):
             new_state = self._alternating_update('conditional_mean',
@@ -385,8 +398,10 @@ class Model(object):
         Scales the units in the state and computes the gradient.
 
         Args:
-            data_state (State object): The observed visible units and sampled hidden units.
-            model_state (State objects): The visible and hidden units sampled from the model.
+            data_state (State object): The observed visible units and sampled 
+                hidden units.
+            model_state (State objects): The visible and hidden units sampled 
+                from the model.
 
         Returns:
             dict: Gradients of the model parameters.
@@ -398,12 +413,15 @@ class Model(object):
 
         # compute the postive phase of the gradients of the layer parameters
         for i in range(self.num_layers):
+            data_state_units = [self.layers[j].rescale(data_state.units[j])
+                                for j in self.layer_connections[i]]
+            data_state_weights = [self.weights[j].W()
+                                  if j < i else self.weights[j].W_T()
+                                  for j in self.weight_connections[i]]
             grad.layers[i] = self.layers[i].derivatives(
                 data_state.units[i],
-                [self.layers[j].rescale(data_state.units[j])
-                    for j in self.layer_connections[i]],
-                [self.weights[j].W() if j < i else self.weights[j].W_T()
-                    for j in self.weight_connections[i]],
+                data_state_units,
+                data_state_weights
             )
 
         # compute the positive phase of the gradients of the weights
@@ -417,24 +435,26 @@ class Model(object):
 
         # update the gradients of the layer parameters with the negative phase
         for i in range(self.num_layers):
-            grad.layers[i] = be.mapzip(be.subtract,
-                self.layers[i].derivatives(
-                    model_state.units[i],
-                    [self.layers[j].rescale(model_state.units[j])
-                        for j in self.layer_connections[i]],
-                    [self.weights[j].W() if j < i else self.weights[j].W_T()
-                        for j in self.weight_connections[i]],
-                ),
-            grad.layers[i])
+            data_state_units = [self.layers[j].rescale(model_state.units[j])
+                                for j in self.layer_connections[i]]
+            data_state_weights = [self.weights[j].W()
+                                  if j < i else self.weights[j].W_T()
+                                  for j in self.weight_connections[i]]
+            neg_grads = self.layers[i].derivatives(
+                model_state.units[i],
+                data_state_units,
+                data_state_weights,
+            )
+
+            grad.layers[i] = be.mapzip(be.subtract, neg_grads, grad.layers[i])
 
         # update the gradients of the weight parameters with the negative phase
         for i in range(self.num_layers - 1):
-            grad.weights[i] = be.mapzip(be.subtract,
-                self.weights[i].derivatives(
-                    self.layers[i].rescale(model_state.units[i]),
-                    self.layers[i+1].rescale(model_state.units[i+1]),
-                ),
-            grad.weights[i])
+            neg_grads = self.weights[i].derivatives(
+                self.layers[i].rescale(model_state.units[i]),
+                self.layers[i+1].rescale(model_state.units[i+1]),
+            )
+            grad.weights[i] = be.mapzip(be.subtract, neg_grads, grad.weights[i])
 
         return grad
 
@@ -445,12 +465,16 @@ class Model(object):
         Gradient of -\ln P(v) with respect to the model parameters
 
         Args:
-            data_state (State object): The observed visible units and sampled hidden units.
-            num_r: (int>=0) number of random seeds to use for Gibbs FE minimization
-            num_p: (int>=0) number of persistent seeds to use for Gibbs FE minimization
-            persistent_samples list of magnetizations: persistent magnetization parameters
-                to keep as seeds for Gibbs free energy estimation.
-            init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+            data_state (State object): The observed visible units and sampled 
+                hidden units.
+            num_r: (int>=0) number of random seeds to use for Gibbs FE 
+                minimization
+            num_p: (int>=0) number of persistent seeds to use for Gibbs FE 
+                minimization
+            persistent_samples list of magnetizations: persistent magnetization 
+                parameters to keep as seeds for Gibbs free energy estimation.
+            init_lr float: initial learning rate which is halved whenever 
+                necessary to enforce descent.
             tol float: tolerance for quitting minimization.
             max_iters int: maximum gradient decsent steps
 
@@ -479,8 +503,9 @@ class Model(object):
             )
 
         # compute the gradient of the Helmholtz FE via TAP_gradient
-        grad_HFE = self.grad_TAP_free_energy(num_r, num_p, persistent_samples,
-                     init_lr_EMF, tolerance_EMF, max_iters_EMF)
+        grad_HFE = self.grad_TAP_free_energy(
+            num_r, num_p, persistent_samples, init_lr_EMF, tolerance_EMF,
+            max_iters_EMF)
         
         return gu.grad_mapzip(be.subtract, grad_MFE, grad_HFE)
 
@@ -515,9 +540,13 @@ class Model(object):
 
         """
         energy = 0
+
         for i in range(self.num_layers - 1):
+            # offset layer_i
             energy += self.layers[i].energy(data.units[i])
+            # offset layer_i+1
             energy += self.layers[i+1].energy(data.units[i+1])
+            # weights between layer_i and layer_i+1
             energy += self.weights[i].energy(data.units[i], data.units[i+1])
         return energy
 
@@ -533,8 +562,10 @@ class Model(object):
             float: Gibbs free energy
         """
         total = 0
-        B = [self.layers[l]._gibbs_lagrange_multipliers_expectation(mag[l]) for l in range(self.num_layers)]
-        A = [self.layers[l]._gibbs_lagrange_multipliers_variance(mag[l]) for l in range(self.num_layers)]
+        B = [self.layers[l]._gibbs_lagrange_multipliers_expectation(mag[l])
+             for l in range(self.num_layers)]
+        A = [self.layers[l]._gibbs_lagrange_multipliers_variance(mag[l])
+             for l in range(self.num_layers)]
         
         for l in range(self.num_layers):
             lay = self.layers[l]
@@ -542,20 +573,23 @@ class Model(object):
 
         for w in range(self.num_layers-1):
             way = self.weights[w]
-            total -= be.dot(mag[w].expectation(), be.dot(way.params.matrix, mag[w+1].expectation()))
+            total -= be.dot(mag[w].expectation(),
+                            be.dot(way.params.matrix, mag[w+1].expectation()))
             total -= 0.5 * be.dot(mag[w].variance(), \
                      be.dot(be.square(way.params.matrix), mag[w+1].variance()))
             
         return total
 
-    def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50, method='gd'):
+    def TAP_free_energy(self, seed=None, init_lr=0.1, tol=1e-7, max_iters=50,
+                        method='gd'):
         """
         Compute the Helmholtz free energy of the model according to the TAP
         expansion around infinite temperature to second order.
 
         If the energy is,
         '''
-            E(v, h) := -\langle a,v \rangle - \langle b,h \rangle - \langle v,W \cdot h \rangle,
+            E(v, h) := -\langle a,v \rangle - \langle b,h \rangle - \langle v,W 
+            \cdot h \rangle,
         '''
         with Boltzmann probability distribution,
         '''
@@ -569,24 +603,30 @@ class Model(object):
         '''
             F(v) := -log\sum_{v,h} \exp{-E(v,h)}.
         '''
-        We add an auxiliary local field q, and introduce the inverse temperature variable \beta to define
+        We add an auxiliary local field q, and introduce the inverse 
+            temperature variable \beta to define
         '''
             \beta F(v;q) := -log\sum_{v,h} \exp{-\beta E(v,h) + \beta \langle q, v \rangle}
         '''
-        Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q, the Gibbs free energy.
+        Let \Gamma(m) be the Legendre transform of F(v;q) as a function of q, 
+            the Gibbs free energy.
         The TAP formula is Taylor series of \Gamma in \beta, around \beta=0.
-        Setting \beta=1 and regarding the first two terms of the series as an approximation of \Gamma[m],
+        Setting \beta=1 and regarding the first two terms of the series as an 
+            approximation of \Gamma[m],
         we can minimize \Gamma in m to obtain an approximation of F(v;q=0) = F(v)
 
-        This implementation uses gradient descent from a random starting location to minimize the function
+        This implementation uses gradient descent from a random starting 
+            location to minimize the function
 
         Args:
-            seed 'None' or Magnetization: initial seed for the minimization routine.
-                                          Chosing 'None' will result in a random seed
-            init_lr float: initial learning rate which is halved whenever necessary to enforce descent.
+            seed 'None' or Magnetization: initial seed for the minimization 
+                routine. Chosing 'None' will result in a random seed
+            init_lr float: initial learning rate which is halved whenever 
+                necessary to enforce descent.
             tol float: tolerance for quitting minimization.
             max_iters: maximum gradient decsent steps.
-            method: one of 'gd' or 'constraint' picking which Gibbs FE minimization method to use.
+            method: one of 'gd' or 'constraint' picking which Gibbs FE 
+                minimization method to use.
 
         Returns:
             tuple (magnetization, TAP-approximated Helmholtz free energy)
@@ -595,19 +635,21 @@ class Model(object):
         """
         # TODO: re-implement support for constraint satisfaction method
         if method not in ['gd', 'constraint']:
-            raise ValueError("Must specify a valid method for minimizing the Gibbs free energy")
+            raise ValueError("Must specify a valid method for minimizing the "
+                             "Gibbs free energy")
 
-        def minimize_gibbs_free_energy_GD(m, init_lr=0.01, tol=1e-6, max_iters=1):
+        def minimize_gibbs_free_energy_GD(m, init_lr=0.01, tol=1e-6,
+                                          max_iters=1):
             """
             Simple gradient descent routine to minimize Gibbs free energy
 
-            Note: The fact that this method is a closure suggests that it might be moved to a
-                   utility class later
+            Note: The fact that this method is a closure suggests that it might 
+                be moved to a utility class later
 
             Args:
                 m (list of magnetizations of layers): seed for gradient descent
-                init_lr float: initial learning rate which is halved whenever necessary
-                               to enforce descent.
+                init_lr float: initial learning rate which is halved whenever 
+                    necessary to enforce descent.
                 tol float: tolerance for quitting minimization.
                 max_iters int: maximum gradient decsent steps
 
@@ -629,7 +671,8 @@ class Model(object):
                 grad = self._grad_magnetization_GFE(mag)
                 for g in grad:
                     be.apply_(lr_, g)
-                m_provisional = [be.mapzip(be.subtract, grad[l], mag[l]) for l in range(self.num_layers)]
+                m_provisional = [be.mapzip(be.subtract, grad[l], mag[l])
+                                 for l in range(self.num_layers)]
 
                 # Warning: in general a lot of clipping gets done here
                 for m_l in m_provisional:
@@ -652,7 +695,8 @@ class Model(object):
 
             return (mag, gam)
 
-        # generate random sample in domain to use as a starting location for gradient descent
+        # generate random sample in domain to use as a starting location for
+        #   gradient descent
         if seed==None :
             seed = [lay.get_random_magnetization() for lay in self.layers]
             clip_ = partial(be.clip_inplace, a_min=0.005, a_max=0.995)
@@ -668,7 +712,8 @@ class Model(object):
 
     def _grad_magnetization_GFE(self, mag):
         """
-        Gradient of the Gibbs free energy with respect to the magnetization parameters
+        Gradient of the Gibbs free energy with respect to the magnetization 
+            parameters
 
         Args:
             mag (list of magnetizations of layers):
@@ -702,9 +747,10 @@ class Model(object):
             namedtuple (Gradient)
         """
         grad_GFE = gu.Gradient(
-            [self.layers[l].GFE_derivatives(mag[l]) for l in range(self.num_layers)],
+            [self.layers[l].GFE_derivatives(mag[l])
+             for l in range(self.num_layers)],
             [self.weights[w].GFE_derivatives(mag[w], mag[w+1])
-                for w in range(self.num_layers-1)]
+             for w in range(self.num_layers-1)]
             )
         return grad_GFE
 

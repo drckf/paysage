@@ -225,6 +225,7 @@ class Gradient(Optimizer):
         gu.grad_apply_(self.lr_, self.delta)
         model.parameter_update(self.delta)
 
+
 class Momentum(Optimizer):
     """
     Stochastic gradient descent with momentum.

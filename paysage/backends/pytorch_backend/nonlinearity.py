@@ -278,3 +278,19 @@ def sin(x: T.FloatTensor) -> T.FloatTensor:
 
     """
     return torch.sin(x)
+
+from torch import autograd
+def softmax(x: T.FloatTensor) -> T.FloatTensor:
+    """
+    Elementwise softplus function of a tensor.
+
+    Args:
+        x: A tensor.
+
+    Returns:
+        tensor: Elementwise softplus.
+
+    """
+    # y = x - torch.max(x)
+    # return torch.exp(y) / torch.exp(y).sum()
+    return torch.nn.Softmax()(autograd.Variable(x)).data

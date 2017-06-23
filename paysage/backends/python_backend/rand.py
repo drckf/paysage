@@ -60,3 +60,18 @@ def randn(shape: T.Tuple[int]) -> T.Tensor:
 
     """
     return float_tensor(random.randn(*shape))
+
+import numpy
+def multinomial(tensor: T.Tensor) -> T.Tensor:
+    # tensor = abs(tensor)
+    # tensor = tensor / tensor.sum(axis=1)[:, None]
+    # s = 0
+    # for p_i in tensor:
+    #     s += p_i.sum()
+    #     # print(random.multinomial(1, p_i))
+    # print(s)
+    # return numpy.vstack([random.multinomial(1, p_i) for p_i in tensor])
+    # TODO: fix the multinomial sampler
+    arr = numpy.vstack([random.choice(len(p_i), p=p_i) for p_i in tensor])
+    rval = numpy.eye(tensor.shape[1])[arr.squeeze()]
+    return rval

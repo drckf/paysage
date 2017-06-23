@@ -58,7 +58,8 @@ class MeanCalculator(object):
         """
         num_samples = len(samples)
         self.num += num_samples
-        self.mean = self.mean + (be.mean(samples, **kwargs) - self.mean) * num_samples / self.num
+        self.mean = self.mean + (be.mean(samples, **kwargs) - self.mean) * \
+                                num_samples / self.num
 
 
 class MeanVarianceCalculator(object):

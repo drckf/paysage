@@ -59,3 +59,8 @@ def randn(shape: T.Tuple[int]) -> T.FloatTensor:
 
     """
     return torch.randn(shape)
+
+def multinomial(tensor: T.TorchTensor) -> T.FloatTensor:
+    arr = torch.multinomial(tensor, 1)
+    rval = torch.eye(tensor.size()[1])[arr.squeeze()]
+    return T.FloatTensor(rval)

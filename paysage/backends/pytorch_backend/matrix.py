@@ -1378,4 +1378,33 @@ def fast_energy_distance(minibatch: T.FloatTensor,
             d3 += euclidean_distance(X[i], Y[j])
     d3 = d3 / (n*m)
 
-    return 2.0 * d3 - d2 - d1
+    return float_tensor(numpy.array([2.0 * d3 - d2 - d1]))
+
+
+def int_tensor(tensor: T.Tensor) -> T.FloatTensor:
+    """
+    Cast tensor to a float tensor.
+
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: Tensor converted to floating point.
+
+    """
+    try:
+        # tensor is a numpy object
+        return torch.IntTensor(tensor.astype(int))
+    except Exception:
+        # tensor is a torch object
+        return tensor.int()
+
+
+def onehot(tensor, n_classes: int) -> T.FloatTensor:
+    return float_tensor(torch.eye(n_classes)[torch.LongTensor(tensor)])
+
+
+def xe(predictions: T.FloatTensor, targets: T.FloatTensor) -> T.FloatTensor:
+    return torch.nn.functional.cross_entropy(
+        torch.autograd.Variable(predictions), torch.autograd.Variable(targets)
+    ).data

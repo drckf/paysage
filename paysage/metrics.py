@@ -158,7 +158,7 @@ class EnergyDistance(object):
         energy_distance = be.fast_energy_distance(update_args.minibatch.units[0],
                                                   update_args.samples.units[0],
                                                   self.downsample)
-        self.calc.update([energy_distance])
+        self.calc.update(energy_distance)
 
     def value(self) -> float:
         """
@@ -391,5 +391,141 @@ class HeatCapacity(object):
         """
         if self.calc.num:
             return self.calc.var
+        else:
+            return None
+
+
+class CrossEntropy(object):
+    """
+    Compute the root-mean-squared error between observations and their
+    reconstructions using minibatches.
+
+    """
+
+    name = 'CrossEntropy'
+
+    def __init__(self):
+        """
+        Create a ReconstructionError object.
+
+        Args:
+            None
+
+        Returns:
+            ReconstructionERror
+
+        """
+        self.calc = math_utils.MeanCalculator()
+
+    def reset(self) -> None:
+        """
+        Reset the metric to its initial state.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.calc.reset()
+
+    def update(self, update_args: MetricState) -> None:
+        """
+        Update the estimate for the reconstruction error using a batch
+        of observations and a batch of reconstructions.
+
+        Args:
+            update_args: uses visible layer of minibatch and reconstructions
+
+        Returns:
+            None
+
+        """
+        xe = be.xe(update_args.reconstructions.units[-1],
+                   be.argmax(update_args.minibatch.units[-1], axis=1))
+        self.calc.update(xe)
+
+    def value(self) -> float:
+        """
+        Get the value of the reconstruction error.
+
+        Args:
+            None
+
+        Returns:
+            reconstruction error (float)
+
+        """
+        if self.calc.num:
+            return self.calc.mean
+        else:
+            return None
+
+
+class Accuracy(object):
+    """
+    Compute the root-mean-squared error between observations and their
+    reconstructions using minibatches.
+
+    """
+
+    name = 'Accuracy'
+
+    def __init__(self):
+        """
+        Create a ReconstructionError object.
+
+        Args:
+            None
+
+        Returns:
+            ReconstructionERror
+
+        """
+        self.calc = math_utils.MeanCalculator()
+
+    def reset(self) -> None:
+        """
+        Reset the metric to its initial state.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.calc.reset()
+
+    def update(self, update_args: MetricState) -> None:
+        """
+        Update the estimate for the reconstruction error using a batch
+        of observations and a batch of reconstructions.
+
+        Args:
+            update_args: uses visible layer of minibatch and reconstructions
+
+        Returns:
+            None
+
+        """
+        predictions = be.argmax(update_args.reconstructions.units[-1], axis=1)
+        targets = be.argmax(update_args.minibatch.units[-1], axis=1)
+        self.calc.update(be.float_tensor(predictions == targets))
+
+    def value(self) -> float:
+        """
+        Get the value of the reconstruction error.
+
+        Args:
+            None
+
+        Returns:
+            reconstruction error (float)
+
+        """
+        if self.calc.num:
+            return self.calc.mean
         else:
             return None

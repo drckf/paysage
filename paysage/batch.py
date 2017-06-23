@@ -1,6 +1,7 @@
 import os
 import numpy
 import pandas
+import pickle, gzip
 from . import backends as be
 
 # ----- FUNCTIONS ----- #
@@ -32,7 +33,84 @@ def color_to_ising(tensor):
     """
     return binary_to_ising(binarize_color(tensor))
 
+def feed(batch_size, dataset, shuffle, limit):
+    size = int(len(dataset[0]) * limit)
+    count = int(size / batch_size)
+
+    if shuffle:
+        idx = numpy.random.permutation(size)
+    else:
+        idx = numpy.arange(size)
+
+    for i in range(count):
+        start = i * batch_size
+        end = start + batch_size
+        yield dataset[0][idx][start:end], \
+              dataset[1][idx][start:end] # input,
+        # target
+
+    if count * batch_size < size:
+        yield dataset[0][idx][size - count * batch_size:], \
+            dataset[1][idx][size - count * batch_size:] # input, target
+
+
 # ----- CLASSES ----- #
+
+class NumpyBatch(object):
+    def __init__(self, filename, batch_size, shuffle=True,
+                 input_transform=be.float_tensor,
+                 target_transform=be.float_tensor,
+                 limit=1.):
+
+        assert callable(input_transform)
+        assert callable(target_transform)
+        self.input_transform = input_transform
+        self.target_transform = target_transform
+
+        # open the store, get the dimensions of the keyed table
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.limit = limit
+
+        # create iterators over the data for the train/validate sets
+        self.datasets = {}
+
+        f = gzip.open(filename, 'rb')
+        self.datasets['train'], self.datasets['validate'], \
+            self.datasets['test'] = pickle.load(f, encoding='latin1')
+        f.close()
+
+        self.ncols = self.datasets['train'][0].shape[1]
+
+        self.generators = {mode: feed(self.batch_size, self.datasets[mode],
+                                      self.shuffle, self.limit)
+                           for mode in self.datasets}
+
+    def reset_generator(self, mode: str) -> None:
+        if mode == 'train':
+            self.generators['train'] = feed(self.batch_size,
+                                            self.datasets['train'],
+                                            self.shuffle,
+                                            self.limit)
+        elif mode == 'validate':
+            self.generators['validate'] = feed(self.batch_size,
+                                               self.datasets['validate'],
+                                               self.shuffle,
+                                               self.limit)
+        else:
+            self.generators = {mode: feed(self.batch_size, self.datasets[mode],
+                                          self.shuffle, self.limit)
+                               for mode in self.datasets}
+
+    def get(self, mode: str):
+        try:
+            vals = next(self.generators[mode])
+        except StopIteration:
+            self.reset_generator(mode)
+            raise StopIteration
+        return (self.input_transform(vals[0]),
+                self.target_transform(vals[1]))
+
 
 class HDFBatch(object):
     """
