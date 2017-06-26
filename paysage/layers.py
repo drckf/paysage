@@ -221,7 +221,7 @@ class Layer(object):
             return deriv
         else:
             return deriv + self.penalties[param_name].grad(
-                getattr(self.params, param_name))
+                    getattr(self.params, param_name))
 
     def parameter_step(self, deltas):
         """
@@ -337,7 +337,7 @@ class Weights(Layer):
         """
         return be.transpose(self.params.matrix)
 
-    def derivatives(self, vis, hid):
+    def derivatives(self, vis, hid, penalize=True):
         """
         Compute the derivative of the weights layer.
 
@@ -351,13 +351,13 @@ class Weights(Layer):
             derivs (namedtuple): 'matrix': tensor (contains gradient)
 
         """
-        derivs = ParamsWeights(
-            self.get_penalty_grad(-be.batch_outer(vis, hid) / len(vis),
-                                  "matrix"))
-        return derivs
+        tmp = -be.batch_outer(vis, hid) / len(vis)
+        if penalize:
+            tmp = self.get_penalty_grad(tmp, "matrix")
+        return ParamsWeights(tmp)
 
 
-    def GFE_derivatives(self, vis, hid):
+    def GFE_derivatives(self, vis, hid, penalize=True):
         """
         Gradient of the Gibbs free energy associated with this layer
 
@@ -369,8 +369,11 @@ class Weights(Layer):
             derivs (namedtuple): 'matrix': tensor (contains gradient)
 
         """
-        return ParamsWeights(-be.outer(vis.mean, hid.mean) - \
+        tmp = (-be.outer(vis.mean, hid.mean) -
           be.multiply(self.params.matrix, be.outer(vis.variance, hid.variance)))
+        if penalize:
+            tmp = self.get_penalty_grad(tmp, "matrix")
+        return ParamsWeights(tmp)
 
     def energy(self, vis, hid):
         """
@@ -618,7 +621,7 @@ class BernoulliLayer(Layer):
 
         return CumulantsTAP(mean, variance)
 
-    def GFE_derivatives(self, cumulants):
+    def GFE_derivatives(self, cumulants, penalize=True):
         """
         Gradient of the Gibbs free energy with respect to local field parameters
 
@@ -628,7 +631,10 @@ class BernoulliLayer(Layer):
         Returns:
             gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of GFE
         """
-        return ParamsBernoulli(-cumulants.mean)
+        tmp = -cumulants.mean
+        if penalize:
+            tmp = self.get_penalty_grad(tmp, "loc")
+        return ParamsBernoulli(tmp)
 
     #
     # Methods for sampling and sample-based training
@@ -697,7 +703,7 @@ class BernoulliLayer(Layer):
         return observations
 
     #TODO: per sample derivatives
-    def derivatives(self, vis, hid, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None, penalize=True):
         """
         Compute the derivatives of the layer parameters.
 
@@ -715,9 +721,10 @@ class BernoulliLayer(Layer):
             grad (namedtuple): param_name: tensor (contains gradient)
 
         """
-        loc = -be.mean(vis, axis=0)
-        loc = self.get_penalty_grad(loc, 'loc')
-        return ParamsBernoulli(loc)
+        tmp = -be.mean(vis, axis=0)
+        if penalize:
+            tmp = self.get_penalty_grad(tmp, 'loc')
+        return ParamsBernoulli(tmp)
 
     def _conditional_params(self, scaled_units, weights, beta=None):
         """
@@ -995,7 +1002,7 @@ class GaussianLayer(Layer):
         return be.divide(scale, observations)
 
     #TODO: per sample derivatives
-    def derivatives(self, vis, hid, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None, penalize=True):
         """
         Compute the derivatives of the layer parameters.
 
@@ -1020,7 +1027,9 @@ class GaussianLayer(Layer):
         # compute the derivative with respect to the location parameter
         v_scaled = self.rescale(vis)
         loc = -be.mean(v_scaled, axis=0)
-        loc = self.get_penalty_grad(loc, 'loc')
+
+        if penalize:
+            loc = self.get_penalty_grad(loc, 'loc')
 
         # compute the derivative with respect to the scale parameter
         log_var = -0.5 * be.mean(be.square(be.subtract(
@@ -1028,7 +1037,9 @@ class GaussianLayer(Layer):
         for i in range(len(hid)):
             log_var += be.batch_dot(hid[i], weights[i], vis, axis=0) / len(vis)
         log_var = self.rescale(log_var)
-        log_var = self.get_penalty_grad(log_var, 'log_var')
+
+        if penalize:
+            log_var = self.get_penalty_grad(log_var, 'log_var')
 
         # return the derivatives in a namedtuple
         return ParamsGaussian(loc, log_var)
@@ -1321,7 +1332,7 @@ class IsingLayer(Layer):
         return observations
 
     #TODO: per sample derivatives
-    def derivatives(self, vis, hid, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None, penalize=True):
         """
         Compute the derivatives of the layer parameters.
 
@@ -1340,7 +1351,8 @@ class IsingLayer(Layer):
 
         """
         loc = -be.mean(vis, axis=0)
-        loc = self.get_penalty_grad(loc, 'loc')
+        if penalize:
+            loc = self.get_penalty_grad(loc, 'loc')
         return ParamsIsing(loc)
 
     def _conditional_params(self, scaled_units, weights, beta=None):
@@ -1602,7 +1614,7 @@ class ExponentialLayer(Layer):
         return observations
 
     #TODO: per sample derivatives
-    def derivatives(self, vis, hid, weights, beta=None):
+    def derivatives(self, vis, hid, weights, beta=None, penalize=True):
         """
         Compute the derivatives of the layer parameters.
 
@@ -1621,7 +1633,8 @@ class ExponentialLayer(Layer):
 
         """
         loc = be.mean(vis, axis=0)
-        loc = self.get_penalty_grad(loc, 'loc')
+        if penalize:
+            loc = self.get_penalty_grad(loc, 'loc')
         return ParamsExponential(loc)
 
     def _conditional_params(self, scaled_units, weights, beta=None):
