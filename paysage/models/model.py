@@ -437,7 +437,8 @@ class Model(object):
             grad.layers[i] = self.layers[i].derivatives(
                 data_state.units[i],
                 self._connected_rescaled_units(i, data_state),
-                self._connected_weights(i)
+                self._connected_weights(i),
+                penalize=True
             )
 
         # compute the positive phase of the gradients of the weights
@@ -447,6 +448,7 @@ class Model(object):
             grad.weights[i] = self.weights[i].derivatives(
                 self.layers[iL].rescale(data_state.units[iL]),
                 self.layers[iR].rescale(data_state.units[iR]),
+                penalize=True
             )
 
         # NEGATIVE PHASE (using sampled)
@@ -457,7 +459,8 @@ class Model(object):
                 self.layers[i].derivatives(
                     model_state.units[i],
                     self._connected_rescaled_units(i, model_state),
-                    self._connected_weights(i)
+                    self._connected_weights(i),
+                    penalize=False
                 ),
             grad.layers[i])
 
@@ -469,6 +472,7 @@ class Model(object):
                 self.weights[i].derivatives(
                     self.layers[iL].rescale(model_state.units[iL]),
                     self.layers[iR].rescale(model_state.units[iR]),
+                    penalize=False
                 ),
             grad.weights[i])
 
