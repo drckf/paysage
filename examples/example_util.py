@@ -3,7 +3,7 @@ import numpy
 
 import plotting
 from paysage import batch
-from paysage.models.model import State
+from paysage.models.model_utils import State
 from paysage import backends as be
 from paysage import schedules
 
@@ -53,13 +53,18 @@ def show_metrics(rbm, performance):
 
 def compute_reconstructions(rbm, v_data, fit, n_recon=10, vertical=False):
     sampler = fit.DrivenSequentialMC(rbm)
-    data_state = State.from_visible(v_data, rbm)
+    data = v_data[0] if isinstance(v_data, tuple) else v_data
+    data_state = State.from_visible(data, rbm)
     sampler.set_positive_state(data_state)
-    sampler.update_positive_state(1, clamped=[])
+    sampler.update_positive_state(1)
     v_model = rbm.deterministic_iteration(1, sampler.pos_state).units[0]
 
     idx = numpy.random.choice(range(len(v_model)), n_recon, replace=False)
-    grid = numpy.array([[be.to_numpy_array(v_data[i]),
+    if isinstance(v_data, tuple):
+        t_model = rbm.deterministic_iteration(1, sampler.pos_state).units[-1]
+        print("Class predictions: {}".format(be.to_numpy_array(t_model)[idx]))
+
+    grid = numpy.array([[be.to_numpy_array(data[i]),
                          be.to_numpy_array(v_model[i])] for i in idx])
     if vertical:
         return grid

@@ -8,6 +8,7 @@ derived from summary information about the current state of the model
 
 from collections import namedtuple
 import math
+import numpy as np
 
 from . import math_utils
 from . import backends as be
@@ -158,7 +159,7 @@ class EnergyDistance(object):
         energy_distance = be.fast_energy_distance(update_args.minibatch.units[0],
                                                   update_args.samples.units[0],
                                                   self.downsample)
-        self.calc.update(energy_distance)
+        self.calc.update(be.float_tensor(np.array([energy_distance])))
 
     def value(self) -> float:
         """
