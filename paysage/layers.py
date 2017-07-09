@@ -861,7 +861,7 @@ class GaussianLayer(Layer):
         super().__init__()
 
         self.len = num_units
-        self.rand = be.rand
+        self.rand = be.randn
         self.params = ParamsGaussian(be.zeros(self.len), be.zeros(self.len))
         self.mean_var_calc = math_utils.MeanVarianceCalculator()
 
