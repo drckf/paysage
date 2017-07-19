@@ -1381,30 +1381,52 @@ def fast_energy_distance(minibatch: T.FloatTensor,
     return float_tensor(numpy.array([2.0 * d3 - d2 - d1]))
 
 
-def int_tensor(tensor: T.Tensor) -> T.FloatTensor:
+def long_tensor(tensor: T.Tensor) -> T.LongTensor:
     """
-    Cast tensor to a float tensor.
+    Cast tensor to a long int tensor.
 
     Args:
         tensor: A tensor.
 
     Returns:
-        tensor: Tensor converted to floating point.
+        tensor: Tensor converted to long.
 
     """
     try:
         # tensor is a numpy object
-        return torch.IntTensor(tensor.astype(int))
+        return torch.LongTensor(tensor.astype(int))
     except Exception:
         # tensor is a torch object
-        return tensor.int()
+        return tensor.long()
 
 
 def onehot(tensor, n_classes: int) -> T.FloatTensor:
-    return float_tensor(torch.eye(n_classes)[torch.LongTensor(tensor)])
+    """
+    Transform tensor with a one-hot encoding.
+
+    Args:
+        tensor: A tensor.
+        n_classes: Number of classes.
+
+    Returns:
+        tensor: One-hot encoded tensor.
+
+    """
+    return float_tensor(torch.eye(n_classes)[long_tensor(tensor)])
 
 
 def xe(predictions: T.FloatTensor, targets: T.FloatTensor) -> T.FloatTensor:
+    """
+    Calculate cross-entropy of predictions and targets.
+
+    Args:
+        predictions: A tensor.
+        targets: A tensor.
+
+    Returns:
+        float: A cross-entropy.
+
+    """
     return torch.nn.functional.cross_entropy(
         torch.autograd.Variable(predictions), torch.autograd.Variable(targets)
     ).data

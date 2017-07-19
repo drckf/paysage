@@ -278,7 +278,7 @@ def sin(x: T.Tensor) -> T.Tensor:
 
 def softmax(x):
     """
-    Elementwise softplus function of a tensor.
+    Columnwise softmax function of a tensor.
 
     Args:
         x: A tensor.
@@ -287,5 +287,5 @@ def softmax(x):
         tensor: Elementwise softplus.
 
     """
-    y = (x - ne.evaluate('max(x)')).T.astype('f4')
-    return (ne.evaluate('exp(y)')  / ne.evaluate('sum(exp(y), axis=0)')).T
+    y = (x - ne.evaluate('max(x, axis=1)')).T
+    return (ne.evaluate('exp(y)') / ne.evaluate('sum(exp(y), axis=0)')).T

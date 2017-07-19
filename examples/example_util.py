@@ -63,6 +63,8 @@ def compute_reconstructions(rbm, v_data, fit, n_recon=10, vertical=False):
     if isinstance(v_data, tuple):
         t_model = rbm.deterministic_iteration(1, sampler.pos_state).units[-1]
         print("Class predictions: {}".format(be.to_numpy_array(t_model)[idx]))
+    # I did not want to copy the code in order to use a separate function here,
+    # so I made it handle both cases.
 
     grid = numpy.array([[be.to_numpy_array(data[i]),
                          be.to_numpy_array(v_model[i])] for i in idx])
