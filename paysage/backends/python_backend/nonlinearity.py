@@ -287,5 +287,5 @@ def softmax(x):
         tensor: Elementwise softplus.
 
     """
-    y = (x - ne.evaluate('max(x, axis=1)')).T
+    y = (x - ne.evaluate('max(x, axis=1)')[:, numpy.newaxis]).T
     return (ne.evaluate('exp(y)') / ne.evaluate('sum(exp(y), axis=0)')).T

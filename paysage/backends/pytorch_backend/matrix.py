@@ -1412,7 +1412,14 @@ def onehot(tensor, n_classes: int) -> T.FloatTensor:
         tensor: One-hot encoded tensor.
 
     """
-    return float_tensor(torch.eye(n_classes)[long_tensor(tensor)])
+    return float_tensor(torch.eye(n_classes)[float_tensor(tensor).long()])
+    # TODO: waiting for matured torch.sparse functionalities
+    # n_samples = len(tensor)
+    # return torch.sparse.FloatTensor(
+    #     torch.stack((torch.arange(0, n_samples).long(),  # row_indices
+    #                  float_tensor(tensor).long()), 0),  # column_indices
+    #     torch.ones(n_samples),  # fill_values
+    #     torch.Size((n_samples, n_classes)))
 
 
 def xe(predictions: T.FloatTensor, targets: T.FloatTensor) -> T.FloatTensor:

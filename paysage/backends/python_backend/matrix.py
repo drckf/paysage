@@ -1,4 +1,5 @@
 import numpy, math
+from scipy import sparse
 from numba import jit
 import numexpr as ne
 from . import typedef as T
@@ -1320,10 +1321,18 @@ def onehot(tensor, n_classes: int) -> T.Tensor:
         n_classes: Number of classes.
 
     Returns:
-        tensor: One-hot encoded tensor.
+        tensor: One-hot encoded sparse tensor.
 
     """
-    return numpy.eye(n_classes)[tensor.astype(int)]
+    # explanation of how sparse.coo_matrix work
+    n_samples = tensor.shape[0]
+    return sparse.coo_matrix(
+        (numpy.ones(n_samples),  # fill_values
+         (numpy.arange(n_samples, dtype='i4'),  # row_indices
+          tensor.astype('i4'))),  # column_indices
+        shape=(n_samples, n_classes),
+        dtype='f4'
+    ).tocsr()
 
 
 def xe(predictions: T.Tensor, targets: T.Tensor) -> T.Tensor:
