@@ -1915,6 +1915,23 @@ def test_fast_energy_distance():
     "torch energy distance is too small"
 
 
+def test_onehot():
+    n_classes = 1000
+
+    py_tensor = py_matrix.numpy.arange(n_classes).astype('f4')
+    naive_py_onehot = py_matrix.identity(n_classes)[py_tensor.astype('i4')]
+    sparse_py_onehot = py_matrix.onehot(py_tensor, n_classes)
+
+    torch_tensor = torch_matrix.float_tensor(py_tensor)
+    naive_torch_onehot = torch_matrix.identity(n_classes)[torch_tensor.long()]
+    sparse_torch_onehot = torch_matrix.onehot(torch_tensor, n_classes)
+
+    assert allclose(naive_py_onehot, sparse_py_onehot.todense())
+    assert allclose(naive_torch_onehot.numpy(), sparse_torch_onehot.numpy())
+    assert allclose(sparse_py_onehot.todense(), sparse_torch_onehot.numpy())
+
+    sparse_torch_onehot = torch_matrix.onehot(py_tensor, n_classes)
+    assert allclose(sparse_py_onehot.todense(), sparse_torch_onehot.numpy())
 
 # ----- Nonlinearities ----- #
 

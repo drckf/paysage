@@ -1378,4 +1378,62 @@ def fast_energy_distance(minibatch: T.FloatTensor,
             d3 += euclidean_distance(X[i], Y[j])
     d3 = d3 / (n*m)
 
-    return 2.0 * d3 - d2 - d1
+    return float_tensor(numpy.array([2.0 * d3 - d2 - d1]))
+
+
+def long_tensor(tensor: T.Tensor) -> T.LongTensor:
+    """
+    Cast tensor to a long int tensor.
+
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: Tensor converted to long.
+
+    """
+    try:
+        # tensor is a numpy object
+        return torch.LongTensor(tensor.astype(int))
+    except Exception:
+        # tensor is a torch object
+        return tensor.long()
+
+
+def onehot(tensor, n_classes: int) -> T.FloatTensor:
+    """
+    Transform tensor with a one-hot encoding.
+
+    Args:
+        tensor: A tensor.
+        n_classes: Number of classes.
+
+    Returns:
+        tensor: One-hot encoded tensor.
+
+    """
+    return float_tensor(torch.eye(n_classes)[float_tensor(tensor).long()])
+    # TODO: waiting for matured torch.sparse functionalities
+    # n_samples = len(tensor)
+    # return torch.sparse.FloatTensor(
+    #     torch.stack((torch.arange(0, n_samples).long(),  # row_indices
+    #                  float_tensor(tensor).long()), 0),  # column_indices
+    #     torch.ones(n_samples),  # fill_values
+    #     torch.Size((n_samples, n_classes)))
+
+
+def xe(predictions: T.FloatTensor, targets: T.FloatTensor) -> T.FloatTensor:
+    """
+    Calculate cross-entropy of predictions and targets.
+
+    Args:
+        predictions: A tensor.
+        targets: A tensor.
+
+    Returns:
+        float: A cross-entropy.
+
+    """
+    return torch.nn.functional.cross_entropy(
+        torch.autograd.Variable(predictions), torch.autograd.Variable(targets)
+    ).data

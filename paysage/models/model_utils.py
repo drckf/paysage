@@ -66,7 +66,7 @@ class State(object):
     ]
 
     """
-    def __init__(self, tensors):
+    def __init__(self, tensors, targets):
         """
         Create a State object.
 
@@ -78,10 +78,11 @@ class State(object):
 
         """
         self.units = tensors
+        self.targets = targets
         self.shapes = [be.shape(t) for t in self.units]
 
     @classmethod
-    def from_model(cls, batch_size, model):
+    def from_model(cls, batch_size, model, targets=False):
         """
         Create a State object.
 
@@ -94,11 +95,12 @@ class State(object):
 
         """
         shapes = [(batch_size, l.len) for l in model.layers]
-        units = [model.layers[i].random(shapes[i]) for i in range(model.num_layers)]
-        return cls(units)
+        units = [model.layers[i].random(shapes[i])
+                 for i in range(model.num_layers)]
+        return cls(units, targets)
 
     @classmethod
-    def from_visible(cls, vis, model):
+    def from_visible(cls, data, model):
         """
         Create a state object with given visible unit values.
 
@@ -110,9 +112,15 @@ class State(object):
             state object
 
         """
-        batch_size = be.shape(vis)[0]
-        state = cls.from_model(batch_size, model)
-        state.units[0] = vis
+        if isinstance(data, tuple):
+            batch_size = be.shape(data[0])[0]
+            state = cls.from_model(batch_size, model, targets=True)
+            state.units[0] = data[0] # input
+            state.units[-1] = data[1] # target
+        else:
+            batch_size = be.shape(data)[0]
+            state = cls.from_model(batch_size, model, targets=False)
+            state.units[0] = data
         return state
 
     @classmethod

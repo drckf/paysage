@@ -382,22 +382,38 @@ def contrastive_divergence(vdata, model, sampler, steps=1):
     # CD resets the sampler from the visible data at each iteration
     sampler.set_positive_state(data_state)
     sampler.set_negative_state(model_state)
-    model.graph.set_clamped_sampling([0])
+
+    # ### equivalent to RBM ###
+    # clamp data vis, tgt, generate mean-field hidden
+    clamped_layers = [0]
+    if sampler.pos_state.targets:
+        clamped_layers += [len(sampler.pos_state.units) - 1]
+    model.graph.set_clamped_sampling(clamped_layers)
     sampler.update_positive_state(steps)
     model.graph.set_clamped_sampling([])
     sampler.update_negative_state(steps)
 
     # compute the conditional sampling on all visible-side layers,
     # inclusive over hidden-side layers
-    layer_list = range(model.num_layers)
+    num_layers = model.num_layers - 1
+    if sampler.pos_state.targets:
+        num_layers -= 1
+    layer_list = list(range(num_layers))
 
     for i in range(1, len(layer_list) - 1):
-        model.graph.set_clamped_sampling(layer_list[:i])
+        clamped_layers = layer_list[:i]
+        if sampler.pos_state.targets:
+            clamped_layers += [len(sampler.pos_state.units) - 1]
+        model.graph.set_clamped_sampling(clamped_layers)
         sampler.update_positive_state(steps)
+        model.graph.set_clamped_sampling(layer_list[:i])
         sampler.update_negative_state(steps)
 
-    # make a mean field step to copmute the expectation on the last layer
-    model.graph.set_clamped_sampling(layer_list[:-1])
+    # make a mean field step to compute the expectation on the last layer
+    clamped_layers = list(layer_list)
+    if sampler.pos_state.targets:
+        clamped_layers += [len(sampler.pos_state.units) - 1]
+    model.graph.set_clamped_sampling(clamped_layers)
     grad_data_state = model.mean_field_iteration(1, sampler.pos_state)
     grad_model_state = model.mean_field_iteration(1, sampler.neg_state)
 
@@ -442,15 +458,25 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
     # step through the hidden layers, up to the last
     # for each, compute the conditional sampling on all visible-side layers,
     # inclusive over hidden-side layers
-    layer_list = range(model.num_layers)
+    num_layers = model.num_layers - 1
+    if sampler.pos_state.targets:
+        num_layers -= 1
+    layer_list = range(num_layers)
 
     for i in range(1, len(layer_list) - 1):
-        model.graph.set_clamped_sampling(layer_list[:i])
+        clamped_layers = layer_list[:i]
+        if sampler.pos_state.targets:
+            clamped_layers += [len(sampler.pos_state.units) - 1]
+        model.graph.set_clamped_sampling(clamped_layers)
         sampler.update_positive_state(steps)
+        model.graph.set_clamped_sampling(layer_list[:i])
         sampler.update_negative_state(steps)
 
-    # make a mean field step to copmute the expectation on the last layer
-    model.graph.set_clamped_sampling(layer_list[:-1])
+    # make a mean field step to compute the expectation on the last layer
+    clamped_layers = list(layer_list)
+    if sampler.pos_state.targets:
+        clamped_layers += [len(sampler.pos_state.units) - 1]
+    model.graph.set_clamped_sampling(clamped_layers)
     grad_data_state = model.mean_field_iteration(1, sampler.pos_state)
     grad_model_state = model.mean_field_iteration(1, sampler.neg_state)
 
@@ -463,8 +489,8 @@ def persistent_contrastive_divergence(vdata, model, sampler, steps=1):
 # alias
 pcd = persistent_contrastive_divergence
 
-def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=1e-4,
-        max_iters_EMF=25):
+def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1,
+        tolerance_EMF=1e-4, max_iters_EMF=25):
     """
     Compute the gradient using the Thouless-Anderson-Palmer (TAP)
     mean field approximation.
@@ -510,7 +536,8 @@ def tap(vdata, model, sampler, positive_steps=1, init_lr_EMF=0.1, tolerance_EMF=
     # reset the sampling clamping
     model.graph.set_clamped_sampling([])
 
-    return model.TAP_gradient(grad_data_state, init_lr_EMF, tolerance_EMF, max_iters_EMF)
+    return model.TAP_gradient(grad_data_state, init_lr_EMF, tolerance_EMF,
+                              max_iters_EMF)
 
 
 class StochasticGradientDescent(object):

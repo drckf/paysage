@@ -394,3 +394,141 @@ class HeatCapacity(object):
             return self.calc.var
         else:
             return None
+
+
+class CrossEntropy(object):
+    """
+    Compute the cross-entropy between targets and their predictions using
+    minibatches.
+
+    """
+
+    name = 'CrossEntropy'
+
+    def __init__(self):
+        """
+        Create a CrossEntropy object.
+
+        Args:
+            None
+
+        Returns:
+            CrossEntropy
+
+        """
+        self.calc = math_utils.MeanCalculator()
+
+    def reset(self) -> None:
+        """
+        Reset the metric to its initial state.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.calc.reset()
+
+    def update(self, update_args: MetricState) -> None:
+        """
+        Update the estimate for the cross-entropy using a batch of targets and 
+        a batch of predictions.
+
+        Args:
+            update_args: uses target layer of minibatch and predictions
+
+        Returns:
+            None
+
+        """
+        xe = be.xe(
+            update_args.reconstructions.units[-1],  # probability predictions
+            be.argmax(update_args.minibatch.units[-1], axis=1)  # class labels
+        )
+        self.calc.update(xe)
+
+    def value(self) -> float:
+        """
+        Get the value of the cross-entropy.
+
+        Args:
+            None
+
+        Returns:
+            cross-entropy (float)
+
+        """
+        if self.calc.num:
+            return self.calc.mean
+        else:
+            return None
+
+
+class Accuracy(object):
+    """
+    Compute the accuracy between targets and their predictions using 
+    minibatches.
+
+    """
+
+    name = 'Accuracy'
+
+    def __init__(self):
+        """
+        Create a Accuracy object.
+
+        Args:
+            None
+
+        Returns:
+            Accuracy
+
+        """
+        self.calc = math_utils.MeanCalculator()
+
+    def reset(self) -> None:
+        """
+        Reset the metric to its initial state.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.calc.reset()
+
+    def update(self, update_args: MetricState) -> None:
+        """
+        Update the estimate for the accuracy using a batch of targets and a 
+        batch of predictions.
+
+        Args:
+            update_args: uses target layer of minibatch and predictions
+
+        Returns:
+            None
+
+        """
+        predictions = be.argmax(update_args.reconstructions.units[-1], axis=1)
+        targets = be.argmax(update_args.minibatch.units[-1], axis=1)
+        self.calc.update(be.float_tensor(predictions == targets))
+
+    def value(self) -> float:
+        """
+        Get the value of the accuracy.
+
+        Args:
+            None
+
+        Returns:
+            accuracy (float)
+
+        """
+        if self.calc.num:
+            return self.calc.mean
+        else:
+            return None

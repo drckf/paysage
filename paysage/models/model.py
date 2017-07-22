@@ -297,7 +297,10 @@ class Model(object):
             tensor: Random sample with same shape as vis.
 
         """
-        return self.layers[0].random(vis)
+        if isinstance(vis, tuple):
+            return self.layers[0].random(vis[0]), self.layers[-1].random(vis[1])
+        else:
+            return self.layers[0].random(vis)
 
     def _alternating_update(self, func_name: str, state: mu.State,
                             beta=None) -> mu.State:

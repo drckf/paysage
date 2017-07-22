@@ -1,4 +1,5 @@
 import numpy, math
+from scipy import sparse
 from numba import jit
 import numexpr as ne
 from . import typedef as T
@@ -1309,3 +1310,41 @@ def fast_energy_distance(minibatch, samples, downsample=100):
     d3 = d3 / (n*m)
 
     return 2.0 * d3 - d2 - d1
+
+
+def onehot(tensor, n_classes: int) -> T.Tensor:
+    """
+    Transform tensor with a one-hot encoding.
+
+    Args:
+        tensor: A tensor.
+        n_classes: Number of classes.
+
+    Returns:
+        tensor: One-hot encoded sparse tensor.
+
+    """
+    # explanation of how sparse.coo_matrix work
+    n_samples = tensor.shape[0]
+    return sparse.coo_matrix(
+        (numpy.ones(n_samples),  # fill_values
+         (numpy.arange(n_samples, dtype='i4'),  # row_indices
+          tensor.astype('i4'))),  # column_indices
+        shape=(n_samples, n_classes),
+        dtype='f4'
+    ).tocsr()
+
+
+def xe(predictions: T.Tensor, targets: T.Tensor) -> T.Tensor:
+    """
+    Calculate cross-entropy of predictions and targets.
+
+    Args:
+        predictions: A tensor.
+        targets: A tensor.
+
+    Returns:
+        float: A cross-entropy.
+
+    """
+    return - numpy.log(numpy.clip(predictions[:, targets], 1e-7, 1))
