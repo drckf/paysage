@@ -398,8 +398,8 @@ class HeatCapacity(object):
 
 class CrossEntropy(object):
     """
-    Compute the root-mean-squared error between observations and their
-    reconstructions using minibatches.
+    Compute the cross-entropy between targets and their predictions using
+    minibatches.
 
     """
 
@@ -407,13 +407,13 @@ class CrossEntropy(object):
 
     def __init__(self):
         """
-        Create a ReconstructionError object.
+        Create a CrossEntropy object.
 
         Args:
             None
 
         Returns:
-            ReconstructionERror
+            CrossEntropy
 
         """
         self.calc = math_utils.MeanCalculator()
@@ -433,29 +433,31 @@ class CrossEntropy(object):
 
     def update(self, update_args: MetricState) -> None:
         """
-        Update the estimate for the reconstruction error using a batch
-        of observations and a batch of reconstructions.
+        Update the estimate for the cross-entropy using a batch of targets and 
+        a batch of predictions.
 
         Args:
-            update_args: uses visible layer of minibatch and reconstructions
+            update_args: uses target layer of minibatch and predictions
 
         Returns:
             None
 
         """
-        xe = be.xe(update_args.reconstructions.units[-1],
-                   be.argmax(update_args.minibatch.units[-1], axis=1))
+        xe = be.xe(
+            update_args.reconstructions.units[-1],  # probability predictions
+            be.argmax(update_args.minibatch.units[-1], axis=1)  # class labels
+        )
         self.calc.update(xe)
 
     def value(self) -> float:
         """
-        Get the value of the reconstruction error.
+        Get the value of the cross-entropy.
 
         Args:
             None
 
         Returns:
-            reconstruction error (float)
+            cross-entropy (float)
 
         """
         if self.calc.num:
@@ -466,8 +468,8 @@ class CrossEntropy(object):
 
 class Accuracy(object):
     """
-    Compute the root-mean-squared error between observations and their
-    reconstructions using minibatches.
+    Compute the accuracy between targets and their predictions using 
+    minibatches.
 
     """
 
@@ -475,13 +477,13 @@ class Accuracy(object):
 
     def __init__(self):
         """
-        Create a ReconstructionError object.
+        Create a Accuracy object.
 
         Args:
             None
 
         Returns:
-            ReconstructionERror
+            Accuracy
 
         """
         self.calc = math_utils.MeanCalculator()
@@ -501,11 +503,11 @@ class Accuracy(object):
 
     def update(self, update_args: MetricState) -> None:
         """
-        Update the estimate for the reconstruction error using a batch
-        of observations and a batch of reconstructions.
+        Update the estimate for the accuracy using a batch of targets and a 
+        batch of predictions.
 
         Args:
-            update_args: uses visible layer of minibatch and reconstructions
+            update_args: uses target layer of minibatch and predictions
 
         Returns:
             None
@@ -517,13 +519,13 @@ class Accuracy(object):
 
     def value(self) -> float:
         """
-        Get the value of the reconstruction error.
+        Get the value of the accuracy.
 
         Args:
             None
 
         Returns:
-            reconstruction error (float)
+            accuracy (float)
 
         """
         if self.calc.num:

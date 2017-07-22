@@ -545,7 +545,7 @@ class StochasticGradientDescent(object):
     def __init__(self, model, batch, optimizer, epochs, method=pcd,
                  sampler=SequentialMC, mcsteps=1, monitor=None):
         """
-        Create a StochasticG([x.shape for x in units])radientDescent object.
+        Create a StochasticGradientDescent object.
 
         Args:
             model: a model object
