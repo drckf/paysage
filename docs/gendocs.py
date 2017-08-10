@@ -202,3 +202,4 @@ if __name__ == "__main__":
     # TODO: define this to run recursively
     savedocs(walk_through_package(paysage))
     savedocs(walk_through_package(paysage.models))
+    savedocs(walk_through_package(paysage.layers))

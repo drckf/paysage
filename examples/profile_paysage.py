@@ -1,9 +1,9 @@
 import cProfile
 import pstats
 
-import example_mnist_grbm as grbm
-import example_mnist_hopfield as hopfield
-import example_mnist_rbm as rbm
+import mnist_grbm as grbm
+import mnist_rbm as rbm
+import mnist_rbm_inmemory as inmemory
 
 
 def run_profiling(mode="short") -> None:
@@ -11,13 +11,14 @@ def run_profiling(mode="short") -> None:
     Execute a shortened run of example models
     """
     if mode == "short":
-        rbm.example_mnist_rbm(num_epochs=3)
+        inmemory.run(num_epochs=3)
+#        rbm.run(num_epochs=3)
+#        grbm.run(num_epochs=3)
     else:
-        grbm.example_mnist_grbm()
-        hopfield.example_mnist_hopfield()
-        rbm.example_mnist_rbm()
+        grbm.run()
+        rbm.run()
 
-def pstats() -> None:
+def custom_pstats() -> None:
     """
     Example showing some pstats analysis of the run
     """

@@ -4,6 +4,26 @@
 BroadcastError exception:<br /><br />Args: None
 
 
+## class NumpyTensor
+ndarray(shape, dtype=float, buffer=None, offset=0,<br />        strides=None, order=None)<br /><br />An array object represents a multidimensional, homogeneous array<br />of fixed-size items.  An associated data-type object describes the<br />format of each element in the array (its byte-order, how many bytes it<br />occupies in memory, whether it is an integer, a floating point number,<br />or something else, etc.)<br /><br />Arrays should be constructed using `array`, `zeros` or `empty` (refer<br />to the See Also section below).  The parameters given here refer to<br />a low-level method (`ndarray(...)`) for instantiating an array.<br /><br />For more information, refer to the `numpy` module and examine the<br />methods and attributes of an array.<br /><br />Parameters<br />----------<br />(for the __new__ method; see Notes below)<br /><br />shape : tuple of ints<br />    Shape of created array.<br />dtype : data-type, optional<br />    Any object that can be interpreted as a numpy data type.<br />buffer : object exposing buffer interface, optional<br />    Used to fill the array with data.<br />offset : int, optional<br />    Offset of array data in buffer.<br />strides : tuple of ints, optional<br />    Strides of data in memory.<br />order : {'C', 'F'}, optional<br />    Row-major (C-style) or column-major (Fortran-style) order.<br /><br />Attributes<br />----------<br />T : ndarray<br />    Transpose of the array.<br />data : buffer<br />    The array's elements, in memory.<br />dtype : dtype object<br />    Describes the format of the elements in the array.<br />flags : dict<br />    Dictionary containing information related to memory use, e.g.,<br />    'C_CONTIGUOUS', 'OWNDATA', 'WRITEABLE', etc.<br />flat : numpy.flatiter object<br />    Flattened version of the array as an iterator.  The iterator<br />    allows assignments, e.g., ``x.flat = 3`` (See `ndarray.flat` for<br />    assignment examples; TODO).<br />imag : ndarray<br />    Imaginary part of the array.<br />real : ndarray<br />    Real part of the array.<br />size : int<br />    Number of elements in the array.<br />itemsize : int<br />    The memory use of each array element in bytes.<br />nbytes : int<br />    The total number of bytes required to store the array data,<br />    i.e., ``itemsize * size``.<br />ndim : int<br />    The array's number of dimensions.<br />shape : tuple of ints<br />    Shape of the array.<br />strides : tuple of ints<br />    The step-size required to move from one element to the next in<br />    memory. For example, a contiguous ``(3, 4)`` array of type<br />    ``int16`` in C-order has strides ``(8, 2)``.  This implies that<br />    to move from element to element in memory requires jumps of 2 bytes.<br />    To move from row-to-row, one needs to jump 8 bytes at a time<br />    (``2 * 4``).<br />ctypes : ctypes object<br />    Class containing properties of the array needed for interaction<br />    with ctypes.<br />base : ndarray<br />    If the array is a view into another array, that array is its `base`<br />    (unless that array is also a view).  The `base` array is where the<br />    array data is actually stored.<br /><br />See Also<br />--------<br />array : Construct an array.<br />zeros : Create an array, each element of which is zero.<br />empty : Create an array, but leave its allocated memory unchanged (i.e.,<br />        it contains "garbage").<br />dtype : Create a data-type.<br /><br />Notes<br />-----<br />There are two modes of creating an array using ``__new__``:<br /><br />1. If `buffer` is None, then only `shape`, `dtype`, and `order`<br />   are used.<br />2. If `buffer` is an object exposing the buffer interface, then<br />   all keywords are interpreted.<br /><br />No ``__init__`` method is needed because the array is fully initialized<br />after the ``__new__`` method.<br /><br />Examples<br />--------<br />These examples illustrate the low-level `ndarray` constructor.  Refer<br />to the `See Also` section above for easier ways of constructing an<br />ndarray.<br /><br />First mode, `buffer` is None:<br /><br />>>> np.ndarray(shape=(2,2), dtype=float, order='F')<br />array([[ -1.13698227e+002,   4.25087011e-303],<br />       [  2.88528414e-306,   3.27025015e-309]])         #random<br /><br />Second mode:<br /><br />>>> np.ndarray((2,), buffer=np.array([1,2,3]),<br />...            offset=np.int_().itemsize,<br />...            dtype=int) # offset = 1*itemsize, i.e. skip first element<br />array([2, 3])
+
+
+## class Iterable
+Abstract base class for generic types.<br /><br />A generic type is typically declared by inheriting from<br />this class parameterized with one or more type variables.<br />For example, a generic mapping type might be defined as::<br /><br />  class Mapping(Generic[KT, VT]):<br />      def __getitem__(self, key: KT) -> VT:<br />          ...<br />      # Etc.<br /><br />This class can then be used as follows::<br /><br />  def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -> VT:<br />      try:<br />          return mapping[key]<br />      except KeyError:<br />          return default
+
+
+## class float32
+32-bit floating-point number. Character code 'f'. C float compatible.
+
+
+## class Tuple
+Tuple type; Tuple[X, Y] is the cross-product type of X and Y.<br /><br />Example: Tuple[T1, T2] is a tuple of two elements corresponding<br />to type variables T1 and T2.  Tuple[int, float, str] is a tuple<br />of an int, a float and a string.<br /><br />To specify a variable-length tuple of homogeneous type, use Tuple[T, ...].
+
+
+## class Dict
+dict() -> new empty dictionary<br />dict(mapping) -> new dictionary initialized from a mapping object's<br />    (key, value) pairs<br />dict(iterable) -> new dictionary initialized as if via:<br />    d = {}<br />    for k, v in iterable:<br />        d[k] = v<br />dict(**kwargs) -> new dictionary initialized with the name=value pairs<br />    in the keyword argument list.  For example:  dict(one=1, two=2)
+
+
 ## functions
 
 ### accumulate
@@ -40,6 +60,18 @@ def add(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
 
 
 Add tensor a to tensor b using broadcasting.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: a + b
+
+
+### add\_
+```py
+
+def add_(a: numpy.ndarray, b: numpy.ndarray) -> None
+
+```
+
+
+
+Add tensor a to tensor b using broadcasting.<br /><br />Notes:<br /> ~ Modifies b in place.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ None
 
 
 ### affine
@@ -114,6 +146,18 @@ def argmin(x: numpy.ndarray, axis: int) -> numpy.ndarray
 Compute the indices of the minimal elements in x along the specified axis.<br /><br />Args:<br /> ~ x: A tensor:<br /> ~ axis: The axis of interest.<br /><br />Returns:<br /> ~ tensor (of ints): Indices of the minimum elements in x along the<br /> ~ specified axis.
 
 
+### argsort
+```py
+
+def argsort(x: numpy.ndarray, axis: int=None) -> numpy.ndarray
+
+```
+
+
+
+Get the indices of a sorted tensor.<br /><br />Args:<br /> ~ x: A tensor:<br /> ~ axis: The axis of interest.<br /><br />Returns:<br /> ~ tensor (of ints): indices of sorted tensor
+
+
 ### atanh
 ```py
 
@@ -162,10 +206,22 @@ def broadcast(vec: numpy.ndarray, matrix: numpy.ndarray) -> numpy.ndarray
 Broadcasts vec into the shape of matrix following numpy rules:<br /><br />vec ~ (N, 1) broadcasts to matrix ~ (N, M)<br />vec ~ (1, N) and (N,) broadcast to matrix ~ (M, N)<br /><br />Args:<br /> ~ vec: A vector (either flat, row, or column).<br /> ~ matrix: A matrix (i.e., a 2D tensor).<br /><br />Returns:<br /> ~ tensor: A tensor of the same size as matrix containing the elements<br /> ~  ~  ~ of the vector.<br /><br />Raises:<br /> ~ BroadcastError
 
 
+### center
+```py
+
+def center(x: numpy.ndarray, axis: int=0) -> numpy.ndarray
+
+```
+
+
+
+Remove the mean along axis.<br /><br />Args:<br /> ~ tensor (num_samples, num_units): the array to center<br /> ~ axis (int; optional): the axis to center along<br /><br />Returns:<br /> ~ tensor (num_samples, num_units)
+
+
 ### clip
 ```py
 
-def clip(tensor: numpy.ndarray, a_min: typing.Union=None, a_max: typing.Union=None) -> numpy.ndarray
+def clip(tensor: numpy.ndarray, a_min: Union[int, float]=None, a_max: Union[int, float]=None) -> numpy.ndarray
 
 ```
 
@@ -177,13 +233,25 @@ Return a tensor with its values clipped between a_min and a_max.<br /><br />Args
 ### clip\_inplace
 ```py
 
-def clip_inplace(tensor: numpy.ndarray, a_min: typing.Union=None, a_max: typing.Union=None) -> None
+def clip_inplace(tensor: numpy.ndarray, a_min: Union[int, float]=None, a_max: Union[int, float]=None) -> None
 
 ```
 
 
 
 Clip the values of a tensor between a_min and a_max.<br /><br />Note:<br /> ~ Modifies tensor in place.<br /><br />Args:<br /> ~ tensor: A tensor.<br /> ~ a_min (optional): The desired lower bound on the elements of the tensor.<br /> ~ a_max (optional): The desired upper bound on the elements of the tensor.<br /><br />Returns:<br /> ~ None
+
+
+### copy\_tensor
+```py
+
+def copy_tensor(tensor: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Copy a tensor.<br /><br />Args:<br /> ~ tensor<br /><br />Returns:<br /> ~ copy of tensor
 
 
 ### cos
@@ -208,6 +276,18 @@ def cosh(x: numpy.ndarray) -> numpy.ndarray
 
 
 Elementwise hyperbolic cosine of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise hyperbolic cosine.
+
+
+### cov
+```py
+
+def cov(x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Compute the cross covariance between tensors x and y.<br /><br />Args:<br /> ~ x (tensor (num_samples, num_units_x))<br /> ~ y (tensor (num_samples, num_units_y))<br /><br />Returns:<br /> ~ tensor (num_units_x, num_units_y)
 
 
 ### diag
@@ -246,10 +326,22 @@ def divide(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
 Divide tensor b by tensor a using broadcasting.<br /><br />Args:<br /> ~ a: A tensor (non-zero)<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: b / a
 
 
+### divide\_
+```py
+
+def divide_(a: numpy.ndarray, b: numpy.ndarray) -> None
+
+```
+
+
+
+Divide tensor b by tensor a using broadcasting.<br /><br />Notes:<br /> ~ Modifies b in place.<br /><br />Args:<br /> ~ a: A tensor (non-zero)<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: b / a
+
+
 ### dot
 ```py
 
-def dot(a: numpy.ndarray, b: numpy.ndarray) -> typing.Union
+def dot(a: numpy.ndarray, b: numpy.ndarray) -> Union[numpy.float32, numpy.ndarray]
 
 ```
 
@@ -270,16 +362,52 @@ def dtype(tensor: numpy.ndarray) -> type
 Return the type of the tensor.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><br />Returns:<br /> ~ type: The type of the elements in the tensor.
 
 
+### energy\_distance
+```py
+
+def energy_distance(x: numpy.ndarray, y: numpy.ndarray) -> float
+
+```
+
+
+
+Compute an energy distance between two tensors treating the rows as observations.<br /><br />Args:<br /> ~ x (tensor (num_samples_1, num_units))<br /> ~ y (tensor (num_samples_2, num_units))<br /><br />Returns:<br /> ~ float: energy distance.<br /><br />Szekely, G.J. (2002)<br />E-statistics: The Energy of Statistical Samples.<br />Technical Report BGSU No 02-16.
+
+
 ### equal
 ```py
 
-def equal(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
+def equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
 
 ```
 
 
 
 Elementwise if two tensors are equal.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A tensor.<br /><br />Returns:<br /> ~ tensor (of bools): Elementwise test of equality between x and y.
+
+
+### erf
+```py
+
+def erf(x: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Elementwise error function of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise error function
+
+
+### erfinv
+```py
+
+def erfinv(x: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Elementwise error function of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise error function
 
 
 ### exp
@@ -306,10 +434,10 @@ def expit(x: numpy.ndarray) -> numpy.ndarray
 Elementwise expit (a.k.a. logistic) function of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise expit (a.k.a. logistic).
 
 
-### fill\_diagonal
+### fill\_diagonal\_
 ```py
 
-def fill_diagonal(mat: numpy.ndarray, val: typing.Union) -> numpy.ndarray
+def fill_diagonal_(mat: numpy.ndarray, val: Union[int, float]) -> numpy.ndarray
 
 ```
 
@@ -321,7 +449,7 @@ Fill the diagonal of the matirx with a specified value.<br /><br />Note:<br /> ~
 ### flatten
 ```py
 
-def flatten(tensor: typing.Union) -> typing.Union
+def flatten(tensor: Union[numpy.float32, numpy.ndarray]) -> Union[numpy.float32, numpy.ndarray]
 
 ```
 
@@ -333,7 +461,7 @@ Return a flattened tensor.<br /><br />Args:<br /> ~ tensor: A tensor or scalar.<
 ### float\_scalar
 ```py
 
-def float_scalar(scalar: typing.Union) -> float
+def float_scalar(scalar: Union[int, float]) -> float
 
 ```
 
@@ -354,22 +482,10 @@ def float_tensor(tensor: numpy.ndarray) -> numpy.ndarray
 Cast tensor to a float tensor.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><br />Returns:<br /> ~ tensor: Tensor converted to floating point.
 
 
-### fold
-```py
-
-def fold(func, a)
-
-```
-
-
-
-Combines the result of a function over iterable a.<br /><br />For example:<br /><br />'''<br />from collections import namedtuple<br />from operator import add<br /><br />coords = namedtuple("coordinates", ["x", "y"])<br /><br />a = coords(1,2)<br />b = fold(add, a) # 3<br /><br />a = list(a)<br />b = fold(add, a) # 3<br /><br />'''<br /><br />Args:<br /> ~ func (callable): a function with two arguments<br /> ~ a (iterable: e.g., list or named tuple)<br /><br />Returns:<br /> ~ float
-
-
 ### greater
 ```py
 
-def greater(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
+def greater(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
 
 ```
 
@@ -381,7 +497,7 @@ Elementwise test if x > y.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A te
 ### greater\_equal
 ```py
 
-def greater_equal(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
+def greater_equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
 
 ```
 
@@ -393,7 +509,7 @@ Elementwise test if x >= y.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A t
 ### hstack
 ```py
 
-def hstack(tensors: typing.Iterable) -> numpy.ndarray
+def hstack(tensors: Iterable[numpy.ndarray]) -> numpy.ndarray
 
 ```
 
@@ -414,6 +530,30 @@ def identity(n: int) -> numpy.ndarray
 Return the n-dimensional identity matrix.<br /><br />Args:<br /> ~ n: The desired size of the tensor.<br /><br />Returns:<br /> ~ tensor: The n x n identity matrix with ones along the diagonal<br /> ~  ~  ~ and zeros elsewhere.
 
 
+### index\_select
+```py
+
+def index_select(mat: numpy.ndarray, index: numpy.ndarray, dim: int=0) -> numpy.ndarray
+
+```
+
+
+
+Select the specified indices of a tensor along dimension dim.<br />For example, dim = 1 is equivalent to mat[:, index] in numpy.<br /><br />Args:<br /> ~ mat (tensor (num_samples, num_units))<br /> ~ index (tensor; 1 -dimensional)<br /> ~ dim (int)<br /><br />Returns:<br /> ~ if dim == 0:<br /> ~  ~ mat[index, :]<br /> ~ if dim == 1:<br /> ~  ~ mat[:, index]
+
+
+### int\_tensor
+```py
+
+def int_tensor(tensor: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Cast tensor to an int tensor.<br /><br />Args:<br /> ~ tensor: A tensor.<br /><br />Returns:<br /> ~ tensor: Tensor converted to int.
+
+
 ### inv
 ```py
 
@@ -426,22 +566,22 @@ def inv(mat: numpy.ndarray) -> numpy.ndarray
 Compute matrix inverse.<br /><br />Args:<br /> ~ mat: A square matrix.<br /><br />Returns:<br /> ~ tensor: The matrix inverse.
 
 
-### jit
+### is\_tensor
 ```py
 
-def jit(signature_or_function=None, locals={}, target='cpu', cache=False, **options)
+def is_tensor(x: Union[numpy.float32, numpy.ndarray]) -> bool
 
 ```
 
 
 
-This decorator is used to compile a Python function into native code.<br /><br />Args<br />-----<br />signature:<br /> ~ The (optional) signature or list of signatures to be compiled.<br /> ~ If not passed, required signatures will be compiled when the<br /> ~ decorated function is called, depending on the argument values.<br /> ~ As a convenience, you can directly pass the function to be compiled<br /> ~ instead.<br /><br />locals: dict<br /> ~ Mapping of local variable names to Numba types. Used to override the<br /> ~ types deduced by Numba's type inference engine.<br /><br />target: str<br /> ~ Specifies the target platform to compile for. Valid targets are cpu,<br /> ~ gpu, npyufunc, and cuda. Defaults to cpu.<br /><br />targetoptions:<br /> ~ For a cpu target, valid options are:<br /> ~  ~ nopython: bool<br /> ~  ~  ~ Set to True to disable the use of PyObjects and Python API<br /> ~  ~  ~ calls. The default behavior is to allow the use of PyObjects<br /> ~  ~  ~ and Python API. Default value is False.<br /><br /> ~  ~ forceobj: bool<br /> ~  ~  ~ Set to True to force the use of PyObjects for every value.<br /> ~  ~  ~ Default value is False.<br /><br /> ~  ~ looplift: bool<br /> ~  ~  ~ Set to True to enable jitting loops in nopython mode while<br /> ~  ~  ~ leaving surrounding code in object mode. This allows functions<br /> ~  ~  ~ to allocate NumPy arrays and use Python objects, while the<br /> ~  ~  ~ tight loops in the function can still be compiled in nopython<br /> ~  ~  ~ mode. Any arrays that the tight loop uses should be created<br /> ~  ~  ~ before the loop is entered. Default value is True.<br /><br />Returns<br />--------<br />A callable usable as a compiled function.  Actual compiling will be<br />done lazily if no explicit signatures are passed.<br /><br />Examples<br />--------<br />The function can be used in the following ways:<br /><br />1) jit(signatures, target='cpu', **targetoptions) -> jit(function)<br /><br /> ~ Equivalent to:<br /><br /> ~  ~ d = dispatcher(function, targetoptions)<br /> ~  ~ for signature in signatures:<br /> ~  ~  ~ d.compile(signature)<br /><br /> ~ Create a dispatcher object for a python function.  Then, compile<br /> ~ the function with the given signature(s).<br /><br /> ~ Example:<br /><br /> ~  ~ @jit("int32(int32, int32)")<br /> ~  ~ def foo(x, y):<br /> ~  ~  ~ return x + y<br /><br /> ~  ~ @jit(["int32(int32, int32)", "float32(float32, float32)"])<br /> ~  ~ def bar(x, y):<br /> ~  ~  ~ return x + y<br /><br />2) jit(function, target='cpu', **targetoptions) -> dispatcher<br /><br /> ~ Create a dispatcher function object that specializes at call site.<br /><br /> ~ Examples:<br /><br /> ~  ~ @jit<br /> ~  ~ def foo(x, y):<br /> ~  ~  ~ return x + y<br /><br /> ~  ~ @jit(target='cpu', nopython=True)<br /> ~  ~ def bar(x, y):<br /> ~  ~  ~ return x + y
+Test if x is a tensor.<br /><br />Args:<br /> ~ x (float or tensor)<br /><br />Returns:<br /> ~ bool
 
 
 ### lesser
 ```py
 
-def lesser(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
+def lesser(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
 
 ```
 
@@ -453,7 +593,7 @@ Elementwise test if x < y.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A te
 ### lesser\_equal
 ```py
 
-def lesser_equal(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
+def lesser_equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
 
 ```
 
@@ -498,6 +638,18 @@ def logcosh(x: numpy.ndarray) -> numpy.ndarray
 Elementwise logarithm of the hyperbolic cosine of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise logarithm of the hyperbolic cosine.
 
 
+### logdet
+```py
+
+def logdet(mat: numpy.ndarray) -> float
+
+```
+
+
+
+Compute the logarithm of the determinant of a square matrix.<br /><br />Args:<br /> ~ mat: A square matrix.<br /><br />Returns:<br /> ~ logdet: The logarithm of the matrix determinant.
+
+
 ### logit
 ```py
 
@@ -531,7 +683,7 @@ def mapzip_(func_, a, b)
 
 
 
-Applies an in place function over the zip of iterables a and b,<br />storing the result in a. That is,<br />a[i] = func(a[i], b[i]).<br /><br />For example:<br /><br />```<br />from collections import namedtuple<br />import numpy as np<br />import numexpr as ne<br /><br />def add_(x: np.ndarray, y: np.ndarray) -> None:<br /> ~ ne.evaluate('x + y', out=x)<br /><br />coords = namedtuple("coordinates", ["x", "y"])<br /><br />a = coords(np.array([1]), np.array([2]))<br />b = coords(np.array([3]), np.array([4]))<br /><br />mapzip_(add_, a, b) # a = coordinates(x=4, y=6)<br /><br />a = list(a)<br />b = list(b)<br /><br />mapzip_(add_, a, b) # a = [7, 10]<br />```<br /><br />Args:<br /> ~ func (callable): an in place function with two arguments<br /> ~ a (iterable; e.g., list or namedtuple)<br /> ~ b (iterable; e.g., list or namedtuple)<br /><br />Returns:<br /> ~ None
+Applies an in place function over the zip of iterables a and b,<br />func(a[i], b[i]).<br /><br />For example:<br /><br />```<br />from collections import namedtuple<br />import numpy as np<br />import numexpr as ne<br /><br />def add_(x: np.ndarray, y: np.ndarray) -> None:<br /> ~ ne.evaluate('x + y', out=x)<br /><br />coords = namedtuple("coordinates", ["x", "y"])<br /><br />a = coords(np.array([1]), np.array([2]))<br />b = coords(np.array([3]), np.array([4]))<br /><br />mapzip_(add_, a, b) # a = coordinates(x=4, y=6)<br /><br />a = list(a)<br />b = list(b)<br /><br />mapzip_(add_, a, b) # a = [7, 10]<br />```<br /><br />Args:<br /> ~ func (callable): an in place function with two arguments<br /> ~ a (iterable; e.g., list or namedtuple)<br /> ~ b (iterable; e.g., list or namedtuple)<br /><br />Returns:<br /> ~ None
 
 
 ### maximum
@@ -549,13 +701,13 @@ Elementwise maximum of two tensors.<br /><br />Args:<br /> ~ x: A tensor.<br /> 
 ### mean
 ```py
 
-def mean(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
+def mean(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
 
 ```
 
 
 
-Return the mean of the elements of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis for taking the mean.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall mean of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The mean of the tensor along the specified axis.
+Return the mean of the elements of a tensor along the specified axis.<br /><br />Args:<br /> ~ x: A float or tensor of rank=2.<br /> ~ axis (optional): The axis for taking the mean.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ float: The overall mean of the elements in the tensor<br /> ~ else:<br /> ~  ~ tensor: The mean of the tensor along the specified axis.
 
 
 ### minimum
@@ -570,16 +722,28 @@ def minimum(x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray
 Elementwise minimum of two tensors.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ y: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise minimum of x and y.
 
 
-### mix\_inplace
+### mix
 ```py
 
-def mix_inplace(w: typing.Union, x: numpy.ndarray, y: numpy.ndarray) -> None
+def mix(w: numpy.ndarray, x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray
 
 ```
 
 
 
-Compute a weighted average of two matrices (x and y) and store the results in x.<br />Useful for keeping track of running averages during training.<br /><br />x <- w * x + (1-w) * y<br /><br />Note:<br /> ~ Modifies x in place.<br /><br />Args:<br /> ~ w: The mixing coefficient between 0 and 1 .<br /> ~ x: A tensor.<br /> ~ y: A tensor:<br /><br />Returns:<br /> ~ None
+Compute a weighted average of two matrices (x and y) and return the result.<br />Multilinear interpolation.<br /><br />Note:<br /> ~ Modifies x in place.<br /><br />Args:<br /> ~ w: The mixing coefficient tensor between 0 and 1 .<br /> ~ x: A tensor.<br /> ~ y: A tensor:<br /><br />Returns:<br /> ~ tensor = w * x + (1-w) * y
+
+
+### mix\_inplace
+```py
+
+def mix_inplace(w: numpy.ndarray, x: numpy.ndarray, y: numpy.ndarray) -> None
+
+```
+
+
+
+Compute a weighted average of two matrices (x and y) and store the results in x.<br />Useful for keeping track of running averages during training.<br /><br />x <- w * x + (1-w) * y<br /><br />Note:<br /> ~ Modifies x in place.<br /><br />Args:<br /> ~ w: The mixing coefficient tensor between 0 and 1 .<br /> ~ x: A tensor.<br /> ~ y: A tensor:<br /><br />Returns:<br /> ~ None
 
 
 ### multiply
@@ -592,6 +756,18 @@ def multiply(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
 
 
 Multiply tensor b with tensor a using broadcasting.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: a * b
+
+
+### multiply\_
+```py
+
+def multiply_(a: numpy.ndarray, b: numpy.ndarray) -> None
+
+```
+
+
+
+Multiply tensor b with tensor a using broadcasting.<br /><br />Notes:<br /> ~ Modifies b in place.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ None
 
 
 ### ndim
@@ -609,13 +785,49 @@ Return the number of dimensions of a tensor.<br /><br />Args:<br /> ~ tensor: A 
 ### norm
 ```py
 
-def norm(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
+def norm(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
 
 ```
 
 
 
 Return the L2 norm of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /> ~ axis (optional): the axis for taking the norm<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is none:<br /> ~  ~ float: The L2 norm of the tensor<br /> ~  ~    (i.e., the sqrt of the sum of the squared elements).<br /> ~ else:<br /> ~  ~ tensor: The L2 norm along the specified axis.
+
+
+### normal\_cdf
+```py
+
+def normal_cdf(x: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Elementwise cumulative distribution function of the standard normal distribution.<br /><br />For the CDF of a normal distributon with mean u and standard deviation sigma, use<br />normal_cdf((x-u)/sigma).<br /><br />Args:<br /> ~ x (tensor)<br /><br />Returns:<br /> ~ tensor: Elementwise cdf
+
+
+### normal\_inverse\_cdf
+```py
+
+def normal_inverse_cdf(p: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Elementwise inverse cumulative distribution function of the standard normal<br />distribution.<br /><br />For the inverse CDF of a normal distributon with mean u and standard deviation sigma,<br />use u + sigma * normal_inverse_cdf(p).<br /><br />Args:<br /> ~ p (tensor bounded in (0,1))<br /><br />Returns:<br /> ~ tensor: Elementwise inverse cdf
+
+
+### normal\_pdf
+```py
+
+def normal_pdf(x: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Elementwise probability density function of the standard normal distribution.<br /><br />For the PDF of a normal distributon with mean u and standard deviation sigma, use<br />normal_pdf((x-u)/sigma) / sigma.<br /><br />Args:<br /> ~ x (tensor)<br /><br />Returns:<br /> ~ tensor: Elementwise pdf
 
 
 ### normalize
@@ -633,7 +845,7 @@ Divide x by it's sum.<br /><br />Args:<br /> ~ x: A non-negative tensor.<br /><b
 ### not\_equal
 ```py
 
-def not_equal(x: numpy.ndarray, y: numpy.ndarray) -> typing.Union
+def not_equal(x: numpy.ndarray, y: numpy.ndarray) -> Union[bool, numpy.ndarray]
 
 ```
 
@@ -657,7 +869,7 @@ Return the number of elements in a tensor.<br /><br />Args:<br /> ~ tensor: A te
 ### ones
 ```py
 
-def ones(shape: typing.Tuple) -> numpy.ndarray
+def ones(shape: Tuple[int]) -> numpy.ndarray
 
 ```
 
@@ -690,6 +902,42 @@ def outer(x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray
 Compute the outer product of vectors x and y.<br /><br />mat_{ij} = x_i * y_j<br /><br />Args:<br /> ~ x: A vector (i.e., a 1D tensor).<br /> ~ y: A vector (i.e., a 1D tensor).<br /><br />Returns:<br /> ~ tensor: Outer product of vectors x and y.
 
 
+### pdist
+```py
+
+def pdist(x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Compute the pairwise distance matrix between the rows of x and y.<br /><br />Args:<br /> ~ x (tensor (num_samples_1, num_units))<br /> ~ y (tensor (num_samples_2, num_units))<br /><br />Returns:<br /> ~ tensor (num_samples_1, num_samples_2)
+
+
+### pinv
+```py
+
+def pinv(mat: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Compute matrix pseudoinverse.<br /><br />Args:<br /> ~ mat: A square matrix.<br /><br />Returns:<br /> ~ tensor: The matrix pseudoinverse.
+
+
+### qr
+```py
+
+def qr(mat: numpy.ndarray) -> Tuple[numpy.ndarray]
+
+```
+
+
+
+Compute the QR decomposition of a matrix.<br />The QR decomposition factorizes a matrix A into a product<br />A = QR of an orthonormal matrix Q and an upper triangular matrix R.<br />Provides an orthonormalization of the columns of the matrix.<br /><br />Args:<br /> ~ mat: A matrix.<br /><br />Returns:<br /> ~ (Q, R): Tuple of tensors.
+
+
 ### quadratic
 ```py
 
@@ -705,7 +953,7 @@ Evaluate the quadratic form a W b.<br /><br />a ~ vector, b ~ vector, W ~ matrix
 ### rand
 ```py
 
-def rand(shape: typing.Tuple) -> numpy.ndarray
+def rand(shape: Tuple[int]) -> numpy.ndarray
 
 ```
 
@@ -714,16 +962,52 @@ def rand(shape: typing.Tuple) -> numpy.ndarray
 Generate a tensor of the specified shape filled with uniform random numbers<br />between 0 and 1.<br /><br />Args:<br /> ~ shape: Desired shape of the random tensor.<br /><br />Returns:<br /> ~ tensor: Random numbers between 0 and 1.
 
 
+### rand\_like
+```py
+
+def rand_like(tensor: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Generate a tensor of the same shape as the specified tensor<br /><br />Args:<br /> ~ tensor: tensor with desired shape.<br /><br />Returns:<br /> ~ tensor: Random numbers between 0 and 1.
+
+
+### rand\_softmax
+```py
+
+def rand_softmax(phi: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Draw random 1-hot samples according to softmax probabilities.<br /><br />Given an effective field vector v,<br />the softmax probabilities are p = exp(v) / sum(exp(v))<br /><br />A 1-hot vector x is sampled according to p.<br /><br />Args:<br /> ~ phi (tensor (batch_size, num_units)): the effective field<br /><br />Returns:<br /> ~ tensor (batch_size, num_units): random 1-hot samples<br /> ~  ~ from the softmax distribution.
+
+
 ### randn
 ```py
 
-def randn(shape: typing.Tuple) -> numpy.ndarray
+def randn(shape: Tuple[int]) -> numpy.ndarray
 
 ```
 
 
 
 Generate a tensor of the specified shape filled with random numbers<br />drawn from a standard normal distribution (mean = 0, variance = 1).<br /><br />Args:<br /> ~ shape: Desired shape of the random tensor.<br /><br />Returns:<br /> ~ tensor: Random numbers between from a standard normal distribution.
+
+
+### randn\_like
+```py
+
+def randn_like(tensor: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Generate a tensor of the same shape as the specified tensor<br />filled with normal(0,1) random numbers<br /><br />Args:<br /> ~ tensor: tensor with desired shape.<br /><br />Returns:<br /> ~ tensor: Random numbers between from a standard normal distribution.
 
 
 ### reciprocal
@@ -753,13 +1037,25 @@ Repeat tensor n times along the first axis.<br /><br />Args:<br /> ~ tensor: A v
 ### reshape
 ```py
 
-def reshape(tensor: numpy.ndarray, newshape: typing.Tuple) -> numpy.ndarray
+def reshape(tensor: numpy.ndarray, newshape: Tuple[int]) -> numpy.ndarray
 
 ```
 
 
 
 Return tensor with a new shape.<br /><br />Args:<br /> ~ tensor: A tensor.<br /> ~ newshape: The desired shape.<br /><br />Returns:<br /> ~ tensor: A tensor with the desired shape.
+
+
+### scatter\_
+```py
+
+def scatter_(mat: numpy.ndarray, inds: numpy.ndarray, val: Union[int, float]) -> numpy.ndarray
+
+```
+
+
+
+Assign a value a specific points in a matrix.<br />Iterates along the rows of mat,<br />successively assigning val to column indices given by inds.<br /><br />Note:<br /> ~ Modifies mat in place.<br /><br />Args:<br /> ~ mat: A tensor.<br /> ~ inds: The indices<br /> ~ val: The value to insert
 
 
 ### set\_seed
@@ -777,7 +1073,7 @@ Set the seed of the random number generator.<br /><br />Notes:<br /> ~ Default s
 ### shape
 ```py
 
-def shape(tensor: numpy.ndarray) -> typing.Tuple
+def shape(tensor: numpy.ndarray) -> Tuple[int]
 
 ```
 
@@ -810,6 +1106,18 @@ def sin(x: numpy.ndarray) -> numpy.ndarray
 Elementwise sine of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise sine.
 
 
+### softmax
+```py
+
+def softmax(x: numpy.ndarray) -> numpy.ndarray
+
+```
+
+
+
+Softmax function on a tensor.<br />Exponentiaties the tensor elementwise and divides<br /> ~ by the sum along axis=1.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Softmax of the tensor.
+
+
 ### softplus
 ```py
 
@@ -820,6 +1128,18 @@ def softplus(x: numpy.ndarray) -> numpy.ndarray
 
 
 Elementwise softplus function of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br />Returns:<br /> ~ tensor: Elementwise softplus.
+
+
+### sort
+```py
+
+def sort(x: numpy.ndarray, axis: int=None) -> numpy.ndarray
+
+```
+
+
+
+Sort a tensor along the specied axis.<br /><br />Args:<br /> ~ x: A tensor:<br /> ~ axis: The axis of interest.<br /><br />Returns:<br /> ~ tensor (of floats): sorted tensor
 
 
 ### sqrt
@@ -861,19 +1181,19 @@ Elementwise square of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br /><br /
 ### square\_mix\_inplace
 ```py
 
-def square_mix_inplace(w: typing.Union, x: numpy.ndarray, y: numpy.ndarray) -> None
+def square_mix_inplace(w: numpy.ndarray, x: numpy.ndarray, y: numpy.ndarray) -> None
 
 ```
 
 
 
-Compute a weighted average of two matrices (x and y^2) and store the results in x.<br />Useful for keeping track of running averages of squared matrices during training.<br /><br />x <- w x + (1-w) * y**2<br /><br />Note:<br /> ~ Modifies x in place.<br /><br />Args:<br /> ~ w: The mixing coefficient between 0 and 1 .<br /> ~ x: A tensor.<br /> ~ y: A tensor:<br /><br />Returns:<br /> ~ None
+Compute a weighted average of two matrices (x and y^2) and store the results in x.<br />Useful for keeping track of running averages of squared matrices during training.<br /><br />x <- w x + (1-w) * y**2<br /><br />Note:<br /> ~ Modifies x in place.<br /><br />Args:<br /> ~ w: The mixing coefficient tensor between 0 and 1.<br /> ~ x: A tensor.<br /> ~ y: A tensor:<br /><br />Returns:<br /> ~ None
 
 
 ### stack
 ```py
 
-def stack(tensors: typing.Iterable, axis: int) -> numpy.ndarray
+def stack(tensors: Iterable[numpy.ndarray], axis: int) -> numpy.ndarray
 
 ```
 
@@ -885,7 +1205,7 @@ Stack tensors along the specified axis.<br /><br />Args:<br /> ~ tensors: A list
 ### std
 ```py
 
-def std(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
+def std(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
 
 ```
 
@@ -906,6 +1226,18 @@ def subtract(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray
 Subtract tensor a from tensor b using broadcasting.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ tensor: b - a
 
 
+### subtract\_
+```py
+
+def subtract_(a: numpy.ndarray, b: numpy.ndarray) -> None
+
+```
+
+
+
+Subtract tensor a from tensor b using broadcasting.<br /><br />Notes:<br /> ~ Modifies b in place.<br /><br />Args:<br /> ~ a: A tensor<br /> ~ b: A tensor<br /><br />Returns:<br /> ~ None
+
+
 ### tabs
 ```py
 
@@ -921,7 +1253,7 @@ Elementwise absolute value of a tensor.<br /><br />Args:<br /> ~ x: A tensor.<br
 ### tall
 ```py
 
-def tall(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
+def tall(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[bool, numpy.ndarray]
 
 ```
 
@@ -945,7 +1277,7 @@ Elementwise hyperbolic tangent of a tensor.<br /><br />Args:<br /> ~ x: A tensor
 ### tany
 ```py
 
-def tany(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
+def tany(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[bool, numpy.ndarray]
 
 ```
 
@@ -954,10 +1286,34 @@ def tany(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
 Return True if any elements of the input tensor are true along the<br />specified axis.<br /><br />Args:<br /> ~ x: A float or tensor.<br /> ~ axis (optional): The axis of interest.<br /> ~ keepdims (optional): If this is set to true, the dimension of the tensor<br /> ~  ~  ~  ~  ~  ~  is unchanged. Otherwise, the reduced axis is removed<br /> ~  ~  ~  ~  ~  ~  and the dimension of the array is 1 less.<br /><br />Returns:<br /> ~ if axis is None:<br /> ~  ~ bool: 'any' applied to all elements in the tensor<br /> ~ else:<br /> ~  ~ tensor (of bools): 'any' applied to the elements in the tensor<br /> ~  ~  ~  ~  ~  ~  ~ along axis
 
 
+### tclip
+```py
+
+def tclip(tensor: numpy.ndarray, a_min: numpy.ndarray=None, a_max: numpy.ndarray=None) -> numpy.ndarray
+
+```
+
+
+
+Return a tensor with its values clipped element-wise between a_min and a_max tensors.<br />The implementation is identical to clip.<br /><br />Args:<br /> ~ tensor: A tensor.<br /> ~ a_min (optional tensor): The desired lower bound on the elements of the tensor.<br /> ~ a_max (optional tensor): The desired upper bound on the elements of the tensor.<br /><br />Returns:<br /> ~ tensor: A new tensor with its values clipped between a_min and a_max.
+
+
+### tclip\_inplace
+```py
+
+def tclip_inplace(tensor: numpy.ndarray, a_min: numpy.ndarray=None, a_max: numpy.ndarray=None) -> None
+
+```
+
+
+
+Clip the values of a tensor elementwise between a_min and a_max tensors.<br />The implementation is identical to tclip_inplace<br /><br />Note:<br /> ~ Modifies tensor in place.<br /><br />Args:<br /> ~ tensor: A tensor.<br /> ~ a_min (optional tensor): The desired lower bound on the elements of the tensor.<br /> ~ a_max (optional tessor): The desired upper bound on the elements of the tensor.<br /><br />Returns:<br /> ~ None
+
+
 ### tmax
 ```py
 
-def tmax(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
+def tmax(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
 
 ```
 
@@ -969,7 +1325,7 @@ Return the elementwise maximum of a tensor along the specified axis.<br /><br />
 ### tmin
 ```py
 
-def tmin(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
+def tmin(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
 
 ```
 
@@ -981,7 +1337,7 @@ Return the elementwise minimum of a tensor along the specified axis.<br /><br />
 ### tmul
 ```py
 
-def tmul(a: typing.Union, x: numpy.ndarray) -> numpy.ndarray
+def tmul(a: Union[int, float], x: numpy.ndarray) -> numpy.ndarray
 
 ```
 
@@ -993,7 +1349,7 @@ Elementwise multiplication of tensor x by scalar a.<br /><br />Args:<br /> ~ x: 
 ### tmul\_
 ```py
 
-def tmul_(a: typing.Union, x: numpy.ndarray) -> numpy.ndarray
+def tmul_(a: Union[int, float], x: numpy.ndarray) -> numpy.ndarray
 
 ```
 
@@ -1029,7 +1385,7 @@ Elementwise power of a tensor x to power a.<br /><br />Args:<br /> ~ x: A tensor
 ### tprod
 ```py
 
-def tprod(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
+def tprod(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
 
 ```
 
@@ -1077,7 +1433,7 @@ Return a tensor with rounded elements.<br /><br />Args:<br /> ~ tensor: A tensor
 ### tsum
 ```py
 
-def tsum(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
+def tsum(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
 
 ```
 
@@ -1101,7 +1457,7 @@ Return tensor with a new axis inserted.<br /><br />Args:<br /> ~ tensor: A tenso
 ### var
 ```py
 
-def var(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> typing.Union
+def var(x: numpy.ndarray, axis: int=None, keepdims: bool=False) -> Union[numpy.float32, numpy.ndarray]
 
 ```
 
@@ -1113,7 +1469,7 @@ Return the variance of the elements of a tensor along the specified axis.<br /><
 ### vstack
 ```py
 
-def vstack(tensors: typing.Iterable) -> numpy.ndarray
+def vstack(tensors: Iterable[numpy.ndarray]) -> numpy.ndarray
 
 ```
 
@@ -1125,7 +1481,7 @@ Concatenate tensors along the zeroth axis.<br /><br />Args:<br /> ~ tensors: A l
 ### zeros
 ```py
 
-def zeros(shape: typing.Tuple) -> numpy.ndarray
+def zeros(shape: Tuple[int]) -> numpy.ndarray
 
 ```
 

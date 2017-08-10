@@ -2,6 +2,7 @@ import os
 
 from paysage import backends as be
 from paysage import batch
+from paysage import preprocess as pre
 from paysage import layers
 from paysage.models import model
 from paysage import fit
@@ -9,12 +10,13 @@ from paysage import optimizers
 from paysage import schedules
 
 import pytest
+import pandas
 
 def test_tap_machine(paysage_path=None):
     num_hidden_units = 10
-    batch_size = 50
+    batch_size = 10
     num_epochs = 1
-    learning_rate = schedules.power_law_decay(initial=0.1, coefficient=0.1)
+    learning_rate = schedules.PowerLawDecay(initial=0.1, coefficient=0.1)
 
     if not paysage_path:
         paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -34,11 +36,13 @@ def test_tap_machine(paysage_path=None):
     be.set_seed()
 
     # set up the reader to get minibatches
-    data = batch.HDFBatch(shuffled_filepath,
-                         'train/images',
-                          batch_size,
-                          transform=batch.binarize_color,
-                          train_fraction=0.1)
+    small_dataset = pandas.read_hdf(shuffled_filepath, key='train/images').as_matrix()[:1000,]
+    print(small_dataset.shape)
+    data = batch.InMemoryBatch(
+           pre.binarize_color(be.float_tensor(small_dataset)),
+           batch_size,
+           train_fraction=0.95
+           )
 
     # set up the model and initialize the parameters
     vis_layer = layers.BernoulliLayer(data.ncols)
@@ -61,7 +65,8 @@ def test_tap_machine(paysage_path=None):
 
     sampler = fit.SequentialMC(rbm)
 
-    solver = fit.SGD(rbm, data, opt, num_epochs, sampler=sampler, method=fit.tap, monitor=perf)
+    solver = fit.SGD(rbm, data, opt, num_epochs, sampler, method=fit.tap,
+                     monitor=perf)
 
     # fit the model
     print('training with stochastic gradient ascent')

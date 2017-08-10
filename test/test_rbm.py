@@ -2,6 +2,7 @@ import os
 
 from paysage import backends as be
 from paysage import batch
+from paysage import preprocess as pre
 from paysage import layers
 from paysage.models import model
 from paysage import fit
@@ -15,7 +16,7 @@ def test_rbm(paysage_path=None):
     num_hidden_units = 50
     batch_size = 50
     num_epochs = 1
-    learning_rate = schedules.power_law_decay(initial=0.01, coefficient=0.1)
+    learning_rate = schedules.PowerLawDecay(initial=0.01, coefficient=0.1)
     mc_steps = 1
 
     if not paysage_path:
@@ -39,7 +40,7 @@ def test_rbm(paysage_path=None):
     data = batch.HDFBatch(shuffled_filepath,
                          'train/images',
                           batch_size,
-                          transform=batch.binarize_color,
+                          transform=pre.binarize_color,
                           train_fraction=0.99)
 
     # set up the model and initialize the parameters
@@ -59,10 +60,9 @@ def test_rbm(paysage_path=None):
     # set up the optimizer and the fit method
     opt = optimizers.RMSProp(stepsize=learning_rate)
 
-
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data)
 
-    cd = fit.SGD(rbm, data, opt, num_epochs, method = fit.pcd, sampler=sampler,
+    cd = fit.SGD(rbm, data, opt, num_epochs, sampler, method = fit.pcd,
                  mcsteps=mc_steps, monitor=perf)
 
     # fit the model

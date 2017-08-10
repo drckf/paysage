@@ -1,77 +1,13 @@
 import os
 import pandas
 from cytoolz import partial
-from copy import deepcopy
-from typing import List, Optional
+from typing import List
 
 from .. import layers
 from .. import backends as be
 from .initialize import init_model as init
 from . import gradient_util as gu
 from . import model_utils as mu
-
-class StateTAP(object):
-    """
-    A StateTAP is a list of CumulantsTAP objects for each layer in the model.
-
-    """
-    def __init__(self, cumulants):
-        """
-        Create a StateTAP.
-
-        Args:
-            cumulants: list of CumulantsTAP objects
-
-        Returns:
-            StateTAP
-
-        """
-        self.cumulants = cumulants
-        self.len = len(self.cumulants)
-
-    @classmethod
-    def from_state(cls, state: mu.State) -> mu.State:
-        """
-        Create a StateTAP object from an existing StateTAP.
-
-        Args:
-            state (StateTAP): a StateTAP instance
-
-        Returns:
-            StateTAP object
-
-        """
-        return copy.deepcopy(state)
-
-    @classmethod
-    def from_model(cls, model):
-        """
-        Create a StateTAP object from a model.
-
-        Args:
-            model (Model): a Model instance
-
-        Returns:
-            StateTAP object
-
-        """
-        return cls([layer.get_zero_magnetization() for layer in model.layers])
-
-    @classmethod
-    def from_model_rand(cls, model):
-        """
-        Create a StateTAP object from a model.
-
-        Args:
-            model (Model): a Model instance
-
-        Returns:
-            StateTAP object
-
-        """
-        return cls([layer.get_random_magnetization() for layer in model.layers])
-
-
 
 class Model(object):
     """
@@ -86,7 +22,7 @@ class Model(object):
     '''
 
     """
-    def __init__(self, layer_list: List):
+    def __init__(self, layer_list: List, weight_list: List = None):
         """
         Create a model.
 
@@ -102,13 +38,17 @@ class Model(object):
         self.layers = layer_list
         self.num_layers = len(self.layers)
         self.graph = mu.ComputationGraph(self.num_layers)
+        self.multipliers = be.ones((self.num_layers))
 
         # set the weights
-        self.weights = [layers.Weights(
-                            (self.layers[weight_index[0]].len,
-                             self.layers[weight_index[1]].len
-                            )
-                        ) for weight_index in self.graph.weight_connections]
+        if weight_list is not None:
+            self.weights = weight_list
+        else:
+            self.weights = [layers.Weights(
+                    (self.layers[weight_index[0]].len,
+                     self.layers[weight_index[1]].len
+                     )
+                    ) for weight_index in self.graph.weight_connections]
         self.num_weights = len(self.weights)
 
     #
@@ -131,7 +71,8 @@ class Model(object):
         """
         config = {
             "model type": "RBM",
-            "layers": [ly.get_config() for ly in self.layers],
+            "layers": [layer.get_config() for layer in self.layers],
+            "weights": [weight.get_config() for weight in self.weights]
         }
         return config
 
@@ -148,9 +89,12 @@ class Model(object):
 
         """
         layer_list = []
-        for ly in config["layers"]:
-            layer_list.append(layers.Layer.from_config(ly))
-        return cls(layer_list)
+        for layer in config["layers"]:
+            layer_list.append(layers.layer_from_config(layer))
+        tmp = cls(layer_list)
+        for i in range(len(config["weights"])):
+            tmp.weights[i] = layers.weights_from_config(config["weights"][i])
+        return tmp
 
     def save(self, store: pandas.HDFStore) -> None:
         """
@@ -210,21 +154,42 @@ class Model(object):
     # Methods that define topology
     #
 
-    def _connected_rescaled_units(self, i: int, state: mu.State) -> List:
+    def use_dropout(self):
+        """
+        Indicate if the model has dropout.
+
+        Args:
+            None
+
+        Returns:
+            true of false
+
+        """
+        return any(layer.use_dropout() for layer in self.layers)
+
+    def _connected_rescaled_units(self, i: int, state: mu.State,
+                                  dropout_mask: mu.State = None) -> List:
         """
         Helper function to retrieve the rescaled units connected to layer i.
 
         Args:
             i (int): the index of the layer of interest
             state (State): the current state of the units
+            dropout_mask (State): mask on
+                model units for dropout, 1: on 0: dropped-out
 
         Returns:
             list[tensor]: the rescaled values of the connected units
 
         """
         connections = self.graph.layer_connections[i]
-        return [self.layers[conn.layer].rescale(state.units[conn.layer]) \
-                for conn in connections]
+        if dropout_mask is not None:
+            return [self.multipliers[conn.layer] * self.layers[conn.layer].rescale(
+                    be.multiply(dropout_mask.units[conn.layer], state.units[conn.layer]))
+                    for conn in connections]
+        else:
+            return [self.multipliers[conn.layer] * self.layers[conn.layer].rescale(
+                    state.units[conn.layer]) for conn in connections]
 
     def _connected_weights(self, i:int) -> List:
         """
@@ -299,23 +264,25 @@ class Model(object):
         """
         return self.layers[0].random(vis)
 
-    def _alternating_update(self, func_name: str, state: mu.State,
-                            beta=None) -> mu.State:
+    def _alternating_update_(self, func_name: str, state: mu.State,
+                            dropout_mask: mu.State = None, beta=None) -> None:
         """
         Performs a single Gibbs sampling update in alternating layers.
-        state -> new state
+
+        Notes:
+            Changes state in place.
 
         Args:
             func_name (str, function name): layer function name to apply to the units to sample
             state (State object): the current state of each layer
+            dropout_mask (State object): mask on model units
+                for dropout, 1: on 0: dropped-out
             beta (optional, tensor (batch_size, 1)): Inverse temperatures
 
         Returns:
             new state
 
         """
-        updated_state = mu.State.from_state(state)
-
         # define even and odd sampling sets to alternate between, including
         # only layers that can be sampled
         (odd_layers, even_layers) = (range(1, self.num_layers, 2),
@@ -326,14 +293,12 @@ class Model(object):
         # update the odd then the even layers
         for i in layer_order:
             func = getattr(self.layers[i], func_name)
-            updated_state.units[i] = func(
-                self._connected_rescaled_units(i, updated_state),
+            state.units[i] = func(
+                self._connected_rescaled_units(i, state, dropout_mask),
                 self._connected_weights(i),
-                beta)
+                beta=beta)
 
-        return updated_state
-
-    def markov_chain(self, n: int, state: mu.State,
+    def markov_chain(self, n: int, state: mu.State, dropout_mask: mu.State = None,
                      beta=None) -> mu.State:
         """
         Perform multiple Gibbs sampling steps in alternating layers.
@@ -347,6 +312,8 @@ class Model(object):
         Args:
             n (int): number of steps.
             state (State object): the current state of each layer
+            dropout_mask (State object):
+                mask on model units for dropout, 1: on 0: dropped-out
             beta (optional, tensor (batch_size, 1)): Inverse temperatures
 
         Returns:
@@ -355,13 +322,12 @@ class Model(object):
         """
         new_state = mu.State.from_state(state)
         for _ in range(n):
-            new_state = self._alternating_update('conditional_sample',
-                                                 new_state,
-                                                 beta)
+            self._alternating_update_('conditional_sample', new_state,
+                                      dropout_mask = dropout_mask, beta = beta)
         return new_state
 
-    def mean_field_iteration(self, n: int,
-                             state: mu.State, beta=None) -> mu.State:
+    def mean_field_iteration(self, n: int, state: mu.State, dropout_mask: mu.State = None,
+                             beta=None) -> mu.State:
         """
         Perform multiple mean-field updates in alternating layers
         states -> new state
@@ -374,6 +340,8 @@ class Model(object):
         Args:
             n (int): number of steps.
             state (State object): the current state of each layer
+            dropout_mask (State object):
+                mask on model units for dropout, 1: on 0: dropped-out
             beta (optional, tensor (batch_size, 1)): Inverse temperatures
 
         Returns:
@@ -382,12 +350,11 @@ class Model(object):
         """
         new_state = mu.State.from_state(state)
         for _ in range(n):
-            new_state = self._alternating_update('conditional_mean',
-                                                 new_state,
-                                                 beta)
+            self._alternating_update_('conditional_mean', new_state,
+                                      dropout_mask=dropout_mask, beta=beta)
         return new_state
 
-    def deterministic_iteration(self, n: int, state: mu.State,
+    def deterministic_iteration(self, n: int, state: mu.State, dropout_mask: mu.State = None,
                                 beta=None) -> mu.State:
         """
         Perform multiple deterministic (maximum probability) updates
@@ -402,6 +369,8 @@ class Model(object):
         Args:
             n (int): number of steps.
             state (State object): the current state of each layer
+            dropout_mask (State object):
+                mask on model units for dropout, 1: on 0: dropped-out
             beta (optional, tensor (batch_size, 1)): Inverse temperatures
 
         Returns:
@@ -410,19 +379,22 @@ class Model(object):
         """
         new_state = mu.State.from_state(state)
         for _ in range(n):
-            new_state = self._alternating_update('conditional_mode',
-                                                 new_state,
-                                                 beta)
+            self._alternating_update_('conditional_mode', new_state,
+                                      dropout_mask=dropout_mask, beta=beta)
         return new_state
 
-    def gradient(self, data_state, model_state):
+    def gradient(self, data_state, model_state, positive_dropout=None, negative_dropout=None):
         """
         Compute the gradient of the model parameters.
         Scales the units in the state and computes the gradient.
 
         Args:
             data_state (State object): The observed visible units and sampled hidden units.
-            model_state (State objects): The visible and hidden units sampled from the model.
+            model_state (State object): The visible and hidden units sampled from the model.
+            positive_dropout (State object): mask on model units
+                for positive phase dropout, 1: on 0: dropped-out
+            negative_dropout (State object): mask on model units
+                for negative phase dropout, 1: on 0: dropped-out
 
         Returns:
             dict: Gradients of the model parameters.
@@ -431,14 +403,16 @@ class Model(object):
         grad = gu.null_grad(self)
 
         # POSITIVE PHASE (using observed)
+        data_state_dropout = mu.dropout_state(data_state, positive_dropout)
 
         # compute the postive phase of the gradients of the layer parameters
         for i in range(self.num_layers):
             grad.layers[i] = self.layers[i].derivatives(
-                data_state.units[i],
+                data_state_dropout.units[i],
                 self._connected_rescaled_units(i, data_state),
-                self._connected_weights(i)
-            )
+                self._connected_weights(i),
+                penalize=True
+                )
 
         # compute the positive phase of the gradients of the weights
         for i in range(self.num_weights):
@@ -447,30 +421,34 @@ class Model(object):
             grad.weights[i] = self.weights[i].derivatives(
                 self.layers[iL].rescale(data_state.units[iL]),
                 self.layers[iR].rescale(data_state.units[iR]),
-            )
+                penalize=True
+                )
 
         # NEGATIVE PHASE (using sampled)
+        model_state_dropout = mu.dropout_state(model_state, negative_dropout)
 
         # update the gradients of the layer parameters with the negative phase
         for i in range(self.num_layers):
-            grad.layers[i] = be.mapzip(be.subtract,
-                self.layers[i].derivatives(
-                    model_state.units[i],
+            deriv = self.layers[i].derivatives(
+                    model_state_dropout.units[i],
                     self._connected_rescaled_units(i, model_state),
-                    self._connected_weights(i)
-                ),
-            grad.layers[i])
+                    self._connected_weights(i),
+                    penalize=False
+                    )
+            grad.layers[i] = [be.mapzip(be.subtract, z[0], z[1])
+            for z in zip(deriv, grad.layers[i])]
 
         # update the gradients of the weight parameters with the negative phase
         for i in range(self.num_weights):
             iL = self.graph.weight_connections[i][0]
             iR = self.graph.weight_connections[i][1]
-            grad.weights[i] = be.mapzip(be.subtract,
-                self.weights[i].derivatives(
+            deriv = self.weights[i].derivatives(
                     self.layers[iL].rescale(model_state.units[iL]),
                     self.layers[iR].rescale(model_state.units[iR]),
-                ),
-            grad.weights[i])
+                    penalize=False
+                    )
+            grad.weights[i] = [be.mapzip(be.subtract, z[0], z[1])
+            for z in zip(deriv, grad.weights[i])]
 
         return grad
 
@@ -506,13 +484,15 @@ class Model(object):
             tensor (num_samples,): Joint energies.
 
         """
+        rescaled_units = mu.dropout_state(data, mu.State.dropout_rescale(self))
         energy = 0
         for layer_index in range(self.num_layers):
-            energy += self.layers[layer_index].energy(data.units[layer_index])
+            energy += self.layers[layer_index].energy(rescaled_units.units[layer_index])
         for weight_index in range(self.num_weights):
             iL = self.graph.weight_connections[weight_index][0]
             iR = self.graph.weight_connections[weight_index][1]
-            energy += self.weights[weight_index].energy(data.units[iL], data.units[iR])
+            energy += self.weights[weight_index].energy(rescaled_units.units[iL],
+                                  rescaled_units.units[iR])
         return energy
 
     #
@@ -594,7 +574,7 @@ class Model(object):
         decrease = be.float_scalar(0.5)
 
         # generate random sample in domain to use as a starting location for gradient descent
-        state = StateTAP.from_model_rand(self)
+        state = mu.StateTAP.from_model_rand(self)
 
         free_energy = self.gibbs_free_energy(state)
         lr = init_lr
@@ -607,7 +587,7 @@ class Model(object):
                 be.apply_(lr_, g)
 
             # take a gradient step to compute a new state
-            new_state = StateTAP([
+            new_state = mu.StateTAP([
                 self.layers[l].clip_magnetization(
                     be.mapzip(be.subtract, grad[l], state.cumulants[l])
                 )
@@ -693,7 +673,7 @@ class Model(object):
         state = self.compute_StateTAP(init_lr_EMF, tolerance_EMF, max_iters_EMF)
         return self._grad_gibbs_free_energy(state)
 
-    def TAP_gradient(self, data_state, init_lr, tolerance, max_iters):
+    def TAP_gradient(self, data_state, init_lr, tolerance, max_iters, positive_dropout=None):
         """
         Gradient of -\ln P(v) with respect to the model parameters
 
@@ -703,7 +683,9 @@ class Model(object):
             init_lr float: initial learning rate which is halved whenever necessary
              to enforce descent.
             tol float: tolerance for quitting minimization.
-            max_iters int: maximum gradient decsent steps
+            max_iters (int): maximum gradient decsent steps
+            positive_dropout (State object): mask on model units for positive phase dropout
+             1: on 0: dropped-out
 
         Returns:
             Gradient (namedtuple): containing gradients of the model parameters.
@@ -711,6 +693,9 @@ class Model(object):
         """
         # compute average grad_F_marginal over the minibatch
         pos_phase = gu.null_grad(self)
+
+        if positive_dropout is not None:
+            data_state.units = be.mapzip(be.multiply, positive_dropout.units, data_state.units)
 
         # compute the postive phase of the gradients of the layer parameters
         for i in range(self.num_layers):

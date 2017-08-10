@@ -1,20 +1,26 @@
-import example_mnist_grbm as grbm
-import example_mnist_hopfield as hopfield
-import example_mnist_rbm as rbm
-import example_mnist_deep_rbm as deep
-import example_mnist_tap_machine as tap
+import mnist_grbm as grbm
+import mnist_hopfield as hopfield
+import mnist_rbm as rbm
+import mnist_dbm as deep
+import mnist_tap as tap
+import mnist_relu_rbm as relu
+import mnist_student_rbm as student
 
 def all_examples():
     print("GRBM")
-    grbm.example_mnist_grbm()
+    grbm.run()
     print("Hopfield")
-    hopfield.example_mnist_hopfield()
+    hopfield.run()
     print("RBM")
-    rbm.example_mnist_rbm()
+    rbm.run()
     print("Deep RBM")
-    deep.example_mnist_deep_rbm()
+    deep.run()
     print("TAP machine rbm")
-    tap.example_mnist_tap_machine()
+    tap.run()
+    print("ReLU rbm")
+    relu.run()
+    print("Student rbm")
+    student.run()
     print("Finished")
 
 if __name__ == "__main__":

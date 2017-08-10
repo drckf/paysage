@@ -9,12 +9,10 @@ ipython==5.2.2
 ipython-genutils==0.1.0
 isort==4.2.5
 lazy-object-proxy==1.2.2
-llvmlite==0.15.0
 matplotlib==2.0.0
 mccabe==0.6.1
-numba==0.30.1
 numexpr==2.6.2
-numpy==1.12.0
+numpy==1.13.1
 packaging==16.8
 pandas==0.19.2
 pbr==1.10.0
