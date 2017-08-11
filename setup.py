@@ -5,17 +5,16 @@ def readme():
         return f.read()
 
 setup(name='paysage',
-      version='0.0',
+      version='0.1',
       description='Machine learning with energy based models in python',
-      url='https://bitbucket.org/drckf/paysage',
-      author='Charles K. Fisher',
-      author_email='charleskennethfisher@gmail.com',
+      url='https://github.com/drckf/paysage',
+      author='Unlearn.AI, Inc.',
+      author_email='drckf@unlearnai.com',
       license='MIT',
       packages=['paysage'],
       install_requires=[
           'h5py',
           'matplotlib',
-          'numba',
           'numexpr',
           'numpy',
           'pandas',
@@ -24,10 +23,10 @@ setup(name='paysage',
           'scipy',
           'seaborn',
           'tables',
-          'prospector',
           'cytoolz'
           ],
       tests_require=[
           'pytest'
       ],
+      python_requires='~=3.6',
       zip_safe=False)

@@ -3,12 +3,12 @@
 This module defines math utilities.
 
 """
-
 from paysage import backends as be
 
 class MeanCalculator(object):
     """
     An online mean calculator.
+    Calculates the mean of tensors, returning a single number.
 
     """
     def __init__(self):
@@ -42,7 +42,7 @@ class MeanCalculator(object):
         self.num = 0
         self.mean = 0
 
-    def update(self, samples, **kwargs) -> None:
+    def update(self, samples) -> None:
         """
         Update the online calculation of the mean.
 
@@ -56,14 +56,85 @@ class MeanCalculator(object):
             None
 
         """
-        num_samples = len(samples)
-        self.num += num_samples
-        self.mean = self.mean + (be.mean(samples, **kwargs) - self.mean) * num_samples / self.num
+        n = len(samples)
+        sample_mean = be.tsum(samples) / n
+
+        self.num += n
+        self.mean += (sample_mean - self.mean) * n / max(self.num, 1)
+
+
+class MeanArrayCalculator(object):
+    """
+    An online mean calculator.
+    Calculates the mean of a tensor along axes.
+    Returns a tensor.
+
+    """
+    def __init__(self):
+        """
+        Create a MeanArrayCalculator object.
+
+        Args:
+            None
+
+        Returns:
+            The MeanArrayCalculator object.
+
+        """
+        self.num = None
+        self.mean = None
+
+    def reset(self) -> None:
+        """
+        Resets the calculation to the initial state.
+
+        Note:
+            Modifies the metric in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.num = None
+        self.mean = None
+
+    def update(self, samples, axis=0) -> None:
+        """
+        Update the online calculation of the mean.
+
+        Notes:
+            Modifies the metrics in place.
+
+        Args:
+            samples: data samples
+
+        Returns:
+            None
+
+        """
+        # compute the sample size and sample mean
+        n = len(samples)
+        sample_mean = be.tsum(samples, axis=axis) / n
+
+        # initialize the num and mean attributes if necessary
+        if self.mean is None:
+            self.mean = be.zeros_like(sample_mean)
+            self.num = 0
+
+        # update the num and mean attributes
+        tmp = self.num*self.mean + n*sample_mean
+        self.num += n
+        self.mean = tmp / self.num
+        #self.mean += (sample_mean - self.mean) * n / be.clip(self.num, a_min=1)
 
 
 class MeanVarianceCalculator(object):
     """
     An online numerically stable mean and variance calculator.
+    For computations on vector objects, where single values are returned.
     Uses Welford's algorithm for the variance.
     B.P. Welford, Technometrics 4(3):419–420.
 
@@ -81,6 +152,7 @@ class MeanVarianceCalculator(object):
         """
         self.num = 0
         self.mean = 0
+        self.square = 0
         self.var = 0
 
     def reset(self) -> None:
@@ -99,6 +171,7 @@ class MeanVarianceCalculator(object):
         """
         self.num = 0
         self.mean = 0
+        self.square = 0
         self.var = 0
 
     def update(self, samples) -> None:
@@ -115,8 +188,96 @@ class MeanVarianceCalculator(object):
             None
 
         """
-        for s in samples:
-            self.num += 1
-            mean_update = self.mean + (s - self.mean) / self.num
-            self.var = (self.var*(self.num - 1) + (s - mean_update)*(s - self.mean)) / self.num
-            self.mean = mean_update
+        n = len(samples)
+        sample_mean = be.tsum(samples) / n
+        sample_square = be.tsum(be.square(samples - sample_mean))
+
+        delta = sample_mean - self.mean
+        new_num = self.num + n
+        correction = n*self.num*delta**2 / max(new_num, 1)
+
+        self.square += sample_square + correction
+        self.var = self.square / max(new_num-1, 1)
+        self.mean = (self.num*self.mean + n*sample_mean) / max(new_num, 1)
+        self.num = new_num
+
+
+class MeanVarianceArrayCalculator(object):
+    """
+    An online numerically stable mean and variance calculator.
+    For calculations on arrays, where tensor objects are returned.
+    The variance over the 0-axis is computed.
+    Uses Welford's algorithm for the variance.
+    B.P. Welford, Technometrics 4(3):419–420.
+
+    """
+    def __init__(self):
+        """
+        Create MeanVarianceArrayCalculator object.
+
+        Args:
+            None
+
+        Returns:
+            The MeanVarianceArrayCalculator object.
+
+        """
+        self.num = None
+        self.mean = None
+        self.square = None
+        self.var = None
+
+    def reset(self) -> None:
+        """
+        Resets the calculation to the initial state.
+
+        Note:
+            Modifies the metrics in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.num = None
+        self.mean = None
+        self.square = None
+        self.var = None
+
+    def update(self, samples, axis=0) -> None:
+        """
+        Update the online calculation of the mean and variance.
+
+        Notes:
+            Modifies the metrics in place.
+
+        Args:
+            samples: data samples
+
+        Returns:
+            None
+
+        """
+        # compute the sample size and sample mean
+        n = len(samples)
+        sample_mean = be.tsum(samples, axis=axis) / max(n, 1)
+        sample_square = be.tsum(be.square(be.subtract(sample_mean, samples)),
+                                axis=axis)
+
+        if self.mean is None:
+            self.mean = be.zeros_like(sample_mean)
+            self.square = be.zeros_like(sample_square)
+            self.var = be.zeros_like(sample_square)
+            self.num = 0
+
+        delta = sample_mean - self.mean
+        new_num = self.num + n
+        correction = n*self.num*be.square(delta) / max(new_num, 1)
+
+        self.square += sample_square + correction
+        self.var = self.square / max(new_num-1, 1)
+        self.mean = (self.num*self.mean + n*sample_mean) / max(new_num, 1)
+        self.num = new_num
+

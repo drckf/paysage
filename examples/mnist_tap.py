@@ -1,4 +1,5 @@
 from paysage import batch
+from paysage import preprocess as pre
 from paysage import layers
 from paysage.models import model
 from paysage import fit
@@ -10,11 +11,12 @@ be.set_seed(137) # for determinism
 
 import example_util as util
 
-def example_mnist_tap_machine(paysage_path=None, num_epochs=10, show_plot=False):
+def run(paysage_path=None, num_epochs=10, show_plot=False):
 
     num_hidden_units = 256
     batch_size = 100
-    learning_rate = schedules.power_law_decay(initial=0.1, coefficient=0.1)
+    learning_rate = schedules.PowerLawDecay(initial=0.1, coefficient=0.1)
+    mc_steps = 1
 
     (_, _, shuffled_filepath) = \
             util.default_paths(paysage_path)
@@ -23,7 +25,7 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs=10, show_plot=False)
     data = batch.HDFBatch(shuffled_filepath,
                          'train/images',
                           batch_size,
-                          transform=batch.binarize_color,
+                          transform=pre.binarize_color,
                           train_fraction=0.95)
 
     # set up the model and initialize the parameters
@@ -31,12 +33,14 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs=10, show_plot=False)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
     rbm = model.Model([vis_layer, hid_layer])
-    rbm.initialize(data, 'glorot_normal')
+    rbm.initialize(data, method='glorot_normal')
 
     perf  = fit.ProgressMonitor(data,
                                 metrics=['ReconstructionError',
                                          'EnergyDistance',
-                                         'HeatCapacity'])
+                                         'HeatCapacity',
+                                         'WeightSparsity',
+                                         'WeightSquare'])
 
     opt = optimizers.Gradient(stepsize=learning_rate,
                               tolerance=1e-4,
@@ -44,7 +48,8 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs=10, show_plot=False)
 
     sampler = fit.DrivenSequentialMC.from_batch(rbm, data)
 
-    sgd = fit.SGD(rbm, data, opt, num_epochs, sampler=sampler, method=fit.tap, monitor=perf)
+    sgd = fit.SGD(rbm, data, opt, num_epochs, sampler, method=fit.tap,
+                  monitor=perf, mcsteps=mc_steps)
 
     # fit the model
     print('Training with stochastic gradient ascent using TAP expansion')
@@ -52,7 +57,8 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs=10, show_plot=False)
 
     util.show_metrics(rbm, perf)
     valid = data.get('validate')
-    util.show_reconstructions(rbm, valid, fit, show_plot, n_recon=10, vertical=False)
+    util.show_reconstructions(rbm, valid, fit, show_plot,
+                              n_recon=10, vertical=False, num_to_avg=10)
     util.show_fantasy_particles(rbm, valid, fit, show_plot, n_fantasy=25)
     util.show_weights(rbm, show_plot, n_weights=25)
     # close the HDF5 store
@@ -60,4 +66,4 @@ def example_mnist_tap_machine(paysage_path=None, num_epochs=10, show_plot=False)
     print("Done")
 
 if __name__ == "__main__":
-    example_mnist_tap_machine(show_plot = True)
+    run(show_plot = True)

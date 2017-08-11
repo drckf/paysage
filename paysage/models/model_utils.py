@@ -1,53 +1,10 @@
 import copy
 import numpy as np
 from collections import namedtuple
+from copy import deepcopy
 
 from .. import backends as be
 
-
-"""
-Comments for drckf:
-
-A deep boltzmann machine typically has a structure like:
-
-L_0 : W_0 : L_1 : W_1 : L_2 ~ layer : weight : layer : weight : layer
-
-the connectivity can be represented by a graph where the layers are "verticies"
-and the weights are "edges". below, i put quotation marks around the usual
-graph theory terms
-
-the "adjacency matrix" for the layers is:
-     L_0 L_1 L_2
-L_0: 0   1   0
-L_1: 1   0   1
-L_2: 0   1   0
-
-so that the layer connections (i.e., the "adjacency list") are:
-0: [1]
-1: [0, 2]
-2: [1]
-
-notice that if the adjacency matrix is A then the connections of layer i
-are given by A[i].nonzero() (works for both numpy and torch tensors -- though,
-they return slightly different objects so need a backend function to standardize
-the result).
-
-the "unoriented incidence matrix" of the graph is:
-     W_0 W_1
-L_0: 1   0
-L_1: 1   1
-L_2: 0   1
-
-the weight connections (i.e., the "edge list") are:
-0: [0, 1]
-1: [1, 2]
-
-Thoughts:
-
-"Gradient Clamping" seems like a natural thing to put in the layer itself,
-because it can be handled easily in the `layer.parameter_step` method.
-
-"""
 
 class State(object):
     """
@@ -78,7 +35,6 @@ class State(object):
 
         """
         self.units = tensors
-        self.shapes = [be.shape(t) for t in self.units]
 
     @classmethod
     def from_model(cls, batch_size, model):
@@ -98,6 +54,43 @@ class State(object):
         return cls(units)
 
     @classmethod
+    def dropout_mask(cls, model, batch_size=1):
+        """
+        Create a list of layer masks for performing dropout
+
+        Args:
+            model (Model): a model object
+            batch_size (int): number of masks per layer
+
+        Returns:
+            state: stores a mask tensor for each layer
+
+        """
+        if model.use_dropout():
+            units = [lay.get_dropout_mask(batch_size) for lay in model.layers]
+            return cls(units)
+        else:
+            return None
+
+    @classmethod
+    def dropout_rescale(cls, model, batch_size=1):
+        """
+        Create a list of tensors used for rescaling units according to dropout percentages
+
+        Args:
+            model (Model): a model object
+
+        Returns:
+            state: (1-layer.dropout_p) for each unit
+
+        """
+        if model.use_dropout():
+            units = [lay.get_dropout_scale(batch_size) for lay in model.layers]
+            return cls(units)
+        else:
+            return None
+
+    @classmethod
     def from_visible(cls, vis, model):
         """
         Create a state object with given visible unit values.
@@ -110,6 +103,7 @@ class State(object):
             state object
 
         """
+        # randomly initialize the state
         batch_size = be.shape(vis)[0]
         state = cls.from_model(batch_size, model)
         state.units[0] = vis
@@ -127,7 +121,105 @@ class State(object):
             state object
 
         """
-        return copy.deepcopy(state)
+        return cls([be.copy_tensor(t) for t in state.units])
+
+
+class StateTAP(object):
+    """
+    A StateTAP is a list of CumulantsTAP objects for each layer in the model.
+
+    """
+    def __init__(self, cumulants):
+        """
+        Create a StateTAP.
+
+        Args:
+            cumulants: list of CumulantsTAP objects
+
+        Returns:
+            StateTAP
+
+        """
+        self.cumulants = cumulants
+        self.len = len(self.cumulants)
+
+    @classmethod
+    def from_state(cls, state):
+        """
+        Create a StateTAP object from an existing StateTAP.
+
+        Args:
+            state (StateTAP): a StateTAP instance
+
+        Returns:
+            StateTAP object
+
+        """
+        return deepcopy(state)
+
+    @classmethod
+    def from_model(cls, model):
+        """
+        Create a StateTAP object from a model.
+
+        Args:
+            model (Model): a Model instance
+
+        Returns:
+            StateTAP object
+
+        """
+        return cls([layer.get_zero_magnetization() for layer in model.layers])
+
+    @classmethod
+    def from_model_rand(cls, model):
+        """
+        Create a StateTAP object from a model.
+
+        Args:
+            model (Model): a Model instance
+
+        Returns:
+            StateTAP object
+
+        """
+        return cls([layer.get_random_magnetization() for layer in model.layers])
+
+
+def dropout_state(state: State, dropout_mask: State) -> State:
+    """
+    Apply a dropout mask to a state.
+
+    Args:
+        state (State): the state of the units
+        dropout_mask (State): the dropout mask
+
+    Returns:
+        new state
+
+    """
+    if dropout_mask is not None:
+        return State(be.mapzip(be.multiply, dropout_mask.units, state.units))
+    else:
+        return state
+
+def dropout_state_(state: State, dropout_mask: State) -> None:
+    """
+    Apply a dropout mask to a state.
+
+    Notes:
+        Changes state in place!
+
+    Args:
+        state (State): the state of the units
+        dropout_mask (State): the dropout mask
+
+    Returns:
+        None
+
+    """
+    if dropout_mask is not None:
+        return be.mapzip_(be.multiply_, dropout_mask.units, state.units)
 
 
 class Graph(object):
@@ -271,6 +363,7 @@ class ComputationGraph(object):
         Returns:
             layer_connections (List): a list over layers, where each entry is
                 a list of LayerConnection tuples of the connections to that layer.
+
         """
         layer_connections = []
         for layer_index in range(self.num_layers):
@@ -300,7 +393,7 @@ class ComputationGraph(object):
             None
 
         """
-        self.clamped_sampling = clamped_sampling
+        self.clamped_sampling = list(clamped_sampling)
 
     def get_sampled(self):
         """
@@ -330,7 +423,7 @@ class ComputationGraph(object):
             None
 
         """
-        self.trainable_layers = trainable_layers
+        self.trainable_layers = list(trainable_layers)
         # set weights where an untrainable layer is a higher index to untrainable
         untrainable_layers = [i for i in range(self.num_layers) if i not in self.trainable_layers]
         untrainable_weights = np.where(np.in1d(self.connections.edge_list.T[1], untrainable_layers))[0]

@@ -7,7 +7,6 @@ derived from summary information about the current state of the model
 """
 
 from collections import namedtuple
-import math
 import numpy as np
 
 from . import math_utils
@@ -82,7 +81,7 @@ class ReconstructionError(object):
 
         """
         mse = be.square(
-                be.subtract(update_args.reconstructions.units[0], 
+                be.subtract(update_args.reconstructions.units[0],
                             update_args.minibatch.units[0])
                 )
         self.calc.update(be.tsum(mse, axis=1))
@@ -98,8 +97,8 @@ class ReconstructionError(object):
             reconstruction error (float)
 
         """
-        if self.calc.num:
-            return math.sqrt(self.calc.mean)
+        if self.calc.num is not None:
+            return np.sqrt(self.calc.mean)
         else:
             return None
 
@@ -117,7 +116,7 @@ class EnergyDistance(object):
 
     name = 'EnergyDistance'
 
-    def __init__(self, downsample=100):
+    def __init__(self):
         """
         Create EnergyDistance object.
 
@@ -129,7 +128,6 @@ class EnergyDistance(object):
 
         """
         self.calc = math_utils.MeanCalculator()
-        self.downsample = 100
 
     def reset(self) -> None:
         """
@@ -156,9 +154,8 @@ class EnergyDistance(object):
             None
 
         """
-        energy_distance = be.fast_energy_distance(update_args.minibatch.units[0],
-                                                  update_args.samples.units[0],
-                                                  self.downsample)
+        energy_distance = be.energy_distance(update_args.minibatch.units[0],
+                                                  update_args.samples.units[0])
         self.calc.update(be.float_tensor(np.array([energy_distance])))
 
     def value(self) -> float:
@@ -172,7 +169,7 @@ class EnergyDistance(object):
             energy distance (float)
 
         """
-        if self.calc.num:
+        if self.calc.num is not None:
             return self.calc.mean
         else:
             return None
@@ -243,7 +240,7 @@ class EnergyGap(object):
             energy gap (float)
 
         """
-        if self.calc.num:
+        if self.calc.num is not None:
             # double the mean from double counting the data and random sets
             return 2*self.calc.mean
         else:
@@ -319,8 +316,8 @@ class EnergyZscore(object):
             energy z-score (float)
 
         """
-        if self.calc_data.num:
-            z = (self.calc_data.mean - self.calc_random.mean) / math.sqrt(self.calc_random.var)
+        if self.calc_data.num is not None:
+            z = (self.calc_data.mean - self.calc_random.mean) / np.sqrt(self.calc_random.var)
             return z
         else:
             return None
@@ -392,5 +389,150 @@ class HeatCapacity(object):
         """
         if self.calc.num:
             return self.calc.var
+        else:
+            return None
+
+class WeightSparsity(object):
+    """
+    Compute the weight sparsity of the model as the formula
+
+    p = \sum_j(\sum_i w_ij^2)^2/\sum_i w_ij^4
+
+    Tubiana, J., Monasson, R. (2017)
+    Emergence of Compositional Representations in Restricted Boltzmann Machines,
+    PRL 118, 138301 (2017)
+
+    """
+
+    name = 'WeightSparsity'
+
+    def __init__(self):
+        """
+        Create WeightSparsity object.
+
+        Args:
+            None
+        Returns:
+            WeightSparsity object
+
+        """
+        self.p = 0
+
+    def reset(self) -> None:
+        """
+        Reset the metric to its initial state.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.p = None
+
+    def update(self, update_args: MetricState) -> None:
+        """
+        Compute the weight sparsity of the model
+
+        Args:
+            update_args: uses model only
+
+        Returns:
+            None
+
+        """
+        # TODO: should this use the weights of all of the layers?
+        w = update_args.model.weights[0].W()
+        (n,m) = be.shape(w)
+        w2 = be.tsum(be.square(w), axis=0)
+        w4 = be.tsum(be.square(w2), axis=0)
+        self.p = 1.0/float(n*m) * be.tsum(be.square(w2)/be.clip(w4, a_min=be.EPSILON))
+
+    def value(self) -> float:
+        """
+        Get the value of the weight sparsity.
+
+        Args:
+            None
+
+        Returns:
+            weight sparsity (float)
+
+        """
+        if self.p is not None:
+            return self.p
+        else:
+            return None
+
+class WeightSquare(object):
+    """
+    Compute the mean squared weights of the model per hidden unit
+
+    w2 = 1/(#hidden units)*\sum_ij w_ij^2
+
+    Tubiana, J., Monasson, R. (2017)
+    Emergence of Compositional Representations in Restricted Boltzmann Machines,
+    PRL 118, 138301 (2017)
+
+    """
+
+    name = 'WeightSquare'
+
+    def __init__(self):
+        """
+        Create WeightSquare object.
+
+        Args:
+            None
+        Returns:
+            WeightSquare object
+
+        """
+        self.mw2 = 0
+
+    def reset(self) -> None:
+        """
+        Reset the metric to its initial state.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.mw2 = None
+
+    def update(self, update_args: MetricState) -> None:
+        """
+        Compute the weight square of the model
+
+        Args:
+            update_args: uses model only
+
+        Returns:
+            None
+
+        """
+        # TODO: should this use the weights of all of the layers?
+        w = update_args.model.weights[0].W()
+        (n,m) = be.shape(w)
+        w2 = be.square(w)
+        self.mw2 = 1.0/float(m) * be.tsum(w2)
+
+    def value(self) -> float:
+        """
+        Get the value of the weight sparsity.
+
+        Args:
+            None
+
+        Returns:
+            weight sparsity (float)
+
+        """
+        if self.mw2 is not None:
+            return self.mw2
         else:
             return None

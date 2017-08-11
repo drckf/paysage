@@ -16,24 +16,16 @@ Using advanced mean field and Markov Chain Monte Carlo methods.
 
 
 ## Installation:
-With Anaconda3:
+We recommend using paysage with Anaconda3. Simply,
+
 1. Clone this git repo
 2. Move into the directory with setup.py
 3. Run “pip install -e .”
 
-On MaxOSX with PyEnv:
-1. Install pyenv, install python 3.6.0 and set python3 to the python 3.6.0 installation
-2. Install llvm 3.9 manually with homebrew
-3. Set the LLVM_CONFIG environment variable to the llvm-config file in the llvm 3.9 configuration
-4. Clone this git repo
-5. Move into the directory with setup.py
-6. Run "pip3 install -e ."
-7. Make a new file ~/.matplotlib/matplotlibrc with the text "backend: TkAgg". This fixes an issue with importing matplotlib in a virtual enviroment. Check out this [post](http://stackoverflow.com/questions/21784641/installation-issue-with-matplotlib-python) for more information.
-
 Running the examples requires a file mnist.h5 containing the MNIST dataset of handwritten images. The script download_mnist.py in the mnist/ folder will fetch the file from the web.
 
 ## Using PyTorch
-Paysage uses one of two backends for performing computations. By default, computations are performed using numpy/numexpr/numba on the CPU. If you have installed [PyTorch](http://pytorch.org), then you can switch to the pytorch backend by changing the setting in `paysage/backends/config.json` to `pytorch`.
+Paysage uses one of two backends for performing computations. By default, computations are performed using numpy/numexpr/numba on the CPU. If you have installed [PyTorch](http://pytorch.org), then you can switch to the pytorch backend by changing the setting in `paysage/backends/config.json` to `pytorch`. Version 0.2 or greater is required.  If you have a CUDA enabled version of pytorch, you can change the setting in `paysage/backends/config.json` from `cpu` to `gpu` to run on the GPU.
 
 ## System Dependencies
 

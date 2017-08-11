@@ -15,7 +15,7 @@ def grad_accumulate(func, grad)
 
 
 
-Apply a funciton entrywise over a Gradient object,<br />accumulating the result.<br /><br />Args:<br /> ~ func (callable): function with one argument<br /> ~ grad (Gradient)<br /><br />returns:<br /> ~ float
+Apply a function entrywise over a Gradient object,<br />accumulating the result.<br /><br />Args:<br /> ~ func (callable): function with one argument<br /> ~ grad (Gradient)<br /><br />returns:<br /> ~ float
 
 
 ### grad\_apply
@@ -40,18 +40,6 @@ def grad_apply_(func_, grad)
 
 
 Apply a function entrywise over a Gradient object.<br /><br />Notes:<br /> ~ Modifies elements of grad in place.<br /><br />Args:<br /> ~ func_ (callable, in place operation)<br /> ~ grad (Gradient)<br /><br />Returns:<br /> ~ None
-
-
-### grad\_fold
-```py
-
-def grad_fold(func, grad)
-
-```
-
-
-
-Apply a function entrywise over a Gradient objet,<br />combining the result.<br /><br />Args:<br /> ~ func (callable): function with two arguments<br /> ~ grad (Gradient)<br /><br />returns:<br /> ~ float
 
 
 ### grad\_magnitude
@@ -93,7 +81,7 @@ Apply an in place function entrywise over the zip of two Gradient objects.<br />
 ### namedtuple
 ```py
 
-def namedtuple(typename, field_names, verbose=False, rename=False)
+def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
 
 ```
 
@@ -111,7 +99,7 @@ def null_grad(model)
 
 
 
-Return a gradient object filled with None.<br /><br />Args:<br /> ~ model: a Model object<br /> ~ <br />Returns:<br /> ~ Gradient
+Return a gradient object filled with empty lists.<br /><br />Args:<br /> ~ model: a Model object<br /><br />Returns:<br /> ~ Gradient
 
 
 ### random\_grad
@@ -123,7 +111,7 @@ def random_grad(model)
 
 
 
-Return a gradient object filled with random numbers.<br /><br />Args:<br /> ~ model: a Model object<br /> ~ <br />Returns:<br /> ~ Gradient
+Return a gradient object filled with random numbers.<br /><br />Args:<br /> ~ model: a Model object<br /><br />Returns:<br /> ~ Gradient
 
 
 ### zero\_grad
@@ -135,5 +123,5 @@ def zero_grad(model)
 
 
 
-Return a gradient object filled with zero tensors.<br /><br />Args:<br /> ~ model: a Model object<br /> ~ <br />Returns:<br /> ~ Gradient
+Return a gradient object filled with zero tensors.<br /><br />Args:<br /> ~ model: a Model object<br /><br />Returns:<br /> ~ Gradient
 

@@ -12,8 +12,6 @@ num_vis = 8
 num_hid = 5
 num_samples = 10
 
-# ----- MODEL CONSTRUCTION ----- #
-
 def test_rmb_construction():
     vis_layer = layers.BernoulliLayer(num_vis)
     hid_layer = layers.BernoulliLayer(num_hid)
@@ -28,9 +26,6 @@ def test_hopfield_construction():
     vis_layer = layers.BernoulliLayer(num_vis)
     hid_layer = layers.GaussianLayer(num_hid)
     rbm = model.Model([vis_layer, hid_layer])
-
-
-# ----- CONFIG CREATION ----- #
 
 def test_grbm_config():
     vis_layer = layers.BernoulliLayer(num_vis)
@@ -74,8 +69,9 @@ def test_grbm_reload():
     # check the two models are consistent
     vis_data = vis_layer.random((num_samples, num_vis))
     data_state = model_utils.State.from_visible(vis_data, grbm)
-    vis_orig = grbm.deterministic_iteration(1, data_state).units[0]
-    vis_reload = grbm_reload.deterministic_iteration(1, data_state).units[0]
+    dropout_scale = model_utils.State.dropout_rescale(grbm)
+    vis_orig = grbm.deterministic_iteration(1, data_state, dropout_scale).units[0]
+    vis_reload = grbm_reload.deterministic_iteration(1, data_state, dropout_scale).units[0]
     assert be.allclose(vis_orig, vis_reload)
 
 if __name__ == "__main__":

@@ -72,6 +72,19 @@ class log_penalty(Penalty):
         return -self.penalty / tensor
 
 
+class logdet_penalty(Penalty):
+
+    def __init__(self, penalty):
+        super().__init__(penalty)
+
+    def value(self, tensor):
+        J = be.dot(be.transpose(tensor), tensor)
+        return -self.penalty * be.logdet(J)
+
+    def grad(self, tensor):
+        return -2 * self.penalty * be.transpose(be.pinv(tensor))
+
+
 # ----- FUNCTIONS ----- #
 
 def from_config(config):

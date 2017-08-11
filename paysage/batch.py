@@ -2,37 +2,77 @@ import os
 import numpy
 import pandas
 from . import backends as be
+from . import preprocess as pre
 
-# ----- FUNCTIONS ----- #
 
-def do_nothing(tensor):
-    return tensor
+def inclusive_slice(tensor, start, stop, step):
+    current = start
+    while current < stop:
+        next_iter = min(stop, current + step)
+        result = (current, next_iter)
+        current = next_iter
+        yield tensor[result[0]:result[1]]
 
-def scale(tensor, denominator):
-    return be.float_tensor(tensor/denominator)
 
-def binarize_color(tensor):
+class InMemoryBatch(object):
     """
-    Scales an int8 "color" value to [0, 1].  Converts to float32.
-
-    """
-    return be.float_tensor(be.tround(tensor/255))
-
-def binary_to_ising(tensor):
-    """
-    Scales a [0, 1] value to [-1, 1].  Converts to float32.
-
-    """
-    return 2.0 * be.float_tensor(tensor) - 1.0
-
-def color_to_ising(tensor):
-    """color_to_ising
-       Scales an int8 "color" value to [-1, 1].  Converts to float32.
+    Serves up minibatches from a tensor held in memory.
+    The validation set is taken as the last (1 - train_fraction)
+    samples in the store.
+    The data should probably be randomly shuffled if being used to
+    train a non-recurrent model.
 
     """
-    return binary_to_ising(binarize_color(tensor))
+    def __init__(self, tensor, batch_size, train_fraction=0.9,
+                 transform=pre.do_nothing):
 
-# ----- CLASSES ----- #
+        self.tensor = tensor
+        self.batch_size = batch_size
+        self.transform = transform
+        self.nrows, self.ncols = be.shape(self.tensor)
+        self.split = int(numpy.ceil(train_fraction * self.nrows))
+
+        # create iterators over the data for the train/validate sets
+        self.iterators = {}
+        self.iterators['train'] = inclusive_slice(self.tensor, 0, self.split,
+                                                  self.batch_size)
+        self.iterators['validate'] = inclusive_slice(self.tensor, self.split,
+                                                  self.nrows, self.batch_size)
+
+    def num_validation_samples(self) -> int:
+        return self.nrows - self.split
+
+    def close(self) -> None:
+        pass
+
+    def num_training_batches(self):
+        return int(numpy.floor(self.split / self.batch_size))
+
+    def reset_generator(self, mode: str) -> None:
+        if mode == 'train':
+            self.iterators['train'] = inclusive_slice(self.tensor, 0, self.split,
+                                                  self.batch_size)
+        elif mode == 'validate':
+            self.iterators['validate'] = inclusive_slice(self.tensor, self.split,
+                                                  self.nrows, self.batch_size)
+        else:
+            self.iterators['train'] = inclusive_slice(self.tensor, 0, self.split,
+                                                  self.batch_size)
+            self.iterators['validate'] = inclusive_slice(self.tensor, self.split,
+                                                  self.nrows, self.batch_size)
+
+    def get(self, mode: str):
+        try:
+            vals = next(self.iterators[mode])
+        except StopIteration:
+            self.reset_generator(mode)
+            raise StopIteration
+        trans_vals = self.transform(vals)
+        return trans_vals
+
+    def get_by_index(self, index):
+        return self.transform(self.tensor[index])
+
 
 class HDFBatch(object):
     """
@@ -45,7 +85,7 @@ class HDFBatch(object):
     """
     def __init__(self, filename, key, batch_size,
                  train_fraction=0.9,
-                 transform=be.float_tensor):
+                 transform=pre.do_nothing):
 
         assert callable(transform)
         self.transform = transform
@@ -67,7 +107,6 @@ class HDFBatch(object):
         self.iterators['validate'] = self.store.select(key, start=self.split,
                                                        iterator=True,
                                                        chunksize=self.batch_size)
-
         self.generators = {mode: self.iterators[mode].__iter__()
                            for mode in self.iterators}
 
@@ -91,12 +130,17 @@ class HDFBatch(object):
 
     def get(self, mode: str):
         try:
-            vals = next(self.generators[mode]).as_matrix()
+            vals = be.float_tensor(next(self.generators[mode]).as_matrix())
         except StopIteration:
             self.reset_generator(mode)
             raise StopIteration
-        return self.transform(vals)
+        trans_vals = self.transform(vals)
+        return trans_vals
 
+    def get_by_index(self, index):
+        idx = list(index)
+        tmp = self.store.select(self.key, where="index={}".format(idx))
+        return self.transform(be.float_tensor(tmp.as_matrix()))
 
 
 class TableStatistics(object):

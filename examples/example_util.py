@@ -1,5 +1,6 @@
 import os
 import numpy
+from math import sqrt
 
 import plotting
 from paysage import batch
@@ -43,49 +44,91 @@ def default_paths(paysage_path = None):
 
 # ----- CHECK MODEL ----- #
 
-def example_plot(grid, show_plot, dim=28):
+def example_plot(grid, show_plot, dim=28, vmin=0, vmax=1, cmap=plotting.cm.gray_r):
+    numpy_grid = be.to_numpy_array(grid)
     if show_plot:
-        plotting.plot_image_grid(grid, (dim,dim), vmin=grid.min(), vmax=grid.max())
+        plotting.plot_image_grid(numpy_grid, (dim,dim), vmin, vmax, cmap=cmap)
 
 def show_metrics(rbm, performance):
     print('Final performance metrics:')
     performance.check_progress(rbm, show=True)
 
-def compute_reconstructions(rbm, v_data, fit, n_recon=10, vertical=False):
-    sampler = fit.DrivenSequentialMC(rbm)
-    data_state = State.from_visible(v_data, rbm)
-    sampler.set_positive_state(data_state)
-    sampler.update_positive_state(1)
-    v_model = rbm.deterministic_iteration(1, sampler.pos_state).units[0]
+def compute_reconstructions(rbm, v_data, fit, n_recon=10, vertical=False, num_to_avg=1):
+
+    v_model = be.zeros_like(v_data)
+
+    # Average over n reconstruction attempts
+    for k in range(num_to_avg):
+        data_state = State.from_visible(v_data, rbm)
+        visible = data_state.units[0]
+        reconstructions = fit.DrivenSequentialMC(rbm)
+        reconstructions.set_state(data_state)
+        dropout_scale = State.dropout_rescale(rbm)
+        reconstructions.update_state(1, dropout_scale)
+        v_model += rbm.deterministic_iteration(1, reconstructions.state, dropout_scale).units[0]
+
+    v_model /= num_to_avg
 
     idx = numpy.random.choice(range(len(v_model)), n_recon, replace=False)
-    grid = numpy.array([[be.to_numpy_array(v_data[i]),
+    grid = numpy.array([[be.to_numpy_array(visible[i]),
                          be.to_numpy_array(v_model[i])] for i in idx])
     if vertical:
         return grid
     else:
         return grid.swapaxes(0,1)
 
-def show_reconstructions(rbm, v_data, fit, show_plot, dim=28, n_recon=10, vertical=False):
+def compute_one_hot_reconstructions(rbm, fit, level, n_recon, num_to_avg=1):
+    n = rbm.layers[level].len
+    grid_size = int(sqrt(n_recon))
+    one_hotz = rbm.layers[level].onehot(n)
+
+    v_model = be.zeros((n, rbm.layers[0].len))
+    for k in range(num_to_avg):
+        # set up the initial state
+        state = State.from_model(n, rbm)
+        state.units[level] = one_hotz
+        dropout_scale = State.dropout_rescale(rbm)
+
+        # set up a sampler and update the state
+        reconstructions = fit.SequentialMC(rbm, clamped=[level], updater='mean_field_iteration')
+        reconstructions.set_state(state)
+        reconstructions.update_state(10, dropout_scale)
+        v_model += reconstructions.state.units[0]
+
+    v_model /= num_to_avg
+    # plot the resulting visible unit activations
+    idx = numpy.random.choice(range(len(v_model)), n_recon, replace=False)
+    recons = numpy.array([be.to_numpy_array(v_model[i]) for i in idx])
+    recons = recons.reshape(grid_size, grid_size, -1)
+    return recons
+
+def show_one_hot_reconstructions(rbm, fit, dim=28, n_recon=25, num_to_avg=1):
+    print("\nPlot a random sample of one-hot reconstructions")
+    for level in range(1, len(rbm.layers)):
+        print("\nLayer ", level)
+        grid = compute_one_hot_reconstructions(rbm, fit, level, n_recon, num_to_avg)
+        grid = grid*0.5 + 0.5
+        example_plot(grid, True, dim=dim)
+
+def show_reconstructions(rbm, v_data, fit, show_plot, dim=28, n_recon=10, vertical=False, num_to_avg=1):
     print("\nPlot a random sample of reconstructions")
-    grid = compute_reconstructions(rbm, v_data, fit, n_recon, vertical)
+    grid = compute_reconstructions(rbm, v_data, fit, n_recon, vertical, num_to_avg)
     example_plot(grid, show_plot, dim=dim)
 
 def compute_fantasy_particles(rbm, v_data, fit, n_fantasy=25):
-    from math import sqrt
     grid_size = int(sqrt(n_fantasy))
     assert grid_size == sqrt(n_fantasy), "n_fantasy must be the square of an integer"
-    
+
     random_samples = rbm.random(v_data)
     model_state = State.from_visible(random_samples, rbm)
 
-    schedule = schedules.power_law_decay(initial=1.0, coefficient=0.5)
-    sampler = fit.DrivenSequentialMC(rbm, schedule=schedule)
+    schedule = schedules.PowerLawDecay(initial=1.0, coefficient=0.5)
+    fantasy = fit.DrivenSequentialMC(rbm, schedule=schedule)
+    dropout_scale = State.dropout_rescale(rbm)
+    fantasy.set_state(model_state)
+    fantasy.update_state(1000, dropout_scale)
 
-    sampler.set_negative_state(model_state)
-    sampler.update_negative_state(1000)
-
-    v_model = rbm.deterministic_iteration(1, sampler.neg_state).units[0]
+    v_model = rbm.deterministic_iteration(1, fantasy.state, dropout_scale).units[0]
     idx = numpy.random.choice(range(len(v_model)), n_fantasy, replace=False)
 
     grid = numpy.array([be.to_numpy_array(v_model[i]) for i in idx])
@@ -96,18 +139,41 @@ def show_fantasy_particles(rbm, v_data, fit, show_plot, dim=28, n_fantasy=25):
     grid = compute_fantasy_particles(rbm, v_data, fit, n_fantasy)
     example_plot(grid, show_plot, dim=dim)
 
-def compute_weights(rbm, n_weights=25):
-    from math import sqrt
+def compute_weights(rbm, n_weights=25, l=0):
     grid_size = int(sqrt(n_weights))
     assert grid_size == sqrt(n_weights), "n_weights must be the square of an integer"
-    
-    idx = numpy.random.choice(range(rbm.weights[0].shape[1]),
+
+    idx = numpy.random.choice(range(rbm.weights[l].shape[1]),
                               n_weights, replace=False)
-    grid = numpy.array([be.to_numpy_array(rbm.weights[0].W()[:, i])
+    grid = numpy.array([be.to_numpy_array(rbm.weights[l].W()[:, i])
                         for i in idx])
     return grid.reshape(grid_size, grid_size, -1)
 
-def show_weights(rbm, show_plot, dim=28, n_weights=25):
+def show_weights(rbm, show_plot, dim=[28, 10], n_weights=25):
     print("\nPlot a random sample of the weights")
-    grid = compute_weights(rbm, n_weights)
-    example_plot(grid, show_plot, dim=dim)
+    for l in range(rbm.num_weights):
+        grid = compute_weights(rbm, n_weights, l=l)
+
+        # normalize the grid between -1 and +1
+        maxval = numpy.max(numpy.abs(grid))
+        grid /= maxval
+
+        example_plot(grid, show_plot, dim=dim[l], vmin=-1, vmax=+1,
+                     cmap=plotting.cm.bwr)
+
+def weight_norm_histogram(rbm, show_plot=False, filename=None):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    fig, ax = plt.subplots()
+    for l in range(rbm.num_weights):
+        num_inputs = rbm.weights[l].shape[0]
+        norm = be.to_numpy_array(be.norm(rbm.weights[l].W(), axis=0) / sqrt(num_inputs))
+        sns.distplot(norm, ax=ax, label=str(l))
+    ax.legend()
+
+    if show_plot:
+        plt.show(fig)
+    if filename is not None:
+        fig.savefig(filename)
+    plt.close(fig)

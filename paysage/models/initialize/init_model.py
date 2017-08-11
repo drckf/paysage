@@ -1,9 +1,6 @@
 from ... import backends as be
+from ... import math_utils as mu
 import math
-
-
-# ----- FUNCTIONS ----- #
-
 
 def hinton(batch, model):
     """

@@ -1,6 +1,5 @@
 machine:
   environment:
-    LLVM_CONFIG: /usr/lib/llvm-3.8/bin/llvm-config
     LD_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/
   python:
     version: 3.6.0
@@ -10,12 +9,11 @@ machine:
 dependencies:
   pre:
     - sudo apt-get install libhdf5-dev
-    - sudo apt-get install llvm-3.8
     # CI image includes only 3.4 shared library
     - sudo ln -s /usr/lib/x86_64-linux-gnu/libpython3.4m.so.1.0 /usr/lib/x86_64-linux-gnu/libpython3.6m.so.1.0
     - pip install -U -r requirements.txt
   post:
-    - pip install http://download.pytorch.org/whl/cu75/torch-0.1.10.post2-cp36-cp36m-linux_x86_64.whl
+    - pip install http://download.pytorch.org/whl/cu75/torch-0.2.0.post1-cp36-cp36m-manylinux1_x86_64.whl
     - pip install torchvision
     - pip install -e .
     # Build docker container
@@ -28,13 +26,11 @@ test:
     # tests
     - which python
     - echo $LD_LIBRARY_PATH
-    - pytest test/test_backends.py
-    - pytest test/test_rbm.py
-    - pytest test/test_derivatives.py
-    - pytest test/test_tap_machine.py
-    - pytest test/paysage/test_layers.py
-    - pytest test/paysage/test_math_utils.py
-    - pytest test/paysage/models/test_save_read.py
+    - echo "Running tests on the default (Python) backend."
+    - pytest
+    - 'echo {\"backend\": \"pytorch\", \"processor\": \"cpu\"} > paysage/backends/config.json'
+    - echo "Running tests on the PyTorch backend."
+    - pytest
     # Test docker container
     # - docker run paysage
 

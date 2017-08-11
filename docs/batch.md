@@ -28,6 +28,76 @@ Returns the sample count that will fit in allowed_mem,<br />given the shape of t
 
 
 
+## class InMemoryBatch
+Serves up minibatches from a tensor held in memory.<br />The validation set is taken as the last (1 - train_fraction)<br />samples in the store.<br />The data should probably be randomly shuffled if being used to<br />train a non-recurrent model.
+### \_\_init\_\_
+```py
+
+def __init__(self, tensor, batch_size, train_fraction=0.9, transform=<function do_nothing at 0x11e81d510>)
+
+```
+
+
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+
+### close
+```py
+
+def close(self) -> None
+
+```
+
+
+
+### get
+```py
+
+def get(self, mode: str)
+
+```
+
+
+
+### get\_by\_index
+```py
+
+def get_by_index(self, index)
+
+```
+
+
+
+### num\_training\_batches
+```py
+
+def num_training_batches(self)
+
+```
+
+
+
+### num\_validation\_samples
+```py
+
+def num_validation_samples(self) -> int
+
+```
+
+
+
+### reset\_generator
+```py
+
+def reset_generator(self, mode: str) -> None
+
+```
+
+
+
+
+
 ## class DataShuffler
 Shuffles data in an HDF5 file.<br />Synchronized shuffling between tables (with matching numbers of rows).
 ### \_\_init\_\_
@@ -97,7 +167,7 @@ Serves up minibatches from an HDFStore.<br />The validation set is taken as the 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, filename, key, batch_size, train_fraction=0.9, transform=<function float_tensor at 0x111afcea0>)
+def __init__(self, filename, key, batch_size, train_fraction=0.9, transform=<function do_nothing at 0x11e81d510>)
 
 ```
 
@@ -119,6 +189,15 @@ def close(self) -> None
 ```py
 
 def get(self, mode: str)
+
+```
+
+
+
+### get\_by\_index
+```py
+
+def get_by_index(self, index)
 
 ```
 
@@ -155,55 +234,10 @@ def reset_generator(self, mode: str) -> None
 
 ## functions
 
-### binarize\_color
+### inclusive\_slice
 ```py
 
-def binarize_color(tensor)
-
-```
-
-
-
-Scales an int8 "color" value to [0, 1].  Converts to float32.
-
-
-### binary\_to\_ising
-```py
-
-def binary_to_ising(tensor)
-
-```
-
-
-
-Scales a [0, 1] value to [-1, 1].  Converts to float32.
-
-
-### color\_to\_ising
-```py
-
-def color_to_ising(tensor)
-
-```
-
-
-
-color_to_ising<br />Scales an int8 "color" value to [-1, 1].  Converts to float32.
-
-
-### do\_nothing
-```py
-
-def do_nothing(tensor)
-
-```
-
-
-
-### scale
-```py
-
-def scale(tensor, denominator)
+def inclusive_slice(tensor, start, stop, step)
 
 ```
 

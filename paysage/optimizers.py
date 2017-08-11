@@ -38,6 +38,24 @@ class GradientMemory(object):
         self.mixer_ = partial(be.mix_inplace, self.mean_weight)
         self.square_mixer_ = partial(be.square_mix_inplace, self.mean_square_weight)
 
+
+    def reset(self):
+        """
+        Reset the accululated mean and mean square gradients.
+
+        Notes:
+            Modifies mean_gradient and mean_square_gradient in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.mean_gradient = None
+        self.mean_square_gradient = None
+
     def update_mean(self, grad):
         """
         Update the running average of the model gradients.
@@ -129,7 +147,7 @@ class GradientMemory(object):
 class Optimizer(object):
     """Base class for the optimizer methods."""
     def __init__(self,
-                 stepsize=schedules.constant(initial=0.001),
+                 stepsize=schedules.Constant(initial=0.001),
                  tolerance=1e-7,
                  ascent=False):
         """
@@ -184,7 +202,7 @@ class Optimizer(object):
 class Gradient(Optimizer):
     """Vanilla gradient optimizer"""
     def __init__(self,
-                 stepsize=schedules.constant(initial=0.001),
+                 stepsize=schedules.Constant(initial=0.001),
                  tolerance=1e-7,
                  ascent=False):
         """
@@ -204,6 +222,22 @@ class Gradient(Optimizer):
 
         """
         super().__init__(stepsize, tolerance, ascent)
+
+    def reset(self):
+        """
+        Reset the gradient memory (does nothing for vanilla gradient).
+
+        Notes:
+            Modifies gradient memory in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        pass
 
     def update(self, model, grad):
         """
@@ -234,7 +268,7 @@ class Momentum(Optimizer):
 
     """
     def __init__(self,
-                 stepsize=schedules.constant(initial=0.001),
+                 stepsize=schedules.Constant(initial=0.001),
                  momentum=0.9,
                  tolerance=1e-7,
                  ascent=False):
@@ -258,6 +292,22 @@ class Momentum(Optimizer):
         super().__init__(stepsize, tolerance, ascent)
         self.memory = GradientMemory(mean_weight=momentum,
                                      mean_square_weight=0)
+
+    def reset(self):
+        """
+        Reset the gradient memory.
+
+        Notes:
+            Modifies gradient memory in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.memory.reset()
 
     def update(self, model, grad):
         """
@@ -288,7 +338,7 @@ class RMSProp(Optimizer):
 
     """
     def __init__(self,
-                 stepsize=schedules.constant(initial=0.001),
+                 stepsize=schedules.Constant(initial=0.001),
                  mean_square_weight=0.9,
                  tolerance=1e-7,
                  ascent=False):
@@ -313,6 +363,22 @@ class RMSProp(Optimizer):
         super().__init__(stepsize, tolerance, ascent)
         self.memory = GradientMemory(mean_weight=0,
                                      mean_square_weight=mean_square_weight)
+
+    def reset(self):
+        """
+        Reset the gradient memory.
+
+        Notes:
+            Modifies gradient memory in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.memory.reset()
 
     def update(self, model, grad):
         """
@@ -346,7 +412,7 @@ class ADAM(Optimizer):
 
     """
     def __init__(self,
-                 stepsize=schedules.constant(initial=0.001),
+                 stepsize=schedules.Constant(initial=0.001),
                  mean_weight=0.9,
                  mean_square_weight=0.999,
                  tolerance=1e-7,
@@ -374,6 +440,22 @@ class ADAM(Optimizer):
         super().__init__(stepsize, tolerance, ascent)
         self.memory = GradientMemory(mean_weight=mean_weight,
                                      mean_square_weight=mean_square_weight)
+
+    def reset(self):
+        """
+        Reset the gradient memory.
+
+        Notes:
+            Modifies gradient memory in place.
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.memory.reset()
 
     def update(self, model, grad):
         """

@@ -26,6 +26,18 @@ def normalize(self, grad, unbiased=False)
 Divide grad by the square root of the mean square gradient.<br /><br />Notes:<br /> ~ A running average is biased due to autoregressive correlations<br /> ~ between adjacent timepoints. The bias can be corrected by<br /> ~ dividing the results by appropriate weights that reflect<br /> ~ the degree of autocorrelation.<br /><br /> ~ Acts like the identity function if mean_square_weight = 0.<br /><br />Args:<br /> ~ grad (a Gradient object)<br /> ~ unbiased (bool): whether to unbias the estimates<br /><br />Returns:<br /> ~ normalized Gradient object
 
 
+### reset
+```py
+
+def reset(self)
+
+```
+
+
+
+Reset the accululated mean and mean square gradients.<br /><br />Notes:<br /> ~ Modifies mean_gradient and mean_square_gradient in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+
+
 ### update
 ```py
 
@@ -69,7 +81,7 @@ Base class for the optimizer methods.
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<generator object constant at 0x113e197d8>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<paysage.schedules.Constant object at 0x11e7fa438>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -109,7 +121,7 @@ Vanilla gradient optimizer
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<generator object constant at 0x113e19830>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<paysage.schedules.Constant object at 0x11e7fada0>, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -128,6 +140,18 @@ def check_convergence(self)
 
 
 Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
+
+
+### reset
+```py
+
+def reset(self)
+
+```
+
+
+
+Reset the gradient memory (does nothing for vanilla gradient).<br /><br />Notes:<br /> ~ Modifies gradient memory in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### update
@@ -161,7 +185,7 @@ Stochastic gradient descent with momentum.<br />Qian, N. (1999).<br />On the mom
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<generator object constant at 0x113e19888>, momentum=0.9, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<paysage.schedules.Constant object at 0x11e8032e8>, momentum=0.9, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -180,6 +204,18 @@ def check_convergence(self)
 
 
 Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
+
+
+### reset
+```py
+
+def reset(self)
+
+```
+
+
+
+Reset the gradient memory.<br /><br />Notes:<br /> ~ Modifies gradient memory in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### update
@@ -213,7 +249,7 @@ Stochastic gradient descent with RMSProp.<br />Geoffrey Hinton's Coursera Course
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<generator object constant at 0x113e198e0>, mean_square_weight=0.9, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<paysage.schedules.Constant object at 0x11e803390>, mean_square_weight=0.9, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -232,6 +268,18 @@ def check_convergence(self)
 
 
 Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
+
+
+### reset
+```py
+
+def reset(self)
+
+```
+
+
+
+Reset the gradient memory.<br /><br />Notes:<br /> ~ Modifies gradient memory in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### update
@@ -269,7 +317,7 @@ Stochastic gradient descent with Adaptive Moment Estimation algorithm.<br /><br 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<generator object constant at 0x113e19938>, mean_weight=0.9, mean_square_weight=0.999, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<paysage.schedules.Constant object at 0x11e803438>, mean_weight=0.9, mean_square_weight=0.999, tolerance=1e-07, ascent=False)
 
 ```
 
@@ -288,6 +336,18 @@ def check_convergence(self)
 
 
 Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
+
+
+### reset
+```py
+
+def reset(self)
+
+```
+
+
+
+Reset the gradient memory.<br /><br />Notes:<br /> ~ Modifies gradient memory in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### update

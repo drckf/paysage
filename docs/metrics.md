@@ -29,7 +29,7 @@ def reset(self) -> None
 
 
 
-Reset the metric to it's initial state.<br /><br />Notes:<br /> ~ Changes norm and mean_square_error in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Reset the metric to its initial state.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### update
@@ -41,7 +41,7 @@ def update(self, update_args: paysage.metrics.MetricState) -> None
 
 
 
-Update the estimate for the reconstruction error using a batch<br />of observations and a batch of reconstructions.<br /><br />Notes:<br /> ~ Changes norm and mean_square_error in place.<br /><br />Args:<br /> ~ update_args: uses visible layer of minibatch and reconstructions<br /><br /><br />Returns:<br /> ~ None
+Update the estimate for the reconstruction error using a batch<br />of observations and a batch of reconstructions.<br /><br />Args:<br /> ~ update_args: uses visible layer of minibatch and reconstructions<br /><br />Returns:<br /> ~ None
 
 
 ### value
@@ -63,7 +63,7 @@ Compute the energy distance between two distributions using<br />minibatches of 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, downsample=100)
+def __init__(self)
 
 ```
 
@@ -81,7 +81,7 @@ def reset(self) -> None
 
 
 
-Reset the metric to it's initial state.<br /><br />Note:<br /> ~ Modifies norm and energy_distance in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Reset the metric to its initial state.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### update
@@ -93,7 +93,7 @@ def update(self, update_args: paysage.metrics.MetricState) -> None
 
 
 
-Update the estimate for the energy distance using a batch<br />of observations and a batch of fantasy particles.<br /><br />Notes:<br /> ~ Changes norm and energy_distance in place.<br /><br />Args:<br /> ~ update_args: uses visible layer of minibatch and samples<br /><br />Returns:<br /> ~ None
+Update the estimate for the energy distance using a batch<br />of observations and a batch of fantasy particles.<br /><br />Args:<br /> ~ update_args: uses visible layer of minibatch and samples<br /><br />Returns:<br /> ~ None
 
 
 ### value
@@ -110,8 +110,8 @@ Get the value of the energy distance.<br /><br />Args:<br /> ~ None<br /><br />R
 
 
 
-## class EnergyZscore
-Samples drawn from a model should have much lower energy<br />than purely random samples. The "energy gap" is the average<br />energy difference between samples from the model and random<br />samples. The "energy z-score" is the energy gap divided by<br />the standard deviation of the energy taken over random<br />samples.
+## class WeightSparsity
+Compute the weight sparsity of the model as the formula<br /><br />p = \sum_j(\sum_i w_ij^2)^2/\sum_i w_ij^4<br /><br />Tubiana, J., Monasson, R. (2017)<br />Emergence of Compositional Representations in Restricted Boltzmann Machines,<br />PRL 118, 138301 (2017)
 ### \_\_init\_\_
 ```py
 
@@ -121,7 +121,7 @@ def __init__(self)
 
 
 
-Create an EnergyZscore object.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ energy z-score object
+Create WeightSparsity object.<br /><br />Args:<br /> ~ None<br />Returns:<br /> ~ WeightSparsity object
 
 
 ### reset
@@ -133,7 +133,7 @@ def reset(self) -> None
 
 
 
-Reset the metric to it's initial state.<br /><br />Note:<br /> ~ Modifies norm, random_mean, and random_mean_square in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Reset the metric to its initial state.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### update
@@ -145,7 +145,59 @@ def update(self, update_args: paysage.metrics.MetricState) -> None
 
 
 
-Update the estimate for the energy z-score using a batch<br />of observations and a batch of fantasy particles.<br /><br />Notes:<br /> ~ Changes norm, random_mean, and random_mean_square in place.<br /><br />Args:<br /> ~ update_args: uses all layers of minibatch and random_samples, and model<br /><br />Returns:<br /> ~ None
+Compute the weight sparsity of the model<br /><br />Args:<br /> ~ update_args: uses model only<br /><br />Returns:<br /> ~ None
+
+
+### value
+```py
+
+def value(self) -> float
+
+```
+
+
+
+Get the value of the weight sparsity.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ weight sparsity (float)
+
+
+
+
+## class EnergyZscore
+Samples drawn from a model should have much lower energy<br />than purely random samples. The "energy gap" is the average<br />energy difference between samples from the model and random<br />samples. The "energy z-score" is the energy gap divided by<br />the standard deviation of the energy taken over random<br />samples.
+### \_\_init\_\_
+```py
+
+def __init__(self)
+
+```
+
+
+
+Create an EnergyZscore object.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ EnergyZscore object
+
+
+### reset
+```py
+
+def reset(self) -> None
+
+```
+
+
+
+Reset the metric to its initial state.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+
+
+### update
+```py
+
+def update(self, update_args: paysage.metrics.MetricState) -> None
+
+```
+
+
+
+Update the estimate for the energy z-score using a batch<br />of observations and a batch of fantasy particles.<br /><br />Args:<br /> ~ update_args: uses all layers of minibatch and random_samples, and model<br /><br />Returns:<br /> ~ None
 
 
 ### value
@@ -214,6 +266,58 @@ Get the value of the heat capacity.<br /><br />Args:<br /> ~ None<br /><br />Ret
 
 
 
+## class WeightSquare
+Compute the mean squared weights of the model per hidden unit<br /><br />w2 = 1/(#hidden units)*\sum_ij w_ij^2<br /><br />Tubiana, J., Monasson, R. (2017)<br />Emergence of Compositional Representations in Restricted Boltzmann Machines,<br />PRL 118, 138301 (2017)
+### \_\_init\_\_
+```py
+
+def __init__(self)
+
+```
+
+
+
+Create WeightSquare object.<br /><br />Args:<br /> ~ None<br />Returns:<br /> ~ WeightSquare object
+
+
+### reset
+```py
+
+def reset(self) -> None
+
+```
+
+
+
+Reset the metric to its initial state.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+
+
+### update
+```py
+
+def update(self, update_args: paysage.metrics.MetricState) -> None
+
+```
+
+
+
+Compute the weight square of the model<br /><br />Args:<br /> ~ update_args: uses model only<br /><br />Returns:<br /> ~ None
+
+
+### value
+```py
+
+def value(self) -> float
+
+```
+
+
+
+Get the value of the weight sparsity.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ weight sparsity (float)
+
+
+
+
 ## class MetricState
 MetricState(minibatch, reconstructions, random_samples, samples, model)
 
@@ -241,7 +345,7 @@ def reset(self) -> None
 
 
 
-Reset the metric to it's initial state.<br /><br />Note:<br /> ~ Modifies norm and energy_gap in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Reset the metric to its initial state.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
 
 
 ### update
@@ -253,7 +357,7 @@ def update(self, update_args: paysage.metrics.MetricState) -> None
 
 
 
-Update the estimate for the energy gap using a batch<br />of observations and a batch of fantasy particles.<br /><br />Notes:<br /> ~ Changes norm and energy_gap in place.<br /><br />Args:<br /> ~ update_args: uses all layers of minibatch and random_samples, and model<br /><br />Returns:<br /> ~ None
+Update the estimate for the energy gap using a batch<br />of observations and a batch of fantasy particles.<br /><br />Args:<br /> ~ update_args: uses all layers of minibatch and random_samples, and model<br /><br />Returns:<br /> ~ None
 
 
 ### value
@@ -275,7 +379,7 @@ Get the value of the energy gap.<br /><br />Args:<br /> ~ None<br /><br />Return
 ### namedtuple
 ```py
 
-def namedtuple(typename, field_names, verbose=False, rename=False)
+def namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)
 
 ```
 
