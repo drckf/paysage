@@ -186,7 +186,7 @@ def test_clamped_SequentialMC():
     # since we set no dropout, dropout_scale should be None
     assert dropout_scale is None
 
-    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration', 'chain_rule_sampling']:
+    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
 
         # set up the sampler with the visible layer clamped
         sampler = fit.SequentialMC(rbm, updater=u, clamped=[0])
@@ -233,7 +233,7 @@ def test_unclamped_SequentialMC():
     # since we set no dropout, dropout_scale should be None
     assert dropout_scale is None
 
-    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration', 'chain_rule_sampling']:
+    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
         # set up the sampler with the visible layer clamped
         sampler = fit.SequentialMC(rbm, updater=u)
         sampler.set_state(data_state)
@@ -277,7 +277,7 @@ def test_state_for_grad_SequentialMC():
     # since we set no dropout, dropout_scale should be None
     assert dropout_scale is None
 
-    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration', 'chain_rule_sampling']:
+    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
         # set up the sampler
         sampler = fit.SequentialMC(rbm, updater=u, clamped=[0])
         sampler.set_state(data_state)
@@ -330,7 +330,7 @@ def test_clamped_DrivenSequentialMC():
     # since we set no dropout, dropout_scale should be None
     assert dropout_scale is None
 
-    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration', 'chain_rule_sampling']:
+    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
 
         # set up the sampler with the visible layer clamped
         sampler = fit.DrivenSequentialMC(rbm, updater=u, clamped=[0])
@@ -376,7 +376,7 @@ def test_unclamped_DrivenSequentialMC():
     # since we set no dropout, dropout_scale should be None
     assert dropout_scale is None
 
-    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration', 'chain_rule_sampling']:
+    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
         # set up the sampler with the visible layer clamped
         sampler = fit.DrivenSequentialMC(rbm, updater=u)
         sampler.set_state(data_state)
@@ -420,7 +420,7 @@ def test_state_for_grad_DrivenSequentialMC():
     # since we set no dropout, dropout_scale should be None
     assert dropout_scale is None
 
-    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration', 'chain_rule_sampling']:
+    for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
         # set up the sampler
         sampler = fit.DrivenSequentialMC(rbm, updater=u, clamped=[0])
         sampler.set_state(data_state)

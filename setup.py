@@ -7,8 +7,8 @@ def readme():
 setup(name='paysage',
       version='0.1',
       description='Machine learning with energy based models in python',
-      url='https://bitbucket.org/drckf/paysage',
-      author='Charles K. Fisher',
+      url='https://github.com/drckf/paysage',
+      author='Unlearn.AI, Inc.',
       author_email='drckf@unlearnai.com',
       license='MIT',
       packages=['paysage'],
@@ -28,4 +28,5 @@ setup(name='paysage',
       tests_require=[
           'pytest'
       ],
+      python_requires='~=3.6',
       zip_safe=False)

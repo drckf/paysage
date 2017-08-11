@@ -24,19 +24,9 @@ def layer_from_config(config):
 def get(key):
     if 'gauss' in key.lower():
         return GaussianLayer
-    elif 'ising' in key.lower():
-        return IsingLayer
     elif 'bern' in key.lower():
         return BernoulliLayer
-    elif 'expo' in key.lower():
-        return ExponentialLayer
-    elif 'vmf' in key.lower():
-        return vMFLayer
     elif 'onehot' in key.lower():
         return OneHotLayer
-    elif 'relu' in key.lower():
-        return ReLULayer
-    elif 'stud' in key.lower():
-        return StudentLayer
     else:
         raise ValueError('Unknown layer type')
