@@ -16,11 +16,11 @@ Using advanced mean field and Markov Chain Monte Carlo methods.
 
 
 ## Installation:
-We recommend using paysage with Anaconda3. Simply,
+We recommend using paysage with Anaconda3. To install Version 0.1 using `pip` simply type `pip install paysage`. To install from `git` use:
 
-1. Clone this git repo
-2. Move into the directory with setup.py
-3. Run “pip install -e .”
+1. `git clone https://github.com/drckf/paysage.git`
+2. `cd paysage`
+3. `pip install -e .`
 
 Running the examples requires a file mnist.h5 containing the MNIST dataset of handwritten images. The script download_mnist.py in the mnist/ folder will fetch the file from the web.
 
