@@ -18,6 +18,7 @@ setup(name='paysage',
       author_email='drckf@unlearnai.com',
       license='MIT',
       packages=find_packages(exclude=['docs', 'tests']),
+      include_package_data=True,
       install_requires=[
           'h5py',
           'matplotlib',
