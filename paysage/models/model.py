@@ -5,7 +5,7 @@ from typing import List
 
 from .. import layers
 from .. import backends as be
-from .initialize import init_model as init
+from . import init_model as init
 from . import gradient_util as gu
 from . import model_utils as mu
 

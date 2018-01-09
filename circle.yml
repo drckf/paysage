@@ -2,15 +2,13 @@ machine:
   environment:
     LD_LIBRARY_PATH: /usr/lib/x86_64-linux-gnu/
   python:
-    version: 3.6.0
+    version: 3.6.1
   services:
     - docker
 
 dependencies:
   pre:
     - sudo apt-get install libhdf5-dev
-    # CI image includes only 3.4 shared library
-    - sudo ln -s /usr/lib/x86_64-linux-gnu/libpython3.4m.so.1.0 /usr/lib/x86_64-linux-gnu/libpython3.6m.so.1.0
     - pip install -U -r requirements.txt
   post:
     - pip install http://download.pytorch.org/whl/cu75/torch-0.2.0.post1-cp36-cp36m-manylinux1_x86_64.whl

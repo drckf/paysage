@@ -1,1 +1,8 @@
+# Include the license file
+include LICENSE.txt
+
+# Include the README
 include README.md
+
+# Include json files
+recursive-include *.json
