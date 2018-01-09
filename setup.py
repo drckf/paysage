@@ -11,13 +11,16 @@ def readme():
         return f.read()
 
 setup(name='paysage',
-      version='0.1.2',
+      version='0.1.3',
       description='Machine learning with energy based models in python',
       url='https://github.com/drckf/paysage',
       author='Unlearn.AI, Inc.',
       author_email='drckf@unlearnai.com',
       license='MIT',
-      packages=find_packages(exclude=['docs', 'tests']),
+      packages=find_packages(),
+      package_data={
+        '': ['*.json', '*.py']
+        },
       include_package_data=True,
       install_requires=[
           'h5py',

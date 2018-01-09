@@ -1,5 +1,5 @@
-from ... import backends as be
-from ... import math_utils as mu
+from .. import backends as be
+from .. import math_utils as mu
 import math
 
 def hinton(batch, model):
