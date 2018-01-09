@@ -11,7 +11,7 @@ def readme():
         return f.read()
 
 setup(name='paysage',
-      version='0.1.3',
+      version='0.1.4',
       description='Machine learning with energy based models in python',
       url='https://github.com/drckf/paysage',
       author='Unlearn.AI, Inc.',
