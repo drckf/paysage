@@ -1,42 +1,39 @@
-# Always prefer setuptools over distutils
-from setuptools import setup, find_packages
-# To use a consistent encoding
-from codecs import open
-from os import path
-
-here = path.abspath(path.dirname(__file__))
+from setuptools import setup
 
 def readme():
-    with open(path.join(here, 'README.md')) as f:
+    with open('README.md') as f:
         return f.read()
 
 setup(name='paysage',
-      version='0.1.4',
+      version='0.2.0',
       description='Machine learning with energy based models in python',
       url='https://github.com/drckf/paysage',
-      author='Unlearn.AI, Inc.',
-      author_email='drckf@unlearnai.com',
+      author='Unlearn.AI',
+      author_email='drckf@unlearn.ai',
       license='MIT',
-      packages=find_packages(),
-      package_data={
-        '': ['*.json', '*.py']
-        },
-      include_package_data=True,
+      classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+        'Topic :: Scientific/Engineering :: Physics',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.6',
+      ],
+      packages=['paysage'],
       install_requires=[
-          'h5py',
           'matplotlib',
           'numexpr',
           'numpy',
           'pandas',
           'pytest',
-          'scikit-learn',
           'scipy',
           'seaborn',
           'tables',
+          'torchvision',
           'cytoolz'
           ],
       tests_require=[
           'pytest'
       ],
-      python_requires='~=3.6',
+      python_requires='>=3.6',
       zip_safe=False)
