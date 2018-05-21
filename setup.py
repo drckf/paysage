@@ -7,6 +7,7 @@ def readme():
 setup(name='paysage',
       version='0.2.0',
       description='Machine learning with energy based models in python',
+      long_description=readme(),
       url='https://github.com/drckf/paysage',
       author='Unlearn.AI',
       author_email='drckf@unlearn.ai',
