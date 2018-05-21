@@ -1,11 +1,10 @@
 import numpy
 import numexpr as ne
-from . import typedef as T
-from scipy import special
 
-EPSILON = float(numpy.finfo(numpy.float32).eps)
+from . import matrix
+from . import typedef as T
+
 LOG2 = 0.6931471805599453
-SQRT2 = 1.4142135623730951
 SQRT2PI = 2.5066282746310002
 
 def tmul(a: T.Scalar, x: T.Tensor) -> T.Tensor:
@@ -22,7 +21,7 @@ def tmul(a: T.Scalar, x: T.Tensor) -> T.Tensor:
     """
     return a * x
 
-def tmul_(a: T.Scalar, x: T.Tensor) -> T.Tensor:
+def tmul_(a: T.Scalar, x: T.Tensor):
     """
     Elementwise multiplication of tensor x by scalar a.
 
@@ -34,7 +33,7 @@ def tmul_(a: T.Scalar, x: T.Tensor) -> T.Tensor:
         a: scalar.
 
     Returns:
-        tensor: Elementwise a * x.
+        None
 
     """
     ne.evaluate('a * x', out=x)
@@ -76,7 +75,7 @@ def log(x: T.Tensor) -> T.Tensor:
         tensor: Elementwise natural logarithm.
 
     """
-    z = numpy.clip(x, a_min=EPSILON, a_max=numpy.inf)
+    z = numpy.clip(x, a_min=T.EPSILON, a_max=numpy.inf)
     return ne.evaluate('log(z)')
 
 def tanh(x: T.Tensor) -> T.Tensor:
@@ -105,7 +104,7 @@ def expit(x: T.Tensor) -> T.Tensor:
     """
     return ne.evaluate('(1 + tanh(x/2))/2')
 
-def softmax(x: T.Tensor) -> T.Tensor:
+def softmax(x: T.Tensor, axis: int = 1) -> T.Tensor:
     """
     Softmax function on a tensor.
     Exponentiaties the tensor elementwise and divides
@@ -118,9 +117,9 @@ def softmax(x: T.Tensor) -> T.Tensor:
         tensor: Softmax of the tensor.
 
     """
-    xreg = x - numpy.max(x, axis=1, keepdims=True)
+    xreg = x - matrix.tmax(x, axis=axis, keepdims=True)
     y = ne.evaluate('exp(xreg)')
-    return y / numpy.sum(y, axis=1, keepdims=True)
+    return y / matrix.tsum(y, axis=axis, keepdims=True)
 
 def reciprocal(x: T.Tensor) -> T.Tensor:
     """
@@ -146,7 +145,7 @@ def atanh(x: T.Tensor) -> T.Tensor:
         tensor: Elementwise inverse hyperbolic tangent
 
     """
-    y = numpy.clip(x, a_min=EPSILON-1, a_max=1-EPSILON)
+    y = numpy.clip(x, a_min=T.EPSILON-1, a_max=1-T.EPSILON)
     return ne.evaluate('arctanh(y)')
 
 def sqrt(x: T.Tensor) -> T.Tensor:
@@ -240,7 +239,7 @@ def acosh(x: T.Tensor) -> T.Tensor:
         tensor: Elementwise inverse hyperbolic cosine.
 
     """
-    y = numpy.clip(x,1+EPSILON, numpy.inf)
+    y = numpy.clip(x,1+T.EPSILON, numpy.inf)
     return ne.evaluate('arccosh(y)')
 
 def logit(x: T.Tensor) -> T.Tensor:
@@ -254,7 +253,7 @@ def logit(x: T.Tensor) -> T.Tensor:
         tensor: Elementwise logit function
 
     """
-    y = numpy.clip(x, a_min=EPSILON, a_max=1-EPSILON)
+    y = numpy.clip(x, a_min=T.EPSILON, a_max=1-T.EPSILON)
     return ne.evaluate('log(y/(1-y))')
 
 def softplus(x: T.Tensor) -> T.Tensor:
@@ -295,63 +294,6 @@ def sin(x: T.Tensor) -> T.Tensor:
 
     """
     return ne.evaluate('sin(x)')
-
-def erf(x: T.Tensor) -> T.Tensor:
-    """
-    Elementwise error function of a tensor.
-
-    Args:
-        x: A tensor.
-
-    Returns:
-        tensor: Elementwise error function
-    """
-    return special.erf(x)
-
-def erfinv(x: T.Tensor) -> T.Tensor:
-    """
-    Elementwise error function of a tensor.
-
-    Args:
-        x: A tensor.
-
-    Returns:
-        tensor: Elementwise error function
-    """
-    return special.erfinv(x)
-
-def normal_cdf(x: T.Tensor) -> T.Tensor:
-    """
-    Elementwise cumulative distribution function of the standard normal distribution.
-
-    For the CDF of a normal distributon with mean u and standard deviation sigma, use
-    normal_cdf((x-u)/sigma).
-
-    Args:
-        x (tensor)
-
-    Returns:
-        tensor: Elementwise cdf
-
-    """
-    return 0.5 * (1 + erf(x/SQRT2))
-
-def normal_inverse_cdf(p: T.Tensor) -> T.Tensor:
-    """
-    Elementwise inverse cumulative distribution function of the standard normal
-    distribution.
-
-    For the inverse CDF of a normal distributon with mean u and standard deviation sigma,
-    use u + sigma * normal_inverse_cdf(p).
-
-    Args:
-        p (tensor bounded in (0,1))
-
-    Returns:
-        tensor: Elementwise inverse cdf
-
-    """
-    return SQRT2*erfinv(2*numpy.clip(p, a_min=EPSILON, a_max=1-EPSILON)-1)
 
 def normal_pdf(x: T.Tensor) -> T.Tensor:
     """

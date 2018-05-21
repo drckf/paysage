@@ -1,0 +1,70 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2
+jobs:
+  build_and_test:
+    docker:
+      # specify the version you desire here
+      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
+      - image: circleci/python:3.6.1
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+
+    working_directory: ~/paysage
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v2-dependencies-{{ .Branch }}-{{ checksum "setup.py" }}
+          # fallback to using the latest cache if no exact match is found
+          - v2-dependencies-
+
+      - run:
+          name: Install Requirements
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -e .
+            python3 examples/mnist/download_mnist.py
+
+      - save_cache:
+          paths:
+            - "venv"
+          key: v2-dependencies-{{ .Branch }}-{{ checksum "setup.py" }}
+
+      # run tests on the python backend
+      - run:
+          name: Run the Tests (Python CPU backend)
+          command: |
+            . venv/bin/activate
+            cp .circleci/backend_pythonCPU_config.json paysage/backends/config.json
+            py.test test --junitxml=test-reports/output_pythonCPU.xml
+
+      # run tests on the pytorch backend
+      - run:
+          name: Run the Tests (PyTorch CPU backend)
+          command: |
+            . venv/bin/activate
+            cp .circleci/backend_pytorchCPU_config.json paysage/backends/config.json
+            py.test test --junitxml=test-reports/output_pytorchCPU.xml
+
+      - store_artifacts:
+          path: test-reports/
+          destination: tr1
+
+      - store_test_results:
+          path: test-reports/
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build_and_test

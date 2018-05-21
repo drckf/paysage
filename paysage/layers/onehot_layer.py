@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 from .. import backends as be
-from .. import math_utils
 from .layer import Layer, CumulantsTAP
 
 ParamsOneHot = namedtuple("ParamsOneHot", ["loc"])
@@ -11,28 +10,24 @@ class OneHotLayer(Layer):
     Layer with 1-hot Bernoulli units.
     e.g. for 3 units, the valid states are [1, 0, 0], [0, 1, 0], and [0, 0, 1].
 
-    Dropout is unused.
-
     """
 
-    def __init__(self, num_units, dropout_p=0):
+    def __init__(self, num_units, center=False):
         """
         Create a layer with 1-hot units.
 
         Args:
             num_units (int): the size of the layer
-            dropout_p (float): unused in this layer.
+            center (bool): whether to center the layer
 
         Returns:
             1-hot layer
 
         """
-        assert dropout_p == 0, "OneHot layer does not support dropout."
-        super().__init__(num_units, dropout_p)
+        super().__init__(num_units, center)
 
         self.rand = be.rand_softmax
         self.params = ParamsOneHot(be.zeros(self.len))
-        self.moments = math_utils.MeanArrayCalculator()
 
     #
     # Methods for the TAP approximation
@@ -217,7 +212,7 @@ class OneHotLayer(Layer):
 
         """
         self.moments.update(units, axis=0)
-        self.set_params(ParamsOneHot(be.log(self.moments.mean)))
+        self.set_params([ParamsOneHot(be.log(self.moments.mean))])
 
     def shrink_parameters(self, shrinkage=1):
         """
@@ -245,9 +240,13 @@ class OneHotLayer(Layer):
             tensor: observations
 
         """
-        return observations
+        if not self.center:
+            return observations
+        else:
+            return be.subtract(self.get_center(), observations)
 
-    def derivatives(self, units, connected_units, connected_weights, penalize=True):
+    def derivatives(self, units, connected_units, connected_weights,
+                    penalize=True, weighting_function=be.do_nothing):
         """
         Compute the derivatives of the layer parameters.
 
@@ -258,12 +257,15 @@ class OneHotLayer(Layer):
                 The rescaled values of the connected units.
             connected_weights list[tensor, (num_connected_units, num_units)]:
                 The weights connecting the layers.
+            penalize (bool): whether to add a penalty term.
+            weighting_function (function): a weighting function to apply
+                to units when computing the gradient.
 
         Returns:
-            grad (namedtuple): param_name: tensor (contains gradient)
+            derivs (List[namedtuple]): List[param_name: tensor] (contains gradient)
 
         """
-        loc = -be.mean(units, axis=0)
+        loc = -be.mean(weighting_function(units), axis=0)
         if penalize:
             loc = self.get_penalty_grad(loc, 'loc')
         return [ParamsOneHot(loc)]
@@ -276,7 +278,7 @@ class OneHotLayer(Layer):
             None
 
         Returns:
-            derivs (List[namedtuple]): List['matrix': tensor] (contains gradient)
+            derivs (List[namedtuple]): List[param_name: tensor] (contains gradient)
 
         """
         return [be.apply(be.zeros_like, self.params)]
@@ -289,12 +291,12 @@ class OneHotLayer(Layer):
             None
 
         Returns:
-            derivs (List[namedtuple]): List['matrix': tensor] (contains gradient)
+            derivs (List[namedtuple]): List[param_name: tensor] (contains gradient)
 
         """
         return [be.apply(be.rand_like, self.params)]
 
-    def _conditional_params(self, scaled_units, weights, beta=None):
+    def conditional_params(self, scaled_units, weights, beta=None):
         """
         Compute the parameters of the layer conditioned on the state
         of the connected layers.
@@ -337,7 +339,7 @@ class OneHotLayer(Layer):
 
         """
         # compute the softmax probabilities
-        field = self._conditional_params(scaled_units, weights, beta)
+        field = self.conditional_params(scaled_units, weights, beta)
         probs = be.softmax(field)
         # find the modes
         on_units = be.argmax(probs, axis=1)
@@ -362,7 +364,7 @@ class OneHotLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        field = self._conditional_params(scaled_units, weights, beta)
+        field = self.conditional_params(scaled_units, weights, beta)
         return be.softmax(field)
 
     def conditional_sample(self, scaled_units, weights, beta=None):
@@ -382,7 +384,7 @@ class OneHotLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        field = self._conditional_params(scaled_units, weights, beta)
+        field = self.conditional_params(scaled_units, weights, beta)
         return self.rand(field)
 
     def random(self, array_or_shape):
@@ -411,16 +413,26 @@ class OneHotLayer(Layer):
         result[:] = self.rand(be.broadcast(self.params.loc, result))
         return result
 
-    def onehot(self, n):
+    def envelope_random(self, array_or_shape):
         """
-        Generate an (n x n) tensor where each row has one unit with maximum
-        activation and all other units with minimum activation.
+        Generate a random sample with the same type as the layer.
+
+        Used for generating initial configurations for Monte Carlo runs.
 
         Args:
-            n (int): the number of units
+            array_or_shape (array or shape tuple):
+                If tuple, then this is taken to be the shape.
+                If array, then its shape is used.
 
         Returns:
-            tensor (n, n)
+            tensor: Random sample with desired shape.
 
         """
-        return be.identity(n)
+        try:
+            shape = be.shape(array_or_shape)
+        except Exception:
+            shape = array_or_shape
+
+        result = be.zeros(shape)
+        result[:] = self.rand(be.broadcast(self.moments.mean, result))
+        return result

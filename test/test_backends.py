@@ -1,12 +1,18 @@
 import paysage.backends.python_backend.matrix as py_matrix
 import paysage.backends.python_backend.nonlinearity as py_func
 import paysage.backends.python_backend.rand as py_rand
+import paysage.backends.python_backend.typedef as py_typedef
 
 import paysage.backends.pytorch_backend.matrix as torch_matrix
 import paysage.backends.pytorch_backend.nonlinearity as torch_func
 import paysage.backends.pytorch_backend.rand as torch_rand
+import paysage.backends.pytorch_backend.typedef as torch_typedef
+
+import paysage.backends as be
+import paysage.math_utils as mu
 
 from numpy import allclose
+from scipy import special
 import numpy as np
 import pytest
 
@@ -32,11 +38,14 @@ def assert_close(pymat, torchmat, name, rtol=1e-05, atol=1e-06):
         assert False, \
         "{}: failure at both python and torch allclose".format(name)
 
+def compare_lists(a, b):
+    return all([be.allclose(ai, bi) for ai, bi in zip(a, b)])
+
 
 # ----- Tests ------ #
 
 
-def test_conversion():
+def test_construction():
 
     shape = (100, 100)
 
@@ -46,15 +55,63 @@ def test_conversion():
     py_torch_x = torch_matrix.to_numpy_array(torch_x)
 
     assert py_matrix.allclose(py_x, py_torch_x), \
-    "python -> torch -> python failure"
+    "torch float constructor failure"
 
-    torch_rand.set_seed()
-    torch_y = torch_rand.rand(shape)
-    py_y = torch_matrix.to_numpy_array(torch_y)
-    torch_py_y = torch_matrix.float_tensor(py_y)
+    py_rand.set_seed()
+    py_x = py_rand.rand(shape)
+    py_y = py_matrix.float_tensor(py_x)
 
-    assert torch_matrix.allclose(torch_y, torch_py_y), \
-    "torch -> python -> torch failure"
+    assert py_matrix.allclose(py_x, py_y), \
+    "python float constructor failure"
+
+    py_rand.set_seed()
+    py_x = py_rand.rand_int(0,10,shape)
+    torch_x = torch_matrix.long_tensor(py_x)
+    py_torch_x = torch_matrix.to_numpy_array(torch_x)
+
+    assert py_matrix.allclose(py_x, py_torch_x), \
+    "torch long constructor failure"
+
+    py_rand.set_seed()
+    py_x = py_rand.rand_int(0,10,shape)
+    py_y = py_matrix.long_tensor(py_x)
+
+    assert py_matrix.allclose(py_x, py_y), \
+    "python long constructor failure"
+
+    py_rand.set_seed()
+    py_x = py_rand.rand((10,)).astype(float)
+    py_x = [p for p in py_x]
+    torch_x = torch_matrix.float_tensor(py_x)
+    py_y = py_matrix.float_tensor(py_x)
+    py_torch_x = torch_matrix.to_numpy_array(torch_x)
+
+    assert py_matrix.allclose(py_y, py_torch_x), \
+    "constructor from float list failure"
+
+    py_rand.set_seed()
+    py_x = py_rand.rand_int(0, 10, (10,))
+    py_x = [int(p) for p in py_x]
+    torch_x = torch_matrix.long_tensor(py_x)
+    py_y = py_matrix.long_tensor(py_x)
+    py_torch_x = torch_matrix.to_numpy_array(torch_x)
+
+    assert py_matrix.allclose(py_y, py_torch_x), \
+    "constructor from int list failure"
+
+
+def test_conversion():
+
+    shape = (100, 100)
+
+    py_rand.set_seed()
+    py_x = py_rand.rand_int(0,10,shape)
+    py_y = py_matrix.cast_float(py_x)
+    torch_y = torch_matrix.cast_float(torch_matrix.long_tensor(py_x))
+    py_torch_y = torch_matrix.to_numpy_array(torch_y)
+
+    assert py_matrix.allclose(py_y, py_torch_y), \
+    "long to float conversion failure"
 
 def test_indexing():
 
@@ -65,8 +122,8 @@ def test_indexing():
     torch_x = torch_matrix.float_tensor(py_x)
 
     index = [0, 2, 10]
-    py_index = py_matrix.int_tensor(index)
-    torch_index = torch_matrix.int_tensor(index)
+    py_index = py_matrix.long_tensor(index)
+    torch_index = torch_matrix.long_tensor(index)
 
     py_subset = py_x[py_index]
     torch_subset = torch_x[torch_index]
@@ -183,7 +240,7 @@ def test_scatter():
 
     value = 2.0
     py_inds = [0, 7, 5, 3, 2, 1, 5, 8, 4, 2]
-    torch_inds = torch_matrix.int_tensor(py_inds)
+    torch_inds = torch_matrix.long_tensor(py_inds)
 
     py_matrix.scatter_(py_mat, py_inds, value)
     torch_matrix.scatter_(torch_mat, torch_inds, value)
@@ -198,8 +255,8 @@ def test_index_select():
     py_mat = py_rand.randn(shape)
     torch_mat = torch_matrix.float_tensor(py_mat)
 
-    py_inds = py_matrix.int_tensor([0, 7, 5, 3, 2, 1, 5, 8, 4, 2])
-    torch_inds = torch_matrix.int_tensor(py_inds)
+    py_inds = py_matrix.long_tensor([0, 7, 5, 3, 2, 1, 5, 8, 4, 2])
+    torch_inds = torch_matrix.long_tensor(py_inds)
 
     # dimension 0
     py_select = py_matrix.index_select(py_mat, py_inds, 0)
@@ -246,7 +303,7 @@ def test_clip():
     torch_clipped = torch_matrix.clip(torch_mat, a_max=1)
     assert_close(py_clipped, torch_clipped, "clip (upper)")
 
-def test_clip_inplace():
+def test_clip_():
 
     shape = (100,100)
 
@@ -255,28 +312,28 @@ def test_clip_inplace():
     torch_mat = torch_matrix.float_tensor(py_mat)
 
     # test two sided clip
-    py_matrix.clip_inplace(py_mat, a_min=0, a_max=1)
-    torch_matrix.clip_inplace(torch_mat, a_min=0, a_max=1)
+    py_matrix.clip_(py_mat, a_min=0, a_max=1)
+    torch_matrix.clip_(torch_mat, a_min=0, a_max=1)
 
-    assert_close(py_mat, torch_mat, "clip_inplace (two-sided)")
+    assert_close(py_mat, torch_mat, "clip_ (two-sided)")
 
     # test lower clip
     py_mat = py_rand.randn(shape)
     torch_mat = torch_matrix.float_tensor(py_mat)
 
-    py_matrix.clip_inplace(py_mat, a_min=0)
-    torch_matrix.clip_inplace(torch_mat, a_min=0)
+    py_matrix.clip_(py_mat, a_min=0)
+    torch_matrix.clip_(torch_mat, a_min=0)
 
-    assert_close(py_mat, torch_mat, "clip_inplace (lower)")
+    assert_close(py_mat, torch_mat, "clip_ (lower)")
 
     # test upper clip
     py_mat = py_rand.randn(shape)
     torch_mat = torch_matrix.float_tensor(py_mat)
 
-    py_matrix.clip_inplace(py_mat, a_max=1)
-    torch_matrix.clip_inplace(torch_mat, a_max=1)
+    py_matrix.clip_(py_mat, a_max=1)
+    torch_matrix.clip_(torch_mat, a_max=1)
 
-    assert_close(py_mat, torch_mat, "clip_inplace (upper)")
+    assert_close(py_mat, torch_mat, "clip_ (upper)")
 
 def test_tclip():
 
@@ -307,7 +364,7 @@ def test_tclip():
     torch_clipped = torch_matrix.tclip(torch_mat, a_max=torch_max)
     assert_close(py_clipped, torch_clipped, "tclip (upper)")
 
-def test_tclip_inplace():
+def test_tclip_():
 
     shape = (100,100)
 
@@ -322,28 +379,28 @@ def test_tclip_inplace():
     torch_max = torch_matrix.float_tensor(py_max)
 
     # test two sided clip
-    py_matrix.tclip_inplace(py_mat, py_min, py_max)
-    torch_matrix.tclip_inplace(torch_mat, torch_min, torch_max)
+    py_matrix.tclip_(py_mat, py_min, py_max)
+    torch_matrix.tclip_(torch_mat, torch_min, torch_max)
 
-    assert_close(py_mat, torch_mat, "tclip_inplace (two-sided)")
+    assert_close(py_mat, torch_mat, "tclip_ (two-sided)")
 
     # test lower clip
     py_mat = py_rand.randn(shape)
     torch_mat = torch_matrix.float_tensor(py_mat)
 
-    py_matrix.tclip_inplace(py_mat, py_min)
-    torch_matrix.tclip_inplace(torch_mat, torch_min)
+    py_matrix.tclip_(py_mat, py_min)
+    torch_matrix.tclip_(torch_mat, torch_min)
 
-    assert_close(py_mat, torch_mat, "tclip_inplace (lower)")
+    assert_close(py_mat, torch_mat, "tclip_ (lower)")
 
     # test upper clip
     py_mat = py_rand.randn(shape)
     torch_mat = torch_matrix.float_tensor(py_mat)
 
-    py_matrix.tclip_inplace(py_mat, a_max=py_max)
-    torch_matrix.tclip_inplace(torch_mat, a_max=torch_max)
+    py_matrix.tclip_(py_mat, a_max=py_max)
+    torch_matrix.tclip_(torch_mat, a_max=torch_max)
 
-    assert_close(py_mat, torch_mat, "tclip_inplace (upper)")
+    assert_close(py_mat, torch_mat, "tclip_ (upper)")
 
 def test_tround():
 
@@ -393,7 +450,7 @@ def test_reshape():
 
     assert_close(py_new, torch_new, "reshape")
 
-def test_mix_inplace():
+def test_mix_():
     shape = (100,100)
 
     # single mixing coefficient
@@ -407,10 +464,10 @@ def test_mix_inplace():
     torch_x = torch_matrix.float_tensor(py_x)
     torch_y = torch_matrix.float_tensor(py_y)
 
-    py_matrix.mix_inplace(py_w, py_x, py_y)
-    torch_matrix.mix_inplace(torch_w, torch_x, torch_y)
+    py_matrix.mix_(py_w, py_x, py_y)
+    torch_matrix.mix_(torch_w, torch_x, torch_y)
 
-    assert_close(py_x, torch_x, "mix_inplace: float w")
+    assert_close(py_x, torch_x, "mix_: float w")
 
     # matrix of mixing coefficients
     torch_w = torch_rand.rand(shape)
@@ -423,10 +480,10 @@ def test_mix_inplace():
     torch_x = torch_matrix.float_tensor(py_x)
     torch_y = torch_matrix.float_tensor(py_y)
 
-    py_matrix.mix_inplace(py_w, py_x, py_y)
-    torch_matrix.mix_inplace(torch_w, torch_x, torch_y)
+    py_matrix.mix_(py_w, py_x, py_y)
+    torch_matrix.mix_(torch_w, torch_x, torch_y)
 
-    assert_close(py_x, torch_x, "mix_inplace: matrix w")
+    assert_close(py_x, torch_x, "mix_: matrix w")
 
 def test_mix():
     shape = (100,100)
@@ -442,8 +499,8 @@ def test_mix():
     torch_x = torch_matrix.float_tensor(py_x)
     torch_y = torch_matrix.float_tensor(py_y)
 
-    py_matrix.mix_inplace(py_w, py_x, py_y)
-    torch_matrix.mix_inplace(torch_w, torch_x, torch_y)
+    py_matrix.mix_(py_w, py_x, py_y)
+    torch_matrix.mix_(torch_w, torch_x, torch_y)
 
     assert_close(py_x, torch_x, "mix: float w")
 
@@ -458,13 +515,13 @@ def test_mix():
     torch_x = torch_matrix.float_tensor(py_x)
     torch_y = torch_matrix.float_tensor(py_y)
 
-    py_matrix.mix_inplace(py_w, py_x, py_y)
-    torch_matrix.mix_inplace(torch_w, torch_x, torch_y)
+    py_matrix.mix_(py_w, py_x, py_y)
+    torch_matrix.mix_(torch_w, torch_x, torch_y)
 
     assert_close(py_x, torch_x, "mix: matrix w")
 
 
-def test_square_mix_inplace():
+def test_square_mix_():
     shape = (100,100)
 
     # single mixing coefficient
@@ -478,10 +535,10 @@ def test_square_mix_inplace():
     torch_x = torch_matrix.float_tensor(py_x)
     torch_y = torch_matrix.float_tensor(py_y)
 
-    py_matrix.square_mix_inplace(py_w, py_x, py_y)
-    torch_matrix.square_mix_inplace(torch_w, torch_x, torch_y)
+    py_matrix.square_mix_(py_w, py_x, py_y)
+    torch_matrix.square_mix_(torch_w, torch_x, torch_y)
 
-    assert_close(py_x, torch_x, "square_mix_inplace: float w")
+    assert_close(py_x, torch_x, "square_mix_: float w")
 
     # single mixing coefficient
     torch_w = torch_rand.rand(shape)
@@ -494,10 +551,10 @@ def test_square_mix_inplace():
     torch_x = torch_matrix.float_tensor(py_x)
     torch_y = torch_matrix.float_tensor(py_y)
 
-    py_matrix.square_mix_inplace(py_w, py_x, py_y)
-    torch_matrix.square_mix_inplace(torch_w, torch_x, torch_y)
+    py_matrix.square_mix_(py_w, py_x, py_y)
+    torch_matrix.square_mix_(torch_w, torch_x, torch_y)
 
-    assert_close(py_x, torch_x, "square_mix_inplace: matrix w")
+    assert_close(py_x, torch_x, "square_mix_: matrix w")
 
 def test_sqrt_div():
     shape = (100,100)
@@ -753,6 +810,22 @@ def test_cov():
     py_cov = py_matrix.cov(py_x, py_y)
     torch_cov = torch_matrix.cov(torch_x, torch_y)
     assert_close(py_cov, torch_cov, "cov")
+
+def test_corr():
+    shape_x = (100, 10)
+    shape_y = (100, 10)
+
+    py_rand.set_seed()
+
+    py_x = py_rand.randn(shape_x)
+    torch_x = torch_matrix.float_tensor(py_x)
+
+    py_y = py_rand.randn(shape_y)
+    torch_y = torch_matrix.float_tensor(py_y)
+
+    py_corr = py_matrix.corr(py_x, py_y)
+    torch_corr = torch_matrix.corr(torch_x, torch_y)
+    assert_close(py_corr, torch_corr, "corr")
 
 def test_tsum():
     shape = (100, 100)
@@ -1144,7 +1217,7 @@ def test_dot():
     py_dot = py_matrix.dot(py_a, py_b)
     torch_dot = torch_matrix.dot(torch_a, torch_b)
 
-    assert allclose(py_dot, torch_dot), \
+    assert allclose(py_dot, torch_dot, 1e-4, 1e-4), \
     "python dot != torch_dot: vector-vector"
 
     # matrix-vector
@@ -1932,6 +2005,34 @@ def test_qr():
     for i in range(2):
         assert_close(py_res[i], torch_res[i], "qr", rtol=1e-4, atol=1e-5)
 
+def test_svd():
+    shape = (100, 10)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.svd(py_mat)
+    torch_res = torch_matrix.svd(torch_mat)
+
+    # needs a lower tolerance to pass than other tests
+    for i in range(3):
+        print(py_matrix.shape(py_res[i]), torch_matrix.shape(torch_res[i]))
+        assert_close(py_res[i], torch_res[i], "svd", rtol=1e-3, atol=1e-4)
+
+def test_matrix_sqrt():
+    shape = (10, 10)
+
+    py_rand.set_seed()
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
+
+    py_res = py_matrix.matrix_sqrt(py_mat)
+    torch_res = torch_matrix.matrix_sqrt(torch_mat)
+
+    # needs a lower tolerance to pass than other tests
+    assert_close(py_res, torch_res, "matrix_sqrt", rtol=1e-3, atol=1e-4)
+
 def test_logdet():
     shape = (100, 100)
 
@@ -1946,6 +2047,22 @@ def test_logdet():
     assert allclose(py_res, torch_res), "python logdet != torch logdet"
 
 def test_batch_dot():
+    L = 10
+    N = 100
+
+    py_rand.set_seed()
+    py_a = py_rand.randn((L, N))
+    py_b = py_rand.randn((L, N))
+
+    torch_a = torch_matrix.float_tensor(py_a)
+    torch_b = torch_matrix.float_tensor(py_b)
+
+    py_res = py_matrix.batch_dot(py_a, py_b)
+    torch_res = torch_matrix.batch_dot(torch_a, torch_b)
+
+    assert_close(py_res, torch_res, "batch_dot")
+
+def test_batch_quadratic():
     L = 10
     N = 100
     M = 50
@@ -1963,10 +2080,10 @@ def test_batch_dot():
     torch_W = torch_matrix.float_tensor(py_W)
     torch_h = torch_matrix.float_tensor(py_h)
 
-    py_res = py_matrix.batch_dot(py_v, py_W, py_h)
-    torch_res = torch_matrix.batch_dot(torch_v, torch_W, torch_h)
+    py_res = py_matrix.batch_quadratic(py_v, py_W, py_h)
+    torch_res = torch_matrix.batch_quadratic(torch_v, torch_W, torch_h)
 
-    assert_close(py_res, torch_res, "batch_dot")
+    assert_close(py_res, torch_res, "batch_quadratic")
 
 def test_batch_outer():
     L = 10
@@ -2106,69 +2223,73 @@ def test_trange():
     assert allclose(py_mat, py_torch_mat), \
     "trange failure: start=10, stop=100, step=7"
 
-def test_pdist():
-    shape = (1000, 50)
-
-    # distance distributions
-    a_mean, a_scale = 1, 1
-    b_mean, b_scale = -1, 1
+def test_cumsum():
+    shape = (100, 100)
 
     py_rand.set_seed()
-    py_a = a_mean + a_scale * py_rand.randn(shape)
-    py_b = b_mean + b_scale * py_rand.randn(shape)
-    torch_a = torch_matrix.float_tensor(py_a)
-    torch_b = torch_matrix.float_tensor(py_b)
+    py_mat = py_rand.randn(shape)
+    torch_mat = torch_matrix.float_tensor(py_mat)
 
-    py_dist = py_matrix.pdist(py_a, py_b)
-    torch_dist = torch_matrix.pdist(torch_a, torch_b)
+    # cumsum over axis 0
+    py_cumsum = py_matrix.cumsum(py_mat, axis=0)
+    torch_cumsum = torch_matrix.cumsum(torch_mat, axis=0)
+    assert_close(py_cumsum, torch_cumsum, "cumsum (axis-0)", rtol=1e-4, atol=1e-5)
 
-    assert_close(py_dist, torch_dist, "pdist", rtol=1e-4, atol=1e-5)
+    # cumsum over axis 1
+    py_cumsum = py_matrix.cumsum(py_mat, axis=1)
+    torch_cumsum = torch_matrix.cumsum(torch_mat, axis=1)
+    assert_close(py_cumsum, torch_cumsum, "cumsum (axis-1)", rtol=1e-4, atol=1e-5)
 
-def test_energy_distance():
-    shape = (1000, 50)
-    # close distributions
-    a_mean, a_scale = 0, 1
-    b_mean, b_scale = 0.1, 0.9
 
+def test_logical_not():
+    shape = (10, 10)
     py_rand.set_seed()
-    py_a = a_mean + a_scale * py_rand.randn(shape)
-    py_b = b_mean + b_scale * py_rand.randn(shape)
-    torch_a = torch_matrix.float_tensor(py_a)
-    torch_b = torch_matrix.float_tensor(py_b)
+    x = py_rand.randn(shape)
 
-    py_dist = py_matrix.energy_distance(py_a, py_b)
-    torch_dist = torch_matrix.energy_distance(torch_a, torch_b)
+    pymat = py_matrix.cast_long(x < 0)
+    torchmat = torch_matrix.long_tensor(pymat)
 
-    assert py_dist < 0.25, \
-    "python energy distance is too big"
+    pymat = py_matrix.logical_not(pymat)
+    torchmat = torch_matrix.logical_not(torchmat)
 
-    assert torch_dist < 0.25, \
-    "torch energy distance is too big"
+    assert_close(py_matrix.cast_float(pymat), torch_matrix.cast_float(torchmat),
+                 "logical_not")
 
-    assert allclose(py_dist, torch_dist, rtol=1e-4, atol=1e-5), \
-    "python != torch, energy_distance"
-
-    # distance distributions
-    a_mean, a_scale = 1, 1
-    b_mean, b_scale = -1, 1
-
+def test_logical_and():
+    shape = (10, 10)
     py_rand.set_seed()
-    py_a = a_mean + a_scale * py_rand.randn(shape)
-    py_b = b_mean + b_scale * py_rand.randn(shape)
-    torch_a = torch_matrix.float_tensor(py_a)
-    torch_b = torch_matrix.float_tensor(py_b)
+    x = py_rand.randn(shape)
+    y = py_rand.randn(shape)
 
-    py_dist = py_matrix.energy_distance(py_a, py_b)
-    torch_dist = torch_matrix.energy_distance(torch_a, torch_b)
+    pyx = py_matrix.cast_long(x < 0)
+    torchx = torch_matrix.long_tensor(pyx)
 
-    assert py_dist > 10, \
-    "python energy distance is too small"
+    pyy = py_matrix.cast_long(y < 0)
+    torchy = torch_matrix.long_tensor(pyy)
 
-    assert torch_dist > 10, \
-    "torch energy distance is too small"
+    pymat = py_matrix.logical_and(pyx, pyy)
+    torchmat = torch_matrix.logical_and(torchx, torchy)
 
-    assert allclose(py_dist, torch_dist, rtol=1e-4, atol=1e-5), \
-    "python != torch, energy_distance"
+    assert_close(py_matrix.cast_float(pymat), torch_matrix.cast_float(torchmat),
+                 "logical_and")
+
+def test_logical_or():
+    shape = (10, 10)
+    py_rand.set_seed()
+    x = py_rand.randn(shape)
+    y = py_rand.randn(shape)
+
+    pyx = py_matrix.cast_long(x < 0)
+    torchx = torch_matrix.long_tensor(pyx)
+
+    pyy = py_matrix.cast_long(y < 0)
+    torchy = torch_matrix.long_tensor(pyy)
+
+    pymat = py_matrix.logical_or(pyx, pyy)
+    torchmat = torch_matrix.logical_or(torchx, torchy)
+
+    assert_close(py_matrix.cast_float(pymat), torch_matrix.cast_float(torchmat),
+                 "logical_and")
 
 
 # ----- Nonlinearities ----- #
@@ -2387,58 +2508,6 @@ def test_sin():
     torch_y = torch_func.sin(torch_x)
     assert_close(py_y, torch_y, "sin")
 
-def test_erf():
-    shape = (100, 100)
-
-    py_rand.set_seed()
-    py_x = py_rand.randn(shape)
-    torch_x = torch_matrix.float_tensor(py_x)
-
-    py_y = py_func.erf(py_x)
-    torch_y = torch_func.erf(torch_x)
-
-    # torch erf is a rough approximation -> increase tolerance
-    assert_close(py_y, torch_y, "erf", rtol=1e-3, atol=1e-3)
-
-def test_erfinv():
-    shape = (100, 100)
-
-    py_rand.set_seed()
-    py_x = py_rand.rand(shape)
-    torch_x = torch_matrix.float_tensor(py_x)
-
-    py_y = py_func.erfinv(py_x)
-    torch_y = torch_func.erfinv(torch_x)
-
-    # torch erfinv is a rough approximation -> increase tolerance
-    assert_close(py_y, torch_y, "erfinv", rtol=1e-2, atol=1e-2)
-
-def test_normal_cdf():
-    shape = (100, 100)
-
-    py_rand.set_seed()
-    py_x = py_rand.randn(shape)
-    torch_x = torch_matrix.float_tensor(py_x)
-
-    py_y = py_func.normal_cdf(py_x)
-    torch_y = torch_func.normal_cdf(torch_x)
-
-    # torch erf is a rough approximation -> increase tolerance
-    assert_close(py_y, torch_y, "normal_cdf", rtol=1e-3, atol=1e-3)
-
-def test_normal_inverse_cdf():
-    shape = (100, 100)
-
-    py_rand.set_seed()
-    py_x = py_rand.rand(shape)
-    torch_x = torch_matrix.float_tensor(py_x)
-
-    py_y = py_func.normal_inverse_cdf(py_x)
-    torch_y = torch_func.normal_inverse_cdf(torch_x)
-
-    # torch erf is a rough approximation -> increase tolerance
-    assert_close(py_y, torch_y, "normal_inverse_cdf", rtol=1e-2, atol=1e-2)
-
 def test_normal_pdf():
     shape = (100, 100)
 
@@ -2449,9 +2518,98 @@ def test_normal_pdf():
     py_y = py_func.normal_pdf(py_x)
     torch_y = torch_func.normal_pdf(torch_x)
 
-    # torch erf is a rough approximation -> increase tolerance
-    assert_close(py_y, torch_y, "normal_pdf", rtol=1e-3, atol=1e-3)
+    assert_close(py_y, torch_y, "normal_pdf")
 
+
+
+# ----- Random Sampling ----- #
+
+def test_rand_softmax():
+    num_samples = 1000000
+    probs = np.array([0.1, 0.2, 0.3, 0.4])
+    scale_factor = 3.7 # factor to scale past unitarity
+    expected_counts = probs * num_samples
+
+    py_rand.set_seed()
+
+    py_phi_1D = py_func.log(scale_factor * probs)
+    py_phi = py_matrix.broadcast(py_phi_1D,
+                                 py_matrix.ones((num_samples, len(probs))))
+    py_draws = py_rand.rand_softmax(py_phi)
+
+    torch_phi_1D = torch_matrix.float_tensor(py_phi_1D)
+    torch_phi = torch_matrix.broadcast(torch_phi_1D,
+                                       torch_matrix.ones((num_samples, len(probs))))
+    torch_draws = torch_rand.rand_softmax(torch_phi)
+
+    py_counts = py_matrix.tsum(py_draws, axis=0)
+    torch_counts = torch_matrix.tsum(torch_draws, axis=0)
+
+    py_num_diff = py_matrix.tsum(0.5*py_func.tabs(py_counts - expected_counts))
+    py_sigma_diff = py_num_diff / py_matrix.tsum(py_func.sqrt(expected_counts))
+    assert py_sigma_diff < 2, \
+        "python random softmax distribution appears inaccurate"
+
+    torch_expected_counts = torch_matrix.float_tensor(expected_counts)
+    torch_num_diff = torch_matrix.tsum(0.5*torch_func.tabs(torch_counts - torch_expected_counts))
+    torch_sigma_diff = torch_num_diff / torch_matrix.tsum(torch_func.sqrt(torch_expected_counts))
+    assert torch_sigma_diff < 2, \
+        "torch random softmax distribution appears inaccurate"
+
+
+def test_1d_conventions():
+    A = py_matrix.float_tensor(np.arange(100))
+    B = torch_matrix.float_tensor(A)
+
+    def float_type(py_func, t_func, A, B):
+        a = py_func(A, axis=0)
+        b = t_func(B, axis=0)
+        assert isinstance(a, np.float32)
+        assert isinstance(b, float)
+        a = py_func(A, axis=None)
+        b = t_func(B, axis=None)
+        assert isinstance(a, np.float32)
+        assert isinstance(b, float)
+        assert a == np.float32(b)
+
+    py_funcs = [py_matrix.norm, py_matrix.tmax, py_matrix.tmin, py_matrix.mean,
+               py_matrix.var, py_matrix.std, py_matrix.tsum, py_matrix.tprod]
+    t_funcs = [torch_matrix.norm, torch_matrix.tmax, torch_matrix.tmin, torch_matrix.mean,
+               torch_matrix.var, torch_matrix.std, torch_matrix.tsum, torch_matrix.tprod]
+
+    for i in range(len(py_funcs)):
+        float_type(py_funcs[i], t_funcs[i], A, B)
+
+    def byte_type(py_func, t_func, A, B):
+        a = py_func(A, axis=0)
+        b = t_func(B, axis=0)
+        assert isinstance(a, np.bool_)
+        assert isinstance(b, int)
+        a = py_func(A, axis=None)
+        b = t_func(B, axis=None)
+        assert isinstance(a, np.bool_)
+        assert isinstance(b, int)
+        assert bool(a) == bool(b)
+
+    py_funcs = [py_matrix.tany, py_matrix.tall]
+    t_funcs = [torch_matrix.tany, torch_matrix.tall]
+
+    for i in range(len(py_funcs)):
+        byte_type(py_funcs[i], t_funcs[i], A, B)
+
+def test_do_nothing():
+    t = py_matrix.float_tensor([1,2,3])
+    T = [t,t,t]
+    result_pre = be.do_nothing(T)
+    result_ref = T
+    assert isinstance(result_pre, list)
+    assert isinstance(result_ref, list)
+    for i,I in enumerate(result_ref):
+        I == result_pre[i]
+
+def test_force_list():
+    t = py_matrix.float_tensor([1,2,3])
+    assert isinstance(be.force_list(t), list)
 
 if __name__ == "__main__":
     pytest.main([__file__])

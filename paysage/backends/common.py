@@ -1,3 +1,86 @@
+def maybe_print(*args, verbose=True, **kwargs):
+    """
+    An optional print statement.
+
+    Args:
+        args: some arguments to print
+        verbose (bool): only print if set to True
+        kwargs: some keyword arguments to print
+
+    Returns:
+        None
+
+    """
+    if verbose:
+        print(*args, **kwargs)
+
+def maybe_a(a, b, func):
+    """
+    Compute func(a, b) when a could be None.
+
+    Args:
+        a (any; maybe None)
+        b (any)
+        func (callable)
+
+    Returns:
+        func(a, b) or b if a is None
+
+    """
+    if a is not None:
+        return func(a, b)
+    return b
+
+def do_nothing(anything):
+    """
+    Identity function.
+
+    Args:
+        Anything.
+
+    Returns:
+        Anything.
+
+    """
+    return anything
+
+def maybe_key(dictionary, key, default=None, func=do_nothing):
+    """
+    Compute func(dictionary['key']) when dictionary has key key, else return default.
+
+    Args:
+        dictionary (dict)
+        default (optional; any): default return value
+        func (callable)
+
+    Returns:
+        func(dictionary[key]) or b if dictionary has no such key
+
+    """
+    try:
+        return func(dictionary[key])
+    except KeyError:
+        return default
+
+def is_namedtuple(obj):
+    """
+    This is a dangerous function!
+
+    We are often applying functions over iterables, but need to handle
+    the namedtuple case specially.
+
+    This function *is a quick and dirty* check for a namedtuple.
+
+    Args:
+        obj (an object)
+
+    Returns:
+        bool: a bool that should be pretty correlated with whether or
+            not the object is a namedtuple
+
+    """
+    return isinstance(obj, tuple) and hasattr(obj, "_fields")
+
 def accumulate(func, a):
     """
     Accumulates the result of a function over iterable a.
@@ -35,6 +118,8 @@ def apply(func, a):
     Applies a function over iterable a, giving back an
     object of the same type as a. That is, b[i] = func(a[i]).
 
+    Warning: this is not meant to be applied to a tensor --it will not work
+
     For example:
 
     '''
@@ -64,16 +149,17 @@ def apply(func, a):
 
     """
     lst = [func(x) for x in a]
-    try:
+    if is_namedtuple(a):
         return type(a)(*lst)
-    except TypeError:
-        return type(a)(lst)
+    return type(a)(lst)
 
 def apply_(func_, a):
     """
     Applies an in place function over iterable a.
 
     That is, a[i] = func(a[i]).
+
+    Warning: this is not meant to be applied to a tensor --it will not work
 
     For example:
 
@@ -113,6 +199,8 @@ def mapzip(func, a, b):
     giving back an object of the same type as a. That is,
     c[i] = func(a[i], b[i]).
 
+    Warning: this is not meant to be applied to a tensor --it will not work
+
     For example:
 
     ```
@@ -142,15 +230,16 @@ def mapzip(func, a, b):
 
     """
     lst = [func(x[0], x[1]) for x in zip(a, b)]
-    try:
+    if is_namedtuple(a):
         return type(a)(*lst)
-    except TypeError:
-        return type(a)(lst)
+    return type(a)(lst)
 
 def mapzip_(func_, a, b):
     """
     Applies an in place function over the zip of iterables a and b,
     func(a[i], b[i]).
+
+    Warning: this is not meant to be applied to a tensor --it will not work
 
     For example:
 
@@ -186,3 +275,34 @@ def mapzip_(func_, a, b):
     """
     for i in range(len(a)):
         func_(a[i], b[i])
+
+def force_list(anything):
+    """
+    Wraps anything into a list, if it is not already a list.
+
+    Args:
+        Anything.
+
+    Returns:
+        [Anything]
+
+    """
+    if not isinstance(anything, list):
+        return [anything]
+    return anything
+
+def force_unlist(anything):
+    """
+    Returns the first element of a list, only if it is a list.
+    Useful for turning [x] into x.
+
+    Args:
+        [Anything]
+
+    Returns:
+        Anything
+
+    """
+    if isinstance(anything, list):
+        return anything[0]
+    return anything

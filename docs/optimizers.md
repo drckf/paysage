@@ -11,7 +11,7 @@ def __init__(self, mean_weight=0.9, mean_square_weight=0.0)
 
 
 
-Create a gradient memory object to keep track of the first two<br />moments of the gradient.<br /><br />Args:<br /> ~ mean_weight (float \in (0,1); optional):<br /> ~  ~ how strongly to weight the previous gradient<br /> ~ mean_square_weight (float \in (0,1); optional)<br /> ~  ~ how strongly to weight the square of the previous gradient<br /><br />Returns:<br /> ~ GradientMemory
+Create a gradient memory object to keep track of the first two<br />moments of the gradient.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;mean_weight (float \in (0,1); optional):<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;how strongly to weight the previous gradient<br />&nbsp;&nbsp;&nbsp;&nbsp;mean_square_weight (float \in (0,1); optional)<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;how strongly to weight the square of the previous gradient<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;GradientMemory
 
 
 ### normalize
@@ -23,7 +23,7 @@ def normalize(self, grad, unbiased=False)
 
 
 
-Divide grad by the square root of the mean square gradient.<br /><br />Notes:<br /> ~ A running average is biased due to autoregressive correlations<br /> ~ between adjacent timepoints. The bias can be corrected by<br /> ~ dividing the results by appropriate weights that reflect<br /> ~ the degree of autocorrelation.<br /><br /> ~ Acts like the identity function if mean_square_weight = 0.<br /><br />Args:<br /> ~ grad (a Gradient object)<br /> ~ unbiased (bool): whether to unbias the estimates<br /><br />Returns:<br /> ~ normalized Gradient object
+Divide grad by the square root of the mean square gradient.<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;A running average is biased due to autoregressive correlations<br />&nbsp;&nbsp;&nbsp;&nbsp;between adjacent timepoints. The bias can be corrected by<br />&nbsp;&nbsp;&nbsp;&nbsp;dividing the results by appropriate weights that reflect<br />&nbsp;&nbsp;&nbsp;&nbsp;the degree of autocorrelation.<br /><br />&nbsp;&nbsp;&nbsp;&nbsp;Acts like the identity function if mean_square_weight = 0.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;grad (a Gradient object)<br />&nbsp;&nbsp;&nbsp;&nbsp;unbiased (bool): whether to unbias the estimates<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;normalized Gradient object
 
 
 ### reset
@@ -35,7 +35,7 @@ def reset(self)
 
 
 
-Reset the accululated mean and mean square gradients.<br /><br />Notes:<br /> ~ Modifies mean_gradient and mean_square_gradient in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Reset the accululated mean and mean square gradients.<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Modifies mean_gradient and mean_square_gradient in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 ### update
@@ -47,7 +47,7 @@ def update(self, grad)
 
 
 
-Update the running average of the model gradients and the running<br />average of the squared model gradients.<br /><br />Notes:<br /> ~ Modifies mean_weight and mean_square_weight attributes in place.<br /><br />Args:<br /> ~ grad (a Gradient object)<br /><br />Returns:<br /> ~ None
+Update the running average of the model gradients and the running<br />average of the squared model gradients.<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Modifies mean_weight and mean_square_weight attributes in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;grad (a Gradient object)<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 ### update\_mean
@@ -59,7 +59,7 @@ def update_mean(self, grad)
 
 
 
-Update the running average of the model gradients.<br /><br />Args:<br /> ~ grad (a Gradient object)<br /><br />Returns:<br /> ~ None
+Update the running average of the model gradients.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;grad (a Gradient object)<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 ### update\_mean\_square
@@ -71,7 +71,7 @@ def update_mean_square(self, grad)
 
 
 
-Update the running average of the squared model gradients.<br /><br />Args:<br /> ~ grad (a Gradient object)<br /><br />Returns:<br /> ~ None
+Update the running average of the squared model gradients.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;grad (a Gradient object)<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 
@@ -81,13 +81,13 @@ Base class for the optimizer methods.
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<paysage.schedules.Constant object at 0x11e7fa438>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<paysage.schedules.Constant object>, tolerance=1e-07)
 
 ```
 
 
 
-Create an optimizer object:<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (generator; optional): the stepsize schedule<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ Optimizer
+Create an optimizer object:<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;model: a BoltzmannMachine object to optimize<br />&nbsp;&nbsp;&nbsp;&nbsp;stepsize (generator; optional): the stepsize schedule<br />&nbsp;&nbsp;&nbsp;&nbsp;tolerance (float; optional):<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the gradient magnitude to declar convergence<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;Optimizer
 
 
 ### check\_convergence
@@ -99,7 +99,7 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
+Check the convergence criterion.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;bool: True if converged, False if not
 
 
 ### update\_lr
@@ -111,7 +111,7 @@ def update_lr(self)
 
 
 
-Update the current value of the stepsize:<br /><br />Notes:<br /> ~ Modifies stepsize attribute in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Update the current value of the stepsize:<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Modifies stepsize attribute in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 
@@ -121,13 +121,13 @@ Vanilla gradient optimizer
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<paysage.schedules.Constant object at 0x11e7fada0>, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<paysage.schedules.Constant object>, tolerance=1e-07)
 
 ```
 
 
 
-Create a gradient ascent/descent optimizer.<br /><br />Aliases:<br /> ~ gradient<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (generator; optional): the stepsize schedule<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ StochasticGradientDescent
+Create a gradient descent optimizer.<br /><br />Aliases:<br />&nbsp;&nbsp;&nbsp;&nbsp;gradient<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;model: a BoltzmannMachine object to optimize<br />&nbsp;&nbsp;&nbsp;&nbsp;stepsize (generator; optional): the stepsize schedule<br />&nbsp;&nbsp;&nbsp;&nbsp;tolerance (float; optional):<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the gradient magnitude to declar convergence<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;StochasticGradientDescent
 
 
 ### check\_convergence
@@ -139,7 +139,7 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
+Check the convergence criterion.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;bool: True if converged, False if not
 
 
 ### reset
@@ -151,7 +151,7 @@ def reset(self)
 
 
 
-Reset the gradient memory (does nothing for vanilla gradient).<br /><br />Notes:<br /> ~ Modifies gradient memory in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Reset the gradient memory (does nothing for vanilla gradient).<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Modifies gradient memory in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 ### update
@@ -163,7 +163,7 @@ def update(self, model, grad)
 
 
 
-Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+Update the model parameters with a gradient step.<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Changes parameters of model in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;model: a BoltzmannMachine object to optimize<br />&nbsp;&nbsp;&nbsp;&nbsp;grad: a Gradient object<br />&nbsp;&nbsp;&nbsp;&nbsp;epoch (int): the current epoch<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 ### update\_lr
@@ -175,7 +175,7 @@ def update_lr(self)
 
 
 
-Update the current value of the stepsize:<br /><br />Notes:<br /> ~ Modifies stepsize attribute in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Update the current value of the stepsize:<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Modifies stepsize attribute in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 
@@ -185,13 +185,13 @@ Stochastic gradient descent with momentum.<br />Qian, N. (1999).<br />On the mom
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<paysage.schedules.Constant object at 0x11e8032e8>, momentum=0.9, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<paysage.schedules.Constant object>, momentum=0.9, tolerance=1e-07)
 
 ```
 
 
 
-Create a stochastic gradient descent with momentum optimizer.<br /><br />Aliases:<br /> ~ momentum<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (generator; optional): the stepsize schedule<br /> ~ momentum (float; optional): the amount of momentum<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ Momentum
+Create a stochastic gradient descent with momentum optimizer.<br /><br />Aliases:<br />&nbsp;&nbsp;&nbsp;&nbsp;momentum<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;model: a BoltzmannMachine object to optimize<br />&nbsp;&nbsp;&nbsp;&nbsp;stepsize (generator; optional): the stepsize schedule<br />&nbsp;&nbsp;&nbsp;&nbsp;momentum (float; optional): the amount of momentum<br />&nbsp;&nbsp;&nbsp;&nbsp;tolerance (float; optional):<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the gradient magnitude to declar convergence<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;Momentum
 
 
 ### check\_convergence
@@ -203,7 +203,7 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
+Check the convergence criterion.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;bool: True if converged, False if not
 
 
 ### reset
@@ -215,7 +215,7 @@ def reset(self)
 
 
 
-Reset the gradient memory.<br /><br />Notes:<br /> ~ Modifies gradient memory in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Reset the gradient memory.<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Modifies gradient memory in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 ### update
@@ -227,7 +227,7 @@ def update(self, model, grad)
 
 
 
-Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+Update the model parameters with a gradient step.<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Changes parameters of model in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;model: a BoltzmannMachine object to optimize<br />&nbsp;&nbsp;&nbsp;&nbsp;grad: a Gradient object<br />&nbsp;&nbsp;&nbsp;&nbsp;epoch (int): the current epoch<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 ### update\_lr
@@ -239,7 +239,7 @@ def update_lr(self)
 
 
 
-Update the current value of the stepsize:<br /><br />Notes:<br /> ~ Modifies stepsize attribute in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Update the current value of the stepsize:<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Modifies stepsize attribute in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 
@@ -249,13 +249,13 @@ Stochastic gradient descent with RMSProp.<br />Geoffrey Hinton's Coursera Course
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<paysage.schedules.Constant object at 0x11e803390>, mean_square_weight=0.9, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<paysage.schedules.Constant object>, mean_square_weight=0.9, tolerance=1e-07)
 
 ```
 
 
 
-Create a stochastic gradient descent with RMSProp optimizer.<br /><br />Aliases:<br /> ~ rmsprop<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (generator; optional): the stepsize schedule<br /> ~ mean_square_weight (float; optional):<br /> ~  ~ for computing the running average of the mean-square gradient<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ RMSProp
+Create a stochastic gradient descent with RMSProp optimizer.<br /><br />Aliases:<br />&nbsp;&nbsp;&nbsp;&nbsp;rmsprop<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;model: a BoltzmannMachine object to optimize<br />&nbsp;&nbsp;&nbsp;&nbsp;stepsize (generator; optional): the stepsize schedule<br />&nbsp;&nbsp;&nbsp;&nbsp;mean_square_weight (float; optional):<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for computing the running average of the mean-square gradient<br />&nbsp;&nbsp;&nbsp;&nbsp;tolerance (float; optional):<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the gradient magnitude to declar convergence<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;RMSProp
 
 
 ### check\_convergence
@@ -267,7 +267,7 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
+Check the convergence criterion.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;bool: True if converged, False if not
 
 
 ### reset
@@ -279,7 +279,7 @@ def reset(self)
 
 
 
-Reset the gradient memory.<br /><br />Notes:<br /> ~ Modifies gradient memory in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Reset the gradient memory.<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Modifies gradient memory in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 ### update
@@ -291,7 +291,7 @@ def update(self, model, grad)
 
 
 
-Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+Update the model parameters with a gradient step.<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Changes parameters of model in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;model: a BoltzmannMachine object to optimize<br />&nbsp;&nbsp;&nbsp;&nbsp;grad: a Gradient object<br />&nbsp;&nbsp;&nbsp;&nbsp;epoch (int): the current epoch<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 ### update\_lr
@@ -303,7 +303,7 @@ def update_lr(self)
 
 
 
-Update the current value of the stepsize:<br /><br />Notes:<br /> ~ Modifies stepsize attribute in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Update the current value of the stepsize:<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Modifies stepsize attribute in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 
@@ -317,13 +317,13 @@ Stochastic gradient descent with Adaptive Moment Estimation algorithm.<br /><br 
 ### \_\_init\_\_
 ```py
 
-def __init__(self, stepsize=<paysage.schedules.Constant object at 0x11e803438>, mean_weight=0.9, mean_square_weight=0.999, tolerance=1e-07, ascent=False)
+def __init__(self, stepsize=<paysage.schedules.Constant object>, mean_weight=0.9, mean_square_weight=0.999, tolerance=1e-07)
 
 ```
 
 
 
-Create a stochastic gradient descent with ADAM optimizer.<br /><br />Aliases:<br /> ~ adam<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ stepsize (generator; optional): the stepsize schedule<br /> ~ mean_weight (float; optional):<br /> ~  ~ for computing the running average of the mean gradient<br /> ~ mean_square_weight (float; optional):<br /> ~  ~ for computing the running average of the mean-square gradient<br /> ~ tolerance (float; optional):<br /> ~  ~ the gradient magnitude to declar convergence<br /><br />Returns:<br /> ~ ADAM
+Create a stochastic gradient descent with ADAM optimizer.<br /><br />Aliases:<br />&nbsp;&nbsp;&nbsp;&nbsp;adam<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;model: a BoltzmannMachine object to optimize<br />&nbsp;&nbsp;&nbsp;&nbsp;stepsize (generator; optional): the stepsize schedule<br />&nbsp;&nbsp;&nbsp;&nbsp;mean_weight (float; optional):<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for computing the running average of the mean gradient<br />&nbsp;&nbsp;&nbsp;&nbsp;mean_square_weight (float; optional):<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for computing the running average of the mean-square gradient<br />&nbsp;&nbsp;&nbsp;&nbsp;tolerance (float; optional):<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the gradient magnitude to declar convergence<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;ADAM
 
 
 ### check\_convergence
@@ -335,7 +335,7 @@ def check_convergence(self)
 
 
 
-Check the convergence criterion.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ bool: True if converged, False if not
+Check the convergence criterion.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;bool: True if converged, False if not
 
 
 ### reset
@@ -347,7 +347,7 @@ def reset(self)
 
 
 
-Reset the gradient memory.<br /><br />Notes:<br /> ~ Modifies gradient memory in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Reset the gradient memory.<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Modifies gradient memory in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 ### update
@@ -359,7 +359,7 @@ def update(self, model, grad)
 
 
 
-Update the model parameters with a gradient step.<br /><br />Notes:<br /> ~ Changes parameters of model in place.<br /><br />Args:<br /> ~ model: a Model object to optimize<br /> ~ grad: a Gradient object<br /> ~ epoch (int): the current epoch<br /><br />Returns:<br /> ~ None
+Update the model parameters with a gradient step.<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Changes parameters of model in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;model: a BoltzmannMachine object to optimize<br />&nbsp;&nbsp;&nbsp;&nbsp;grad: a Gradient object<br />&nbsp;&nbsp;&nbsp;&nbsp;epoch (int): the current epoch<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
 ### update\_lr
@@ -371,21 +371,7 @@ def update_lr(self)
 
 
 
-Update the current value of the stepsize:<br /><br />Notes:<br /> ~ Modifies stepsize attribute in place.<br /><br />Args:<br /> ~ None<br /><br />Returns:<br /> ~ None
+Update the current value of the stepsize:<br /><br />Notes:<br />&nbsp;&nbsp;&nbsp;&nbsp;Modifies stepsize attribute in place.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;None<br /><br />Returns:<br />&nbsp;&nbsp;&nbsp;&nbsp;None
 
 
-
-
-## functions
-
-### deepcopy
-```py
-
-def deepcopy(x, memo=None, _nil=[])
-
-```
-
-
-
-Deep copy operation on arbitrary Python objects.<br /><br />See the module's __doc__ string for more info.
 

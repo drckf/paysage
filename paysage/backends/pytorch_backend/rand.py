@@ -3,7 +3,7 @@ from . import matrix
 from . import nonlinearity as nl
 from . import typedef as T
 
-DTYPE=matrix.DTYPE
+device = matrix.device
 
 DEFAULT_SEED = 137
 
@@ -25,7 +25,10 @@ def set_seed(n: int = DEFAULT_SEED):
     torch.manual_seed(int(n))
     numpy.random.seed(int(n))
     # set the seed for the gpu generator if needed
-    DTYPE.manual_seed(int(n))
+    if device.type == 'cpu':
+        torch.manual_seed(int(n))
+    else:
+        torch.cuda.manual_seed(int(n))
 
 def rand(shape: T.Tuple[int]) -> T.FloatTensor:
     """
@@ -91,6 +94,80 @@ def randn_like(tensor: T.FloatTensor) -> T.FloatTensor:
     x.normal_()
     return x
 
+def rand_int(a: int, b: int, shape: T.Tuple[int]) -> T.LongTensor:
+    """
+    Generate random integers in [a, b).
+    Fills a tensor of a given shape
+
+    Args:
+        a (int): the minimum (inclusive) of the range.
+        b (int): the maximum (exclusive) of the range.
+        shape: the shape of the output tensor.
+
+    Returns:
+        tensor (shape): the random integer samples.
+
+    """
+    return torch.randint(a,b, shape, device=device, dtype=T.Long)
+
+def rand_samples(tensor: T.FloatTensor, num: int) -> T.FloatTensor:
+    """
+    Collect a random number samples from a tensor with replacement.
+    Only supports the input tensor being a vector.
+
+    Args:
+        tensor ((num_samples)): a vector of values.
+        num (int): the number of samples to take.
+
+    Returns:
+        samples ((num)): a vector of sampled values.
+
+    """
+    ix = rand_int(0, len(tensor), (num,))
+    return tensor[ix]
+
+def shuffle_(tensor: T.FloatTensor) -> None:
+    """
+    Shuffle the rows of a tensor.
+
+    Notes:
+        Modifies tensor in place.
+
+    Args:
+        tensor (shape): a tensor to shuffle.
+
+    Returns:
+        None
+
+    """
+    tensor[:] = tensor[torch.randperm(len(tensor), device=device, dtype=T.Long)]
+
+def rand_softmax_units(phi: T.FloatTensor) -> T.FloatTensor:
+    """
+    Draw random unit values according to softmax probabilities.
+
+    Given an effective field vector v,
+    the softmax probabilities are p = exp(v) / sum(exp(v))
+
+    The unit values (the on-units for a 1-hot encoding)
+    are sampled according to p.
+
+    Args:
+        phi (tensor (batch_size, num_units)): the effective field
+
+    Returns:
+        tensor (batch_size,): random unit values from the softmax distribution.
+
+    """
+    max_index = matrix.shape(phi)[1]-1
+    probs = nl.softmax(phi)
+    cum_probs = matrix.cumsum(probs, 1)
+    ref_probs = rand((len(phi), 1))
+    on_units = matrix.tsum(matrix.cast_long(cum_probs < ref_probs), axis=1,
+                           keepdims=True)
+    matrix.clip_(on_units, a_min=0, a_max=max_index)
+    return on_units
+
 def rand_softmax(phi: T.FloatTensor) -> T.FloatTensor:
     """
     Draw random 1-hot samples according to softmax probabilities.
@@ -108,10 +185,5 @@ def rand_softmax(phi: T.FloatTensor) -> T.FloatTensor:
             from the softmax distribution.
 
     """
-    max_index = matrix.shape(phi)[1]-1
-    probs = nl.softmax(phi)
-    cum_probs = torch.cumsum(probs, 1)
-    ref_probs = rand((len(phi), 1))
-    on_units = matrix.int_tensor(matrix.tsum(cum_probs < ref_probs, axis=1, keepdims=True))
-    matrix.clip_inplace(on_units, a_min=0, a_max=max_index)
+    on_units = rand_softmax_units(phi)
     return matrix.zeros_like(phi).scatter_(1, on_units, 1)

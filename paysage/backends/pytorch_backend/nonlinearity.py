@@ -1,11 +1,10 @@
 import torch
+
 from . import matrix
 from . import typedef as T
 
 LOG2 = 0.6931471805599453
-SQRT2 = 1.4142135623730951
 SQRT2PI = 2.5066282746310002
-from numpy import pi
 
 def tmul(a: T.Scalar, x: T.FloatTensor) -> T.FloatTensor:
     """
@@ -75,7 +74,7 @@ def log(x: T.FloatTensor) -> T.FloatTensor:
         tensor: Elementwise natural logarithm.
 
     """
-    y = matrix.clip(x, a_min=matrix.EPSILON)
+    y = matrix.clip(x, a_min=T.EPSILON)
     return torch.log(y)
 
 def tanh(x: T.FloatTensor) -> T.FloatTensor:
@@ -104,11 +103,11 @@ def expit(x: T.FloatTensor) -> T.FloatTensor:
     """
     return 0.5 * (1.0 + tanh(0.5 * x))
 
-def softmax(x: T.Tensor) -> T.Tensor:
+def softmax(x: T.Tensor, axis: int = 1) -> T.Tensor:
     """
     Softmax function on a tensor.
     Exponentiaties the tensor elementwise and divides
-        by the sum along axis=1.
+        by the sum along axis.
 
     Args:
         x: A tensor.
@@ -117,9 +116,9 @@ def softmax(x: T.Tensor) -> T.Tensor:
         tensor: Softmax of the tensor.
 
     """
-    xreg = matrix.subtract(matrix.tmax(x, axis=1, keepdims=True), x)
-    y = torch.exp(xreg)
-    return matrix.divide(matrix.tsum(y, axis=1, keepdims=True), y)
+    xreg = matrix.subtract(matrix.tmax(x, axis=axis, keepdims=True), x)
+    y = exp(xreg)
+    return matrix.divide(matrix.tsum(y, axis=axis, keepdims=True), y)
 
 def reciprocal(x: T.FloatTensor) -> T.FloatTensor:
     """
@@ -145,7 +144,7 @@ def atanh(x: T.FloatTensor) -> T.FloatTensor:
         tensor: Elementwise inverse hyperbolic tangent
 
     """
-    y = matrix.clip(x, a_min=matrix.EPSILON - 1, a_max=1 - matrix.EPSILON)
+    y = matrix.clip(x, a_min=T.EPSILON - 1, a_max=1 -T.EPSILON)
     return (log(1+y) - log(1-y)) / 2
 
 def sqrt(x: T.FloatTensor) -> T.FloatTensor:
@@ -243,7 +242,7 @@ def acosh(x: T.FloatTensor) -> T.FloatTensor:
         tensor: Elementwise inverse hyperbolic cosine.
 
     """
-    y = matrix.clip(x, a_min=1+matrix.EPSILON)
+    y = matrix.clip(x, a_min=1+T.EPSILON)
     return log(y + sqrt(y+1) * sqrt(y-1))
 
 def logit(x: T.FloatTensor) -> T.FloatTensor:
@@ -257,7 +256,7 @@ def logit(x: T.FloatTensor) -> T.FloatTensor:
         tensor: Elementwise logit function
 
     """
-    y = matrix.clip(x, a_min=matrix.EPSILON, a_max = 1 - matrix.EPSILON)
+    y = matrix.clip(x, a_min=T.EPSILON, a_max = 1 - T.EPSILON)
     return torch.log(y / (1 - y))
 
 def softplus(x: T.FloatTensor) -> T.FloatTensor:
@@ -271,7 +270,7 @@ def softplus(x: T.FloatTensor) -> T.FloatTensor:
         tensor: Elementwise softplus.
 
     """
-    return torch.log1p(exp(x))
+    return logaddexp(matrix.zeros_like(x),x)
 
 def cos(x: T.FloatTensor) -> T.FloatTensor:
     """
@@ -298,68 +297,6 @@ def sin(x: T.FloatTensor) -> T.FloatTensor:
 
     """
     return torch.sin(x)
-
-def erf(x: T.FloatTensor) -> T.FloatTensor:
-    """
-    Elementwise error function of a tensor.
-
-    Args:
-        x: A tensor.
-
-    Returns:
-        tensor: Elementwise error function
-    """
-    a = 8.0/(3.0*pi)*(pi-3.0)/(4.0-pi)
-    x_sq = x*x
-    return torch.sign(x)*torch.sqrt(1-torch.exp(-x_sq*(4/pi+a*x_sq)/(1+a*x_sq)))
-
-def erfinv(x: T.FloatTensor) -> T.FloatTensor:
-    """
-    Elementwise error function of a tensor.
-
-    Args:
-        x: A tensor.
-
-    Returns:
-        tensor: Elementwise error function
-    """
-    a = 8.0/(3.0*pi)*(pi-3.0)/(4.0-pi)
-    x_sq = x*x
-    b = -2/(pi*a)-torch.log(1-x_sq)/2
-    return torch.sign(x)*torch.sqrt(b+torch.sqrt(b*b-torch.log(1-x_sq)/a))
-
-def normal_cdf(x: T.FloatTensor) -> T.FloatTensor:
-    """
-    Elementwise cumulative distribution function of the standard normal distribution.
-
-    For the CDF of a normal distributon with mean u and standard deviation sigma, use
-    normal_cdf((x-u)/sigma).
-
-    Args:
-        x (tensor)
-
-    Returns:
-        tensor: Elementwise cdf
-
-    """
-    return 0.5 * (1 + erf(x/SQRT2))
-
-def normal_inverse_cdf(p: T.FloatTensor) -> T.FloatTensor:
-    """
-    Elementwise inverse cumulative distribution function of the standard normal
-    distribution.
-
-    For the inverse CDF of a normal distributon with mean u and standard deviation sigma,
-    use u + sigma * normal_inverse_cdf(p).
-
-    Args:
-        p (tensor bounded in (0,1))
-
-    Returns:
-        tensor: Elementwise inverse cdf
-
-    """
-    return SQRT2*erfinv(2*matrix.clip(p, a_min=matrix.EPSILON, a_max=1-matrix.EPSILON)-1)
 
 def normal_pdf(x: T.FloatTensor) -> T.FloatTensor:
     """

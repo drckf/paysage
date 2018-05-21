@@ -1,9 +1,9 @@
 from paysage import backends as be
 from paysage import layers
-from paysage.models import model
+from paysage.models import BoltzmannMachine
 from paysage import math_utils as mu
-from paysage.models.model_utils import State
-from paysage import fit
+from paysage.models.state import State
+from paysage import samplers
 
 import pytest
 
@@ -22,7 +22,7 @@ def test_independent():
     num_hidden_units = 10
     batch_size = 1000
     steps = 100
-    mean_tol = 0.1
+    mean_tol = 0.2
     corr_tol = 0.2
 
     # set a seed for the random number generator
@@ -36,7 +36,7 @@ def test_independent():
         # set up some layer and model objects
         vis_layer = layer_type(num_visible_units)
         hid_layer = layer_type(num_hidden_units)
-        rbm = model.Model([vis_layer, hid_layer])
+        rbm = BoltzmannMachine([vis_layer, hid_layer])
 
         # randomly set the intrinsic model parameters
         a = be.rand((num_visible_units,))
@@ -45,7 +45,7 @@ def test_independent():
 
         rbm.layers[0].params.loc[:] = a
         rbm.layers[1].params.loc[:] = b
-        rbm.weights[0].params.matrix[:] = W
+        rbm.connections[0].weights.params.matrix[:] = W
 
         if layer_type == layers.GaussianLayer:
             log_var_a = be.randn((num_visible_units,))
@@ -55,16 +55,15 @@ def test_independent():
 
         # initialize a state
         state = State.from_model(batch_size, rbm)
-        dropout = State.dropout_rescale(rbm)
 
         # run a markov chain to update the state
-        state = rbm.markov_chain(steps, state, dropout)
+        state = rbm.markov_chain(steps, state)
 
         # compute the mean
         state_for_moments = State.from_model(1, rbm)
-        sample_mean = [be.mean(state.units[i], axis=0) for i in range(len(state.units))]
+        sample_mean = [be.mean(state[i], axis=0) for i in range(state.len)]
         model_mean = [rbm.layers[i].conditional_mean(
-                rbm._connected_rescaled_units(i, state_for_moments, dropout),
+                rbm._connected_rescaled_units(i, state_for_moments),
                 rbm._connected_weights(i)) for i in range(rbm.num_layers)]
 
         # check that the means are roughly equal
@@ -74,8 +73,8 @@ def test_independent():
             assert close, "{0} {1}: sample mean does not match model mean".format(layer_type, i)
 
         # check the cross correlation between the layers
-        crosscov = be.cov(state.units[0], state.units[1])
-        norm = be.outer(be.std(state.units[0], axis=0), be.std(state.units[1], axis=0))
+        crosscov = be.cov(state[0], state[1])
+        norm = be.outer(be.std(state[0], axis=0), be.std(state[1], axis=0))
         crosscorr = be.divide(norm, crosscov)
         assert be.tmax(be.tabs(crosscorr)) < corr_tol, "{} cross correlation too large".format(layer_type)
 
@@ -106,7 +105,7 @@ def test_conditional_sampling():
         # set up some layer and model objects
         vis_layer = layer_type(num_visible_units)
         hid_layer = layer_type(num_hidden_units)
-        rbm = model.Model([vis_layer, hid_layer])
+        rbm = BoltzmannMachine([vis_layer, hid_layer])
 
         # randomly set the intrinsic model parameters
         a = be.rand((num_visible_units,))
@@ -115,7 +114,7 @@ def test_conditional_sampling():
 
         rbm.layers[0].params.loc[:] = a
         rbm.layers[1].params.loc[:] = b
-        rbm.weights[0].params.matrix[:] = W
+        rbm.connections[0].weights.params.matrix[:] = W
 
         if layer_type == layers.GaussianLayer:
             log_var_a = be.randn((num_visible_units,))
@@ -125,19 +124,19 @@ def test_conditional_sampling():
 
         # initialize a state
         state = State.from_model(1, rbm)
-        dropout = State.dropout_rescale(rbm)
 
         # set up a calculator for the moments
         moments = mu.MeanVarianceArrayCalculator()
 
         for _ in range(steps):
             moments.update(rbm.layers[0].conditional_sample(
-                    rbm._connected_rescaled_units(0, state, dropout),
+                    rbm._connected_rescaled_units(0, state),
                     rbm._connected_weights(0)))
 
         model_mean = rbm.layers[0].conditional_mean(
-                rbm._connected_rescaled_units(0, state, dropout),
+                rbm._connected_rescaled_units(0, state),
                 rbm._connected_weights(0))
+
 
         ave = moments.mean
 
@@ -145,8 +144,8 @@ def test_conditional_sampling():
         assert close, "{} conditional mean".format(layer_type)
 
         if layer_type == layers.GaussianLayer:
-            model_mean, model_var = rbm.layers[0]._conditional_params(
-                rbm._connected_rescaled_units(0, state, dropout),
+            model_mean, model_var = rbm.layers[0].conditional_params(
+                rbm._connected_rescaled_units(0, state),
                 rbm._connected_weights(0))
 
             close = be.allclose(be.sqrt(moments.var), be.sqrt(model_var[0]), rtol=mean_tol, atol=mean_tol)
@@ -167,7 +166,7 @@ def test_clamped_SequentialMC():
     # set up some layer and model objects
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
-    rbm = model.Model([vis_layer, hid_layer])
+    rbm = BoltzmannMachine([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))
@@ -176,29 +175,25 @@ def test_clamped_SequentialMC():
 
     rbm.layers[0].params.loc[:] = a
     rbm.layers[1].params.loc[:] = b
-    rbm.weights[0].params.matrix[:] = W
+    rbm.connections[0].weights.params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     data_state = State.from_visible(vdata, rbm)
-    dropout_scale = State.dropout_rescale(rbm)
-
-    # since we set no dropout, dropout_scale should be None
-    assert dropout_scale is None
 
     for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
 
         # set up the sampler with the visible layer clamped
-        sampler = fit.SequentialMC(rbm, updater=u, clamped=[0])
+        sampler = samplers.SequentialMC(rbm, updater=u, clamped=[0], beta_std=0)
         sampler.set_state(data_state)
 
         # update the sampler state and check the output
-        sampler.update_state(steps, dropout_scale)
+        sampler.update_state(steps)
 
-        assert be.allclose(data_state.units[0], sampler.state.units[0]), \
+        assert be.allclose(data_state[0], sampler.state[0]), \
         "visible layer is clamped, and shouldn't get updated: {}".format(u)
 
-        assert not be.allclose(data_state.units[1], sampler.state.units[1]), \
+        assert not be.allclose(data_state[1], sampler.state[1]), \
         "hidden layer is not clamped, and should get updated: {}".format(u)
 
 
@@ -214,7 +209,7 @@ def test_unclamped_SequentialMC():
     # set up some layer and model objects
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
-    rbm = model.Model([vis_layer, hid_layer])
+    rbm = BoltzmannMachine([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))
@@ -223,28 +218,24 @@ def test_unclamped_SequentialMC():
 
     rbm.layers[0].params.loc[:] = a
     rbm.layers[1].params.loc[:] = b
-    rbm.weights[0].params.matrix[:] = W
+    rbm.connections[0].weights.params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     data_state = State.from_visible(vdata, rbm)
-    dropout_scale = State.dropout_rescale(rbm)
-
-    # since we set no dropout, dropout_scale should be None
-    assert dropout_scale is None
 
     for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
         # set up the sampler with the visible layer clamped
-        sampler = fit.SequentialMC(rbm, updater=u)
+        sampler = samplers.SequentialMC(rbm, updater=u, beta_std=0)
         sampler.set_state(data_state)
 
         # update the sampler state and check the output
-        sampler.update_state(steps, dropout_scale)
+        sampler.update_state(steps)
 
-        assert not be.allclose(data_state.units[0], sampler.state.units[0]), \
+        assert not be.allclose(data_state[0], sampler.state[0]), \
         "visible layer is not clamped, and should get updated: {}".format(u)
 
-        assert not be.allclose(data_state.units[1], sampler.state.units[1]), \
+        assert not be.allclose(data_state[1], sampler.state[1]), \
         "hidden layer is not clamped, and should get updated: {}".format(u)
 
 def test_state_for_grad_SequentialMC():
@@ -258,7 +249,7 @@ def test_state_for_grad_SequentialMC():
     # set up some layer and model objects
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
-    rbm = model.Model([vis_layer, hid_layer])
+    rbm = BoltzmannMachine([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))
@@ -267,36 +258,32 @@ def test_state_for_grad_SequentialMC():
 
     rbm.layers[0].params.loc[:] = a
     rbm.layers[1].params.loc[:] = b
-    rbm.weights[0].params.matrix[:] = W
+    rbm.connections[0].weights.params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     data_state = State.from_visible(vdata, rbm)
-    dropout_scale = State.dropout_rescale(rbm)
-
-    # since we set no dropout, dropout_scale should be None
-    assert dropout_scale is None
 
     for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
         # set up the sampler
-        sampler = fit.SequentialMC(rbm, updater=u, clamped=[0])
+        sampler = samplers.SequentialMC(rbm, updater=u, clamped=[0], beta_std=0)
         sampler.set_state(data_state)
 
         # update the state of the hidden layer
-        grad_state = sampler.state_for_grad(1, dropout_scale)
+        grad_state = sampler.state_for_grad(1)
 
-        assert be.allclose(data_state.units[0], grad_state.units[0]), \
+        assert be.allclose(data_state[0], grad_state[0]), \
         "visible layer is clamped, and shouldn't get updated: {}".format(u)
 
-        assert not be.allclose(data_state.units[1], grad_state.units[1]), \
+        assert not be.allclose(data_state[1], grad_state[1]), \
         "hidden layer is not clamped, and should get updated: {}".format(u)
 
         # compute the conditional mean with the layer function
         ave = rbm.layers[1].conditional_mean(
-                rbm._connected_rescaled_units(1, data_state, dropout_scale),
+                rbm._connected_rescaled_units(1, data_state),
                 rbm._connected_weights(1))
 
-        assert be.allclose(ave, grad_state.units[1]), \
+        assert be.allclose(ave, grad_state[1]), \
         "hidden layer of grad_state should be conditional mean: {}".format(u)
 
 def test_clamped_DrivenSequentialMC():
@@ -311,7 +298,7 @@ def test_clamped_DrivenSequentialMC():
     # set up some layer and model objects
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
-    rbm = model.Model([vis_layer, hid_layer])
+    rbm = BoltzmannMachine([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))
@@ -320,29 +307,25 @@ def test_clamped_DrivenSequentialMC():
 
     rbm.layers[0].params.loc[:] = a
     rbm.layers[1].params.loc[:] = b
-    rbm.weights[0].params.matrix[:] = W
+    rbm.connections[0].weights.params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     data_state = State.from_visible(vdata, rbm)
-    dropout_scale = State.dropout_rescale(rbm)
-
-    # since we set no dropout, dropout_scale should be None
-    assert dropout_scale is None
 
     for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
 
         # set up the sampler with the visible layer clamped
-        sampler = fit.DrivenSequentialMC(rbm, updater=u, clamped=[0])
+        sampler = samplers.SequentialMC(rbm, updater=u, clamped=[0])
         sampler.set_state(data_state)
 
         # update the sampler state and check the output
-        sampler.update_state(steps, dropout_scale)
+        sampler.update_state(steps)
 
-        assert be.allclose(data_state.units[0], sampler.state.units[0]), \
+        assert be.allclose(data_state[0], sampler.state[0]), \
         "visible layer is clamped, and shouldn't get updated: {}".format(u)
 
-        assert not be.allclose(data_state.units[1], sampler.state.units[1]), \
+        assert not be.allclose(data_state[1], sampler.state[1]), \
         "hidden layer is not clamped, and should get updated: {}".format(u)
 
 def test_unclamped_DrivenSequentialMC():
@@ -357,7 +340,7 @@ def test_unclamped_DrivenSequentialMC():
     # set up some layer and model objects
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
-    rbm = model.Model([vis_layer, hid_layer])
+    rbm = BoltzmannMachine([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))
@@ -366,28 +349,24 @@ def test_unclamped_DrivenSequentialMC():
 
     rbm.layers[0].params.loc[:] = a
     rbm.layers[1].params.loc[:] = b
-    rbm.weights[0].params.matrix[:] = W
+    rbm.connections[0].weights.params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     data_state = State.from_visible(vdata, rbm)
-    dropout_scale = State.dropout_rescale(rbm)
-
-    # since we set no dropout, dropout_scale should be None
-    assert dropout_scale is None
 
     for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
         # set up the sampler with the visible layer clamped
-        sampler = fit.DrivenSequentialMC(rbm, updater=u)
+        sampler = samplers.SequentialMC(rbm, updater=u)
         sampler.set_state(data_state)
 
         # update the sampler state and check the output
-        sampler.update_state(steps, dropout_scale)
+        sampler.update_state(steps)
 
-        assert not be.allclose(data_state.units[0], sampler.state.units[0]), \
+        assert not be.allclose(data_state[0], sampler.state[0]), \
         "visible layer is not clamped, and should get updated: {}".format(u)
 
-        assert not be.allclose(data_state.units[1], sampler.state.units[1]), \
+        assert not be.allclose(data_state[1], sampler.state[1]), \
         "hidden layer is not clamped, and should get updated: {}".format(u)
 
 def test_state_for_grad_DrivenSequentialMC():
@@ -401,7 +380,7 @@ def test_state_for_grad_DrivenSequentialMC():
     # set up some layer and model objects
     vis_layer = layers.BernoulliLayer(num_visible_units)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
-    rbm = model.Model([vis_layer, hid_layer])
+    rbm = BoltzmannMachine([vis_layer, hid_layer])
 
     # randomly set the intrinsic model parameters
     a = be.randn((num_visible_units,))
@@ -410,36 +389,32 @@ def test_state_for_grad_DrivenSequentialMC():
 
     rbm.layers[0].params.loc[:] = a
     rbm.layers[1].params.loc[:] = b
-    rbm.weights[0].params.matrix[:] = W
+    rbm.connections[0].weights.params.matrix[:] = W
 
     # generate a random batch of data
     vdata = rbm.layers[0].random((batch_size, num_visible_units))
     data_state = State.from_visible(vdata, rbm)
-    dropout_scale = State.dropout_rescale(rbm)
-
-    # since we set no dropout, dropout_scale should be None
-    assert dropout_scale is None
 
     for u in ['markov_chain', 'mean_field_iteration', 'deterministic_iteration']:
         # set up the sampler
-        sampler = fit.DrivenSequentialMC(rbm, updater=u, clamped=[0])
+        sampler = samplers.SequentialMC(rbm, updater=u, clamped=[0])
         sampler.set_state(data_state)
 
         # update the state of the hidden layer
-        grad_state = sampler.state_for_grad(1, dropout_scale)
+        grad_state = sampler.state_for_grad(1)
 
-        assert be.allclose(data_state.units[0], grad_state.units[0]), \
+        assert be.allclose(data_state[0], grad_state[0]), \
         "visible layer is clamped, and shouldn't get updated: {}".format(u)
 
-        assert not be.allclose(data_state.units[1], grad_state.units[1]), \
+        assert not be.allclose(data_state[1], grad_state[1]), \
         "hidden layer is not clamped, and should get updated: {}".format(u)
 
         # compute the conditional mean with the layer function
         ave = rbm.layers[1].conditional_mean(
-                rbm._connected_rescaled_units(1, data_state, dropout_scale),
+                rbm._connected_rescaled_units(1, data_state),
                 rbm._connected_weights(1))
 
-        assert be.allclose(ave, grad_state.units[1]), \
+        assert be.allclose(ave, grad_state[1]), \
         "hidden layer of grad_state should be conditional mean: {}".format(u)
 
 

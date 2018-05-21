@@ -5,9 +5,15 @@ import pandas
 from .. import penalties
 from .. import constraints
 from .. import backends as be
+from .. import math_utils as mu
 
 # CumulantsTAP type is common to all layers
 CumulantsTAP = namedtuple("CumulantsTAP", ["mean", "variance"])
+CumulantsTAP.__doc__ += \
+"\nNote: the expectation thoughout the TAP codebase is that both \
+mean and variance are tensors of shape (num_samples>1, num_units) \
+or (num_units) in which num_samples is some sampling multiplicity \
+used in the tap calculations, not the SGD batch size."
 
 # Params type must be redefined for all Layers
 ParamsLayer = namedtuple("Params", [])
@@ -17,13 +23,13 @@ class Layer(object):
     A general layer class with common functionality.
 
     """
-    def __init__(self, num_units, dropout_p, *args, **kwargs):
+    def __init__(self, num_units, center=False, *args, **kwargs):
         """
         Basic layer initialization method.
 
         Args:
             num_units (int): number of units in the layer
-            dropout_p (float): likelihood each unit is dropped out in training
+            center (bool): whether to center the layer
             *args: any arguments
             **kwargs: any keyword arguments
 
@@ -36,10 +42,26 @@ class Layer(object):
         # these attributes are mutable (their keys do change)
         self.penalties = OrderedDict()
         self.constraints = OrderedDict()
-        self.dropout_p = dropout_p
         self.len = num_units
         self.fixed_params = []
-        self.moments = None
+        self.moments = mu.MeanVarianceArrayCalculator()
+        self.center = center
+        self.centering_vec = None
+
+    def get_center(self):
+        """
+        Get the vector used for centering:
+
+        Args:
+            None
+
+        Returns:
+            tensor ~ (num_units,)
+
+        """
+        if self.centering_vec is not None:
+            return self.centering_vec
+        return self.moments.mean
 
     def set_fixed_params(self, fixed_params):
         """
@@ -57,6 +79,19 @@ class Layer(object):
         """
         self.fixed_params = fixed_params
 
+    def get_fixed_params(self):
+        """
+        Get the params that are not trainable.
+
+        Args:
+            None
+
+        Returns:
+            fixed_params (List[str]): a list of the fixed parameter names
+
+        """
+        return self.fixed_params
+
     def _get_trainable_indices(self):
         """
         Get the indices of the trainable params.
@@ -72,35 +107,49 @@ class Layer(object):
         trainable_fields = [f for f in fields if f not in self.fixed_params]
         return [fields.index(f) for f in trainable_fields]
 
+    def get_params(self):
+        """
+        Get the value of the layer params attribute.
+
+        Args:
+            None
+
+        Returns:
+            params (list[namedtuple]): length=1 list
+
+        """
+        return [self.params]
+
     def set_params(self, new_params):
         """
         Set the value of the layer params attribute.
 
         Notes:
             Modifies layer.params in place.
+            Note: expects a length=1 list
 
         Args:
-            new_params (namedtuple)
+            new_params (list[namedtuple])
 
         Returns:
             None
 
         """
         for i in self._get_trainable_indices():
-            self.params[i][:] = new_params[i]
+            self.params[i][:] = new_params[0][i]
 
-    def use_dropout(self):
+    def get_param_names(self):
         """
-        Indicate if the layer has dropout.
+        Return the field names of the params attribute.
 
         Args:
             None
 
         Returns:
-            true of false
+            field names (List[str])
 
         """
-        return self.dropout_p > 0
+        return list(self.params._fields)
 
     def get_base_config(self):
         """
@@ -120,12 +169,13 @@ class Layer(object):
         return {
             "layer_type"  : self.__class__.__name__,
             "num_units"   : self.len,
-            "dropout"     : self.dropout_p,
+            "center"      : self.center,
             "parameters"  : list(self.params._fields),
             "penalties"   : {pk: self.penalties[pk].get_config()
                              for pk in self.penalties},
             "constraints" : {ck: self.constraints[ck].__name__
-                             for ck in self.constraints}
+                             for ck in self.constraints},
+            "fixed_params": self.fixed_params
         }
 
     def get_config(self):
@@ -158,16 +208,23 @@ class Layer(object):
             layer
 
         """
-        layer = cls(config["num_units"], config["dropout"])
-        for k, v in config["penalties"].items():
+        # separate out the layer arguments from other parameters
+        layer_config = dict(config)
+        penalties_config = layer_config.pop("penalties", {})
+        constraints_config = layer_config.pop("constraints", {})
+        param_names = layer_config.pop("parameters", [])
+        fixed_params = layer_config.pop("fixed_params", [])
+        layer = cls(**layer_config)
+        for k, v in penalties_config.items():
             layer.add_penalty({k: penalties.from_config(v)})
-        for k, v in config["constraints"].items():
+        for k, v in constraints_config.items():
             layer.add_constraint({k: getattr(constraints, v)})
+        layer.set_fixed_params(fixed_params)
         return layer
 
     def save_params(self, store, key):
         """
-        Save the parameters to a HDFStore.
+        Save the parameters to a HDFStore.  Includes the moments for the layer.
 
         Notes:
             Performs an IO operation.
@@ -182,7 +239,9 @@ class Layer(object):
         """
         for i, ip in enumerate(self.params):
             df_params = pandas.DataFrame(be.to_numpy_array(ip))
-            store.put(os.path.join(key, 'parameters', 'key'+str(i)), df_params)
+            store.put(os.path.join(key, 'parameters', 'params'+str(i)), df_params)
+            store.put(os.path.join(key, 'parameters', 'moments'+str(i)),
+                      self.moments.to_dataframe())
 
     def load_params(self, store, key):
         """
@@ -200,11 +259,39 @@ class Layer(object):
 
         """
         params = []
-        for i, ip in enumerate(self.params):
+        for i, _ in enumerate(self.params):
             params.append(be.float_tensor(
-                store.get(os.path.join(key, 'parameters', 'key'+str(i))).as_matrix()
+                store.get(os.path.join(key, 'parameters', 'params'+str(i))).as_matrix()
             ).squeeze()) # collapse trivial dimensions to a vector
-        self.set_params(self.params.__class__(*params))
+
+        # load parameters, but first unset fixed_params to load, then re-set
+        fixed_params_cache = self.fixed_params
+        self.fixed_params = []
+        self.set_params([self.params.__class__(*params)])
+        self.fixed_params = fixed_params_cache
+
+        self.moments = mu.MeanVarianceArrayCalculator.from_dataframe(
+                store.get(os.path.join(key, 'parameters', 'moments'+str(i))))
+
+    def num_parameters(self):
+        return self.len * len(self.params)
+
+    def update_moments(self, units):
+        """
+        Set a reference mean and variance of the layer
+            (used for centering and sampling).
+
+        Notes:
+            Modifies layer.reference_mean attribute in place.
+
+        Args:
+            units (tensor (batch_size, self.len)
+
+        Returns:
+            None
+
+        """
+        self.moments.update(units, axis=0)
 
     def add_constraint(self, constraint):
         """
@@ -311,30 +398,5 @@ class Layer(object):
             None
 
         """
-        self.set_params(be.mapzip(be.subtract, deltas[0], self.params))
+        self.set_params([be.mapzip(be.subtract, deltas[0], self.params)])
         self.enforce_constraints()
-
-    def get_dropout_mask(self, batch_size=1):
-        """
-        Return a binary mask
-
-        Args:
-            batch_size (int): number of masks to generate
-
-        Returns:
-            mask (tensor (batch_size, self.len): binary mask
-        """
-        return be.float_tensor(be.rand((batch_size, self.len)) > self.dropout_p)
-
-    def get_dropout_scale(self, batch_size=1):
-        """
-        Return a vector representing the probability that each unit is on
-            with respect to dropout
-
-        Args:
-            batch_size (int): number of copies to return
-
-        Returns:
-            scale (tensor (batch_size, self.len)): vector of scales for each unit
-        """
-        return (1.0-self.dropout_p) * be.ones((batch_size, self.len))

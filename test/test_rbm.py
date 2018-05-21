@@ -4,8 +4,9 @@ from paysage import backends as be
 from paysage import batch
 from paysage import preprocess as pre
 from paysage import layers
-from paysage.models import model
+from paysage.models import BoltzmannMachine
 from paysage import fit
+from paysage.metrics import ProgressMonitor
 from paysage import optimizers
 from paysage import schedules
 
@@ -21,12 +22,12 @@ def test_rbm(paysage_path=None):
 
     if not paysage_path:
         paysage_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    filepath = os.path.join(paysage_path, 'mnist', 'mnist.h5')
+    filepath = os.path.join(paysage_path, 'examples', 'mnist', 'mnist.h5')
 
     if not os.path.exists(filepath):
         raise IOError("{} does not exist. run mnist/download_mnist.py to fetch from the web".format(filepath))
 
-    shuffled_filepath = os.path.join(paysage_path, 'mnist', 'shuffled_mnist.h5')
+    shuffled_filepath = os.path.join(paysage_path, 'examples', 'mnist', 'shuffled_mnist.h5')
 
     # shuffle the data
     if not os.path.exists(shuffled_filepath):
@@ -36,41 +37,34 @@ def test_rbm(paysage_path=None):
     # set a seed for the random number generator
     be.set_seed()
 
-    # set up the reader to get minibatches
-    data = batch.HDFBatch(shuffled_filepath,
-                         'train/images',
-                          batch_size,
-                          transform=pre.binarize_color,
-                          train_fraction=0.99)
+    import pandas
+    samples = pre.binarize_color(be.float_tensor(pandas.read_hdf(
+                shuffled_filepath, key='train/images').as_matrix()[:10000]))
+    samples_train, samples_validate = batch.split_tensor(samples, 0.95)
+    data = batch.Batch({'train': batch.InMemoryTable(samples_train, batch_size),
+                        'validate': batch.InMemoryTable(samples_validate, batch_size)})
 
     # set up the model and initialize the parameters
     vis_layer = layers.BernoulliLayer(data.ncols)
     hid_layer = layers.BernoulliLayer(num_hidden_units)
 
-    rbm = model.Model([vis_layer, hid_layer])
+    rbm = BoltzmannMachine([vis_layer, hid_layer])
     rbm.initialize(data)
 
     # obtain initial estimate of the reconstruction error
-    perf  = fit.ProgressMonitor(data,
-                                metrics=[
-                                'ReconstructionError'])
-    untrained_performance = perf.check_progress(rbm)
-
+    perf  = ProgressMonitor()
+    untrained_performance = perf.epoch_update(data, rbm, store=True, show=False)
 
     # set up the optimizer and the fit method
     opt = optimizers.RMSProp(stepsize=learning_rate)
-
-    sampler = fit.DrivenSequentialMC.from_batch(rbm, data)
-
-    cd = fit.SGD(rbm, data, opt, num_epochs, sampler, method = fit.pcd,
-                 mcsteps=mc_steps, monitor=perf)
+    cd = fit.SGD(rbm, data)
 
     # fit the model
     print('training with contrastive divergence')
-    cd.train()
+    cd.train(opt, num_epochs, method = fit.pcd, mcsteps=mc_steps)
 
     # obtain an estimate of the reconstruction error after 1 epoch
-    trained_performance = perf.check_progress(rbm)
+    trained_performance = cd.monitor.memory[-1]
 
     assert (trained_performance['ReconstructionError'] <
             untrained_performance['ReconstructionError']), \

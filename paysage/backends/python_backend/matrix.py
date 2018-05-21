@@ -13,35 +13,66 @@ def float_scalar(scalar: T.Scalar) -> float:
         numpy.float32: Scalar converted to floating point.
 
     """
-    return numpy.float32(scalar)
+    return T.Float(scalar)
 
-EPSILON = float_scalar(numpy.finfo(numpy.float32).eps)
-
-def float_tensor(tensor: T.Tensor) -> T.Tensor:
+def cast_float(tensor: T.Tensor) -> T.Tensor:
     """
     Cast tensor to a float tensor.
 
-    Args:
-        tensor: A tensor.
-
-    Returns:
-        tensor: Tensor converted to floating point.
-
-    """
-    return numpy.array(tensor, dtype=numpy.float32)
-
-def int_tensor(tensor: T.Tensor) -> T.Tensor:
-    """
-    Cast tensor to an int tensor.
+    Notes:
+        If tensor is already float, no copy is made.
 
     Args:
         tensor: A tensor.
 
     Returns:
-        tensor: Tensor converted to int.
+        tensor: copy of tensor converted to floating point.
 
     """
-    return numpy.array(tensor, dtype=int)
+    return tensor.astype(T.Float, copy=False)
+
+def float_tensor(tensor: T.FloatConstructable) -> T.Tensor:
+    """
+    Construct a float tensor.
+    This will always copy the data in tensor.
+
+    Args:
+        tensor: A float tensor or list of floats.
+
+    Returns:
+        tensor: Constructed float tensor.
+
+    """
+    return numpy.array(tensor, dtype=T.Float)
+
+def cast_long(tensor: T.Tensor) -> T.Tensor:
+    """
+    Cast tensor to an long int tensor.
+    Notes:
+        If tensor is already long int, no copy is made.
+
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: Copy of tensor converted to long int.
+
+    """
+    return tensor.astype(T.Long, copy=False)
+
+def long_tensor(tensor: T.LongConstructable) -> T.Tensor:
+    """
+    Construct a long int tensor.
+    This will always copy the data in tensor.
+
+    Args:
+        tensor: A long tensor or list of longs.
+
+    Returns:
+        tensor: Tensor converted to long int.
+
+    """
+    return numpy.array(tensor, dtype=T.Long)
 
 def to_numpy_array(tensor: T.Tensor) -> T.Tensor:
     """
@@ -52,6 +83,19 @@ def to_numpy_array(tensor: T.Tensor) -> T.Tensor:
 
     Returns:
         tensor: Tensor converted to a numpy array.
+
+    """
+    return tensor
+
+def from_numpy_array(tensor: T.Tensor) -> T.NumpyTensor:
+    """
+    Construct a tensor from a numpy array. A noop.
+
+    Args:
+        tensor: A numpy ndarray
+
+    Returns:
+        tensor: Tensor converted from ndarray.
 
     """
     return tensor
@@ -121,7 +165,7 @@ def transpose(tensor: T.Tensor) -> T.Tensor:
     """
     return numpy.transpose(tensor)
 
-def zeros(shape: T.Tuple[int]) -> T.Tensor:
+def zeros(shape: T.Tuple[int], dtype: T.Dtype = T.Float) -> T.Tensor:
     """
     Return a tensor of a specified shape filled with zeros.
 
@@ -132,7 +176,7 @@ def zeros(shape: T.Tuple[int]) -> T.Tensor:
         tensor: A tensor of zeros with the desired shape.
 
     """
-    return numpy.zeros(shape, dtype=numpy.float32)
+    return numpy.zeros(shape, dtype=dtype)
 
 def zeros_like(tensor: T.Tensor) -> T.Tensor:
     """
@@ -147,7 +191,7 @@ def zeros_like(tensor: T.Tensor) -> T.Tensor:
     """
     return zeros(shape(tensor))
 
-def ones(shape: T.Tuple[int]) -> T.Tensor:
+def ones(shape: T.Tuple[int], dtype: T.Dtype = T.Float) -> T.Tensor:
     """
     Return a tensor of a specified shape filled with ones.
 
@@ -158,7 +202,7 @@ def ones(shape: T.Tuple[int]) -> T.Tensor:
         tensor: A tensor of ones with the desired shape.
 
     """
-    return numpy.ones(shape, dtype=numpy.float32)
+    return numpy.ones(shape, dtype=dtype)
 
 def ones_like(tensor: T.Tensor) -> T.Tensor:
     """
@@ -213,7 +257,7 @@ def identity(n: int) -> T.Tensor:
                 and zeros elsewhere.
 
     """
-    return numpy.identity(n, dtype=numpy.float32)
+    return numpy.identity(n, dtype=T.Float)
 
 def fill_diagonal_(mat: T.Tensor, val: T.Scalar) -> T.Tensor:
     """
@@ -316,7 +360,7 @@ def tclip(tensor: T.Tensor, a_min: T.Tensor=None,
     """
     return tensor.clip(a_min, a_max)
 
-def clip_inplace(tensor: T.Tensor, a_min: T.Scalar=None,
+def clip_(tensor: T.Tensor, a_min: T.Scalar=None,
                  a_max: T.Scalar=None) -> None:
     """
     Clip the values of a tensor between a_min and a_max.
@@ -335,11 +379,11 @@ def clip_inplace(tensor: T.Tensor, a_min: T.Scalar=None,
     """
     tensor.clip(a_min, a_max, out=tensor)
 
-def tclip_inplace(tensor: T.Tensor, a_min: T.Tensor=None,
+def tclip_(tensor: T.Tensor, a_min: T.Tensor=None,
                  a_max: T.Tensor=None) -> None:
     """
     Clip the values of a tensor elementwise between a_min and a_max tensors.
-    The implementation is identical to tclip_inplace
+    The implementation is identical to clip_
 
     Note:
         Modifies tensor in place.
@@ -367,6 +411,32 @@ def tround(tensor: T.Tensor) -> T.Tensor:
 
     """
     return numpy.round(tensor)
+
+def tfloor(tensor: T.Tensor) -> T.Tensor:
+    """
+    Return a tensor with floored elements.
+
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: A tensor rounded down to the next integer (still floating point).
+
+    """
+    return numpy.floor(tensor)
+
+def tceil(tensor: T.Tensor) -> T.Tensor:
+    """
+    Return a tensor with ceilinged elements.
+
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: A tensor rounded up to the next integer (still floating point).
+
+    """
+    return numpy.ceil(tensor)
 
 def flatten(tensor: T.FloatingPoint) -> T.FloatingPoint:
     """
@@ -445,7 +515,7 @@ def mix(w: T.Tensor, x: T.Tensor, y: T.Tensor) -> T.Tensor:
     """
     return ne.evaluate('w*x + (1-w)*y')
 
-def mix_inplace(w: T.Tensor, x: T.Tensor, y: T.Tensor) -> None:
+def mix_(w: T.Tensor, x: T.Tensor, y: T.Tensor) -> None:
     """
     Compute a weighted average of two matrices (x and y) and store the results in x.
     Useful for keeping track of running averages during training.
@@ -466,7 +536,7 @@ def mix_inplace(w: T.Tensor, x: T.Tensor, y: T.Tensor) -> None:
     """
     ne.evaluate('w*x + (1-w)*y', out=x)
 
-def square_mix_inplace(w: T.Tensor, x: T.Tensor, y: T.Tensor) -> None:
+def square_mix_(w: T.Tensor, x: T.Tensor, y: T.Tensor) -> None:
     """
     Compute a weighted average of two matrices (x and y^2) and store the results in x.
     Useful for keeping track of running averages of squared matrices during training.
@@ -499,7 +569,7 @@ def sqrt_div(x: T.Tensor, y: T.Tensor) -> T.Tensor:
         tensor: Elementwise division of x by sqrt(y).
 
     """
-    z = EPSILON + y
+    z = T.EPSILON + y
     return ne.evaluate('x/sqrt(z)')
 
 def normalize(x: T.Tensor) -> T.Tensor:
@@ -513,7 +583,7 @@ def normalize(x: T.Tensor) -> T.Tensor:
         tensor: A tensor normalized by it's sum.
 
     """
-    y = EPSILON + x
+    y = T.EPSILON + x
     return x/numpy.sum(y)
 
 def norm(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
@@ -663,8 +733,25 @@ def cov(x: T.Tensor, y: T.Tensor) -> T.Tensor:
         tensor (num_units_x, num_units_y)
 
     """
-    num_samples = len(x)
+    num_samples = len(x) - 1
     return batch_outer(center(x), center(y)) / num_samples
+
+def corr(x: T.Tensor, y: T.Tensor) -> T.Tensor:
+    """
+    Compute the cross correlation between tensors x and y.
+
+    Args:
+        x (tensor (num_samples, num_units_x))
+        y (tensor (num_samples, num_units_y))
+
+    Returns:
+        tensor (num_units_x, num_units_y)
+
+    """
+    covariance = cov(x, y)
+    std_x = std(x, axis=0) + T.EPSILON
+    std_y = std(y, axis=0) + T.EPSILON
+    return divide(outer(std_x, std_y), covariance)
 
 def tsum(x: T.Tensor, axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
@@ -898,6 +985,7 @@ def sort(x: T.Tensor, axis: int = None) -> T.Tensor:
 def argsort(x: T.Tensor, axis: int = None) -> T.Tensor:
     """
     Get the indices of a sorted tensor.
+    If axis=None this flattens x
 
     Args:
         x: A tensor:
@@ -922,7 +1010,10 @@ def argmax(x: T.Tensor, axis: int) -> T.Tensor:
         specified axis.
 
     """
-    return numpy.argmax(x, axis=axis)
+    r = numpy.argmax(x, axis=axis)
+    if numpy.isscalar(r):
+        return cast_long(numpy.array([r]))
+    return r
 
 def argmin(x: T.Tensor, axis: int) -> T.Tensor:
     """
@@ -937,7 +1028,10 @@ def argmin(x: T.Tensor, axis: int) -> T.Tensor:
         specified axis.
 
     """
-    return numpy.argmin(x, axis=axis)
+    r = numpy.argmin(x, axis=axis)
+    if numpy.isscalar(r):
+        return cast_long(numpy.array([r]))
+    return r
 
 def dot(a: T.Tensor, b: T.Tensor) -> T.FloatingPoint:
     """
@@ -1192,7 +1286,9 @@ def inv(mat: T.Tensor) -> T.Tensor:
         tensor: The matrix inverse.
 
     """
-    return numpy.linalg.inv(mat)
+    if len(mat) > 1:
+        return numpy.linalg.inv(mat)
+    return numpy.reciprocal(mat)
 
 def pinv(mat: T.Tensor) -> T.Tensor:
     """
@@ -1223,6 +1319,35 @@ def qr(mat: T.Tensor) -> T.Tuple[T.Tensor]:
     """
     return numpy.linalg.qr(mat)
 
+def svd(mat: T.Tensor) -> T.Tuple[T.Tensor]:
+    """
+    Compute the Singular Value decomposition of a matrix
+    A = U S V^T
+
+    Args:
+        mat: A matrix.
+
+    Returns:
+        (U, S, V): Tuple of tensors.
+
+    """
+    u, s, v = numpy.linalg.svd(mat, full_matrices=False)
+    return u, s, v.T
+
+def matrix_sqrt(mat: T.Tensor) -> T.Tensor:
+    """
+    Compute the matrix square root using an SVD
+
+    Args:
+        mat: A square matrix.
+
+    Returns:
+        logdet: The logarithm of the matrix determinant.
+
+    """
+    u, s, v = svd(mat)
+    return numpy.dot(u * numpy.sqrt(s), v.T)
+
 def logdet(mat: T.Tensor) -> float:
     """
     Compute the logarithm of the determinant of a square matrix.
@@ -1236,12 +1361,31 @@ def logdet(mat: T.Tensor) -> float:
     """
     return numpy.linalg.slogdet(mat)[1]
 
-def batch_dot(vis: T.Tensor, W: T.Tensor, hid: T.Tensor, axis: int=1) -> T.Tensor:
+def batch_dot(a: T.Tensor, b: T.Tensor, axis: int=1) -> T.Tensor:
     """
-    Let v by a L x N matrix where each row v_i is a visible vector.
-    Let h be a L x M matrix where each row h_i is a hidden vector.
+    Compute the dot product of vectors batch-wise.
+    Let a be an L x N matrix where each row a_i is a vector.
+    Let b be an L x N matrix where each row b_i is a vector.
+    Then batch_dot(a, b) = \sum_j a_ij * b_ij
+    One can choose the axis to sum along with the axis argument.
+
+    Args:
+        a: A tensor.
+        b: A tensor.
+        axis (int): The axis to dot along.
+
+    Returns:
+        tensor: A tensor.
+
+    """
+    return (a * b).sum(axis=axis)
+
+def batch_quadratic(vis: T.Tensor, W: T.Tensor, hid: T.Tensor, axis: int=1) -> T.Tensor:
+    """
+    Let v by an L x N matrix where each row v_i is a visible vector.
+    Let h be an L x M matrix where each row h_i is a hidden vector.
     And, let W be a N x M matrix of weights.
-    Then, batch_dot(v,W,h) = \sum_i v_i^T W h_i
+    Then, batch_quadratic(v,W,h) = \sum_i v_i^T W h_i
 
     The actual computation is performed with a vectorized expression.
 
@@ -1255,7 +1399,7 @@ def batch_dot(vis: T.Tensor, W: T.Tensor, hid: T.Tensor, axis: int=1) -> T.Tenso
         tensor: A vector.
 
     """
-    return (numpy.dot(vis, W) * hid).sum(axis).astype(numpy.float32)
+    return (numpy.dot(vis, W) * hid).sum(axis).astype(T.Float)
 
 def batch_outer(vis: T.Tensor, hid: T.Tensor) -> T.Tensor:
     """
@@ -1332,7 +1476,7 @@ def vstack(tensors:  T.Iterable[T.Tensor]) -> T.Tensor:
     """
     return numpy.vstack(tensors)
 
-def trange(start: int, end: int, step: int=1) -> T.Tensor:
+def trange(start: int, end: int, step: int=1, dtype: T.Dtype = None) -> T.Tensor:
     """
     Generate a tensor like a python range.
 
@@ -1346,49 +1490,21 @@ def trange(start: int, end: int, step: int=1) -> T.Tensor:
                 of step. Cast to float rather than int.
 
     """
-    return numpy.arange(start, end, step, dtype=numpy.float32)
+    return numpy.arange(start, end, step, dtype=dtype)
 
-def pdist(x: T.Tensor, y: T.Tensor) -> T.Tensor:
+def cumsum(x: T.Tensor, axis: int = 0) -> T.Tensor:
     """
-    Compute the pairwise distance matrix between the rows of x and y.
+    Return the cumulative sum of elements of a tensor along the specified axis.
 
     Args:
-        x (tensor (num_samples_1, num_units))
-        y (tensor (num_samples_2, num_units))
+        x: A float or tensor.
+        axis (optional): The axis for taking the sum.
 
     Returns:
-        tensor (num_samples_1, num_samples_2)
+        tensor: the cumulative sum of elements of the tensor along the specified axis.
 
     """
-    inner = dot(x, transpose(y))
-    x_mag = norm(x, axis=1) ** 2
-    y_mag = norm(y, axis=1) ** 2
-    squared = add(unsqueeze(y_mag, axis=0), add(unsqueeze(x_mag, axis=1), -2*inner))
-    return numpy.sqrt(clip(squared, a_min=0))
-
-def energy_distance(x: T.Tensor, y: T.Tensor) -> float:
-    """
-    Compute an energy distance between two tensors treating the rows as observations.
-
-    Args:
-        x (tensor (num_samples_1, num_units))
-        y (tensor (num_samples_2, num_units))
-
-    Returns:
-        float: energy distance.
-
-    Szekely, G.J. (2002)
-    E-statistics: The Energy of Statistical Samples.
-    Technical Report BGSU No 02-16.
-
-    """
-    n = float_scalar(len(x))
-    m = float_scalar(len(y))
-
-    x_inflator = n*n / (n*(n-1))
-    y_inflator = m*m / (m*(m-1))
-
-    return 2*mean(pdist(x, y)) - x_inflator*mean(pdist(x,x)) - y_inflator*mean(pdist(y,y))
+    return x.cumsum(axis=axis)
 
 def is_tensor(x: T.FloatingPoint) -> bool:
     """
@@ -1406,3 +1522,44 @@ def is_tensor(x: T.FloatingPoint) -> bool:
         return True
     except Exception:
         return False
+
+def logical_not(x: T.Tensor) -> T.Tensor:
+    """
+    Invert a logical array (True -> False, False -> True).
+
+    Args:
+        x (tensor)
+
+    Returns:
+        tensor
+
+    """
+    return numpy.logical_not(x)
+
+def logical_and(x: T.Tensor, y: T.Tensor) -> T.Tensor:
+    """
+    Compute the elementwise logical and on two tensors
+
+    Args:
+        x (tensor)
+        y (tensor)
+
+    Returns:
+        tensor
+
+    """
+    return numpy.logical_and(x, y)
+
+def logical_or(x: T.Tensor, y: T.Tensor) -> T.Tensor:
+    """
+    Compute the elementwise logical or on two tensors
+
+    Args:
+        x (tensor)
+        y (tensor)
+
+    Returns:
+        tensor
+
+    """
+    return numpy.logical_or(x, y)

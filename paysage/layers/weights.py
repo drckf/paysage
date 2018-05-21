@@ -47,11 +47,86 @@ class Weights(object):
         """
         # these attributes are immutable (their keys don't change)
         self.shape = shape
-        self.params = ParamsWeights(0.01 * be.randn(shape))
+        self.params = ParamsWeights(be.zeros(shape))
 
         # these attributes are mutable (their keys do change)
         self.penalties = OrderedDict()
         self.constraints = OrderedDict()
+        self.fixed_params = []
+
+    def set_fixed_params(self, fixed_params):
+        """
+        Set the params that are not trainable.
+
+        Notes:
+            Modifies the layer.fixed_params attribute in place.
+
+        Args:
+            fixed_params (List[str]): a list of the fixed parameter names
+
+        Returns:
+            None
+
+        """
+        self.fixed_params = fixed_params
+
+    def get_fixed_params(self):
+        """
+        Get the params that are not trainable.
+
+        Args:
+            None
+
+        Returns:
+            fixed_params (List[str]): a list of the fixed parameter names
+
+        """
+        return self.fixed_params
+
+    def _get_trainable_indices(self):
+        """
+        Get the indices of the trainable params.
+
+        Args:
+            None
+
+        Returns:
+            trainable param indices (List[int])
+
+        """
+        fields = list(self.params._fields)
+        trainable_fields = [f for f in fields if f not in self.fixed_params]
+        return [fields.index(f) for f in trainable_fields]
+
+    def set_params(self, new_params):
+        """
+        Set the value of the layer params attribute.
+
+        Notes:
+            Modifies layer.params in place.
+
+        Args:
+            new_params (namedtuple)
+
+        Returns:
+            None
+
+        """
+        for i in self._get_trainable_indices():
+            self.params[i][:] = new_params[i]
+
+    def get_param_names(self):
+        """
+        Return the field names of the params attribute.
+
+        Args:
+            None
+
+        Returns:
+            field names (List[str])
+
+        """
+        return list(self.params._fields)
 
     def get_config(self):
         """
@@ -129,10 +204,10 @@ class Weights(object):
 
         """
         params = []
-        for i, ip in enumerate(self.params):
+        for i, _ in enumerate(self.params):
             params.append(be.float_tensor(
                 store.get(os.path.join(key, 'parameters', 'key'+str(i))).as_matrix()
-            ).squeeze()) # collapse trivial dimensions to a vector
+            )) # collapse trivial dimensions to a vector
         self.params = self.params.__class__(*params)
 
     def add_constraint(self, constraint):
@@ -220,9 +295,8 @@ class Weights(object):
         """
         if param_name not in self.penalties:
             return deriv
-        else:
-            return deriv + self.penalties[param_name].grad(
-                    getattr(self.params, param_name))
+        return deriv + self.penalties[param_name].grad(
+                getattr(self.params, param_name))
 
     def parameter_step(self, deltas):
         """
@@ -240,10 +314,10 @@ class Weights(object):
             None
 
         """
-        self.params = be.mapzip(be.subtract, deltas[0], self.params)
+        self.set_params(be.mapzip(be.subtract, deltas[0], self.params))
         self.enforce_constraints()
 
-    def W(self):
+    def W(self, trans=False):
         """
         Get the weight matrix.
 
@@ -251,32 +325,18 @@ class Weights(object):
         with a shorter syntax.
 
         Args:
-            None
+            trans (optional; bool): transpose the matrix if true
 
         Returns:
             tensor: weight matrix
 
         """
-        return self.params.matrix
-
-    def W_T(self):
-        """
-        Get the transpose of the weight matrix.
-
-        A convenience method for accessing the transpose of
-        layer.params.matrix with a shorter syntax.
-
-        Args:
-            None
-
-        Returns:
-            tensor: transpose of weight matrix
-
-        """
+        if not trans:
+            return self.params.matrix
         return be.transpose(self.params.matrix)
 
-    #TODO: add beta
-    def derivatives(self, units_target, units_domain, penalize=True):
+    def derivatives(self, units_target, units_domain,
+                    penalize=True, weighting_function=be.do_nothing):
         """
         Compute the derivative of the weights layer.
 
@@ -285,12 +345,16 @@ class Weights(object):
         Args:
             units_target (tensor (num_samples, num_visible)): Rescaled target units.
             units_domain (tensor (num_samples, num_visible)): Rescaled domain units.
+            penalize (bool): whether to add a penalty term.
+            weighting_function (function): a weighting function to apply
+                to units when computing the gradient.
 
         Returns:
             derivs (List[namedtuple]): List['matrix': tensor] (contains gradient)
 
         """
-        tmp = -be.batch_outer(units_target, units_domain) / len(units_target)
+        tmp = -be.batch_outer(weighting_function(units_target),
+                              units_domain) / len(units_target)
         if penalize:
             tmp = self.get_penalty_grad(tmp, "matrix")
         return [ParamsWeights(tmp)]
@@ -336,22 +400,25 @@ class Weights(object):
             tensor (num_samples,): energy per sample
 
         """
-        return -be.batch_dot(target_units, self.W(), domain_units)
+        return -be.batch_quadratic(target_units, self.W(), domain_units)
 
-    def GFE_derivatives(self, target_units, domain_units, penalize=True):
+    def GFE_derivatives(self, rescaled_target_cumulants, rescaled_domain_cumulants):
         """
         Gradient of the Gibbs free energy associated with this layer
 
         Args:
-            target_units (CumulantsTAP): magnetization of the shallower layer linked to w
-            domain_units (CumulantsTAP): magnetization of the deeper layer linked to w
+            rescaled_target_cumulants (CumulantsTAP): rescaled magnetization of
+             the shallower layer linked to w
+            rescaled_domain_cumulants (CumulantsTAP): rescaled magnetization of
+             the deeper layer linked to w
 
         Returns:
             derivs (namedtuple): 'matrix': tensor (contains gradient)
 
         """
-        tmp = (-be.outer(target_units.mean, domain_units.mean) -
-          be.multiply(self.params.matrix, be.outer(target_units.variance, domain_units.variance)))
-        if penalize:
-            tmp = self.get_penalty_grad(tmp, "matrix")
+        tmp = be.zeros_like(self.params.matrix)
+        tmp = -be.outer(rescaled_target_cumulants.mean, rescaled_domain_cumulants.mean) - \
+               be.multiply(self.params.matrix,
+                be.outer(rescaled_target_cumulants.variance, rescaled_domain_cumulants.variance))
+
         return [ParamsWeights(tmp)]

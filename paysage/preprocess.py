@@ -1,99 +1,144 @@
+import sys
+
 from . import backends as be
-from cytoolz import partial, compose
 
-def do_nothing(tensor):
-    """
-    Identity function.
 
-    Args:
-        Anything.
+class Transformation(object):
 
-    Returns:
-        Anything.
+    def __init__(self, function=be.do_nothing, args=None, kwargs=None):
+        """
+        Create a transformation that operates on a list of tensors.
 
-    """
-    return tensor
+        Args:
+            function (optional; callable)
+            args (optional; List)
+            kwargs (optional; Dict)
 
-def scale(tensor, denominator):
+        Returns:
+            Transformation
+
+        """
+        self.name = function.__name__
+        self.function = function
+        self.args = args if args is not None else []
+        self.kwargs = kwargs if kwargs is not None else {}
+
+    def _closure(self):
+        """
+        Create a callable function with the arguments and keyword arguments
+        already in place.
+
+        Args:
+            None
+
+        Returns:
+            callable
+
+        """
+        def partial(tensor):
+            return self.function(tensor, *self.args, **self.kwargs)
+        return partial
+
+    def compute(self, tensor):
+        """
+        Apply the transformation to a single tensor.
+
+        Args:
+            tensor
+
+        Returns:
+            tensor
+
+        """
+        return self._closure()(tensor)
+
+    def get_config(self):
+        """
+        Get the configuration of a transformation.
+
+        Args:
+            None
+
+        Returns:
+            Dict
+
+        """
+        return {'name': self.name,
+                'args': self.args if len(self.args) > 0 else None,
+                'kwargs': self.kwargs if len(self.kwargs) > 0 else None}
+
+    @classmethod
+    def from_config(cls, config):
+        """
+        Create a transformation from a configuration dictionary.
+
+        Args:
+            config (Dict)
+
+        Returns:
+            Transformation
+
+        """
+        function = getattr(sys.modules[__name__], config["name"])
+        return cls(function, config['args'], config['kwargs'])
+
+
+def scale(tensor, denominator=1):
     """
     Rescale the values in a tensor by the denominator.
 
     Args:
-        tensor: A tensor.
-        denominator (float)
+        tensor (tensor (num_samples, num_units))
+        denominator (optional; float)
 
     Returns:
-        float tensor
+        tensor (tensor (num_samples, num_units))
 
     """
     return tensor/denominator
 
+
 def l2_normalize(tensor):
     """
-    Divide the rows of the tensory by their L2 norms.
+    Divide the rows of a tensor by their L2 norms.
 
     Args:
-        tensor (num_samples, num_units)
+        tensor (tensor (num_samples, num_units))
 
     Returns:
-        tensor (num_samples, num_units)
+        tensor (tensor (num_samples, num_units))
 
     """
-    norm = be.norm(tensor, axis=1, keepdims=True)
-    return be.divide(norm, tensor)
+    return be.divide(be.norm(tensor, axis=1, keepdims=True), tensor)
+
 
 def l1_normalize(tensor):
     """
-    Divide the rows of the tensor by their L1 norms.
+    Divide the rows of a tensor by their L1 norms.
 
     Args:
-        tensor (num_samples, num_units)
+        tensor (tensor (num_samples, num_units))
 
     Returns:
-        tensor (num_samples, num_units)
+        tensor (tensor (num_samples, num_units))
 
     """
-    norm = be.tsum(tensor, axis=1, keepdims=True)
-    return be.divide(norm, tensor)
+    return be.divide(be.tsum(tensor, axis=1, keepdims=True), tensor)
+
 
 def binarize_color(tensor):
     """
     Scales an int8 "color" value to [0, 1].
 
     Args:
-        tensor
+        tensor (tensor (num_samples, num_units))
 
     Returns:
-        float tensor
+        tensor (tensor (num_samples, num_units))
 
     """
     return be.float_tensor(be.tround(tensor/255))
 
-def binary_to_ising(tensor):
-    """
-    Scales a [0, 1] value to [-1, 1].
-
-    Args:
-        tensor
-
-    Returns:
-        float tensor
-
-    """
-    return 2.0 * tensor - 1.0
-
-def color_to_ising(tensor):
-    """
-    Scales an int8 "color" value to [-1, 1].
-
-    Args:
-        tensor
-
-    Returns:
-        float tensor
-
-    """
-    return binary_to_ising(binarize_color(tensor))
 
 def one_hot(data, category_list):
     """
@@ -108,6 +153,6 @@ def one_hot(data, category_list):
 
     """
     units = be.zeros((len(data), len(category_list)))
-    on_units = be.int_tensor(list(map(category_list.index, be.flatten(data))))
+    on_units = be.long_tensor(list(map(category_list.index, be.flatten(data))))
     be.scatter_(units, on_units, 1.)
     return units

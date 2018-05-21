@@ -1,5 +1,6 @@
-from . import backends as be
 import sys
+from numpy import clip
+from . import backends as be
 
 def schedule_from_config(config):
     """
@@ -19,9 +20,29 @@ def schedule_from_config(config):
 class Schedule(object):
     """Base schedule class"""
     def get_config(self):
+        """
+        Get a configuration dictionary for the schedule.
+
+        Args:
+            None
+
+        Returns:
+            dict
+
+        """
         return [self.__class__.__name__, self.__dict__]
 
     def copy(self):
+        """
+        Copy a schedule.
+
+        Args:
+            None
+
+        Returns:
+            Schedule
+
+        """
         return schedule_from_config(self.get_config())
 
 
@@ -44,10 +65,197 @@ class Constant(Schedule):
             self.value = value
 
     def reset(self):
+        """
+        Reset the value of the schedule to the initial value.
+
+        Notes:
+            Modifies the value attribute in place!
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
         self.value = self.initial
 
+    def set_value(self, value):
+        """
+        Set the value of the schedule to the given value.
+
+        Notes:
+            Modifies the value attribute in place!
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.value = value
+
     def __next__(self):
+        """
+        Get the next value from the schedule.
+
+        Args:
+            None
+
+        Returns:
+            float
+
+        """
         return be.float_scalar(self.value)
+
+
+class Linear(Schedule):
+    def __init__(self, initial=1.0, delta=0.0, value=None, minval=0.0, maxval=1.0):
+        """
+        Linear schedule x(t) = x(0) - delta t.
+
+        Args:
+            initial (float)
+            delta (float)
+
+        Returns:
+            Linear
+
+        """
+        self.initial = initial
+        self.delta = delta
+        self.minval = minval
+        self.maxval = maxval
+        if value is None:
+            self.reset()
+        else:
+            self.value = value
+
+    def reset(self):
+        """
+        Reset the value of the schedule to the initial value.
+
+        Notes:
+            Modifies the value attribute in place!
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.value = self.initial
+
+    def set_value(self, value):
+        """
+        Set the value of the schedule to the given value.
+
+        Notes:
+            Modifies the value attribute in place!
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.value = value
+
+    def __next__(self):
+        """
+        Get the next value from the schedule.
+
+        Args:
+            None
+
+        Returns:
+            float
+
+        """
+        tmp = be.float_scalar(self.value)
+        self.value -= self.delta
+        self.value = clip(self.value, self.minval, self.maxval)
+        return tmp
+
+
+class Step(Schedule):
+    def __init__(self, initial=1.0, final=0.0, steps=1, value=None):
+        """
+        Step function schedule:
+            x(t) = initial if t < steps
+            x(t) = final if t >= steps
+
+        Args:
+            initial (float)
+            delta (float)
+
+        Returns:
+            Linear
+
+        """
+        self.initial = initial
+        self.final = final
+        self.steps = steps
+        self.t = 0
+        if value is None:
+            self.reset()
+        else:
+            self.value = value
+
+    def reset(self):
+        """
+        Reset the value of the schedule to the initial value.
+
+        Notes:
+            Modifies the value attribute in place!
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.value = self.initial
+        self.t = 0
+
+    def set_value(self, value):
+        """
+        Set the value of the schedule to the given value.
+
+        Notes:
+            Modifies the value attribute in place!
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.value = value
+
+    def __next__(self):
+        """
+        Get the next value from the schedule.
+
+        Args:
+            None
+
+        Returns:
+            float
+
+        """
+        tmp = be.float_scalar(self.value)
+        if self.t <= self.steps:
+            self.value = self.initial
+        else:
+            self.value = self.final
+        self.t += 1
+        return tmp
 
 
 class ExponentialDecay(Schedule):
@@ -72,11 +280,51 @@ class ExponentialDecay(Schedule):
             self.value = value
 
     def reset(self):
+        """
+        Reset the value of the schedule to the initial value.
+
+        Notes:
+            Modifies the value attribute in place!
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
         self.value = self.initial
 
+    def set_value(self, value):
+        """
+        Set the value of the schedule to the given value.
+
+        Notes:
+            Modifies the value attribute in place!
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.value = value
+
     def __next__(self):
+        """
+        Get the next value from the schedule.
+
+        Args:
+            None
+
+        Returns:
+            float
+
+        """
+        tmp = be.float_scalar(self.value)
         self.value *= self.coefficient
-        return be.float_scalar(self.value)
+        return tmp
 
 
 class PowerLawDecay(Schedule):
@@ -101,10 +349,50 @@ class PowerLawDecay(Schedule):
             self.value = value
 
     def reset(self):
+        """
+        Reset the value of the schedule to the initial value.
+
+        Notes:
+            Modifies the value attribute in place!
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
         self.value = self.initial
 
+    def set_value(self, value):
+        """
+        Set the value of the schedule to the given value.
+
+        Notes:
+            Modifies the value attribute in place!
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        """
+        self.value = value
+
     def __next__(self):
+        """
+        Get the next value from the schedule.
+
+        Args:
+            None
+
+        Returns:
+            float
+
+        """
+        tmp = be.float_scalar(self.value)
         reciprocal = 1 / self.value
         reciprocal += self.coefficient
         self.value = 1 / reciprocal
-        return be.float_scalar(self.value)
+        return tmp

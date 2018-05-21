@@ -33,7 +33,7 @@ def rand(shape: T.Tuple[int]) -> T.Tensor:
         tensor: Random numbers between 0 and 1.
 
     """
-    return matrix.float_tensor(numpy.random.rand(*shape))
+    return matrix.cast_float(numpy.random.rand(*shape))
 
 def rand_like(tensor: T.Tensor) -> T.Tensor:
     """
@@ -46,7 +46,7 @@ def rand_like(tensor: T.Tensor) -> T.Tensor:
         tensor: Random numbers between 0 and 1.
 
     """
-    return matrix.float_tensor(numpy.random.rand(*matrix.shape(tensor)))
+    return numpy.random.rand(*matrix.shape(tensor)).astype(tensor.dtype)
 
 def randn(shape: T.Tuple[int]) -> T.Tensor:
     """
@@ -60,7 +60,7 @@ def randn(shape: T.Tuple[int]) -> T.Tensor:
         tensor: Random numbers between from a standard normal distribution.
 
     """
-    return matrix.float_tensor(numpy.random.randn(*shape))
+    return numpy.random.randn(*shape).astype(T.Float)
 
 def randn_like(tensor: T.Tensor) -> T.Tensor:
     """
@@ -74,7 +74,80 @@ def randn_like(tensor: T.Tensor) -> T.Tensor:
         tensor: Random numbers between from a standard normal distribution.
 
     """
-    return matrix.float_tensor(numpy.random.randn(*matrix.shape(tensor)))
+    return numpy.random.randn(*matrix.shape(tensor)).astype(tensor.dtype)
+
+def rand_int(a: int, b: int, shape: T.Tuple[int]) -> T.Tensor:
+    """
+    Generate random integers in [a, b).
+    Fills a tensor of a given shape
+
+    Args:
+        a (int): the minimum (inclusive) of the range.
+        b (int): the maximum (exclusive) of the range.
+        shape: the shape of the output tensor.
+
+    Returns:
+        tensor (shape): the random integer samples.
+
+    """
+    return numpy.random.randint(a, b, shape).astype(T.Long)
+
+def rand_samples(tensor: T.Tensor, num: int) -> T.Tensor:
+    """
+    Collect a random number samples from a tensor with replacement.
+    Only supports the input tensor being a vector.
+
+    Args:
+        tensor ((num_samples)): a vector of values.
+        num (int): the number of samples to take.
+
+    Returns:
+        samples ((num)): a vector of sampled values.
+
+    """
+    ix = rand_int(0, len(tensor), (num))
+    return tensor[ix]
+
+def shuffle_(tensor: T.Tensor) -> None:
+    """
+    Shuffle the rows of a tensor.
+
+    Notes:
+        Modifies tensor in place.
+
+    Args:
+        tensor (shape): a tensor to shuffle.
+
+    Returns:
+        None
+
+    """
+    numpy.random.shuffle(tensor)
+
+def rand_softmax_units(phi: T.Tensor) -> T.Tensor:
+    """
+    Draw random unit values according to softmax probabilities.
+
+    Given an effective field vector v,
+    the softmax probabilities are p = exp(v) / sum(exp(v))
+
+    The unit values (the on-units for a 1-hot encoding)
+    are sampled according to p.
+
+    Args:
+        phi (tensor (batch_size, num_units)): the effective field
+
+    Returns:
+        tensor (batch_size,): random unit values from the softmax distribution.
+
+    """
+    max_index = matrix.shape(phi)[1]-1
+    probs = nl.softmax(phi)
+    cum_probs = matrix.cumsum(probs, axis=1)
+    ref_probs = rand((len(phi), 1))
+    on_units = matrix.tsum(cum_probs < ref_probs, axis=1)
+    matrix.clip_(on_units, a_min=0, a_max=max_index)
+    return on_units
 
 def rand_softmax(phi: T.Tensor) -> T.Tensor:
     """
@@ -93,12 +166,7 @@ def rand_softmax(phi: T.Tensor) -> T.Tensor:
             from the softmax distribution.
 
     """
-    max_index = matrix.shape(phi)[1]-1
-    probs = nl.softmax(phi)
-    cum_probs = numpy.cumsum(probs, axis=1)
-    ref_probs = numpy.random.rand(len(phi), 1)
-    on_units = matrix.tsum(cum_probs < ref_probs, axis=1)
-    matrix.clip_inplace(on_units, a_min=0, a_max=max_index)
+    on_units = rand_softmax_units(phi)
     units = matrix.zeros_like(phi)
     units[range(len(phi)), on_units] = 1.
-    return matrix.float_tensor(units)
+    return units.astype(T.Float)

@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 from .. import backends as be
-from .. import math_utils
 from .layer import Layer, CumulantsTAP
 
 ParamsBernoulli = namedtuple("ParamsBernoulli", ["loc"])
@@ -11,23 +10,22 @@ class BernoulliLayer(Layer):
     Layer with Bernoulli units (i.e., 0 or +1).
 
     """
-    def __init__(self, num_units, dropout_p=0.0):
+    def __init__(self, num_units, center=False):
         """
         Create a layer with Bernoulli units.
 
         Args:
             num_units (int): the size of the layer
-            dropout_p (float): the probability that each unit is dropped out
+            center (bool): whether to center the layer
 
         Returns:
             Bernoulli layer
 
         """
-        super().__init__(num_units, dropout_p)
+        super().__init__(num_units, center)
 
         self.rand = be.rand
         self.params = ParamsBernoulli(be.zeros(self.len))
-        self.moments = math_utils.MeanArrayCalculator()
 
     #
     # Methods for the TAP approximation
@@ -38,7 +36,7 @@ class BernoulliLayer(Layer):
         Compute a CumulantsTAP object for the BernoulliLayer.
 
         Args:
-            expect (tensor (num_units,)): expected values of the units
+            mean (tensor (num_units,)): expected values of the units
 
         returns:
             CumulantsTAP
@@ -57,19 +55,25 @@ class BernoulliLayer(Layer):
             CumulantsTAP
 
         """
-        return self.get_magnetization(be.zeros(self.len))
+        return self.get_magnetization(be.zeros_like(self.params[0]))
 
-    def get_random_magnetization(self, epsilon=be.float_scalar(0.005)):
+    def get_random_magnetization(self, num_samples=1, epsilon=be.float_scalar(1e-6)):
         """
         Create a layer magnetization with random expectations.
 
         Args:
-            None
+            num_samples (int>0): number of random samples to draw
+            epsilon (float): bound away from [0,1] in which to draw magnetization values
 
         Returns:
             CumulantsTAP
 
         """
+        # If num_samples == 1 we do not vectorize computations over a sampling set
+        # for the sake of performance
+        if num_samples > 1:
+            return self.get_magnetization(be.clip(be.rand((num_samples,self.len,)),
+                a_min=epsilon, a_max=be.float_scalar(1-epsilon)))
         return self.get_magnetization(be.clip(be.rand((self.len,)),
                 a_min=epsilon, a_max=be.float_scalar(1-epsilon)))
 
@@ -90,6 +94,23 @@ class BernoulliLayer(Layer):
         tmp = be.clip(magnetization.mean,  a_min=a_min, a_max=a_max)
         return self.get_magnetization(tmp)
 
+    def clip_magnetization_(self, magnetization, a_min=be.float_scalar(1e-6),
+                           a_max=be.float_scalar(1 - 1e-6)):
+        """
+        Clip the mean of the mean of a CumulantsTAP object.
+
+        Args:
+            magnetization (CumulantsTAP) to clip
+            a_min (float): the minimum value
+            a_max (float): the maximum value
+
+        Returns:
+            None
+
+        """
+        be.clip_(magnetization.mean[:],  a_min=a_min, a_max=a_max)
+        magnetization.variance[:] = magnetization.mean - be.square(magnetization.mean)
+
     def log_partition_function(self, external_field, quadratic_field):
         """
         Compute the logarithm of the partition function of the layer
@@ -99,10 +120,10 @@ class BernoulliLayer(Layer):
         Let B_i be an external field
         Let A_i be a quadratic field
 
-        Z_i = Tr_{x_i} exp( a_i x_i + B_i x_i - A_i x_i^2)
-        = 1 + \exp(a_i + B_i - A_i)
+        Z_i = Tr_{x_i} exp( a_i x_i + B_i x_i + A_i x_i^2)
+        = 1 + \exp(a_i + B_i + A_i)
 
-        log(Z_i) = softplus(a_i + B_i - A_i)
+        log(Z_i) = softplus(a_i + B_i + A_i)
 
         Args:
             external_field (tensor (num_samples, num_units)): external field
@@ -112,35 +133,15 @@ class BernoulliLayer(Layer):
             logZ (tensor (num_samples, num_units)): log partition function
 
         """
-        return be.softplus(be.add(self.params.loc, be.subtract(quadratic_field, external_field)))
+        return be.softplus(self.params.loc + quadratic_field + external_field)
 
-    def grad_log_partition_function(self, external_field, quadratic_field):
+    def lagrange_multipliers_analytic(self, cumulants):
         """
-        Compute the gradient of the logarithm of the partition function with respect to
-        its local field parameter with external field (B) and quadratic field (A).
-
-        (d_a_i)softplus(a_i + B_i - A_i) = expit(a_i + B_i - A_i)
-
-        Note: This function returns the mean parameters over a minibatch of input fields
+        Return the Lagrange multipliers (at beta=0) according to the starionarity
+            conditions {d/da(GibbsFE)=0, d/dc(GibbsFE)=0} at beta=0.
 
         Args:
-            external_field (tensor (num_samples, num_units)): external field
-            quadratic_field (tensor (num_samples, num_units)): quadratic field
-
-        Returns:
-            (d_a_i) logZ (tensor (num_samples, num_units)): gradient of the log partition function
-
-        """
-        tmp = be.expit(be.add(be.unsqueeze(self.params.loc,0), be.subtract(quadratic_field, external_field)))
-        return ParamsBernoulli(be.mean(tmp, axis=0))
-
-    def lagrange_multiplers(self, cumulants):
-        """
-        The Lagrange multipliers associated with the first and second
-        cumulants of the units.
-
-        Args:
-            cumulants (CumulantsTAP object): cumulants
+            cumulants (CumulantsTAP object): layer magnetization cumulants
 
         Returns:
             lagrange multipliers (CumulantsTAP)
@@ -150,50 +151,117 @@ class BernoulliLayer(Layer):
         variance = be.zeros_like(cumulants.variance)
         return CumulantsTAP(mean, variance)
 
-    def TAP_entropy(self, lagrange, cumulants):
+    def update_lagrange_multipliers_(self, cumulants, lagrange_multipliers,
+                                     connected_cumulants,
+                                     rescaled_connected_weights,
+                                     rescaled_connected_weights_sq):
+        """
+        Update, in-place, the Lagrange multipliers with respect to the TAP2 approximation
+        of the GFE as in
+
+        Eric W Tramel, Marylou Gabrie, Andre Manoel, Francesco Caltagirone,
+        and Florent Krzakala
+        "A Deterministic and Generalized Framework for Unsupervised Learning
+        with Restricted Boltzmann Machines"
+
+        Args:
+            cumulants (CumulantsTAP): layer magnetization cumulants
+            lagrange_multipliers (CumulantsTAP)
+            connected_cumulants (CumulantsTAP): connected magnetization cumulants
+            rescaled_connected_weights (list[tensor, (num_connected_units, num_units)]):
+                The weights connecting the layers.
+            rescaled_connected_weights_sq (list[tensor, (num_connected_units, num_units)]):
+                The cached squares of weights connecting the layers.
+                (unused on Bernoulli layer)
+
+        Returns:
+            None
+
+        """
+        lagrange_multipliers.variance[:] = be.zeros_like(lagrange_multipliers.variance)
+        lagrange_multipliers.mean[:] = be.zeros_like(lagrange_multipliers.mean)
+        for l in range(len(connected_cumulants)):
+            # let len(mean) = N and len(connected_mag[l].mean) = N_l
+            # weights[l] is a matrix of shape (N_l, N)
+            w_l = rescaled_connected_weights[l]
+            w2_l = rescaled_connected_weights_sq[l]
+            lagrange_multipliers.mean[:] += \
+                be.dot(connected_cumulants[l].mean, w_l) + \
+                be.multiply(be.dot(connected_cumulants[l].variance, w2_l),
+                                   0.5 - cumulants.mean)
+
+    def TAP_entropy(self, cumulants):
         """
         The TAP-0 Gibbs free energy term associated strictly with this layer
 
         Args:
-            lagrange (CumulantsTAP): Lagrange multiplers
             cumulants (CumulantsTAP): magnetization of the layer
 
         Returns:
             (float): 0th order term of Gibbs free energy
         """
-        return -be.tsum(self.log_partition_function(lagrange.mean, lagrange.variance)) + \
-                be.dot(lagrange.mean, cumulants.mean) + be.dot(lagrange.variance, cumulants.mean)
+        # this quadratic approximation is 2x faster:
+        #a = be.float_scalar(1.06*2.77258872224)
+        #u = be.float_scalar(1.06*-0.69314718056)
+        #return be.tsum(be.add(u, a * be.square(be.subtract(0.5, cumulants.mean)))) - \
+        #       be.dot(self.params.loc, cumulants.mean)
+        alias = 1.0-cumulants.mean
+        return be.dot(cumulants.mean, be.log(cumulants.mean)) + \
+               be.dot(alias, be.log(alias)) - \
+               be.dot(self.params.loc, cumulants.mean)
 
-    def TAP_magnetization_grad(self, mag, connected_mag, connected_weights):
+    def TAP_magnetization_grad(self, cumulants,
+                               connected_cumulants, rescaled_connected_weights,
+                               rescaled_connected_weights_sq):
         """
         Gradient of the Gibbs free energy with respect to the magnetization
         associated strictly with this layer.
 
         Args:
-            mag (CumulantsTAP object): magnetization of the layer
-            connected_mag list[CumulantsTAP]: magnetizations of the connected layers
-            connected weights list[tensor, (num_connected_units, num_units)]:
+            cumulants (CumulantsTAP): magnetization of the layer
+            connected_cumulants (list[CumulantsTAP]): magnetizations of the connected layers
+            rescaled_connected_weights (list[tensor, (num_connected_units, num_units)]):
                 The weights connecting the layers.
+            rescaled_connected_weights_sq (list[tensor, (num_connected_units, num_units)]):
+                The cached squares of weights connecting the layers.
 
         Return:
             gradient of GFE w.r.t. magnetization (CumulantsTAP)
 
         """
-        mean = be.logit(mag.mean) - self.params.loc
+        mean = be.logit(cumulants.mean) - self.params.loc
         variance = be.zeros_like(mean)
 
-        for l in range(len(connected_mag)):
-            # let len(mean) = N and len(connected_mag[l].mean) = N_l
+        for l in range(len(connected_cumulants)):
+            # let len(mean) = N and len(connected_cumulants[l].mean) = N_l
             # weights[l] is a matrix of shape (N_l, N)
-            w_l = connected_weights[l]
-            w2_l = be.square(w_l)
+            w_l = rescaled_connected_weights[l]
+            w2_l = rescaled_connected_weights_sq[l]
 
-            mean -= be.dot(connected_mag[l].mean, w_l) + \
-                    be.multiply(be.dot(connected_mag[l].variance, w2_l), 0.5 - mag.mean)
+            mean -= be.dot(connected_cumulants[l].mean, w_l) + \
+                    be.multiply(be.dot(connected_cumulants[l].variance, w2_l),
+                                0.5 - cumulants.mean)
 
         return CumulantsTAP(mean, variance)
 
-    def GFE_derivatives(self, cumulants, penalize=True):
+    def self_consistent_update_(self, cumulants, lagrange_multipliers):
+        """
+        Applies self-consistent TAP update to the layer's magnetization. This formula
+         is analytically computed --not based on a 2-term truncation of the Gibbs FE.
+
+        Args:
+            cumulants (CumulantsTAP object): magnetization of the layer
+            lagrange_multipliers (CumulantsTAP object)
+
+        Returns:
+            None
+        """
+        cumulants.mean[:] = be.expit(self.params.loc + lagrange_multipliers.mean)
+        cumulants.variance[:] = cumulants.mean - be.square(cumulants.mean)
+
+    def GFE_derivatives(self, cumulants, connected_cumulants=None,
+                        rescaled_connected_weights=None,
+                        rescaled_connected_weights_sq=None):
         """
         Gradient of the Gibbs free energy with respect to local field parameters
 
@@ -203,10 +271,7 @@ class BernoulliLayer(Layer):
         Returns:
             gradient parameters (ParamsBernoulli): gradient w.r.t. local fields of GFE
         """
-        tmp = -cumulants.mean
-        if penalize:
-            tmp = self.get_penalty_grad(tmp, "loc")
-        return [ParamsBernoulli(tmp)]
+        return [ParamsBernoulli(-cumulants.mean)]
 
     #
     # Methods for sampling and sample-based training
@@ -244,7 +309,7 @@ class BernoulliLayer(Layer):
 
         """
         self.moments.update(units, axis=0)
-        self.set_params(ParamsBernoulli(be.logit(self.moments.mean)))
+        self.set_params([ParamsBernoulli(be.logit(self.moments.mean))])
 
     def shrink_parameters(self, shrinkage=1):
         """
@@ -271,9 +336,36 @@ class BernoulliLayer(Layer):
             tensor: observations
 
         """
-        return observations
+        if not self.center:
+            return observations
+        return be.subtract(self.get_center(), observations)
 
-    def derivatives(self, units, connected_units, connected_weights, penalize=True):
+    def rescale_cumulants(self, cumulants):
+        """
+        Rescales the cumulants associated with the layer.
+         Trivial for the Bernoulli layer.
+
+        Args:
+            cumulants (CumulantsTAP)
+
+        Returns:
+            rescaled cumulants (CumulantsTAP)
+        """
+        return cumulants
+
+    def reciprocal_scale(self):
+        """
+        Returns a tensor of shape (num_units) providing a reciprocal scale for each unit
+
+        Args:
+            None
+        Returns:
+            reciproical scale (tensor)
+        """
+        return be.ones_like(self.params[0])
+
+    def derivatives(self, units, connected_units, connected_weights,
+                    penalize=True, weighting_function=be.do_nothing):
         """
         Compute the derivatives of the layer parameters.
 
@@ -284,15 +376,18 @@ class BernoulliLayer(Layer):
                 The rescaled values of the connected units.
             connected_weights list[tensor, (num_connected_units, num_units)]:
                 The weights connecting the layers.
+            penalize (bool): whether to add a penalty term.
+            weighting_function (function): a weighting function to apply
+                to units when computing the gradient.
 
         Returns:
             grad (namedtuple): param_name: tensor (contains gradient)
 
         """
-        tmp = -be.mean(units, axis=0)
+        loc = -be.mean(weighting_function(units), axis=0)
         if penalize:
-            tmp = self.get_penalty_grad(tmp, 'loc')
-        return [ParamsBernoulli(tmp)]
+            loc = self.get_penalty_grad(loc, 'loc')
+        return [ParamsBernoulli(loc)]
 
     def zero_derivatives(self):
         """
@@ -302,7 +397,7 @@ class BernoulliLayer(Layer):
             None
 
         Returns:
-            derivs (List[namedtuple]): List['matrix': tensor] (contains gradient)
+            derivs (List[namedtuple]): List[param_name: tensor] (contains gradient)
 
         """
         return [be.apply(be.zeros_like, self.params)]
@@ -315,12 +410,12 @@ class BernoulliLayer(Layer):
             None
 
         Returns:
-            derivs (List[namedtuple]): List['matrix': tensor] (contains gradient)
+            derivs (List[namedtuple]): List[param_name: tensor] (contains gradient)
 
         """
         return [be.apply(be.rand_like, self.params)]
 
-    def _conditional_params(self, scaled_units, weights, beta=None):
+    def conditional_params(self, scaled_units, weights, beta=None):
         """
         Compute the parameters of the layer conditioned on the state
         of the connected layers.
@@ -363,8 +458,8 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): The mode of the distribution
 
         """
-        field = self._conditional_params(scaled_units, weights, beta)
-        return be.float_tensor(field > 0.0)
+        field = self.conditional_params(scaled_units, weights, beta)
+        return be.cast_float(field > 0.0)
 
     def conditional_mean(self, scaled_units, weights, beta=None):
         """
@@ -383,7 +478,7 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): The mean of the distribution.
 
         """
-        field = self._conditional_params(scaled_units, weights, beta)
+        field = self.conditional_params(scaled_units, weights, beta)
         return be.expit(field)
 
     def conditional_sample(self, scaled_units, weights, beta=None):
@@ -403,10 +498,10 @@ class BernoulliLayer(Layer):
             tensor (num_samples, num_units): Sampled units.
 
         """
-        field = self._conditional_params(scaled_units, weights, beta)
+        field = self.conditional_params(scaled_units, weights, beta)
         p = be.expit(field)
         r = self.rand(be.shape(p))
-        return be.float_tensor(r < p)
+        return be.cast_float(r < p)
 
     def random(self, array_or_shape):
         """
@@ -432,18 +527,30 @@ class BernoulliLayer(Layer):
 
         r = self.rand(shape)
         p = be.expit(self.params.loc)
-        return be.float_tensor(r < p)
+        return be.cast_float(r < p)
 
-    def onehot(self, n):
+    def envelope_random(self, array_or_shape):
         """
-        Generate an (n x n) tensor where each row has one unit with maximum
-        activation and all other units with minimum activation.
+        Generate a random sample with the same type as the layer.
+        For a Bernoulli layer, draws 0 or 1 from a bernoulli layer with mean
+        self.moments.mean
+
+        Used for generating initial configurations for Monte Carlo runs.
 
         Args:
-            n (int): the number of units
+            array_or_shape (array or shape tuple):
+                If tuple, then this is taken to be the shape.
+                If array, then its shape is used.
 
         Returns:
-            tensor (n, n)
+            tensor: Random sample with desired shape.
 
         """
-        return be.identity(n)
+        try:
+            shape = be.shape(array_or_shape)
+        except Exception:
+            shape = array_or_shape
+
+        r = self.rand(shape)
+        p = be.expit(self.moments.mean)
+        return be.cast_float(r < p)

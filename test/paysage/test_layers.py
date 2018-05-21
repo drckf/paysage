@@ -8,22 +8,22 @@ import pytest
 num_vis = 8
 num_hid = 5
 num_samples = 10
-dropout_p = 0.5
 dof = 4
+num_values = 5
 
 # ----- CONSTRUCTORS ----- #
 
 def test_Layer_creation():
-    layers.Layer(num_vis, dropout_p)
+    layers.Layer(num_vis)
 
 def test_Weights_creation():
     layers.Weights((num_vis, num_hid))
 
 def test_Gaussian_creation():
-    layers.GaussianLayer(num_vis, dropout_p)
+    layers.GaussianLayer(num_vis)
 
 def test_Bernoulli_creation():
-    layers.BernoulliLayer(num_vis, dropout_p)
+    layers.BernoulliLayer(num_vis)
 
 def test_OneHot_creation():
     layers.OneHotLayer(num_vis, 0)
@@ -67,6 +67,7 @@ def test_get_base_config():
     ly.add_constraint({'loc': constraints.non_negative})
     p = penalties.l2_penalty(0.37)
     ly.add_penalty({'loc': p})
+    ly.set_fixed_params(['loc'])
     ly.get_base_config()
 
 
@@ -112,8 +113,9 @@ def test_gaussian_energy():
 
 def test_gaussian_log_partition_function():
     ly = layers.GaussianLayer(num_vis)
-    vis = ly.random((num_samples, num_vis))
-    ly.log_partition_function(vis)
+    B = ly.random((num_samples, num_vis))
+    A = ly.random((num_samples, num_vis))
+    ly.log_partition_function(B,A)
 
 def test_gaussian_online_param_update():
     ly = layers.GaussianLayer(num_vis)
@@ -128,16 +130,16 @@ def test_gaussian_conditional_params():
     ly = layers.GaussianLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     scaled_units = [be.randn((num_samples, num_hid))]
-    weights = [w.W_T()]
+    weights = [w.W(trans=True)]
     beta = be.rand((num_samples, 1))
-    ly._conditional_params(scaled_units, weights, beta)
+    ly.conditional_params(scaled_units, weights, beta)
 
 def test_gaussian_derivatives():
     ly = layers.GaussianLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     vis = ly.random((num_samples, num_vis))
     hid = [be.randn((num_samples, num_hid))]
-    weights = [w.W_T()]
+    weights = [w.W(trans=True)]
     ly.derivatives(vis, hid, weights)
 
 # ----- Bernoulli LAYER ----- #
@@ -170,16 +172,16 @@ def test_bernoulli_conditional_params():
     ly = layers.BernoulliLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     scaled_units = [be.randn((num_samples, num_hid))]
-    weights = [w.W_T()]
+    weights = [w.W(trans=True)]
     beta = be.rand((num_samples, 1))
-    ly._conditional_params(scaled_units, weights, beta)
+    ly.conditional_params(scaled_units, weights, beta)
 
 def test_bernoulli_derivatives():
     ly = layers.BernoulliLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     vis = ly.random((num_samples, num_vis))
     hid = [be.randn((num_samples, num_hid))]
-    weights = [w.W_T()]
+    weights = [w.W(trans=True)]
     ly.derivatives(vis, hid, weights)
 
 
@@ -214,17 +216,18 @@ def test_onehot_conditional_params():
     ly = layers.OneHotLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     scaled_units = [be.randn((num_samples, num_hid))]
-    weights = [w.W_T()]
+    weights = [w.W(trans=True)]
     beta = be.rand((num_samples, 1))
-    ly._conditional_params(scaled_units, weights, beta)
+    ly.conditional_params(scaled_units, weights, beta)
 
 def test_onehot_derivatives():
     ly = layers.OneHotLayer(num_vis)
     w = layers.Weights((num_vis, num_hid))
     vis = ly.random((num_samples, num_vis))
     hid = [be.randn((num_samples, num_hid))]
-    weights = [w.W_T()]
+    weights = [w.W(trans=True)]
     ly.derivatives(vis, hid, weights)
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

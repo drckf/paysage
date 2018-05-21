@@ -1,8 +1,10 @@
-from . import backends as be
+from copy import deepcopy
+
 from cytoolz import identity, partial
+
+from . import backends as be
 from .models import gradient_util as gu
 from . import schedules
-from copy import deepcopy
 
 # ----- CLASSES ----- #
 
@@ -35,8 +37,8 @@ class GradientMemory(object):
         self.mean_gradient = None
         self.mean_square_gradient = None
 
-        self.mixer_ = partial(be.mix_inplace, self.mean_weight)
-        self.square_mixer_ = partial(be.square_mix_inplace, self.mean_square_weight)
+        self.mixer_ = partial(be.mix_, self.mean_weight)
+        self.square_mixer_ = partial(be.square_mix_, self.mean_square_weight)
 
 
     def reset(self):
@@ -148,13 +150,12 @@ class Optimizer(object):
     """Base class for the optimizer methods."""
     def __init__(self,
                  stepsize=schedules.Constant(initial=0.001),
-                 tolerance=1e-7,
-                 ascent=False):
+                 tolerance=1e-7):
         """
         Create an optimizer object:
 
         Args:
-            model: a Model object to optimize
+            model: a BoltzmannMachine object to optimize
             stepsize (generator; optional): the stepsize schedule
             tolerance (float; optional):
                 the gradient magnitude to declar convergence
@@ -166,7 +167,7 @@ class Optimizer(object):
         self.stepsize = stepsize
         self.tolerance = tolerance
         self.delta = {}
-        self.grad_sign = be.float_scalar(1 - 2 * ascent)
+        self.lr_ = partial(be.tmul_, stepsize)
 
     def check_convergence(self):
         """
@@ -178,7 +179,7 @@ class Optimizer(object):
         Returns:
             bool: True if converged, False if not
         """
-        mag = gu.grad_magnitude(self.delta)
+        mag = gu.grad_rms(self.delta)
         return mag <= self.tolerance
 
     def update_lr(self):
@@ -195,7 +196,7 @@ class Optimizer(object):
             None
 
         """
-        lr = be.float_scalar(next(self.stepsize) * self.grad_sign)
+        lr = be.float_scalar(next(self.stepsize))
         self.lr_ = partial(be.tmul_, lr)
 
 
@@ -203,16 +204,15 @@ class Gradient(Optimizer):
     """Vanilla gradient optimizer"""
     def __init__(self,
                  stepsize=schedules.Constant(initial=0.001),
-                 tolerance=1e-7,
-                 ascent=False):
+                 tolerance=1e-7):
         """
-        Create a gradient ascent/descent optimizer.
+        Create a gradient descent optimizer.
 
         Aliases:
             gradient
 
         Args:
-            model: a Model object to optimize
+            model: a BoltzmannMachine object to optimize
             stepsize (generator; optional): the stepsize schedule
             tolerance (float; optional):
                 the gradient magnitude to declar convergence
@@ -221,7 +221,7 @@ class Gradient(Optimizer):
             StochasticGradientDescent
 
         """
-        super().__init__(stepsize, tolerance, ascent)
+        super().__init__(stepsize, tolerance)
 
     def reset(self):
         """
@@ -247,7 +247,7 @@ class Gradient(Optimizer):
             Changes parameters of model in place.
 
         Args:
-            model: a Model object to optimize
+            model: a BoltzmannMachine object to optimize
             grad: a Gradient object
             epoch (int): the current epoch
 
@@ -255,9 +255,10 @@ class Gradient(Optimizer):
             None
 
         """
-        self.delta = grad
+        self.delta = deepcopy(grad)
         gu.grad_apply_(self.lr_, self.delta)
         model.parameter_update(self.delta)
+
 
 class Momentum(Optimizer):
     """
@@ -270,8 +271,7 @@ class Momentum(Optimizer):
     def __init__(self,
                  stepsize=schedules.Constant(initial=0.001),
                  momentum=0.9,
-                 tolerance=1e-7,
-                 ascent=False):
+                 tolerance=1e-7):
         """
         Create a stochastic gradient descent with momentum optimizer.
 
@@ -279,7 +279,7 @@ class Momentum(Optimizer):
             momentum
 
         Args:
-            model: a Model object to optimize
+            model: a BoltzmannMachine object to optimize
             stepsize (generator; optional): the stepsize schedule
             momentum (float; optional): the amount of momentum
             tolerance (float; optional):
@@ -289,7 +289,7 @@ class Momentum(Optimizer):
             Momentum
 
         """
-        super().__init__(stepsize, tolerance, ascent)
+        super().__init__(stepsize, tolerance)
         self.memory = GradientMemory(mean_weight=momentum,
                                      mean_square_weight=0)
 
@@ -317,7 +317,7 @@ class Momentum(Optimizer):
             Changes parameters of model in place.
 
         Args:
-            model: a Model object to optimize
+            model: a BoltzmannMachine object to optimize
             grad: a Gradient object
             epoch (int): the current epoch
 
@@ -340,8 +340,7 @@ class RMSProp(Optimizer):
     def __init__(self,
                  stepsize=schedules.Constant(initial=0.001),
                  mean_square_weight=0.9,
-                 tolerance=1e-7,
-                 ascent=False):
+                 tolerance=1e-7):
         """
         Create a stochastic gradient descent with RMSProp optimizer.
 
@@ -349,7 +348,7 @@ class RMSProp(Optimizer):
             rmsprop
 
         Args:
-            model: a Model object to optimize
+            model: a BoltzmannMachine object to optimize
             stepsize (generator; optional): the stepsize schedule
             mean_square_weight (float; optional):
                 for computing the running average of the mean-square gradient
@@ -360,7 +359,7 @@ class RMSProp(Optimizer):
             RMSProp
 
         """
-        super().__init__(stepsize, tolerance, ascent)
+        super().__init__(stepsize, tolerance)
         self.memory = GradientMemory(mean_weight=0,
                                      mean_square_weight=mean_square_weight)
 
@@ -388,7 +387,7 @@ class RMSProp(Optimizer):
             Changes parameters of model in place.
 
         Args:
-            model: a Model object to optimize
+            model: a BoltzmannMachine object to optimize
             grad: a Gradient object
             epoch (int): the current epoch
 
@@ -415,8 +414,7 @@ class ADAM(Optimizer):
                  stepsize=schedules.Constant(initial=0.001),
                  mean_weight=0.9,
                  mean_square_weight=0.999,
-                 tolerance=1e-7,
-                 ascent=False):
+                 tolerance=1e-7):
         """
         Create a stochastic gradient descent with ADAM optimizer.
 
@@ -424,7 +422,7 @@ class ADAM(Optimizer):
             adam
 
         Args:
-            model: a Model object to optimize
+            model: a BoltzmannMachine object to optimize
             stepsize (generator; optional): the stepsize schedule
             mean_weight (float; optional):
                 for computing the running average of the mean gradient
@@ -437,7 +435,7 @@ class ADAM(Optimizer):
             ADAM
 
         """
-        super().__init__(stepsize, tolerance, ascent)
+        super().__init__(stepsize, tolerance)
         self.memory = GradientMemory(mean_weight=mean_weight,
                                      mean_square_weight=mean_square_weight)
 
@@ -465,7 +463,7 @@ class ADAM(Optimizer):
             Changes parameters of model in place.
 
         Args:
-            model: a Model object to optimize
+            model: a BoltzmannMachine object to optimize
             grad: a Gradient object
             epoch (int): the current epoch
 

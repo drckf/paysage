@@ -1,4 +1,5 @@
-import json, os
+import json
+import os
 
 # load the configuration file with the backend specification
 filedir = os.path.dirname(os.path.abspath(__file__))
@@ -25,3 +26,5 @@ if PROCESSOR == "gpu":
         except Exception:
             assert False, "must have cuda enabled pytorch to use gpu"
     test_has_cuda()
+
+print("Running paysage with the {} backend on the {}".format(BACKEND, PROCESSOR))

@@ -1,13 +1,12 @@
-
-from cytoolz import compose
+from cytoolz import compose, partial
 from math import sqrt
 from collections import namedtuple
 
 from .. import backends as be
 
 Gradient = namedtuple("Gradient", [
-    "layers",
-    "weights"
+    "layers", # List[List[ParamsLayer]]
+    "weights" # List[List[ParamsWeights]]
 ])
 
 """
@@ -19,23 +18,20 @@ def null_grad(model):
     Return a gradient object filled with empty lists.
 
     Args:
-        model: a Model object
+        model: a BoltzmannMachine object
 
     Returns:
         Gradient
 
     """
-    return Gradient(
-        [[] for layer in model.layers],
-        [[] for weight in model.weights]
-        )
+    return Gradient([[] for layer in model.layers], [[] for conn in model.connections])
 
 def zero_grad(model):
     """
     Return a gradient object filled with zero tensors.
 
     Args:
-        model: a Model object
+        model: a BoltzmannMachine object
 
     Returns:
         Gradient
@@ -43,7 +39,7 @@ def zero_grad(model):
     """
     return Gradient(
         [layer.zero_derivatives() for layer in model.layers],
-        [weight.zero_derivatives() for weight in model.weights]
+        [conn.weights.zero_derivatives() for conn in model.connections]
         )
 
 def random_grad(model):
@@ -51,7 +47,7 @@ def random_grad(model):
     Return a gradient object filled with random numbers.
 
     Args:
-        model: a Model object
+        model: a BoltzmannMachine object
 
     Returns:
         Gradient
@@ -59,7 +55,7 @@ def random_grad(model):
     """
     return Gradient(
         [layer.random_derivatives() for layer in model.layers],
-        [weight.random_derivatives() for weight in model.weights]
+        [conn.weights.random_derivatives() for conn in model.connections]
         )
 
 def grad_accumulate(func, grad):
@@ -142,7 +138,7 @@ def grad_mapzip(func, grad1, grad2):
         for i in range(n)],
         [[be.mapzip(func, z[0], z[1]) for z in zip(grad1.weights[i], grad2.weights[i])]
         for i in range(m)]
-    )
+        )
 
 def grad_mapzip_(func_, grad1, grad2):
     """
@@ -169,9 +165,9 @@ def grad_mapzip_(func_, grad1, grad2):
         for z in zip(grad1.weights[j], grad2.weights[j]):
             be.mapzip_(func_, z[0], z[1])
 
-def grad_magnitude(grad):
+def grad_norm(grad):
     """
-    Compute the root-mean-square of the gradient.
+    Compute the l2 norm of the gradient.
 
     Args:
         grad (Gradient)
@@ -180,6 +176,52 @@ def grad_magnitude(grad):
         magnitude (float)
 
     """
+    tensor_sum_square = compose(be.tsum, be.square)
+    return sqrt(grad_accumulate(tensor_sum_square, grad))
+
+def grad_normalize_(grad):
+    """
+    Normalize the gradient vector with respect to the L2 norm
+
+    Args:
+        grad (Gradient)
+
+    Return:
+        None
+    """
+    nrm = grad_norm(grad)
+    grad_apply_(partial(be.tmul_, be.float_scalar(1.0/nrm)), grad)
+
+def grad_rms(grad):
+    """
+    Compute the root-mean-square of the gradient.
+
+    Args:
+        grad (Gradient)
+
+    Returns:
+        rms (float)
+
+    """
     n = len(grad.layers) + len(grad.weights)
     tensor_mean_square = compose(be.mean, be.square)
     return sqrt(grad_accumulate(tensor_mean_square, grad) / n)
+
+def grad_flatten(grad):
+    """
+    Returns a flat vector of gradient parameters
+
+    Args:
+        grad (Gradient)
+
+    Returns:
+        (tensor): vectorized gradient
+    """
+    v = []
+    for l in grad.layers:
+        for c in l:
+            v.extend([be.flatten(i) for i in c])
+    for w in grad.weights:
+        for c in w:
+            v.extend([be.flatten(i) for i in c])
+    return be.hstack(v)

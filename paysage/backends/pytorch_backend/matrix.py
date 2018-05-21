@@ -3,9 +3,9 @@ from . import typedef as T
 from ..read_config import PROCESSOR
 
 if PROCESSOR == "cpu":
-    DTYPE = torch
+    device = torch.device("cpu")
 else:
-    DTYPE = torch.cuda
+    device = torch.device("cuda:0")
 
 def float_scalar(scalar: T.Scalar) -> float:
     """
@@ -20,11 +20,12 @@ def float_scalar(scalar: T.Scalar) -> float:
     """
     return float(scalar)
 
-EPSILON = float_scalar(numpy.finfo(numpy.float32).eps)
-
-def float_tensor(tensor: T.Tensor) -> T.FloatTensor:
+def cast_float(tensor: T.TorchTensor) -> T.FloatTensor:
     """
-    Cast tensor to a float tensor.
+    Cast torch tensor to a float tensor.
+
+    Notes:
+        If tensor is already float, no copy is made.
 
     Args:
         tensor: A tensor.
@@ -33,30 +34,49 @@ def float_tensor(tensor: T.Tensor) -> T.FloatTensor:
         tensor: Tensor converted to floating point.
 
     """
-    try:
-        # tensor is a numpy object
-        return torch.FloatTensor(numpy.array(tensor, dtype=float)).type(DTYPE.FloatTensor)
-    except Exception:
-        # tensor is a torch object
-        return tensor.float().type(DTYPE.FloatTensor)
+    return tensor.float()
 
-def int_tensor(tensor: T.Tensor) -> T.LongTensor:
+def float_tensor(tensor: T.FloatConstructable) -> T.FloatTensor:
     """
-    Cast tensor to an int tensor.
+    Construct to a float tensor.  Note: requires floating point data.
+    This will always copy the data in tensor.
 
     Args:
         tensor: A tensor.
 
     Returns:
-        tensor: Tensor converted to int.
+        tensor: Tensor converted to floating point.
 
     """
-    try:
-        # tensor is a numpy object
-        return torch.LongTensor(numpy.array(tensor, dtype=int)).type(DTYPE.LongTensor)
-    except Exception:
-        # tensor is a torch object
-        return tensor.long().type(DTYPE.LongTensor)
+    return torch.tensor(tensor, device=device, dtype=T.Float)
+
+def cast_long(tensor: T.TorchTensor) -> T.LongTensor:
+    """
+    Cast torch tensor to a long int tensor.
+    Notes:
+        If tensor is already long int, no copy is made.
+
+    Args:
+        tensor: A torch tensor.
+
+    Returns:
+        tensor: Tensor converted to long.
+
+    """
+    return tensor.to(T.Long)
+
+def long_tensor(tensor: T.LongConstructable) -> T.LongTensor:
+    """
+    Construct a long tensor.  This will always copy the data in tensor.
+
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: Tensor converted to long int type.
+
+    """
+    return torch.tensor(tensor, device=device, dtype=T.Long)
 
 def to_numpy_array(tensor: T.Tensor) -> T.NumpyTensor:
     """
@@ -73,6 +93,21 @@ def to_numpy_array(tensor: T.Tensor) -> T.NumpyTensor:
         return tensor.cpu().numpy()
     except Exception:
         return numpy.array(tensor)
+
+def from_numpy_array(tensor: T.Tensor) -> T.NumpyTensor:
+    """
+    Construct a tensor from a numpy array.
+    Note:
+        This shares the memory with the ndarray.
+
+    Args:
+        tensor: A numpy ndarray
+
+    Returns:
+        tensor: Tensor converted from ndarray.
+
+    """
+    return torch.from_numpy(tensor).to(device)
 
 def copy_tensor(tensor: T.Tensor) -> T.Tensor:
     """
@@ -124,7 +159,7 @@ def num_elements(tensor: T.TorchTensor) -> int:
         int: The number of elements in the tensor.
 
     """
-    return numpy.prod(shape(tensor))
+    return int(numpy.prod(shape(tensor)))
 
 def transpose(tensor: T.TorchTensor) -> T.FloatTensor:
     """
@@ -139,7 +174,7 @@ def transpose(tensor: T.TorchTensor) -> T.FloatTensor:
     """
     return tensor.t()
 
-def zeros(shape: T.Tuple[int]) -> T.FloatTensor:
+def zeros(shape: T.Tuple[int], dtype: T.Dtype=T.Float) -> T.Tensor:
     """
     Return a tensor of a specified shape filled with zeros.
 
@@ -150,11 +185,11 @@ def zeros(shape: T.Tuple[int]) -> T.FloatTensor:
         tensor: A tensor of zeros with the desired shape.
 
     """
-    return torch.zeros(shape).type(DTYPE.FloatTensor)
+    return torch.zeros(shape, device=device, dtype=dtype)
 
 def zeros_like(tensor: T.TorchTensor) -> T.FloatTensor:
     """
-    Return a tensor of zeros with the same shape as the input tensor.
+    Return a tensor of zeros with the same shape and dtype as the input tensor.
 
     Args:
         tensor: A tensor.
@@ -163,9 +198,9 @@ def zeros_like(tensor: T.TorchTensor) -> T.FloatTensor:
         tensor: A tensor of zeros with the same shape.
 
     """
-    return zeros(shape(tensor))
+    return torch.zeros_like(tensor)
 
-def ones(shape: T.Tuple[int]) -> T.FloatTensor:
+def ones(shape: T.Tuple[int], dtype: T.Dtype=T.Float) -> T.Tensor:
     """
     Return a tensor of a specified shape filled with ones.
 
@@ -176,11 +211,12 @@ def ones(shape: T.Tuple[int]) -> T.FloatTensor:
         tensor: A tensor of ones with the desired shape.
 
     """
-    return torch.ones(shape).type(DTYPE.FloatTensor)
+    return torch.ones(shape, device=device, dtype=dtype)
 
-def ones_like(tensor: T.TorchTensor) -> T.FloatTensor:
+def ones_like(tensor: T.TorchTensor) -> T.Tensor:
     """
-    Return a tensor of ones with the same shape as the input tensor.
+    Return a tensor of ones with the same shape and dtype as the input tensor.
+    Note: much faster on the GPU than calling ones(shape(tensor))
 
     Args:
         tensor: A tensor.
@@ -189,7 +225,7 @@ def ones_like(tensor: T.TorchTensor) -> T.FloatTensor:
         tensor: A tensor with the same shape.
 
     """
-    return ones(shape(tensor))
+    return torch.ones_like(tensor)
 
 def diagonal_matrix(vec: T.TorchTensor) -> T.TorchTensor:
     """
@@ -231,7 +267,7 @@ def identity(n: int) -> T.FloatTensor:
                 and zeros elsewhere.
 
     """
-    return torch.eye(n).type(DTYPE.FloatTensor)
+    return torch.eye(n, device=device, dtype=T.Float)
 
 def fill_diagonal_(mat: T.FloatTensor, val: T.Scalar) -> None:
     """
@@ -265,7 +301,7 @@ def scatter_(mat: T.Tensor, inds: T.LongTensor, val: T.Scalar) -> T.Tensor:
         inds: The indices
         val: The value to insert
     """
-    return mat.scatter_(1, inds.unsqueeze(1), val)
+    mat.scatter_(1, inds.unsqueeze(1), val)
 
 def index_select(mat: T.Tensor, index: T.LongTensor, dim: int = 0) -> T.Tensor:
     """
@@ -316,7 +352,7 @@ def clip(tensor: T.FloatTensor,
     """
     return tensor.clamp(a_min, a_max)
 
-def clip_inplace(tensor: T.FloatTensor,
+def clip_(tensor: T.FloatTensor,
                  a_min: T.Scalar = -numpy.inf,
                  a_max: T.Scalar = numpy.inf) -> None:
     """
@@ -334,7 +370,7 @@ def clip_inplace(tensor: T.FloatTensor,
         None
 
     """
-    return torch.clamp(tensor, a_min, a_max, out=tensor)
+    torch.clamp(tensor, a_min, a_max, out=tensor)
 
 def tclip(tensor: T.FloatTensor,
           a_min: T.FloatTensor = None,
@@ -364,7 +400,7 @@ def tclip(tensor: T.FloatTensor,
     return res
 
 
-def tclip_inplace(tensor: T.FloatTensor,
+def tclip_(tensor: T.FloatTensor,
                   a_min: T.FloatTensor = None,
                   a_max: T.FloatTensor = None) -> None:
     """
@@ -405,6 +441,32 @@ def tround(tensor: T.FloatTensor) -> T.FloatTensor:
     """
     return tensor.round()
 
+def tfloor(tensor: T.Tensor) -> T.Tensor:
+    """
+    Return a tensor with floored elements.
+
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: A tensor rounded down to the next integer (still floating point).
+
+    """
+    return tensor.floor()
+
+def tceil(tensor: T.Tensor) -> T.Tensor:
+    """
+    Return a tensor with ceilinged elements.
+
+    Args:
+        tensor: A tensor.
+
+    Returns:
+        tensor: A tensor rounded up to the next integer (still floating point).
+
+    """
+    return tensor.ceil()
+
 def flatten(tensor: T.FloatingPoint) -> T.FloatingPoint:
     """
     Return a flattened tensor.
@@ -418,7 +480,7 @@ def flatten(tensor: T.FloatingPoint) -> T.FloatingPoint:
 
     """
     try:
-        return tensor.view(int(numpy.prod(shape(tensor))))
+        return tensor.reshape(int(numpy.prod(shape(tensor))))
     except AttributeError:
         return tensor
 
@@ -435,7 +497,7 @@ def reshape(tensor: T.FloatTensor,
         tensor: A tensor with the desired shape.
 
     """
-    return tensor.contiguous().view(*newshape)
+    return tensor.reshape(*newshape)
 
 def unsqueeze(tensor: T.Tensor, axis: int) -> T.Tensor:
     """
@@ -462,7 +524,7 @@ def dtype(tensor: T.FloatTensor) -> type:
         type: The type of the elements in the tensor.
 
     """
-    return tensor.type()
+    return tensor.dtype
 
 def mix(w: T.FloatingPoint,
         x: T.FloatTensor,
@@ -483,9 +545,9 @@ def mix(w: T.FloatingPoint,
         tensor = w * x + (1-w) * y
 
     """
-    return torch.add(torch.mul(x, w), torch.mul(1-w, y))
+    return torch.add(x.mul(w), y.mul(1-w))
 
-def mix_inplace(w: T.FloatingPoint,
+def mix_(w: T.FloatingPoint,
                 x: T.FloatTensor,
                 y: T.FloatTensor) -> None:
     """
@@ -509,7 +571,7 @@ def mix_inplace(w: T.FloatingPoint,
     x.mul_(w)
     x.add_(y.mul(1-w))
 
-def square_mix_inplace(w: T.FloatingPoint,
+def square_mix_(w: T.FloatingPoint,
                        x: T.FloatTensor,
                        y: T.FloatTensor) -> None:
     """
@@ -545,7 +607,7 @@ def sqrt_div(x: T.FloatTensor, y: T.FloatTensor) -> T.FloatTensor:
         tensor: Elementwise division of x by sqrt(y).
 
     """
-    return x.div(torch.sqrt(EPSILON + y))
+    return x.div(torch.sqrt(T.EPSILON + y))
 
 def normalize(x: T.FloatTensor) -> T.FloatTensor:
     """
@@ -558,7 +620,7 @@ def normalize(x: T.FloatTensor) -> T.FloatTensor:
         tensor: A tensor normalized by it's sum.
 
     """
-    return x.div(torch.sum(EPSILON + x))
+    return x.div(torch.sum(T.EPSILON + x))
 
 def norm(x: T.FloatTensor,  axis: int=None, keepdims: bool=False) -> T.FloatingPoint:
     """
@@ -580,9 +642,12 @@ def norm(x: T.FloatTensor,  axis: int=None, keepdims: bool=False) -> T.FloatingP
 
     """
     if axis is not None:
-        return x.norm(p=2, dim=axis, keepdim=keepdims)
+        res = x.norm(p=2, dim=axis, keepdim=keepdims)
     else:
-        return x.norm()
+        res = x.norm()
+    if len(shape(res))==0:
+        return res.item()
+    return res
 
 def tmax(x: T.FloatTensor,
          axis: int = None,
@@ -605,9 +670,12 @@ def tmax(x: T.FloatTensor,
 
     """
     if axis is not None:
-        return x.max(dim=axis, keepdim=keepdims)[0]
+        res = x.max(dim=axis, keepdim=keepdims)[0]
     else:
-        return x.max()
+        res = x.max()
+    if len(shape(res))==0:
+        return res.item()
+    return res
 
 def tmin(x: T.FloatTensor,
          axis: int = None,
@@ -630,9 +698,12 @@ def tmin(x: T.FloatTensor,
 
     """
     if axis is not None:
-        return x.min(dim=axis, keepdim=keepdims)[0]
+        res = x.min(dim=axis, keepdim=keepdims)[0]
     else:
-        return x.min()
+        res = x.min()
+    if len(shape(res))==0:
+        return res.item()
+    return res
 
 def mean(x: T.FloatTensor,
          axis: int = None,
@@ -655,9 +726,12 @@ def mean(x: T.FloatTensor,
 
     """
     if axis is not None:
-        return x.mean(dim=axis, keepdim=keepdims)
+        res = x.mean(dim=axis, keepdim=keepdims)
     else:
-        return x.mean()
+        res = x.mean()
+    if len(shape(res))==0:
+        return res.item()
+    return res
 
 def center(x: T.FloatTensor, axis: int=0) -> T.FloatTensor:
     """
@@ -694,9 +768,12 @@ def var(x: T.FloatTensor,
 
     """
     if axis is not None:
-        return x.var(dim=axis, keepdim=keepdims)
+        res = x.var(dim=axis, keepdim=keepdims)
     else:
-        return x.var()
+        res = x.var()
+    if len(shape(res))==0:
+        return res.item()
+    return res
 
 def std(x: T.FloatTensor,
          axis: int = None,
@@ -720,9 +797,12 @@ def std(x: T.FloatTensor,
 
     """
     if axis is not None:
-        return x.std(dim=axis, keepdim=keepdims)
+        res = x.std(dim=axis, keepdim=keepdims)
     else:
-        return x.std()
+        res = x.std()
+    if len(shape(res))==0:
+        return res.item()
+    return res
 
 def cov(x: T.Tensor, y: T.Tensor) -> T.Tensor:
     """
@@ -736,8 +816,35 @@ def cov(x: T.Tensor, y: T.Tensor) -> T.Tensor:
         tensor (num_units_x, num_units_y)
 
     """
-    num_samples = len(x)
-    return batch_outer(center(x), center(y)) / num_samples
+    if ndim(x) == 1:
+        X = unsqueeze(x, 1)
+    else:
+        X = x
+
+    if ndim(y) == 1:
+        Y = unsqueeze(y, 1)
+    else:
+        Y = y
+
+    num_samples = len(X) - 1
+    return batch_outer(center(X), center(Y)) / num_samples
+
+def corr(x: T.Tensor, y: T.Tensor) -> T.Tensor:
+    """
+    Compute the cross correlation between tensors x and y.
+
+    Args:
+        x (tensor (num_samples, num_units_x))
+        y (tensor (num_samples, num_units_y))
+
+    Returns:
+        tensor (num_units_x, num_units_y)
+
+    """
+    covariance = cov(x, y)
+    std_x = std(x, axis=0) + T.EPSILON
+    std_y = std(y, axis=0) + T.EPSILON
+    return divide(outer(std_x, std_y), covariance)
 
 def tsum(x: T.FloatTensor,
          axis: int = None,
@@ -760,9 +867,12 @@ def tsum(x: T.FloatTensor,
 
     """
     if axis is not None:
-        return x.sum(dim=axis, keepdim=keepdims)
+        res = x.sum(dim=axis, keepdim=keepdims)
     else:
-        return x.sum()
+        res = x.sum()
+    if len(shape(res))==0:
+        return res.item()
+    return res
 
 def tprod(x: T.FloatTensor,
          axis: int = None,
@@ -785,9 +895,12 @@ def tprod(x: T.FloatTensor,
 
     """
     if axis is not None:
-        return x.prod(dim=axis, keepdim=keepdims)
+        res = x.prod(dim=axis, keepdim=keepdims)
     else:
-        return x.prod()
+        res = x.prod()
+    if len(shape(res))==0:
+        return res.item()
+    return res
 
 def tany(x: T.Tensor,
          axis: int = None,
@@ -797,7 +910,7 @@ def tany(x: T.Tensor,
     specified axis.
 
     Args:
-        x: A float or tensor.
+        x: (torch.ByteTensor)
         axis (optional): The axis of interest.
         keepdims (optional): If this is set to true, the dimension of the tensor
                              is unchanged. Otherwise, the reduced axis is removed
@@ -811,6 +924,11 @@ def tany(x: T.Tensor,
                                 along axis
 
     """
+    # TODO: can we clean up this implementation?  Numpy's convention is to return
+    # False in this case.  We have to check manually here because tmax fails on
+    # empty arrays
+    if sum(shape(x))==0:
+        return False
     return tmax(x.ne(0), axis=axis, keepdims=keepdims)
 
 def tall(x: T.Tensor,
@@ -835,6 +953,9 @@ def tall(x: T.Tensor,
                                 along axis
 
     """
+    # TODO: see tany comment
+    if sum(shape(x))==0:
+        return False
     return tmin(x.ne(0), axis=axis, keepdims=keepdims)
 
 def equal(x: T.FloatTensor, y: T.FloatTensor) -> T.ByteTensor:
@@ -990,6 +1111,7 @@ def sort(x: T.FloatTensor, axis: int = None) -> T.FloatTensor:
 def argsort(x: T.FloatTensor, axis: int = None) -> T.LongTensor:
     """
     Get the indices of a sorted tensor.
+    If axis=None this flattens x.
 
     Args:
         x: A tensor:
@@ -1000,7 +1122,7 @@ def argsort(x: T.FloatTensor, axis: int = None) -> T.LongTensor:
 
     """
     if axis is None:
-        return x.sort()[1]
+        return flatten(x).sort()[1]
     else:
         return x.sort(dim=axis)[1]
 
@@ -1300,7 +1422,9 @@ def inv(mat: T.FloatTensor) -> T.FloatTensor:
         tensor: The matrix inverse.
 
     """
-    return mat.inverse()
+    if len(mat) > 1:
+        return mat.inverse()
+    return mat.reciprocal()
 
 def pinv(mat: T.FloatTensor) -> T.FloatTensor:
     """
@@ -1313,7 +1437,9 @@ def pinv(mat: T.FloatTensor) -> T.FloatTensor:
         tensor: The matrix pseudoinverse.
 
     """
-    return mat.t().mm(mat).inverse().mm(mat.t())
+    U, s, V = torch.svd(mat)
+    S = unsqueeze(s.reciprocal(), axis=0)
+    return multiply(V,S).mm(U.t())
 
 def qr(mat: T.FloatTensor) -> T.Tuple[T.FloatTensor]:
     """
@@ -1331,6 +1457,34 @@ def qr(mat: T.FloatTensor) -> T.Tuple[T.FloatTensor]:
     """
     return torch.qr(mat)
 
+def svd(mat: T.FloatTensor) -> T.Tuple[T.FloatTensor]:
+    """
+    Compute the Singular Value decomposition of a matrix
+    A = U S V^T
+
+    Args:
+        mat: A matrix.
+
+    Returns:
+        (U, S, V): Tuple of tensors.
+
+    """
+    return torch.svd(mat)
+
+def matrix_sqrt(mat: T.FloatTensor) -> T.FloatTensor:
+    """
+    Compute the matrix square root using an SVD
+
+    Args:
+        mat: A square matrix.
+
+    Returns:
+        matrix square root
+
+    """
+    u, s, v = mat.svd()
+    return (u*s.sqrt()).mm(v.t())
+
 def logdet(mat: T.FloatTensor) -> float:
     """
     Compute the logarithm of the determinant of a square matrix.
@@ -1342,10 +1496,28 @@ def logdet(mat: T.FloatTensor) -> float:
         logdet: The logarithm of the matrix determinant.
 
     """
-    u, s, v = mat.svd()
-    return s.log().sum()
+    return torch.logdet(mat)
 
-def batch_dot(vis: T.FloatTensor,
+def batch_dot(a: T.Tensor, b: T.Tensor, axis: int=1) -> T.Tensor:
+    """
+    Compute the dot product of vectors batch-wise.
+    Let a be an L x N matrix where each row a_i is a vector.
+    Let b be an L x N matrix where each row b_i is a vector.
+    Then batch_dot(a, b) = \sum_j a_ij * b_ij
+    One can choose the axis to sum along with the axis argument.
+
+    Args:
+        a: A tensor.
+        b: A tensor.
+        axis (int): The axis to dot along.
+
+    Returns:
+        tensor: A tensor.
+
+    """
+    return (a * b).sum(dim=axis)
+
+def batch_quadratic(vis: T.FloatTensor,
               W: T.FloatTensor,
               hid: T.FloatTensor,
               axis: int = 1) -> T.FloatTensor:
@@ -1353,7 +1525,7 @@ def batch_dot(vis: T.FloatTensor,
     Let v by a L x N matrix where each row v_i is a visible vector.
     Let h be a L x M matrix where each row h_i is a hidden vector.
     And, let W be a N x M matrix of weights.
-    Then, batch_dot(v,W,h) = \sum_i v_i^T W h_i
+    Then, batch_quadratic(v,W,h) = \sum_i v_i^T W h_i
 
     The actual computation is performed with a vectorized expression.
 
@@ -1450,7 +1622,7 @@ def vstack(tensors: T.Iterable[T.FloatTensor]) -> T.FloatTensor:
     else:
         return torch.cat(tensors, 0)
 
-def trange(start: int, end: int, step: int = 1) -> T.FloatTensor:
+def trange(start: int, end: int, step: int = 1, dtype=T.Float) -> T.Tensor:
     """
     Generate a tensor like a python range.
 
@@ -1458,59 +1630,28 @@ def trange(start: int, end: int, step: int = 1) -> T.FloatTensor:
         start: The start of the range.
         end: The end of the range.
         step: The step of the range.
+        dtype: (torch.Dtype): desired data type for output
 
     Returns:
         tensor: A vector ranging from start to end in increments
                 of step. Cast to float rather than int.
 
     """
-    return torch.range(start, end-1, step)
+    return torch.arange(start, end, step, device=device, dtype=dtype)
 
-def pdist(x: T.FloatTensor, y: T.FloatTensor) -> T.FloatTensor:
+def cumsum(x: T.FloatTensor, axis: int = 0) -> T.FloatTensor:
     """
-    Compute the pairwise distance matrix between the rows of x and y.
+    Return the cumulative sum of elements of a tensor along the specified axis.
 
     Args:
-        x (tensor (num_samples_1, num_units))
-        y (tensor (num_samples_2, num_units))
+        x: A float or tensor.
+        axis (optional): The axis for taking the sum.
 
     Returns:
-        tensor (num_samples_1, num_samples_2)
+        tensor: the cumulative sum of elements of the tensor along the specified axis.
 
     """
-    inner = dot(x, transpose(y))
-    x_mag = norm(x, axis=1) ** 2
-    y_mag = norm(y, axis=1) ** 2
-    squared = add(unsqueeze(y_mag, axis=0), add(unsqueeze(x_mag, axis=1), -2*inner))
-    return torch.sqrt(clip(squared, a_min=0))
-
-def energy_distance(x: T.FloatTensor, y: T.FloatTensor) -> float:
-    """
-    Compute an energy distance between two tensors treating the rows as observations.
-
-    Args:
-        x (tensor (num_samples_1, num_units))
-        y (tensor (num_samples_2, num_units))
-
-    Returns:
-        float: energy distance.
-
-    Szekely, G.J. (2002)
-    E-statistics: The Energy of Statistical Samples.
-    Technical Report BGSU No 02-16.
-
-    """
-    n = float_scalar(len(x))
-    m = float_scalar(len(y))
-
-    x_inflator = n*n / (n*(n-1))
-    y_inflator = m*m / (m*(m-1))
-
-    d1 = x_inflator*mean(pdist(x,x))
-    d2 = y_inflator*mean(pdist(y,y))
-    d3 = mean(pdist(x, y))
-
-    return 2 * d3 - d2 - d1
+    return x.cumsum(dim=axis)
 
 def is_tensor(x: T.FloatingPoint) -> bool:
     """
@@ -1528,3 +1669,44 @@ def is_tensor(x: T.FloatingPoint) -> bool:
         return True
     except Exception:
         return False
+
+def logical_not(x: T.ByteTensor) -> T.ByteTensor:
+    """
+    Invert a logical array (True -> False, False -> True).
+
+    Args:
+        x (tensor)
+
+    Returns:
+        tensor
+
+    """
+    return 1-x
+
+def logical_and(x: T.ByteTensor, y: T.ByteTensor) -> T.ByteTensor:
+    """
+    Compute the elementwise logical and on two tensors
+
+    Args:
+        x (tensor)
+        y (tensor)
+
+    Returns:
+        tensor
+
+    """
+    return x*y
+
+def logical_or(x: T.ByteTensor, y: T.ByteTensor) -> T.ByteTensor:
+    """
+    Compute the elementwise logical or on two tensors
+
+    Args:
+        x (tensor)
+        y (tensor)
+
+    Returns:
+        tensor
+
+    """
+    return 1-(1-x)*(1-y)

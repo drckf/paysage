@@ -1,28 +1,83 @@
 import pydoc
 from collections import OrderedDict
+import re
+import os
 
 module_header = "# Documentation for {0} ({1}.py)\n"
 class_header = "## class {}"
 function_header = "### {}"
 
-
-def savedocs(docs):
+def maybe_a(a, b, func):
     """
-    Save the documentation to a series of markdown files for mkdocs.
-
-    Notes:
-        Outputs files.
+    Compute func(a, b) when a could be None.
 
     Args:
-        docs: A dictionary of strings:
+        a (any; maybe None)
+        b (any)
+        func (callable)
+
+    Returns:
+        func(a, b) or b if a is None
+
+    """
+    if a is not None:
+        return func(a, b)
+    return b
+
+def write_into(addendum, out):
+    """
+    Writs addendum into out and returns a copy.
+
+    Args:
+        addendum (OrderedDict): dictionary to write into out
+        out (OrderedDict): dictionary to write into
+
+    Returns:
+        out (OrderedDict): addendum written into out
+    """
+    for a in addendum:
+        out[a] = addendum[a]
+    return out
+
+def save_doc_hierarchy(doc_od, basedir):
+    """
+    Saves the document hierarchy with a folder for each package
+    and each module in each package having a single .md file.
+
+    Args
+        doc_od (OrderedDict): tree of of ordered dictionaries of docstrings
+
+    Returns:
+        None
+    """
+    for od in doc_od:
+        if isinstance(doc_od[od], OrderedDict):
+            subdir = os.path.join(basedir, od)
+            try:
+                os.mkdir(subdir)
+            except OSError:
+                pass
+
+            save_doc_hierarchy(doc_od[od], subdir)
+        else:
+            savedoc(doc_od[od], od, basedir)
+
+def savedoc(docstring, name, basedir):
+    """
+    Save the documentation string to a file named 'name' at basedir
+
+    Args:
+        docstring (str)
+        name (str): filename
+        basedir (os.path): base directory for *.md file
 
     Returns:
         None
 
     """
-    for key in docs:
-        with open(key + '.md', 'w') as output:
-            output.write(docs[key])
+    path = os.path.join(basedir, name + '.md')
+    with open(path, 'w') as output:
+        output.write(docstring)
 
 
 def format_linebreaks(string):
@@ -41,7 +96,7 @@ def format_linebreaks(string):
 
 def format_indentation(string):
     """
-    Replace indentation (4 spaces) with '\t'
+    Replace indentation (4 spaces) with four HTML spaces
 
     Args:
         string: A string.
@@ -50,10 +105,27 @@ def format_indentation(string):
         string: A string.
 
     """
-    return string.replace("    ", " ~ ")
+    return string.replace("    ", "&nbsp;&nbsp;&nbsp;&nbsp;")
 
+def document_modules(modules):
+    """
+    Get the documentation for each of the modules in a list of modules:
 
-def walk_through_package(package):
+    Args:
+        modules: A list of modules.
+
+    Returns:
+        output: A dictionary with documentation strings for each module.
+
+    """
+    output = OrderedDict()
+    for mod in modules:
+        as_name, reference = mod
+        module_name = re.split('\.', reference.__name__)[-1]
+        output[module_name] = getmodule(module_name, reference)
+    return output
+
+def walk_through_package_recursive(package):
     """
     Get the documentation for each of the modules in the package:
 
@@ -61,16 +133,40 @@ def walk_through_package(package):
         package: An imported python package.
 
     Returns:
-        output: A dictionary with documentation strings for each module.
+        output: A tree of ordered dictionaries with leaves the
+                documentation strings of submodules.
 
     """
+    # get basedirectort of package
+    basedir = os.path.dirname(package.__spec__.origin)
+
+    # filters based on whether the module was imported from __init__.py or
+    # if it came from elsewhere
+    def from_init(mod):
+        return maybe_a(mod.__file__,
+                       False, lambda file,b: file.find('__init__.py')>-1)
+
+    # filters based on whether the module is a python module object and
+    # whether it is a submodule of the given package
+    def is_local_sub_module(mod):
+        return pydoc.inspect.ismodule(mod) and \
+               maybe_a(mod.__spec__.origin, False,
+                       lambda origin,b: origin.find(basedir) > -1)
+
+    sub_packages = \
+        pydoc.inspect.getmembers(package,
+                                 lambda x: is_local_sub_module(x) and from_init(x))
+
+    # For subpackages add another level to the tree
     output = OrderedDict()
+    for sub in sub_packages:
+        output[sub[0]] = walk_through_package_recursive(sub[1])
 
-    modules = pydoc.inspect.getmembers(package, pydoc.inspect.ismodule)
-
-    for mod in modules:
-        module_name, reference = mod
-        output[module_name] = getmodule(module_name, reference)
+    # For proper submodules add a leaf
+    modules = \
+        pydoc.inspect.getmembers(package,
+                                 lambda x: is_local_sub_module(x) and not from_init(x))
+    output = write_into(document_modules(modules), output)
     return output
 
 
@@ -84,7 +180,7 @@ def getmodule(module_name, reference):
         reference: The module.
 
     Returns:
-        str: The documentation string for the modulee.
+        str: The documentation string for the module.
 
     """
     output = [module_header.format(module_name.title(), module_name)]
@@ -163,8 +259,12 @@ def getfunctions(item):
     """
 
     output = list()
+    # filters based on whether the module function is coming from is local
+    def is_local_func(mod):
+        return pydoc.inspect.isfunction(mod) and \
+               mod.__module__.find('paysage') > -1
 
-    methods = pydoc.inspect.getmembers(item, pydoc.inspect.isfunction)
+    methods = pydoc.inspect.getmembers(item, is_local_func)
 
     for func in methods:
 
@@ -175,13 +275,23 @@ def getfunctions(item):
 
         output.append(function_header.format(func_name.replace('_', '\\_')))
 
+        # get argspec
+        argspec = pydoc.inspect.getfullargspec(reference)
+        arg_text = pydoc.inspect.formatargspec(*argspec)
+
+        _re_stripid = re.compile(r' at 0x[0-9a-f]{6,16}(>+)', re.IGNORECASE)
+        def stripid(text):
+            """
+            Strips off object ids
+            """
+            return _re_stripid.sub(r'\1', text)
+
         # Get the signature
         output.append ('```py\n')
         output.append('def %s%s\n' % (
             func_name,
-            pydoc.inspect.formatargspec(
-                *pydoc.inspect.getfullargspec(reference)
-            )))
+            stripid(arg_text)
+            ))
         output.append ('```\n')
 
         # get the docstring
@@ -199,7 +309,5 @@ def getfunctions(item):
 
 if __name__ == "__main__":
     import paysage
-    # TODO: define this to run recursively
-    savedocs(walk_through_package(paysage))
-    savedocs(walk_through_package(paysage.models))
-    savedocs(walk_through_package(paysage.layers))
+    doc_hierarchy = walk_through_package_recursive(paysage)
+    save_doc_hierarchy(doc_hierarchy, os.path.dirname(__file__))
