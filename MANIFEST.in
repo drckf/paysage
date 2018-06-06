@@ -1,3 +1,4 @@
 include LICENSE.md
 include CONTRIBUTING.md
 include README.md
+recursive-include *.json

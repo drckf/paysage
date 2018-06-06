@@ -1,11 +1,17 @@
-from setuptools import setup
+from setuptools import setup, find_packages
+
+# To use a consistent encoding
+from codes import open
+from os import path
+
+here = path.abspath(path.dirname(__file__))
 
 def readme():
-    with open('README.md') as f:
+    with open(path.join(here,'README.md')) as f:
         return f.read()
 
 setup(name='paysage',
-      version='0.2.0',
+      version='0.2.1',
       description='Machine learning with energy based models in python',
       long_description=readme(),
       url='https://github.com/drckf/paysage',
@@ -20,7 +26,10 @@ setup(name='paysage',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
       ],
-      packages=['paysage'],
+      packages=find_packages(),
+      package_data={
+              '': ['*.json', '*.py']
+              },
       install_requires=[
           'matplotlib',
           'numexpr',
