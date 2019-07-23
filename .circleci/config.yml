@@ -2,13 +2,13 @@
 #
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 #
-version: 2
+version: 3
 jobs:
   build_and_test:
     docker:
       # specify the version you desire here
-      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.6.1
+      # use `-browsers` prefix for selenium tests, e.g. `3.7.3-browsers`
+      - image: circleci/python:3.7.3
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -64,7 +64,7 @@ jobs:
           path: test-reports/
 
 workflows:
-  version: 2
+  version: 3
   build_and_test:
     jobs:
       - build_and_test
