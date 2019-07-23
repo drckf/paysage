@@ -44,7 +44,7 @@ def save_doc_hierarchy(doc_od, basedir):
     Saves the document hierarchy with a folder for each package
     and each module in each package having a single .md file.
 
-    Args
+    Args:
         doc_od (OrderedDict): tree of of ordered dictionaries of docstrings
 
     Returns:
@@ -137,14 +137,9 @@ def walk_through_package_recursive(package):
                 documentation strings of submodules.
 
     """
+    print('gendocs: entering ', package.__name__)
     # get basedirectort of package
     basedir = os.path.dirname(package.__spec__.origin)
-
-    # filters based on whether the module was imported from __init__.py or
-    # if it came from elsewhere
-    def from_init(mod):
-        return maybe_a(mod.__file__,
-                       False, lambda file,b: file.find('__init__.py')>-1)
 
     # filters based on whether the module is a python module object and
     # whether it is a submodule of the given package
@@ -155,17 +150,25 @@ def walk_through_package_recursive(package):
 
     sub_packages = \
         pydoc.inspect.getmembers(package,
-                                 lambda x: is_local_sub_module(x) and from_init(x))
+                                 lambda x: is_local_sub_module(x))
 
     # For subpackages add another level to the tree
     output = OrderedDict()
     for sub in sub_packages:
         output[sub[0]] = walk_through_package_recursive(sub[1])
 
+    # filters based on whether the module was imported from __init__.py or
+    # if it came from elsewhere
+    def from_init(mod):
+        return maybe_a(mod.__file__,
+                       False, lambda file,b: file.find('__init__.py')>-1)
+
     # For proper submodules add a leaf
     modules = \
         pydoc.inspect.getmembers(package,
                                  lambda x: is_local_sub_module(x) and not from_init(x))
+
+    modules = set(modules)
     output = write_into(document_modules(modules), output)
     return output
 
@@ -183,6 +186,7 @@ def getmodule(module_name, reference):
         str: The documentation string for the module.
 
     """
+    print('gendocs: documenting ', module_name)
     output = [module_header.format(module_name.title(), module_name)]
 
     if reference.__doc__:
@@ -235,7 +239,7 @@ def getclasses(item):
             # Get the docstring
             docstring = pydoc.inspect.getdoc(reference)
             if docstring:
-                output.append(format_linebreaks(docstring))
+                output.append(format_indentation(format_linebreaks(docstring)))
             # Get the methods
             output.extend(getfunctions(reference))
             # Recurse into any methods
@@ -276,8 +280,7 @@ def getfunctions(item):
         output.append(function_header.format(func_name.replace('_', '\\_')))
 
         # get argspec
-        argspec = pydoc.inspect.getfullargspec(reference)
-        arg_text = pydoc.inspect.formatargspec(*argspec)
+        arg_text = str(pydoc.inspect.signature(reference))
 
         _re_stripid = re.compile(r' at 0x[0-9a-f]{6,16}(>+)', re.IGNORECASE)
         def stripid(text):
