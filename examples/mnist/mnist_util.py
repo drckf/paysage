@@ -45,7 +45,7 @@ def create_batch(batch_size, train_fraction=0.95, transform=be.do_nothing):
 
     """
     samples = be.float_tensor(pandas.read_hdf(
-                default_paths(), key='train/images').as_matrix())
+                default_paths(), key='train/images').values)
     return batch.in_memory_batch(samples, batch_size, train_fraction, transform)
 
 # ----- CHECK MODEL ----- #

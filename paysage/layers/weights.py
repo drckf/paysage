@@ -206,7 +206,7 @@ class Weights(object):
         params = []
         for i, _ in enumerate(self.params):
             params.append(be.float_tensor(
-                store.get(os.path.join(key, 'parameters', 'key'+str(i))).as_matrix()
+                store.get(os.path.join(key, 'parameters', 'key'+str(i))).values
             )) # collapse trivial dimensions to a vector
         self.params = self.params.__class__(*params)
 

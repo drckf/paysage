@@ -89,11 +89,11 @@ class PCA(object):
         """
         config = store.get_storer('pca').attrs.config
         pca = cls(config['num_components'], config['stepsize'])
-        pca.W = be.float_tensor(store.get('pca/W').as_matrix())
-        pca.var = be.float_tensor(store.get('pca/var').as_matrix()[:,0])
+        pca.W = be.float_tensor(store.get('pca/W').values)
+        pca.var = be.float_tensor(store.get('pca/var').values[:,0])
         # check the mean is present
         if 'pca/mean' in store.keys():
-            pca.mean = be.float_tensor(store.get('pca/mean').as_matrix()[:,0])
+            pca.mean = be.float_tensor(store.get('pca/mean').values[:,0])
         # if the saved PCA was fit from SVD, there is not calculator defined
         if 'pca/var_calc' in store.keys():
             pca.var_calc = math_utils.MeanVarianceArrayCalculator.from_dataframe(
