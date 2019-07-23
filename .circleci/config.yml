@@ -2,7 +2,7 @@
 #
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 #
-version: 3
+version: 2
 jobs:
   build_and_test:
     docker:
@@ -23,9 +23,9 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v2-dependencies-{{ .Branch }}-{{ checksum "setup.py" }}
+          - v3-dependencies-{{ .Branch }}-{{ checksum "setup.py" }}
           # fallback to using the latest cache if no exact match is found
-          - v2-dependencies-
+          - v3-dependencies-
 
       - run:
           name: Install Requirements
@@ -38,7 +38,7 @@ jobs:
       - save_cache:
           paths:
             - "venv"
-          key: v2-dependencies-{{ .Branch }}-{{ checksum "setup.py" }}
+          key: v3-dependencies-{{ .Branch }}-{{ checksum "setup.py" }}
 
       # run tests on the python backend
       - run:
@@ -64,7 +64,7 @@ jobs:
           path: test-reports/
 
 workflows:
-  version: 3
+  version: 2
   build_and_test:
     jobs:
       - build_and_test
