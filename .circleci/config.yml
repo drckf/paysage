@@ -17,6 +17,9 @@ jobs:
 
     working_directory: ~/paysage
 
+    environment:
+      CIRCLE_REPOSITORY_URL: https://github.com/drckf/paysage
+
     steps:
       - checkout
 
