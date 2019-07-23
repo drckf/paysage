@@ -5,7 +5,7 @@
 ### find\_k\_nearest\_neighbors
 ```py
 
-def find_k_nearest_neighbors(x: Union[numpy.ndarray, torch.IntTensor, torch.cuda.IntTensor, torch.ShortTensor, torch.cuda.ShortTensor, torch.LongTensor, torch.cuda.LongTensor, torch.ByteTensor, torch.cuda.ByteTensor, torch.FloatTensor, torch.cuda.FloatTensor, torch.DoubleTensor, torch.cuda.DoubleTensor], y: Union[numpy.ndarray, torch.IntTensor, torch.cuda.IntTensor, torch.ShortTensor, torch.cuda.ShortTensor, torch.LongTensor, torch.cuda.LongTensor, torch.ByteTensor, torch.cuda.ByteTensor, torch.FloatTensor, torch.cuda.FloatTensor, torch.DoubleTensor, torch.cuda.DoubleTensor], k: int, callbacks=None) -> Tuple[Union[numpy.ndarray, torch.IntTensor, torch.cuda.IntTensor, torch.ShortTensor, torch.cuda.ShortTensor, torch.LongTensor, torch.cuda.LongTensor, torch.ByteTensor, torch.cuda.ByteTensor, torch.FloatTensor, torch.cuda.FloatTensor, torch.DoubleTensor, torch.cuda.DoubleTensor], Union[numpy.ndarray, torch.IntTensor, torch.cuda.IntTensor, torch.ShortTensor, torch.cuda.ShortTensor, torch.LongTensor, torch.cuda.LongTensor, torch.ByteTensor, torch.cuda.ByteTensor, torch.FloatTensor, torch.cuda.FloatTensor, torch.DoubleTensor, torch.cuda.DoubleTensor]]
+def find_k_nearest_neighbors(x: numpy.ndarray, y: numpy.ndarray, k: int, callbacks=None) -> Tuple[numpy.ndarray, numpy.ndarray]
 
 ```
 
@@ -17,7 +17,7 @@ For each row in x, find the kth nearest row in y.<br />The algorithm actually co
 ### find\_nearest\_neighbors
 ```py
 
-def find_nearest_neighbors(x: Union[numpy.ndarray, torch.IntTensor, torch.cuda.IntTensor, torch.ShortTensor, torch.cuda.ShortTensor, torch.LongTensor, torch.cuda.LongTensor, torch.ByteTensor, torch.cuda.ByteTensor, torch.FloatTensor, torch.cuda.FloatTensor, torch.DoubleTensor, torch.cuda.DoubleTensor], y: Union[numpy.ndarray, torch.IntTensor, torch.cuda.IntTensor, torch.ShortTensor, torch.cuda.ShortTensor, torch.LongTensor, torch.cuda.LongTensor, torch.ByteTensor, torch.cuda.ByteTensor, torch.FloatTensor, torch.cuda.FloatTensor, torch.DoubleTensor, torch.cuda.DoubleTensor], k: int, callbacks=None) -> Tuple[Union[numpy.ndarray, torch.IntTensor, torch.cuda.IntTensor, torch.ShortTensor, torch.cuda.ShortTensor, torch.LongTensor, torch.cuda.LongTensor, torch.ByteTensor, torch.cuda.ByteTensor, torch.FloatTensor, torch.cuda.FloatTensor, torch.DoubleTensor, torch.cuda.DoubleTensor], Union[numpy.ndarray, torch.IntTensor, torch.cuda.IntTensor, torch.ShortTensor, torch.cuda.ShortTensor, torch.LongTensor, torch.cuda.LongTensor, torch.ByteTensor, torch.cuda.ByteTensor, torch.FloatTensor, torch.cuda.FloatTensor, torch.DoubleTensor, torch.cuda.DoubleTensor]]
+def find_nearest_neighbors(x: numpy.ndarray, y: numpy.ndarray, k: int, callbacks=None) -> Tuple[numpy.ndarray, numpy.ndarray]
 
 ```
 
@@ -29,7 +29,7 @@ For each row in x, find the nearest row in y for each j <= k<br />The algorithm 
 ### pdist
 ```py
 
-def pdist(x: Union[numpy.ndarray, torch.IntTensor, torch.cuda.IntTensor, torch.ShortTensor, torch.cuda.ShortTensor, torch.LongTensor, torch.cuda.LongTensor, torch.ByteTensor, torch.cuda.ByteTensor, torch.FloatTensor, torch.cuda.FloatTensor, torch.DoubleTensor, torch.cuda.DoubleTensor], y: Union[numpy.ndarray, torch.IntTensor, torch.cuda.IntTensor, torch.ShortTensor, torch.cuda.ShortTensor, torch.LongTensor, torch.cuda.LongTensor, torch.ByteTensor, torch.cuda.ByteTensor, torch.FloatTensor, torch.cuda.FloatTensor, torch.DoubleTensor, torch.cuda.DoubleTensor]) -> Union[numpy.ndarray, torch.IntTensor, torch.cuda.IntTensor, torch.ShortTensor, torch.cuda.ShortTensor, torch.LongTensor, torch.cuda.LongTensor, torch.ByteTensor, torch.cuda.ByteTensor, torch.FloatTensor, torch.cuda.FloatTensor, torch.DoubleTensor, torch.cuda.DoubleTensor]
+def pdist(x: numpy.ndarray, y: numpy.ndarray) -> numpy.ndarray
 
 ```
 
