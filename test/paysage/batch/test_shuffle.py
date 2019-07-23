@@ -23,7 +23,7 @@ def test_shuffle():
                         index=['ix_{}'.format(i) for i in np.arange(num_rows)])
 
     # save it
-    store = pd.HDFStore(file_original.name, mode='w', format='table')
+    store = pd.HDFStore(file_original.name, mode='w')
     store.append("A", df_A)
     store.append("B", df_B)
     store.close()
