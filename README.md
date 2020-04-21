@@ -1,3 +1,5 @@
+### Note: this repository has not been under active development for quite some time
+
 # Paysage
 
 Paysage is library for unsupervised learning and probabilistic generative models written in Python. The library is still in the early stages and is not yet stable, so new features will be added frequently.
