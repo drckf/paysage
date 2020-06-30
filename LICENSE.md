@@ -1,19 +1,19 @@
 COPYRIGHT:
 
 All contributions by Charles K. Fisher:
-Copyright (c) 2018, unlearn.ai.
+Copyright (c) 2019, unlearn.ai.
 All rights reserved.
 
 All contributions by Aaron M. Smith:
-Copyright (c) 2018, unlearn.ai.
+Copyright (c) 2019, unlearn.ai.
 All rights reserved.
 
 All contributions by Jonathan R. Walsh:
-Copyright (c) 2018, unlearn.ai.
+Copyright (c) 2019, unlearn.ai.
 All rights reserved.
 
 All other contributions:
-Copyright (c) 2018, unlearn.ai.
+Copyright (c) 2019, unlearn.ai.
 All rights reserved.
 
 Each contributor holds copyright over their respective contributions.
