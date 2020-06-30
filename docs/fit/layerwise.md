@@ -45,7 +45,7 @@ Gradient of -\ln P(v) with respect to the model parameters<br /><br />Args:<br /
 ### \_\_init\_\_
 ```py
 
-def __init__(self, layer_list: List, conn_list: List=None)
+def __init__(self, layer_list: List, conn_list: List = None)
 
 ```
 
@@ -201,7 +201,7 @@ Compute the gradient of the model parameters.<br />Scales the units in the state
 ### initialize
 ```py
 
-def initialize(self, batch, method: str='hinton', **kwargs) -> None
+def initialize(self, batch, method: str = 'hinton', **kwargs) -> None
 
 ```
 
@@ -348,7 +348,7 @@ Return a dictionary describing the configuration of the connections.<br /><br />
 
 
 ## class State
-A State is a list of tensors that contains the states of the units<br />described by a model.<br /><br />For a model with L hidden layers, the tensors have shapes<br /><br />shapes = [<br />(num_samples, num_visible),<br />(num_samples, num_hidden_1),<br />            .<br />            .<br />            .<br />(num_samples, num_hidden_L)<br />]
+A State is a list of tensors that contains the states of the units<br />described by a model.<br /><br />For a model with L hidden layers, the tensors have shapes<br /><br />shapes = [<br />(num_samples, num_visible),<br />(num_samples, num_hidden_1),<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.<br />(num_samples, num_hidden_L)<br />]
 ### \_\_init\_\_
 ```py
 

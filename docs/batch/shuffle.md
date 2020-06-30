@@ -29,7 +29,7 @@ Returns the sample count that will fit in allowed_mem,<br />given the shape of t
 
 
 ## class DataShuffler
-Shuffles data in an HDF5 file.  Memory is managed.<br />Synchronized shuffling between tables (with matching numbers of rows).<br /><br />Each table is shuffled with the following algorithm:<br />    - The table is sequentially divided into chunks.<br />        Each is shuffled and saved to a temporary file.<br />    - Pieces of each chunk are read in and shuffled together,<br />        Then written to the target file.<br />        This is done in a memory-managed way that preserves randomness.
+Shuffles data in an HDF5 file.  Memory is managed.<br />Synchronized shuffling between tables (with matching numbers of rows).<br /><br />Each table is shuffled with the following algorithm:<br />&nbsp;&nbsp;&nbsp;&nbsp;- The table is sequentially divided into chunks.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Each is shuffled and saved to a temporary file.<br />&nbsp;&nbsp;&nbsp;&nbsp;- Pieces of each chunk are read in and shuffled together,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Then written to the target file.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This is done in a memory-managed way that preserves randomness.
 ### \_\_init\_\_
 ```py
 

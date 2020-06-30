@@ -17,7 +17,7 @@ Holds data sources with iterators that can pull minibatches.<br />The train and 
 ### close
 ```py
 
-def close(self, mode: str='all') -> None
+def close(self, mode: str = 'all') -> None
 
 ```
 
@@ -77,7 +77,7 @@ Reset the generator.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;mode (str): t
 ### set\_parameters\_with\_test
 ```py
 
-def set_parameters_with_test(self, mode: str='all')
+def set_parameters_with_test(self, mode: str = 'all')
 
 ```
 

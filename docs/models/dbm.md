@@ -17,7 +17,7 @@ Gradient of -\ln P(v) with respect to the model parameters<br /><br />Args:<br /
 ### \_\_init\_\_
 ```py
 
-def __init__(self, layer_list: List, conn_list: List=None)
+def __init__(self, layer_list: List, conn_list: List = None)
 
 ```
 
@@ -173,7 +173,7 @@ Compute the gradient of the model parameters.<br />Scales the units in the state
 ### initialize
 ```py
 
-def initialize(self, batch, method: str='hinton', **kwargs) -> None
+def initialize(self, batch, method: str = 'hinton', **kwargs) -> None
 
 ```
 
@@ -282,8 +282,4 @@ Convenience function to set the layers for which sampling is clamped.<br />Sets 
 
 ## class partial
 partial(func, *args, **keywords) - new function with partial application<br />of the given arguments and keywords.
-
-
-## class List
-list() -> new empty list<br />list(iterable) -> new list initialized from iterable's items
 

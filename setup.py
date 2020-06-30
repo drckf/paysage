@@ -11,7 +11,7 @@ def readme():
         return f.read()
 
 setup(name='paysage',
-      version='0.2.1',
+      version='0.2.2',
       description='Machine learning with energy based models in python',
       long_description=readme(),
       url='https://github.com/drckf/paysage',
@@ -24,7 +24,7 @@ setup(name='paysage',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Topic :: Scientific/Engineering :: Physics',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
       ],
       packages=find_packages(),
       package_data={
@@ -45,5 +45,5 @@ setup(name='paysage',
       tests_require=[
           'pytest'
       ],
-      python_requires='>=3.6',
+      python_requires='>=3.7',
       zip_safe=False)

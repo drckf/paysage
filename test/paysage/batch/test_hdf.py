@@ -17,7 +17,7 @@ def test_hdf_table_batch():
     df_A = pd.DataFrame(np.arange(num_rows*num_cols).reshape(num_rows, num_cols))
 
     # save it
-    with pd.HDFStore(store_file.name, mode="w", format="table") as store:
+    with pd.HDFStore(store_file.name, mode="w") as store:
         store.append("train", df_A)
 
     # read it back with the HDFtable
@@ -55,7 +55,7 @@ def test_hdf_batch():
     df_B = df_A + num_rows*num_cols
 
     # save it
-    with pd.HDFStore(store_file.name, mode="w", format="table") as store:
+    with pd.HDFStore(store_file.name, mode="w") as store:
         store.append("train", df_A)
         store.append("validate", df_B)
 

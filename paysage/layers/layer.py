@@ -261,7 +261,7 @@ class Layer(object):
         params = []
         for i, _ in enumerate(self.params):
             params.append(be.float_tensor(
-                store.get(os.path.join(key, 'parameters', 'params'+str(i))).as_matrix()
+                store.get(os.path.join(key, 'parameters', 'params'+str(i))).values
             ).squeeze()) # collapse trivial dimensions to a vector
 
         # load parameters, but first unset fixed_params to load, then re-set

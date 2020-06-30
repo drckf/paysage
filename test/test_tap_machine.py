@@ -39,7 +39,7 @@ def test_tap_machine(paysage_path=None):
 
     # set up the reader to get minibatches
     samples = pre.binarize_color(be.float_tensor(pandas.read_hdf(
-                shuffled_filepath, key='train/images').as_matrix()[:10000]))
+                shuffled_filepath, key='train/images').values[:10000]))
     samples_train, samples_validate = batch.split_tensor(samples, 0.95)
     data = batch.Batch({'train': batch.InMemoryTable(samples_train, batch_size),
                         'validate': batch.InMemoryTable(samples_validate, batch_size)})

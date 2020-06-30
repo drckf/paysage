@@ -192,7 +192,7 @@ Sample from the multivariate Gaussian represented by the pca<br /><br />Args:<br
 ### save
 ```py
 
-def save(self, store: pandas.io.pytables.HDFStore, num_components_save: int=None) -> None
+def save(self, store: pandas.io.pytables.HDFStore, num_components_save: int = None) -> None
 
 ```
 

@@ -7,8 +7,8 @@ jobs:
   build_and_test:
     docker:
       # specify the version you desire here
-      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.6.1
+      # use `-browsers` prefix for selenium tests, e.g. `3.7.3-browsers`
+      - image: circleci/python:3.7.3
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -17,15 +17,18 @@ jobs:
 
     working_directory: ~/paysage
 
+    environment:
+      CIRCLE_REPOSITORY_URL: https://github.com/drckf/paysage
+
     steps:
       - checkout
 
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v2-dependencies-{{ .Branch }}-{{ checksum "setup.py" }}
+          - v4-dependencies-{{ .Branch }}-{{ checksum "setup.py" }}
           # fallback to using the latest cache if no exact match is found
-          - v2-dependencies-
+          - v4-dependencies-
 
       - run:
           name: Install Requirements
@@ -38,7 +41,7 @@ jobs:
       - save_cache:
           paths:
             - "venv"
-          key: v2-dependencies-{{ .Branch }}-{{ checksum "setup.py" }}
+          key: v4-dependencies-{{ .Branch }}-{{ checksum "setup.py" }}
 
       # run tests on the python backend
       - run:

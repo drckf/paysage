@@ -17,7 +17,7 @@ Create a StateTAP.<br /><br />Args:<br />&nbsp;&nbsp;&nbsp;&nbsp;cumulants: list
 
 
 ## class State
-A State is a list of tensors that contains the states of the units<br />described by a model.<br /><br />For a model with L hidden layers, the tensors have shapes<br /><br />shapes = [<br />(num_samples, num_visible),<br />(num_samples, num_hidden_1),<br />            .<br />            .<br />            .<br />(num_samples, num_hidden_L)<br />]
+A State is a list of tensors that contains the states of the units<br />described by a model.<br /><br />For a model with L hidden layers, the tensors have shapes<br /><br />shapes = [<br />(num_samples, num_visible),<br />(num_samples, num_hidden_1),<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.<br />(num_samples, num_hidden_L)<br />]
 ### \_\_init\_\_
 ```py
 
@@ -85,7 +85,7 @@ Get the number of units in a layer of the state.<br /><br />Args:<br />&nbsp;&nb
 ### state\_allclose
 ```py
 
-def state_allclose(state1: paysage.models.state.State, state2: paysage.models.state.State, rtol: float=1e-05, atol: float=1e-08) -> bool
+def state_allclose(state1: paysage.models.state.State, state2: paysage.models.state.State, rtol: float = 1e-05, atol: float = 1e-08) -> bool
 
 ```
 
