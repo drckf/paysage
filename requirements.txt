@@ -22,7 +22,7 @@ protobuf==3.2.0
 psycopg2==2.7.1
 ptyprocess==0.5.1
 py==1.4.32
-Pygments==2.2.0
+Pygments==2.7.4
 pylint==1.6.5
 pyparsing==2.1.10
 pytest==3.0.6
