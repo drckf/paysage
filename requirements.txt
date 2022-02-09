@@ -34,7 +34,7 @@ simplegeneric==0.8.1
 six==1.10.0
 stevedore==1.17.1
 tables==3.3.0
-tensorflow==0.12.1
+tensorflow==2.5.3
 traitlets==4.3.1
 virtualenv==15.1.0
 virtualenv-clone==0.2.6
