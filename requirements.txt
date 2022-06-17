@@ -11,7 +11,7 @@ lazy-object-proxy==1.2.2
 matplotlib==2.0.0
 mccabe==0.6.1
 numexpr==2.6.2
-numpy==1.13.1
+numpy==1.21.0
 packaging==16.8
 pandas==0.19.2
 pbr==1.10.0
